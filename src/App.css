@@ -22,8 +22,6 @@
   display: flex;
   flex-direction: column;
   padding: 20px;
-  overflow: auto;
-  max-height: 300px;
   background-color: var(--pale-green);
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
@@ -256,6 +254,8 @@
 .clear-clipboard-link {
   text-align: right;
   transform: translateX(15px);
+  margin-right: 60px;
+  margin-top: -20px;
 }
 
 .clear-clipboard-link:hover,
