@@ -1,0 +1,164 @@
+/* Account container */
+.account-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Headings */
+h1,
+h2,
+h3 {
+  margin-bottom: 30px;
+}
+
+/* Account info section */
+.account-container .account-info {
+  margin-bottom: 50px;
+}
+
+.account-info label {
+  display: block;
+  font-size: 1.3rem;
+  margin-bottom: 15px;
+  color: var(--dark-green);
+}
+
+.account-info input[type="text"] {
+  width: 90%;
+  max-width: 350px;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 2px solid var(--light-green);
+}
+
+/* Buttons */
+.account-container :where(.update-name-btn, .manage-plan-btn) {
+  color: var(--pure-white);
+  margin-top: 10px;
+  border: none;
+  border-radius: 30px;
+  padding: 14px 28px;
+  font-size: 1.125rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
+  transition: all 0.3s ease;
+}
+
+.account-container :where(.update-name-btn, .manage-plan-btn):hover {
+  transform: translateY(-3px);
+  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.account-container .account-info .update-name-btn {
+  margin-left: 20px;
+}
+
+/* Subscription options */
+.subscription-info {
+  margin-top: 30px;
+}
+
+.subscription-info .subscription-status {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 30px;
+  justify-content: space-between;
+}
+
+.subscription-option {
+  height: 110px;
+  padding: 15px;
+  cursor: pointer;
+  border-radius: 8px;
+  width: calc(60vw / 3);
+  border: 1px solid var(--medium-green);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.subscription-option:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-option.active {
+  background-color: var(--light-green);
+  color: var(--pure-white);
+}
+
+/* Option name and features */
+.subscription-option .option-name {
+  font-size: 1.4rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.subscription-option .option-features li {
+  list-style: none;
+  margin-bottom: 10px;
+}
+
+/* Hours remaining box */
+.subscription-info .hours-remaining {
+  margin-top: 30px;
+}
+
+.subscription-info .hours-box {
+  color: var(--pure-white);
+  border-radius: 50%;
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin: 20px auto 1.5vh;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, var(--light-green), var(--medium-green));
+  transition: all 0.3s ease;
+}
+
+.subscription-info .hours-box:hover {
+  transform: scale(1.08);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-info #hours {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.subscription-info .hours-label {
+  margin-top: 5px;
+  text-transform: uppercase;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .account-container .account-info .update-name-btn {
+    margin-left: 0;
+  }
+
+  .subscription-info .subscription-option {
+    width: calc(100% - 30px);
+    margin-right: 15px;
+  }
+
+  .subscription-info .subscription-status {
+    flex-direction: column;
+  }
+
+  .subscription-info .hours-box {
+    width: 100px;
+    height: 100px;
+  }
+}

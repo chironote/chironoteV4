@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" width="50" height="50">
+  <g transform="rotate(45, 25, 25)" fill="#2e6930" stroke="#2e6930">
+    <!-- Broom handle -->
+    <line x1="25" y1="5" x2="25" y2="35" stroke-width="2" stroke-linecap="round"/>
+    
+    <!-- Broom head -->
+    <path d="M20 35 Q25 40 30 35 L33 45 Q25 50 17 45 Z"/>
+    
+    <!-- Bristles -->
+    <line x1="22" y1="39" x2="21" y2="44" stroke-width="1"/>
+    <line x1="26" y1="39" x2="27" y2="44" stroke-width="1"/>
+    <line x1="30" y1="38" x2="32" y2="43" stroke-width="1"/>
+  </g>
+</svg>

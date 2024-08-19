@@ -1,0 +1,70 @@
+/* Feedback form container */
+.feedback-container {
+  min-height: 81.3vh;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px;
+  border-radius: 12px;
+  box-sizing: border-box;
+  background: var(--off-white);
+}
+
+/* Form group */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--dark-green);
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+/* Select and textarea */
+.feedback-select,
+.feedback-textarea {
+  width: 90%;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: var(--dark-green);
+  border: 2px solid var(--light-green);
+  background-color: var(--off-white);
+}
+
+.feedback-textarea {
+  margin: auto;
+  height: 150px;
+  resize: vertical;
+}
+
+/* Submit button */
+.submit-feedback-btn {
+  color: var(--off-white);
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
+}
+
+.submit-feedback-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+}
+
+.submit-feedback-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}

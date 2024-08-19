@@ -1,0 +1,27 @@
+type UserSubscription @model @auth(rules: [{allow: public}]) 
+type Transcription {
+    id: ID!
+    timestamp: String!
+    transcription: String
+    note: String
+    json: String
+}
+
+input TranscriptionInput {
+    id: ID!
+    timestamp: String!
+    transcription: String
+    note: String
+    json: String
+}
+
+type Query {
+    getTranscription(id: ID!, timestamp: String!): Transcription
+    listTranscriptions: [Transcription]
+}
+
+type Mutation {
+    createTranscription(input: TranscriptionInput): Transcription
+    updateTranscription(id: ID!, timestamp: String!, input: TranscriptionInput): Transcription
+    deleteTranscription(id: ID!, timestamp: String!): Transcription
+}

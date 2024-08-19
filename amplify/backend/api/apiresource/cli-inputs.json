@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "paths": {
+    "/items": {
+      "name": "/items",
+      "lambdaFunction": "chironotereact601b21eb",
+      "permissions": {
+        "setting": "open"
+      }
+    }
+  }
+}

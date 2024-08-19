@@ -1,0 +1,26 @@
+{
+  "master": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chironotereact-master-676f9-authRole",
+      "UnauthRoleArn": "arn:aws:iam::905418365998:role/amplify-chironotereact-master-676f9-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::905418365998:role/amplify-chironotereact-master-676f9-authRole",
+      "Region": "us-west-2",
+      "DeploymentBucketName": "amplify-chironotereact-master-676f9-deployment",
+      "UnauthRoleName": "amplify-chironotereact-master-676f9-unauthRole",
+      "StackName": "amplify-chironotereact-master-676f9",
+      "StackId": "arn:aws:cloudformation:us-west-2:905418365998:stack/amplify-chironotereact-master-676f9/1d1a4140-58cb-11ef-ad6d-0625770ad547",
+      "AmplifyAppId": "d2li1hjmuxyi4g"
+    },
+    "categories": {
+      "auth": {
+        "chironotereact": {}
+      },
+      "function": {
+        "chironotereact601b21eb": {
+          "deploymentBucketName": "amplify-chironotereact-master-676f9-deployment",
+          "s3Key": "amplify-builds/chironotereact601b21eb-466a79475351636c3761-build.zip"
+        }
+      }
+    }
+  }
+}
