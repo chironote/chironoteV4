@@ -1,6 +1,7 @@
 /* Main content area */
 .app-main {
   display: flex;
+  height: calc(100vh - 70px);
   padding: 20px;
   text-align: center;
   flex-direction: column;
