@@ -74,7 +74,7 @@ function Account({ setCurrentPage }) {
             />
           ))}
         </div>
-        <button className="manage-plan-btn">Manage Plan</button>
+        <button className="manage-plan-btn">Purchase Plan</button>
 
         {/* Hours remaining this month */}
         <div className="hours-remaining">
