@@ -595,8 +595,8 @@ input:checked~.slider {
   }
 
   .left-panel {
-    max-width: 300px;
-    max-height: 83.5vh;
+    max-width: 330px;
+    max-height: 100vh;
   }
 
   .clipboard-actions {
