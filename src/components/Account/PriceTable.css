@@ -1,0 +1,50 @@
+.pricing-table-container {
+    display: flex;
+    position: absolute;
+    left: 0%;
+    top: 70px;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 75px);
+    width: 99.8%;
+    background-color: var(--pale-green);
+    border: 2px solid var(--light-green);
+    overflow: hidden;
+  
+  }
+  
+  stripe-pricing-table {
+    position: absolute;
+    width: 100%;
+  }
+  
+  .app-main .back-button {
+    align-self: flex-start;
+  }
+  
+  
+  .back-button {
+    position: absolute;
+    left: 10%;
+    top: 10%;
+    color: var(--pure-white);
+    margin-top: 10px;
+    border: none;
+    border-radius: 30px;
+    padding: 14px 28px;
+    font-size: 1.125rem;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(45deg, var(--medium-green), var(--light-green));
+    transition: all 0.3s ease;
+    z-index: 2;
+  }
+  
+  .back-button:hover {
+  transform: translateY(-3px);
+  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+  }
+  
