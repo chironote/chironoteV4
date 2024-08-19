@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Account.css';
 import { PLANS, getPlanFeatures } from '../../constants/constants';
+import PriceTable from '../Account/PriceTable'; // Add this import
 
 // Component to render individual subscription options
 const SubscriptionOption = ({ plan, isActive, onClick }) => (
@@ -23,6 +24,7 @@ function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
   const [currentPlan, setCurrentPlan] = useState('free');
   const [remainingHours, setRemainingHours] = useState(10);
+  const [showPriceTable, setShowPriceTable] = useState(false);
 
   // Handle name input change
   const handleNameChange = (event) => {
@@ -39,6 +41,15 @@ function Account({ setCurrentPage }) {
   const handlePlanSelect = (plan) => {
     setCurrentPlan(plan);
   };
+
+  // Add this function to handle the "Purchase Plan" button click
+  const handlePurchasePlan = () => {
+    setShowPriceTable(true);
+  };
+
+  if (showPriceTable) {
+    return <PriceTable setShowPriceTable={setShowPriceTable} />;
+  }
 
   return (
     <div className="account-container">
@@ -74,7 +85,9 @@ function Account({ setCurrentPage }) {
             />
           ))}
         </div>
-        <button className="manage-plan-btn">Purchase Plan</button>
+        <button className="manage-plan-btn" onClick={handlePurchasePlan}>
+          Purchase Plan
+        </button>
 
         {/* Hours remaining this month */}
         <div className="hours-remaining">

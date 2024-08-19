@@ -1,20 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { getCurrentUser } from 'aws-amplify/auth';
-import './pricetable.css';
+import { Auth } from 'aws-amplify';
+import './PriceTable.css';
 
 const StripePricingTable = ({ onBack }) => {
   const [userEmail, setUserEmail] = useState('');
 
   useEffect(() => {
-    async function fetchUserEmail() {
+    const fetchUserEmail = async () => {
       try {
-        const user = await getCurrentUser();
-        const email = user.signInDetails.loginId;
-        setUserEmail(email);
-      } catch (err) {
-        console.error('Error fetching user email:', err);
+        const user = await Auth.currentAuthenticatedUser();
+        const { attributes } = user;
+        setUserEmail(attributes.email);
+        console.log(userEmail);
+      } catch (error) {
+        console.error('Error fetching user email:', error);
       }
-    }
+    };
 
     fetchUserEmail();
   }, []);
