@@ -11,9 +11,9 @@ export const PLANS = ['free', 'standard', 'pro'];
 
 // Features based on the plan
 export const PLAN_FEATURES = {
-  free: ['Basic features', 'Limited storage'],
-  standard: ['Advanced features', 'Limited storage'],
-  pro: ['Advanced features', 'Unlimited storage']
+  free: ['Slow Clinic'],
+  standard: ['Busy Clinic'],
+  pro: ['Booked Solid']
 };
 
 // Helper function to get features based on the plan

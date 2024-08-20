@@ -10,7 +10,7 @@ import ClipboardButtons from './components/ClipboardButtons';
 import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
-import { Amplify } from 'aws-amplify';
+import { Amplify, API, graphqlOperation } from 'aws-amplify';
 
 import { withAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';

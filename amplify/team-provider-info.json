@@ -20,6 +20,10 @@
           "deploymentBucketName": "amplify-chironotereact-master-676f9-deployment",
           "s3Key": "amplify-builds/chironotereact601b21eb-466a79475351636c3761-build.zip"
         }
+      },
+      "api": {
+        "apiresource": {},
+        "chironotereact": {}
       }
     }
   }
