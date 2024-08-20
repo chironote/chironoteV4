@@ -1,40 +1,22 @@
 {
   "api": {
-    "apiresource": {
-      "dependsOn": [
-        {
-          "attributes": [
-            "Name",
-            "Arn"
-          ],
-          "category": "function",
-          "resourceName": "chironotereact601b21eb"
-        }
-      ],
-      "providerPlugin": "awscloudformation",
-      "service": "API Gateway"
-    },
-    "chironotereact": {
+    "chironotev4": {
       "dependsOn": [
         {
           "attributes": [
             "UserPoolId"
           ],
           "category": "auth",
-          "resourceName": "chironotereact"
+          "resourceName": "chironotev4167c865f"
         }
       ],
       "output": {
         "authConfig": {
-          "additionalAuthenticationProviders": [
-            {
-              "authenticationType": "AWS_IAM"
-            }
-          ],
+          "additionalAuthenticationProviders": [],
           "defaultAuthentication": {
             "authenticationType": "AMAZON_COGNITO_USER_POOLS",
             "userPoolConfig": {
-              "userPoolId": "authchironotereact"
+              "userPoolId": "authchironotev4167c865f"
             }
           }
         }
@@ -44,7 +26,7 @@
     }
   },
   "auth": {
-    "chironotereact": {
+    "chironotev4167c865f": {
       "customAuth": false,
       "dependsOn": [],
       "frontendAuthConfig": {
@@ -57,8 +39,7 @@
           "passwordPolicyMinLength": 8
         },
         "signupAttributes": [
-          "EMAIL",
-          "NAME"
+          "EMAIL"
         ],
         "socialProviders": [],
         "usernameAttributes": [
@@ -70,31 +51,6 @@
       },
       "providerPlugin": "awscloudformation",
       "service": "Cognito"
-    }
-  },
-  "function": {
-    "chironotereact601b21eb": {
-      "build": true,
-      "providerPlugin": "awscloudformation",
-      "service": "Lambda"
-    }
-  },
-  "parameters": {
-    "AMPLIFY_function_chironotereact601b21eb_deploymentBucketName": {
-      "usedBy": [
-        {
-          "category": "function",
-          "resourceName": "chironotereact601b21eb"
-        }
-      ]
-    },
-    "AMPLIFY_function_chironotereact601b21eb_s3Key": {
-      "usedBy": [
-        {
-          "category": "function",
-          "resourceName": "chironotereact601b21eb"
-        }
-      ]
     }
   }
 }

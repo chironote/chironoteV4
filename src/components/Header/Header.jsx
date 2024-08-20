@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import tempLogo from '../../assets/temp-logo.png';
 import { NAV_LINKS } from '../../constants/constants';
-import { Auth } from 'aws-amplify';
+import { signOut } from 'aws-amplify/auth';
 import "./Header.css"
 
 function Header({ setCurrentPage, currentPage }) {
@@ -10,15 +10,15 @@ function Header({ setCurrentPage, currentPage }) {
   // Ref to detect clicks outside the mobile menu
   const menuRef = useRef(null);
 
-  // Handle user logout logic
+  // Updated handleLogout function using v6 format
   const handleLogout = async () => {
     try {
-      await Auth.signOut();
+      await signOut();
       console.log('User signed out successfully');
       // You might want to redirect the user or update the app state here
       // For example: setCurrentPage('login');
     } catch (error) {
-      console.error('Error signing out: ', error);
+      console.log('error signing out: ', error);
     }
   };
 

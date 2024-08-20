@@ -1,6 +1,6 @@
 projects:
-  chironotereact:
-    schemaPath: amplify/backend/api/chironotereact/build/schema.graphql
+  chironotev4:
+    schemaPath: src/graphql/schema.json
     includes:
       - src/graphql/**/*.js
     excludes:
@@ -10,6 +10,6 @@ projects:
         codeGenTarget: javascript
         generatedFileName: ''
         docsFilePath: src/graphql
-        region: us-west-2
-        apiId: null
-        maxDepth: 2
+extensions:
+  amplify:
+    version: 3

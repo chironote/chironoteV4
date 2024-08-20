@@ -1,10 +1,10 @@
 {
   "version": "1",
   "cognitoConfig": {
-    "identityPoolName": "defaultuser",
+    "identityPoolName": "chironotev4167c865f_identitypool_167c865f",
     "allowUnauthenticatedIdentities": false,
-    "resourceNameTruncated": "chironbe6ad994",
-    "userPoolName": "UserPool",
+    "resourceNameTruncated": "chiron167c865f",
+    "userPoolName": "chironotev4167c865f_userpool_167c865f",
     "autoVerifiedAttributes": [
       "email"
     ],
@@ -20,8 +20,7 @@
     "passwordPolicyMinLength": 8,
     "passwordPolicyCharacters": [],
     "requiredAttributes": [
-      "email",
-      "name"
+      "email"
     ],
     "aliasAttributes": [],
     "userpoolClientGenerateSecret": false,
@@ -32,41 +31,18 @@
     "userpoolClientReadAttributes": [
       "email"
     ],
-    "userpoolClientLambdaRole": "chironbe6ad994_userpoolclient_lambda_role",
+    "userpoolClientLambdaRole": "chiron167c865f_userpoolclient_lambda_role",
     "userpoolClientSetAttributes": false,
-    "sharedId": "be6ad994",
-    "resourceName": "chironotereact",
+    "sharedId": "167c865f",
+    "resourceName": "chironotev4167c865f",
     "authSelections": "identityPoolAndUserPool",
     "useDefault": "default",
     "usernameAttributes": [
       "email"
     ],
-    "userPoolGroups": false,
-    "adminQueries": false,
-    "triggers": {},
-    "hostedUI": false,
     "userPoolGroupList": [],
     "serviceName": "Cognito",
     "usernameCaseSensitive": false,
-    "useEnabledMfas": true,
-    "authRoleArn": {
-      "Fn::GetAtt": [
-        "AuthRole",
-        "Arn"
-      ]
-    },
-    "unauthRoleArn": {
-      "Fn::GetAtt": [
-        "UnauthRole",
-        "Arn"
-      ]
-    },
-    "breakCircularDependency": true,
-    "dependsOn": [],
-    "authProviders": [],
-    "parentStack": {
-      "Ref": "AWS::StackId"
-    },
-    "permissions": []
+    "useEnabledMfas": true
   }
 }

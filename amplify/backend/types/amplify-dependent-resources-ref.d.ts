@@ -1,17 +1,12 @@
 export type AmplifyDependentResourcesAttributes = {
   "api": {
-    "apiresource": {
-      "ApiId": "string",
-      "ApiName": "string",
-      "RootUrl": "string"
-    },
-    "chironotereact": {
+    "chironotev4": {
       "GraphQLAPIEndpointOutput": "string",
       "GraphQLAPIIdOutput": "string"
     }
   },
   "auth": {
-    "chironotereact": {
+    "chironotev4167c865f": {
       "AppClientID": "string",
       "AppClientIDWeb": "string",
       "IdentityPoolId": "string",
@@ -19,15 +14,6 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolArn": "string",
       "UserPoolId": "string",
       "UserPoolName": "string"
-    }
-  },
-  "function": {
-    "chironotereact601b21eb": {
-      "Arn": "string",
-      "LambdaExecutionRole": "string",
-      "LambdaExecutionRoleArn": "string",
-      "Name": "string",
-      "Region": "string"
     }
   }
 }

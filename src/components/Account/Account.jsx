@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Account.css';
 import { PLANS, getPlanFeatures } from '../../constants/constants';
-import PriceTable from '../Account/PriceTable'; // Add this import
+import config from '../../amplifyconfiguration.json';
+import { fetchUserAttributes } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import { createTodo, updateTodo, deleteTodo } from '../../graphql/mutations';
+import { listTodos } from '../../graphql/queries';
+import { Amplify } from 'aws-amplify';
+Amplify.configure(config);
+
+const client = generateClient();
+
 
 // Component to render individual subscription options
 const SubscriptionOption = ({ plan, isActive, onClick }) => (
@@ -24,7 +33,35 @@ function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
   const [currentPlan, setCurrentPlan] = useState('free');
   const [remainingHours, setRemainingHours] = useState(10);
-  const [showPriceTable, setShowPriceTable] = useState(false);
+
+  useEffect(() => {
+    fetchUserSubscription();
+  }, []);
+  
+  async function fetchUserSubscription() {
+    try {
+      const userAttributes = await fetchUserAttributes();
+      console.log('User id:', userAttributes.sub);
+      const writeResult = await client.graphql({
+        query: createTodo,
+        variables: {
+          input: {
+            name: 'My first todo!',
+            owner: userAttributes.sub
+          }
+        }
+      });
+      console.log('Todos wrote successfully:',writeResult);
+      const result = await client.graphql({ query: listTodos });
+      console.log('Todos read successfully:', result);
+      
+      // TODO: Handle the subscription data here
+      // For example:
+      // setCurrentPlan(data.getUserSubscriptionByUser.tier);
+    } catch (err) {
+      console.error('Error fetching user subscription:', err);
+    }
+  }
 
   // Handle name input change
   const handleNameChange = (event) => {
@@ -41,15 +78,6 @@ function Account({ setCurrentPage }) {
   const handlePlanSelect = (plan) => {
     setCurrentPlan(plan);
   };
-
-  // Add this function to handle the "Purchase Plan" button click
-  const handlePurchasePlan = () => {
-    setShowPriceTable(true);
-  };
-
-  if (showPriceTable) {
-    return <PriceTable setShowPriceTable={setShowPriceTable} />;
-  }
 
   return (
     <div className="account-container">
@@ -85,9 +113,7 @@ function Account({ setCurrentPage }) {
             />
           ))}
         </div>
-        <button className="manage-plan-btn" onClick={handlePurchasePlan}>
-          Purchase Plan
-        </button>
+        <button className="manage-plan-btn">Purchase Plan</button>
 
         {/* Hours remaining this month */}
         <div className="hours-remaining">

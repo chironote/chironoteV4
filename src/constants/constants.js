@@ -12,7 +12,7 @@ export const PLANS = ['free', 'standard', 'pro'];
 // Features based on the plan
 export const PLAN_FEATURES = {
   free: ['Slow Clinic'],
-  standard: ['Busy Clinic'],
+  standard: ['Busy Clinic '],
   pro: ['Booked Solid']
 };
 

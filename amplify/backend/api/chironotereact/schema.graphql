@@ -1,9 +1,0 @@
-type UserSubscription @model @auth(rules: [{ allow: owner }]) {
-  id: ID!
-  userID: String!
-  tier: String!
-}
-
-type Query {
-  getUserSubscriptionByUser(userID: String!): UserSubscription
-}

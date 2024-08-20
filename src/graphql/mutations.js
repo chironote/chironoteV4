@@ -1,50 +1,50 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const createUserSubscription = /* GraphQL */ `
-  mutation CreateUserSubscription(
-    $input: CreateUserSubscriptionInput!
-    $condition: ModelUserSubscriptionConditionInput
+export const createTodo = /* GraphQL */ `
+  mutation CreateTodo(
+    $input: CreateTodoInput!
+    $condition: ModelTodoConditionInput
   ) {
-    createUserSubscription(input: $input, condition: $condition) {
+    createTodo(input: $input, condition: $condition) {
       id
-      userID
-      tier
+      name
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }
 `;
-export const updateUserSubscription = /* GraphQL */ `
-  mutation UpdateUserSubscription(
-    $input: UpdateUserSubscriptionInput!
-    $condition: ModelUserSubscriptionConditionInput
+export const updateTodo = /* GraphQL */ `
+  mutation UpdateTodo(
+    $input: UpdateTodoInput!
+    $condition: ModelTodoConditionInput
   ) {
-    updateUserSubscription(input: $input, condition: $condition) {
+    updateTodo(input: $input, condition: $condition) {
       id
-      userID
-      tier
+      name
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }
 `;
-export const deleteUserSubscription = /* GraphQL */ `
-  mutation DeleteUserSubscription(
-    $input: DeleteUserSubscriptionInput!
-    $condition: ModelUserSubscriptionConditionInput
+export const deleteTodo = /* GraphQL */ `
+  mutation DeleteTodo(
+    $input: DeleteTodoInput!
+    $condition: ModelTodoConditionInput
   ) {
-    deleteUserSubscription(input: $input, condition: $condition) {
+    deleteTodo(input: $input, condition: $condition) {
       id
-      userID
-      tier
+      name
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }

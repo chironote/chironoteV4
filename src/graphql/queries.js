@@ -1,50 +1,33 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-export const getUserSubscriptionByUser = /* GraphQL */ `
-  query GetUserSubscriptionByUser($userID: String!) {
-    getUserSubscriptionByUser(userID: $userID) {
+export const getTodo = /* GraphQL */ `
+  query GetTodo($id: ID!) {
+    getTodo(id: $id) {
       id
-      userID
-      tier
+      name
+      description
+      owner
       createdAt
       updatedAt
-      owner
       __typename
     }
   }
 `;
-export const getUserSubscription = /* GraphQL */ `
-  query GetUserSubscription($id: ID!) {
-    getUserSubscription(id: $id) {
-      id
-      userID
-      tier
-      createdAt
-      updatedAt
-      owner
-      __typename
-    }
-  }
-`;
-export const listUserSubscriptions = /* GraphQL */ `
-  query ListUserSubscriptions(
-    $filter: ModelUserSubscriptionFilterInput
+export const listTodos = /* GraphQL */ `
+  query ListTodos(
+    $filter: ModelTodoFilterInput
     $limit: Int
     $nextToken: String
   ) {
-    listUserSubscriptions(
-      filter: $filter
-      limit: $limit
-      nextToken: $nextToken
-    ) {
+    listTodos(filter: $filter, limit: $limit, nextToken: $nextToken) {
       items {
         id
-        userID
-        tier
+        name
+        description
+        owner
         createdAt
         updatedAt
-        owner
         __typename
       }
       nextToken
