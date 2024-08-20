@@ -5,3 +5,8 @@ type Todo @model @auth(rules: [{ allow: owner }]) {
   description: String
   owner: String
 }
+
+type UserSubscription @model @auth(rules: [{ allow: owner }]) {
+  owner: String! @primaryKey
+  tier: String!
+}

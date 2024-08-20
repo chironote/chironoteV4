@@ -5,7 +5,7 @@ import config from '../../amplifyconfiguration.json';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { createTodo, updateTodo, deleteTodo } from '../../graphql/mutations';
-import { listTodos } from '../../graphql/queries';
+import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
 Amplify.configure(config);
 
@@ -13,11 +13,8 @@ const client = generateClient();
 
 
 // Component to render individual subscription options
-const SubscriptionOption = ({ plan, isActive, onClick }) => (
-  <div
-    className={`subscription-option ${isActive ? 'active' : ''}`}
-    onClick={() => onClick(plan)}
-  >
+const SubscriptionOption = ({ plan, isActive }) => (
+  <div className={`subscription-option ${isActive ? 'active' : ''}`}>
     <div className="option-name">{plan.toUpperCase()}</div>
     <div className="option-features">
       <ul>
@@ -31,8 +28,8 @@ const SubscriptionOption = ({ plan, isActive, onClick }) => (
 
 function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
-  const [currentPlan, setCurrentPlan] = useState('free');
-  const [remainingHours, setRemainingHours] = useState(10);
+  const [currentPlan, setCurrentPlan] = useState('');
+  const [remainingHours, setRemainingHours] = useState(0);
 
   useEffect(() => {
     fetchUserSubscription();
@@ -41,23 +38,18 @@ function Account({ setCurrentPage }) {
   async function fetchUserSubscription() {
     try {
       const userAttributes = await fetchUserAttributes();
-      console.log('User id:', userAttributes.sub);
-      const writeResult = await client.graphql({
-        query: createTodo,
-        variables: {
-          input: {
-            name: 'My first todo!',
-            owner: userAttributes.sub
-          }
-        }
+      const owner = userAttributes.sub;
+      console.log('User id:', owner);
+
+      const data = await client.graphql({
+        query: getUserSubscription,
+        variables: { owner: owner }
       });
-      console.log('Todos wrote successfully:',writeResult);
-      const result = await client.graphql({ query: listTodos });
-      console.log('Todos read successfully:', result);
+      const currentTier = data.data.getUserSubscription.tier.toLowerCase();
+      console.log('Current Tier:', currentTier);
       
-      // TODO: Handle the subscription data here
-      // For example:
-      // setCurrentPlan(data.getUserSubscriptionByUser.tier);
+      setCurrentPlan(currentTier);
+      setRemainingHours(data.data.getUserSubscription.remainingHours || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     }
@@ -72,11 +64,6 @@ function Account({ setCurrentPage }) {
   const handleUpdateName = () => {
     console.log('Name updated:', name);
     // In a real app, this would update the name in state or context
-  };
-
-  // Handle plan selection
-  const handlePlanSelect = (plan) => {
-    setCurrentPlan(plan);
   };
 
   return (
@@ -108,12 +95,11 @@ function Account({ setCurrentPage }) {
             <SubscriptionOption
               key={plan}
               plan={plan}
-              isActive={currentPlan === plan}
-              onClick={handlePlanSelect}
+              isActive={currentPlan === plan.toLowerCase()}
             />
           ))}
         </div>
-        <button className="manage-plan-btn">Purchase Plan</button>
+        <button className="manage-plan-btn">Change Plan</button>
 
         {/* Hours remaining this month */}
         <div className="hours-remaining">

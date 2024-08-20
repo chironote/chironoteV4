@@ -35,3 +35,39 @@ export const listTodos = /* GraphQL */ `
     }
   }
 `;
+export const getUserSubscription = /* GraphQL */ `
+  query GetUserSubscription($owner: String!) {
+    getUserSubscription(owner: $owner) {
+      owner
+      tier
+
+    }
+  }
+`;
+export const listUserSubscriptions = /* GraphQL */ `
+  query ListUserSubscriptions(
+    $owner: String
+    $filter: ModelUserSubscriptionFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listUserSubscriptions(
+      owner: $owner
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        owner
+        tier
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;

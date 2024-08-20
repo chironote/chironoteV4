@@ -49,3 +49,45 @@ export const onDeleteTodo = /* GraphQL */ `
     }
   }
 `;
+export const onCreateUserSubscription = /* GraphQL */ `
+  subscription OnCreateUserSubscription(
+    $filter: ModelSubscriptionUserSubscriptionFilterInput
+    $owner: String
+  ) {
+    onCreateUserSubscription(filter: $filter, owner: $owner) {
+      owner
+      tier
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateUserSubscription = /* GraphQL */ `
+  subscription OnUpdateUserSubscription(
+    $filter: ModelSubscriptionUserSubscriptionFilterInput
+    $owner: String
+  ) {
+    onUpdateUserSubscription(filter: $filter, owner: $owner) {
+      owner
+      tier
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteUserSubscription = /* GraphQL */ `
+  subscription OnDeleteUserSubscription(
+    $filter: ModelSubscriptionUserSubscriptionFilterInput
+    $owner: String
+  ) {
+    onDeleteUserSubscription(filter: $filter, owner: $owner) {
+      owner
+      tier
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
