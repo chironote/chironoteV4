@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Auth } from 'aws-amplify';
+import { fetchUserAttributes } from 'aws-amplify/auth';
 import './PriceTable.css';
 
 const StripePricingTable = () => {
@@ -15,9 +15,15 @@ const StripePricingTable = () => {
   }, []);
 
   useEffect(() => {
-    Auth.currentAuthenticatedUser()
-      .then(user => setUserEmail(user.attributes.email))
-      .catch(error => console.error('Error fetching user email:', error));
+    const getUserEmail = async () => {
+      try {
+        const userAttributes = await fetchUserAttributes();
+        setUserEmail(userAttributes.email);
+      } catch (error) {
+        console.error('Error fetching user email:', error);
+      }
+    };
+    getUserEmail();
   }, []);
 
   return (
