@@ -1,8 +1,8 @@
 // Navigation links
 export const NAV_LINKS = [
-  { name: 'Home', page: 'main', icon: "home" },
-  { name: 'Account', page: 'account', icon: "person" },
-  { name: 'Feedback', page: 'feedback', icon: "add_comment" },
+  { name: 'Home', path: '/', icon: "home" },
+  { name: 'Account', path: '/account', icon: "person" },
+  { name: 'Feedback', path: '/feedback', icon: "add_comment" },
   { name: 'Log Out', action: 'logout', icon: "logout" }
 ];
 

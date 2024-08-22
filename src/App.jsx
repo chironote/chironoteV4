@@ -1,23 +1,55 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 import { NOTES, TRANSCRIPTS } from './constants/constants';
 import Account from './components/Account/Account';
 import Feedback from './components/Feedback/Feedback';
-import Header from './components/Header/Header';
 import Recording from './components/Recording/Recording';
+import Navbar from './components/Navbar/Navbar';
 import TogglePanel from './components/TogglePanel';
 import ClipboardButtons from './components/ClipboardButtons';
 import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
+import Header from './components/AuthUI/SignIn';
 import { Amplify, API, graphqlOperation } from 'aws-amplify';
+import TermsAndConditions from './components/AuthUI/TermsAndConditions';
 
-import { withAuthenticator } from '@aws-amplify/ui-react';
+import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
 import awsExports from './aws-exports';
 Amplify.configure(awsExports);
+const components = {
+  Header: () => <Header />,
+  SignUp: {
+    FormFields() {
+      return (
+        <>
+          <Authenticator.SignUp.FormFields />
+          <CheckboxField
+            name="acknowledgement"
+            value="yes"
+            label={
+              <>
+                I agree with the <a href="https://www.termsfeed.com/public/uploads/2021/12/sample-terms-conditions-agreement.pdf" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+              </>
+            }
+            required={true}
+          />
+        </>
+      );
+    },
+  },
+};
 
+const services = {
+  async validateCustomSignUp(formData) {
+    if (!formData.acknowledgement) {
+      throw new Error('You must agree to the Terms and Conditions');
+    }
+  },
+};
 
 // Helper function to extract plain text from HTML
 const extractPlainText = (html) => {
@@ -34,7 +66,6 @@ const ListItem = ({ item, onClick }) => (
 );
 
 function App({ signOut, user }) {
-  const [currentPage, setCurrentPage] = useState('main');
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
@@ -132,63 +163,65 @@ function App({ signOut, user }) {
   };
 
   return (
-    <div className="app">
-      {/* Modify the Header component to include user info and sign out button */}
-      <Header 
-        setCurrentPage={setCurrentPage} 
-        currentPage={currentPage}
-        username={user.username}
-        onSignOut={signOut}
-      />
+    <Router>
+      <div className="app">
+        <Navbar 
+          username={user.username}
+          onSignOut={signOut}
+        />
 
-      <main className="app-main">
-        {/* Conditionally render the main content based on the current page */}
-        {currentPage === 'main' && (
-          <>
-            {/* Left panel: Toggle between Notes and Transcripts */}
-            <section className="left-panel">
-              <h2 className="panel-header">History</h2>
-              <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
+        <main className="app-main">
+          <Routes>
+            <Route path="/" element={
+              <>
+                {/* Left panel: Toggle between Notes and Transcripts */}
+                <section className="left-panel">
+                  <h2 className="panel-header">History</h2>
+                  <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
 
-              {/* Render list of items based on selected toggle */}
-              <div className="list-container">
-                {renderItems()}
-              </div>
-            </section>
+                  {/* Render list of items based on selected toggle */}
+                  <div className="list-container">
+                    {renderItems()}
+                  </div>
+                </section>
 
-            {/* Clipboard container: Displays the current note with actions */}
-            <section className="clipboard-container">
-              <h2 className="section-header">Current Note</h2>
-              <ClipboardButtons toggleRecordingPopup={toggleRecordingPopup} showEditPanel={toggleRecordingPopup} toggleEditPanel={toggleEditPanel} />
+                {/* Clipboard container: Displays the current note with actions */}
+                <section className="clipboard-container">
+                  <h2 className="section-header">Current Note</h2>
+                  <ClipboardButtons toggleRecordingPopup={toggleRecordingPopup} showEditPanel={toggleRecordingPopup} toggleEditPanel={toggleEditPanel} />
 
-              {/* Clipboard area for note taking */}
-              <Clipboard clipboardTextareaRef={clipboardTextareaRef} clipboardContent={clipboardContent} handleCopyPaste={handleCopyPaste} setClipboardContent={setClipboardContent} showCopyMessage={showCopyMessage} />
-            </section>
+                  {/* Clipboard area for note taking */}
+                  <Clipboard clipboardTextareaRef={clipboardTextareaRef} clipboardContent={clipboardContent} handleCopyPaste={handleCopyPaste} setClipboardContent={setClipboardContent} showCopyMessage={showCopyMessage} />
+                </section>
 
-            {/* Edit panel for updating notes */}
-            <EditPanel showEditPanel={showEditPanel} editContent={editContent} setEditContent={setEditContent} setClipboardContent={setClipboardContent} />
-          </>
+                {/* Edit panel for updating notes */}
+                <EditPanel showEditPanel={showEditPanel} editContent={editContent} setEditContent={setEditContent} setClipboardContent={setClipboardContent} />
+              </>
+            } />
+            <Route path="/account" element={<Account />} />
+            <Route path="/feedback" element={<Feedback />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </main>
+
+        {/* Popup for recording options */}
+        {showRecordingPopup && (
+          <Recording
+            toggleRecordingPopup={toggleRecordingPopup}
+            recordingType={recordingType}
+          />
         )}
 
-        {/* Conditionally render the Account or Feedback pages */}
-        {currentPage === 'account' && <Account setCurrentPage={setCurrentPage} />}
-        {currentPage === 'feedback' && <Feedback />}
-      </main>
-
-      {/* Popup for recording options */}
-      {showRecordingPopup && (
-        <Recording
-          toggleRecordingPopup={toggleRecordingPopup}
-          recordingType={recordingType}
-        />
-      )}
-
-      {/* Content popup for displaying selected note or transcript */}
-      {showContentPopup && (
-        <ContentPopup setShowContentPopup={setShowContentPopup} setShowPopupMenu={setShowPopupMenu} showNotes={showNotes} showPopupMenu={showPopupMenu} togglePopupMenu={togglePopupMenu} handleCopy={handleCopy} handleSendToClipboard={handleSendToClipboard} selectedContent={selectedContent} showPopupCopyMessage={showPopupCopyMessage} />
-      )}
-    </div>
+        {/* Content popup for displaying selected note or transcript */}
+        {showContentPopup && (
+          <ContentPopup setShowContentPopup={setShowContentPopup} setShowPopupMenu={setShowPopupMenu} showNotes={showNotes} showPopupMenu={showPopupMenu} togglePopupMenu={togglePopupMenu} handleCopy={handleCopy} handleSendToClipboard={handleSendToClipboard} selectedContent={selectedContent} showPopupCopyMessage={showPopupCopyMessage} />
+        )}
+      </div>
+    </Router>
   );
 }
 
-export default withAuthenticator(App);
+export default withAuthenticator(App, {
+  components,
+});

@@ -609,3 +609,19 @@ input:checked~.slider {
     font-size: 1rem;
   }
 }
+
+/* This is the styling for the amplify authenticator */
+
+[data-amplify-authenticator] {
+  --amplify-components-button-border-radius: 100px;
+  --amplify-components-authenticator-modal-background-color: var(--pale-green);
+  --amplify-components-authenticator-form-padding: var(--amplify-space-medium) var(--amplify-space-xl) var(--amplify-space-xl);
+  --amplify-components-button-primary-background-color: var(--medium-green);
+  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 2px var(--light-green);
+  --amplify-components-tabs-item-active-border-color: var(--medium-green);
+  --amplify-components-tabs-item-color: var(--dark-green);
+  --amplify-components-tabs-item-active-color: (--light-green);
+  --amplify-components-button-link-color: var(--medium-green);
+  --amplify-components-authenticator-router-border-style: none;
+  --amplify-components-authenticator-router-background-color: #f6fdf6;
+}
