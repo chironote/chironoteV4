@@ -7,7 +7,6 @@ function Recording({ toggleRecordingPopup, recordingType }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const mediaRecorderRef = useRef(null);
-  const recordingIntervalRef = useRef(null);
 
   useEffect(() => {
     const setupRecorder = async () => {
@@ -20,7 +19,11 @@ function Recording({ toggleRecordingPopup, recordingType }) {
           if (event.data.size > 0) {
             
             uploadAudioChunk(event.data);
-  
+
+            if(mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive"){ 
+              mediaRecorderRef.current.stop();
+              mediaRecorderRef.current.start(5000);
+            }
           }
         };
       } catch (error) {
@@ -34,24 +37,14 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       if (mediaRecorderRef.current) {
         mediaRecorderRef.current.stop();
       }
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
     };
-  }, []);
+  }, [isPaused]);
 
   const startRecording = () => {
     if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.start(5000);
       setIsRecording(true);
       setIsPaused(false);
-
-      recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
-        }
-      }, 5000);
     }
   };
 
@@ -60,9 +53,6 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
     }
   };
 
@@ -70,23 +60,13 @@ function Recording({ toggleRecordingPopup, recordingType }) {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsPaused(true);
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
     }
   };
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPaused) {
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.start(5000);
       setIsPaused(false);
-
-      recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
-        }
-      }, 5000);
     }
   };
 
