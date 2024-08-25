@@ -33,17 +33,10 @@ function Account({ setCurrentPage }) {
   const [remainingHours, setRemainingHours] = useState(0);
   const [showPriceTable, setShowPriceTable] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState(null);
 
   useEffect(() => {
     fetchUserSubscription();
   }, []);
-
-  useEffect(() => {
-    if (redirectUrl) {
-      window.location.href = redirectUrl;
-    }
-  }, [redirectUrl]);
 
   async function fetchUserSubscription() {
     try {
@@ -110,8 +103,8 @@ function Account({ setCurrentPage }) {
         }
 
         const result = await response.text();
-        console.log('Checkout successful, redirecting to:', result);
-        setRedirectUrl(result);
+        console.log('Checkout successful, opening in new tab:', result);
+        window.open(result, '_blank');
       } catch (error) {
         console.error('Error during checkout:', error);
         // Handle error (e.g., show error message to user)

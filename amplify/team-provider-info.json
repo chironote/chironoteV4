@@ -1,15 +1,15 @@
 {
-  "dev": {
+  "production": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-chironotev4-dev-b1c22-authRole",
-      "UnauthRoleArn": "arn:aws:iam::905418365998:role/amplify-chironotev4-dev-b1c22-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::905418365998:role/amplify-chironotev4-dev-b1c22-authRole",
-      "Region": "us-west-2",
-      "DeploymentBucketName": "amplify-chironotev4-dev-b1c22-deployment",
-      "UnauthRoleName": "amplify-chironotev4-dev-b1c22-unauthRole",
-      "StackName": "amplify-chironotev4-dev-b1c22",
-      "StackId": "arn:aws:cloudformation:us-west-2:905418365998:stack/amplify-chironotev4-dev-b1c22/aed528f0-5f12-11ef-9722-0a7a60cb44a1",
-      "AmplifyAppId": "dsisolwy9oznb"
+      "AuthRoleName": "amplify-chironotev4-production-6ff56-authRole",
+      "UnauthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-production-6ff56-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-production-6ff56-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-chironotev4-production-6ff56-deployment",
+      "UnauthRoleName": "amplify-chironotev4-production-6ff56-unauthRole",
+      "StackName": "amplify-chironotev4-production-6ff56",
+      "StackId": "arn:aws:cloudformation:us-east-2:026090532772:stack/amplify-chironotev4-production-6ff56/a0e70300-624e-11ef-8db5-0a5cde90aad9",
+      "AmplifyAppId": "dts0oh1e6pkks"
     },
     "categories": {
       "auth": {
@@ -17,6 +17,9 @@
       },
       "api": {
         "chironotev4": {}
+      },
+      "hosting": {
+        "S3AndCloudFront": {}
       }
     }
   }
