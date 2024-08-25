@@ -40,9 +40,6 @@ export const getUserSubscription = /* GraphQL */ `
     getUserSubscription(owner: $owner) {
       owner
       tier
-      createdAt
-      updatedAt
-      __typename
     }
   }
 `;
