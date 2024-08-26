@@ -4,6 +4,7 @@ const Clipboard = ({
   handleCopyPaste,
   setClipboardContent,
   showCopyMessage,
+  streamContent, // New prop for the stream from Recording.jsx
 }) => {
   return (
     <div className="clipboard">
@@ -16,6 +17,13 @@ const Clipboard = ({
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
         />
+
+        {/* Stream content display */}
+        {streamContent && (
+          <div className="stream-content">
+            <p>{streamContent}</p>
+          </div>
+        )}
 
         <div className="textarea-icons">
           <div className="icon-wrapper">

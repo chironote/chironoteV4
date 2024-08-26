@@ -9,7 +9,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null);
-  const [streamResult, setStreamResult] = useState('');
+  const [textStream, settextStream] = useState('')
 
   // Upload audio chunk to Lambda
   const uploadAudioChunk = async (audioBlob) => {
@@ -80,20 +80,20 @@ function Recording({ toggleRecordingPopup, recordingType }) {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-
-      let result = '';
+      let chunk;
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log("Stream complete");
+        chunk = await reader.read();
+        const text = decoder.decode(chunk.value, { stream: !chunk.done });
+        const formattedText = text.replace(/\n/g, '<br>');
+        console.log('Stream:', formattedText);        
+        settextStream((prev) => prev + formattedText);
+
+        if (chunk.done) {
           break;
+
         }
-        const text = decoder.decode(value, { stream: true });
-        result += text;
-        setStreamResult(prevResult => prevResult + text);
       }
 
-      console.log("Final result:", result);
 
     } catch (error) {
       console.error("Streaming error:", error);
@@ -121,6 +121,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
 
   const setupRecorder = async () => {
     try {
+      settextStream('');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
 
@@ -233,7 +234,6 @@ function Recording({ toggleRecordingPopup, recordingType }) {
                 </div>
               </div>
             </div>
-
             <button className="close-btn" onClick={() => toggleRecordingPopup()}>Close</button>
           </>
         ) : (
@@ -252,7 +252,6 @@ function Recording({ toggleRecordingPopup, recordingType }) {
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
             </div>
-            <div>{streamResult}</div>
           </div>
         )}
       </div>
