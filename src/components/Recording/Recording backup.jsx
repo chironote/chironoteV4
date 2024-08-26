@@ -8,40 +8,33 @@ function Recording({ toggleRecordingPopup, recordingType }) {
   const [isPaused, setIsPaused] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
+  const timeStampRef = useRef(null);
 
   useEffect(() => {
-    const setupRecorder = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mediaRecorderRef.current = new MediaRecorder(stream);
-
-
-        mediaRecorderRef.current.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            
-            uploadAudioChunk(event.data);
-  
-          }
-        };
-      } catch (error) {
-        console.error('Error accessing microphone', error);
-      }
-    };
-
-    setupRecorder();
-
     return () => {
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop();
-      }
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
+      stopRecording();
     };
   }, []);
 
-  const startRecording = () => {
+  const setupRecorder = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          uploadAudioChunk(event.data);
+        }
+      };
+    } catch (error) {
+      console.error('Error accessing microphone', error);
+    }
+  };
+
+  const startRecording = async () => {
+    await setupRecorder();
     if (mediaRecorderRef.current) {
+      timeStampRef.current = Date.now();
       mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPaused(false);
@@ -63,12 +56,14 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current = null;
     }
   };
 
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.pause();
       setIsPaused(true);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -78,7 +73,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPaused) {
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.resume();
       setIsPaused(false);
 
       recordingIntervalRef.current = setInterval(() => {
@@ -109,8 +104,10 @@ function Recording({ toggleRecordingPopup, recordingType }) {
         throw new Error('User not authenticated');
       }
 
-      const url = new URL('https://b3zbyutddodkryfsulofjlkwzi0zyqxq.lambda-url.us-west-2.on.aws');
+      const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
+      url.searchParams.append('timeStamp', timeStampRef.current);
+      console.log(timeStampRef.current);
 
       const response = await fetch(url.toString(), {
         method: 'POST',
@@ -121,6 +118,10 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.message === 'Insufficient hours remaining') {
+          throw new Error('You are out of credits. Wait for the next month or upgrade to our paid plan');
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -128,6 +129,8 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       console.log('Lambda response:', data);
     } catch (error) {
       console.error('Error sending audio to Lambda:', error);
+      alert(error.message); // Display the error message to the user
+      stopRecording(); // Stop the recording when out of credits
     }
   };
 

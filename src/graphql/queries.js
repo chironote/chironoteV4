@@ -70,3 +70,47 @@ export const listUserSubscriptions = /* GraphQL */ `
     }
   }
 `;
+export const getNotes = /* GraphQL */ `
+  query GetNotes($owner: String!, $timestamp: String!) {
+    getNotes(owner: $owner, timestamp: $timestamp) {
+      owner
+      timestamp
+      transcript
+      note
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const listNotes = /* GraphQL */ `
+  query ListNotes(
+    $owner: String
+    $timestamp: ModelStringKeyConditionInput
+    $filter: ModelNotesFilterInput
+    $limit: Int
+    $nextToken: String
+    $sortDirection: ModelSortDirection
+  ) {
+    listNotes(
+      owner: $owner
+      timestamp: $timestamp
+      filter: $filter
+      limit: $limit
+      nextToken: $nextToken
+      sortDirection: $sortDirection
+    ) {
+      items {
+        owner
+        timestamp
+        transcript
+        note
+        createdAt
+        updatedAt
+        __typename
+      }
+      nextToken
+      __typename
+    }
+  }
+`;

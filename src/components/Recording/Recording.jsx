@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Recording.css';
 import dictateIcon from '../../assets/mic.svg';
-import { getCurrentUser } from 'aws-amplify/auth'; // Add this import
+import { getCurrentUser } from 'aws-amplify/auth';
 
 function Recording({ toggleRecordingPopup, recordingType }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -9,6 +9,109 @@ function Recording({ toggleRecordingPopup, recordingType }) {
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null);
+  const [streamResult, setStreamResult] = useState('');
+
+  // Upload audio chunk to Lambda
+  const uploadAudioChunk = async (audioBlob) => {
+    try {
+      const userId = await getUserId();
+
+      if (!userId) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
+      url.searchParams.append('userId', userId);
+      url.searchParams.append('timeStamp', timeStampRef.current);
+      console.log(timeStampRef.current);
+
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        body: audioBlob,
+        headers: {
+          'Content-Type': 'audio/webm',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error uploading audio chunk:', errorData.message);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Lambda response:', data);
+    } catch (error) {
+      console.error('Error sending audio to Lambda:', error);
+    }
+  };
+
+  const handleOuterClick = () => {
+    if (!isRecording) {
+      toggleRecordingPopup();
+    }
+  };
+
+  // Stream response from Lambda
+  const streamResponse = async () => {
+    try {
+      const userId = await getUserId();
+      if (!userId) {
+        console.error('User not authenticated');
+        return;
+      }
+
+      const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          timeStamp: timeStampRef.current
+        }),
+      });
+
+      if (!response.ok) {
+        console.error(`HTTP error! status: ${response.status}`);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+
+      let result = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log("Stream complete");
+          break;
+        }
+        const text = decoder.decode(value, { stream: true });
+        result += text;
+        setStreamResult(prevResult => prevResult + text);
+      }
+
+      console.log("Final result:", result);
+
+    } catch (error) {
+      console.error("Streaming error:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsPaused(false);
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current = null;
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -21,8 +124,11 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+      mediaRecorderRef.current.ondataavailable = async (event) => {
+        if (event.data.size > 0 && !isRecording) {
+          await uploadAudioChunk(event.data);
+          streamResponse();
+        } else if (event.data.size > 0) {
           uploadAudioChunk(event.data);
         }
       };
@@ -48,22 +154,9 @@ function Recording({ toggleRecordingPopup, recordingType }) {
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsPaused(false);
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
-    }
-  };
-
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.pause();
       setIsPaused(true);
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -73,7 +166,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPaused) {
-      mediaRecorderRef.current.start();
+      mediaRecorderRef.current.resume();
       setIsPaused(false);
 
       recordingIntervalRef.current = setInterval(() => {
@@ -96,64 +189,19 @@ function Recording({ toggleRecordingPopup, recordingType }) {
     }
   }
 
-  const uploadAudioChunk = async (audioBlob) => {
-    try {
-      const userId = await getUserId();
-
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
-
-      const url = new URL('https://b3zbyutddodkryfsulofjlkwzi0zyqxq.lambda-url.us-west-2.on.aws');
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('timeStamp', timeStampRef.current);
-      console.log(timeStampRef.current);
-
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        body: audioBlob,
-        headers: {
-          'Content-Type': 'audio/webm',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        if (errorData.message === 'Insufficient hours remaining') {
-          throw new Error('You are out of credits. Wait for the next month or upgrade to our paid plan');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Lambda response:', data);
-    } catch (error) {
-      console.error('Error sending audio to Lambda:', error);
-      alert(error.message); // Display the error message to the user
-      stopRecording(); // Stop the recording when out of credits
-    }
-  };
-
-  // Close popup when clicking outside if not recording
-  const handleOuterClick = () => {
-    if (!isRecording) {
-      toggleRecordingPopup();
-    }
-  };
+  
 
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
       <div className="popup-content" onClick={(e) => e.stopPropagation()}>
         {!isRecording ? (
           <>
-            {/* Header and recording start button */}
             <h2>Create New Note</h2>
             <button className="start-recording-btn" onClick={startRecording}>
               <img src={dictateIcon} alt="Start Recording" />
               Start Recording
             </button>
 
-            {/* Language selection */}
             <label htmlFor="language-select">Language:</label>
             <select id="language-select" className="language-select">
               <option value="auto">Auto</option>
@@ -165,7 +213,6 @@ function Recording({ toggleRecordingPopup, recordingType }) {
               <option value="ru">Russian</option>
             </select>
 
-            {/* Settings options */}
             <div className="settings-options">
               <div className="checkbox-grid">
                 <div className="checkbox-group">
@@ -187,13 +234,11 @@ function Recording({ toggleRecordingPopup, recordingType }) {
               </div>
             </div>
 
-            {/* Close button */}
             <button className="close-btn" onClick={() => toggleRecordingPopup()}>Close</button>
           </>
         ) : (
           <div className="recording-content">
             <div className="recording-container">
-              {/* Sound bar visualization */}
               {[...Array(5)].map((_, index) => (
                 <div key={index}
                   style={{ 'animation-delay': `${index * 0.2}s` }}
@@ -202,12 +247,12 @@ function Recording({ toggleRecordingPopup, recordingType }) {
               ))}
             </div>
             <div className="recording-controls">
-              {/* Stop and pause/resume recording buttons */}
               <button onClick={stopRecording}>Stop Recording</button>
               <button onClick={isPaused ? resumeRecording : pauseRecording}>
                 {isPaused ? 'Resume' : 'Pause'}
               </button>
             </div>
+            <div>{streamResult}</div>
           </div>
         )}
       </div>

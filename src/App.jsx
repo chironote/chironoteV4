@@ -77,6 +77,7 @@ function App({ signOut, user }) {
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
+  
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);

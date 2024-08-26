@@ -10,3 +10,10 @@ type UserSubscription @model @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey
   tier: String!
 }
+
+type Notes @model @auth(rules: [{ allow: owner }]) {
+  owner: String! @primaryKey(sortKeyFields: ["timestamp"])
+  timestamp: String!
+  transcript: String!
+  note: String!
+}

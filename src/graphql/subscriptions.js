@@ -91,3 +91,51 @@ export const onDeleteUserSubscription = /* GraphQL */ `
     }
   }
 `;
+export const onCreateNotes = /* GraphQL */ `
+  subscription OnCreateNotes(
+    $filter: ModelSubscriptionNotesFilterInput
+    $owner: String
+  ) {
+    onCreateNotes(filter: $filter, owner: $owner) {
+      owner
+      timestamp
+      transcript
+      note
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onUpdateNotes = /* GraphQL */ `
+  subscription OnUpdateNotes(
+    $filter: ModelSubscriptionNotesFilterInput
+    $owner: String
+  ) {
+    onUpdateNotes(filter: $filter, owner: $owner) {
+      owner
+      timestamp
+      transcript
+      note
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
+export const onDeleteNotes = /* GraphQL */ `
+  subscription OnDeleteNotes(
+    $filter: ModelSubscriptionNotesFilterInput
+    $owner: String
+  ) {
+    onDeleteNotes(filter: $filter, owner: $owner) {
+      owner
+      timestamp
+      transcript
+      note
+      createdAt
+      updatedAt
+      __typename
+    }
+  }
+`;
