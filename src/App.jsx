@@ -12,6 +12,8 @@ import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
+import TextStream from './components/Recording/TextStream';
+import RecordingManager from './components/Recording/RecordingManager';
 import { Amplify, API, graphqlOperation } from 'aws-amplify';
 import TermsAndConditions from './components/AuthUI/TermsAndConditions';
 
@@ -77,10 +79,18 @@ function App({ signOut, user }) {
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
-  
+  const [streamingText, setStreamingText] = useState('');
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
+
+  // Define handleTextStreamUpdate before using it
+  const handleTextStreamUpdate = useCallback((newText) => {
+    setStreamingText(newText);
+    setClipboardContent(newText);
+  }, []);
+
+  const recordingManager = RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate });
 
   // Toggle the visibility of the edit panel
   const toggleEditPanel = () => {
@@ -163,6 +173,10 @@ function App({ signOut, user }) {
     ));
   };
 
+  const updateClipboardContent = useCallback((newContent) => {
+    setClipboardContent(newContent);
+  }, []);
+
   return (
     <Router>
       <div className="app">
@@ -196,7 +210,14 @@ function App({ signOut, user }) {
                 </section>
 
                 {/* Edit panel for updating notes */}
-                <EditPanel showEditPanel={showEditPanel} editContent={editContent} setEditContent={setEditContent} setClipboardContent={setClipboardContent} />
+                <EditPanel 
+                  showEditPanel={showEditPanel} 
+                  editContent={editContent} 
+                  setEditContent={setEditContent} 
+                  clipboardContent={clipboardContent}
+                  userId={user.username}
+                  onTextStreamUpdate={handleTextStreamUpdate}
+                />
               </>
             } />
             <Route path="/account" element={<Account />} />
@@ -211,6 +232,12 @@ function App({ signOut, user }) {
           <Recording
             toggleRecordingPopup={toggleRecordingPopup}
             recordingType={recordingType}
+            isRecording={recordingManager.isRecording}
+            isPaused={recordingManager.isPaused}
+            startRecording={recordingManager.startRecording}
+            stopRecording={recordingManager.stopRecording}
+            pauseRecording={recordingManager.pauseRecording}
+            resumeRecording={recordingManager.resumeRecording}
           />
         )}
 
