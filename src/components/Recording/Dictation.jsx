@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { RealtimeTranscriber } from 'assemblyai';
 import './Recording.css';
 
@@ -8,32 +8,22 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const rtRef = useRef(null);
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
-
-  useEffect(() => {
-    return () => {
-      if (isActive) {
-        stopRecording();
-      }
-    };
-  }, []);
+  
 
   const fetchAssemblyAIToken = async () => {
     try {
-      const response = await fetch('https://api.assemblyai.com/v2/realtime/token', {
-        method: 'POST',
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          'Authorization': 'process.env.REACT_APP_ASSEMBLYAI_API_KEY'
-        }
+      console.log('Fetching AssemblyAI token');
+      const response = await fetch('https://llck5m4mzd6sa6do3joadjzzs40jtoef.lambda-url.us-east-2.on.aws', {
+        method: 'GET'
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Received AssemblyAI token:', data.token);
-      return data.token;
+      const { token } = await response.json();
+      console.log('Received AssemblyAI token:', token);
+      return token;
     } catch (error) {
       console.error('Error fetching AssemblyAI token:', error);
       return null;
@@ -41,50 +31,79 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   };
 
   const setupTranscription = (token) => {
-    rtRef.current = new RealtimeTranscriber({ token });
-    
-    const texts = {};
-    rtRef.current.on("transcript", (message) => {
-      let msg = "";
-      texts[message.audio_start] = message.text;
-      const keys = Object.keys(texts);
-      keys.sort((a, b) => a - b);
-      for (const key of keys) {
-        if (texts[key]) {
-          msg += ` ${texts[key]}`;
-        }
-      }
-      setTranscription(msg);
-      onTextStreamUpdate(msg);
+    return new Promise((resolve, reject) => {
+      console.log('Setting up transcription with token:', token);
+      rtRef.current = new RealtimeTranscriber({
+        token: token,
+        sampleRate: 16_000,
+      });
+      rtRef.current.connect();
+      
+      rtRef.current.on('open', () => {
+        console.log('WebSocket connection opened successfully');
+        resolve();
+      });
+  
+      rtRef.current.on('error', (error) => {
+        console.error('WebSocket error:', error);
+        reject(error);
+      });
+  
+      rtRef.current.on('close', () => {
+        console.log('WebSocket connection closed');
+      });
+      
+      const texts = {};
+      rtRef.current.on("transcript", (message) => {
+        texts[message.audio_start] = message.text;
+        const sortedTexts = Object.entries(texts)
+          .sort(([a], [b]) => a - b)
+          .map(([, text]) => text)
+          .join(' ');
+          setTranscription(sortedTexts);
+      });
     });
   };
 
   const startRecording = async () => {
     try {
+      console.log('Starting recording process');
       const token = await fetchAssemblyAIToken();
       if (!token) {
         throw new Error('Failed to obtain AssemblyAI token');
       }
 
-      setupTranscription(token);
+      console.log('Token obtained, setting up transcription');
+      try {
+        await setupTranscription(token);
+        console.log('Transcription setup completed successfully');
+      } catch (error) {
+        console.error('Error during transcription setup:', error);
+        return;
+      }
 
+      console.log('Requesting user media');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('User media obtained');
+      
       mediaRecorder.current = new MediaRecorder(stream);
       audioChunks.current = [];
 
       mediaRecorder.current.ondataavailable = (event) => {
         audioChunks.current.push(event.data);
         if (rtRef.current) {
+          console.log('Sending audio chunk, size:', event.data.size);
           rtRef.current.sendAudio(event.data);
+        } else {
+          console.warn('rtRef.current is null, cannot send audio');
         }
       };
 
       mediaRecorder.current.onstop = () => {
-        const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
         audioChunks.current = [];
-        sendAudioToAssemblyAI(audioBlob);
       };
 
+      console.log('Starting media recorder');
       mediaRecorder.current.start(1000); // Collect data every second
       setIsActive(true);
     } catch (error) {
@@ -94,17 +113,15 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const stopRecording = () => {
     if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+      console.log('Stopping media recorder');
       mediaRecorder.current.stop();
       if (rtRef.current) {
+        console.log('Closing RealtimeTranscriber');
         rtRef.current.close();
       }
       setIsActive(false);
     }
-  };
-
-  const sendAudioToAssemblyAI = async (audioBlob) => {
-    // This function is kept for compatibility, but it's not used in real-time transcription
-    console.log('Audio recording completed. Blob size:', audioBlob.size);
+    toggleDictationPopup(); // Close the window after stopping the recording
   };
 
   return (
@@ -120,9 +137,15 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
             ))}
           </div>
           <div className="recording-controls">
-            <button onClick={isActive ? stopRecording : startRecording}>
-              {isActive ? 'Stop Recording' : 'Start Recording'}
-            </button>
+            {!isActive ? (
+              <button onClick={startRecording}>
+                Start Recording
+              </button>
+            ) : (
+              <button onClick={stopRecording}>
+                Stop Recording
+              </button>
+            )}
           </div>
         </div>
         <div className="dictation-textarea">
@@ -133,7 +156,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
           />
         </div>
       </div>
-      <button className="close-button" onClick={toggleDictationPopup}>×</button>
     </div>
   );
 }
