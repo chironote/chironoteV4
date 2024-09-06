@@ -1,14 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { RealtimeTranscriber } from 'assemblyai';
+import RecordRTC from 'recordrtc';
 import './Recording.css';
 
 function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const [isActive, setIsActive] = useState(false);
   const [transcription, setTranscription] = useState('');
   const rtRef = useRef(null);
-  const mediaRecorder = useRef(null);
-  const audioChunks = useRef([]);
-  
+  const recorder = useRef(null);
 
   const fetchAssemblyAIToken = async () => {
     try {
@@ -35,7 +34,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       console.log('Setting up transcription with token:', token);
       rtRef.current = new RealtimeTranscriber({
         token: token,
-        sampleRate: 16_000,
+        sampleRate: 16000,
       });
       rtRef.current.connect();
       
@@ -86,25 +85,24 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log('User media obtained');
       
-      mediaRecorder.current = new MediaRecorder(stream);
-      audioChunks.current = [];
+      recorder.current = new RecordRTC(stream, {
+        type: 'audio',
+        mimeType: 'audio/webm;codecs=pcm',
+        recorderType: RecordRTC.StereoAudioRecorder,
+        timeSlice: 250,
+        desiredSampRate: 16000,
+        numberOfAudioChannels: 1,
+        bufferSize: 4096,
+        audioBitsPerSecond: 128000,
+        ondataavailable: async (blob) => {
+          if(!rtRef.current) return;
+          const buffer = await blob.arrayBuffer();
+          rtRef.current.sendAudio(buffer);
+        },
+      });
 
-      mediaRecorder.current.ondataavailable = (event) => {
-        audioChunks.current.push(event.data);
-        if (rtRef.current) {
-          console.log('Sending audio chunk, size:', event.data.size);
-          rtRef.current.sendAudio(event.data);
-        } else {
-          console.warn('rtRef.current is null, cannot send audio');
-        }
-      };
-
-      mediaRecorder.current.onstop = () => {
-        audioChunks.current = [];
-      };
-
-      console.log('Starting media recorder');
-      mediaRecorder.current.start(1000); // Collect data every second
+      console.log('Starting RecordRTC');
+      recorder.current.startRecording();
       setIsActive(true);
     } catch (error) {
       console.error('Error starting recording:', error);
@@ -112,14 +110,15 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   };
 
   const stopRecording = () => {
-    if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
-      console.log('Stopping media recorder');
-      mediaRecorder.current.stop();
-      if (rtRef.current) {
-        console.log('Closing RealtimeTranscriber');
-        rtRef.current.close();
-      }
-      setIsActive(false);
+    if (recorder.current && recorder.current.state !== 'stopped') {
+      console.log('Stopping RecordRTC');
+      recorder.current.stopRecording(() => {
+        if (rtRef.current) {
+          console.log('Closing RealtimeTranscriber');
+          rtRef.current.close();
+        }
+        setIsActive(false);
+      });
     }
     toggleDictationPopup(); // Close the window after stopping the recording
   };
@@ -148,13 +147,12 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
             )}
           </div>
         </div>
-        <div className="dictation-textarea">
-          <textarea
-            value={transcription}
-            readOnly
-            placeholder="Transcription will appear here..."
-          />
-        </div>
+        <textarea
+          className="dictation-textarea"
+          value={transcription}
+          readOnly
+          placeholder="Transcription will appear here..."
+        />
       </div>
     </div>
   );
