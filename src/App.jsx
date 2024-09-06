@@ -5,6 +5,7 @@ import { NOTES, TRANSCRIPTS } from './constants/constants';
 import Account from './components/Account/Account';
 import Feedback from './components/Feedback/Feedback';
 import Recording from './components/Recording/Recording';
+import Dictation from './components/Recording/Dictation';
 import Navbar from './components/Navbar/Navbar';
 import TogglePanel from './components/TogglePanel';
 import ClipboardButtons from './components/ClipboardButtons';
@@ -72,6 +73,7 @@ function App({ signOut, user }) {
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
   const [recordingType, setRecordingType] = useState('');
+  const [showDictationPopup, setShowDictationPopup] = useState(false);
   const [showContentPopup, setShowContentPopup] = useState(false);
   const [selectedContent, setSelectedContent] = useState('');
   const [showPopupMenu, setShowPopupMenu] = useState(false);
@@ -102,6 +104,11 @@ function App({ signOut, user }) {
   const toggleRecordingPopup = (type) => {
     setRecordingType(type);
     setShowRecordingPopup(prev => !prev);
+  };
+
+  // Toggle dictation popup visibility
+  const toggleDictationPopup = () => {
+    setShowDictationPopup(prev => !prev);
   };
 
   // Show or hide content popup
@@ -203,7 +210,11 @@ function App({ signOut, user }) {
                 {/* Clipboard container: Displays the current note with actions */}
                 <section className="clipboard-container">
                   <h2 className="section-header">Current Note</h2>
-                  <ClipboardButtons toggleRecordingPopup={toggleRecordingPopup} showEditPanel={toggleRecordingPopup} toggleEditPanel={toggleEditPanel} />
+                  <ClipboardButtons 
+                    toggleRecordingPopup={toggleRecordingPopup} 
+                    toggleDictationPopup={toggleDictationPopup}
+                    toggleEditPanel={toggleEditPanel} 
+                  />
 
                   {/* Clipboard area for note taking */}
                   <Clipboard clipboardTextareaRef={clipboardTextareaRef} clipboardContent={clipboardContent} handleCopyPaste={handleCopyPaste} setClipboardContent={setClipboardContent} showCopyMessage={showCopyMessage} />
@@ -238,6 +249,14 @@ function App({ signOut, user }) {
             stopRecording={recordingManager.stopRecording}
             pauseRecording={recordingManager.pauseRecording}
             resumeRecording={recordingManager.resumeRecording}
+          />
+        )}
+
+        {/* Popup for dictation options */}
+        {showDictationPopup && (
+          <Dictation
+            toggleDictationPopup={toggleDictationPopup}
+            onTextStreamUpdate={handleTextStreamUpdate}
           />
         )}
 

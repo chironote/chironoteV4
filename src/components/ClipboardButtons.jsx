@@ -2,7 +2,7 @@ import captureIcon from '../assets/conversation.svg';
 import dictateIcon from '../assets/mic.svg';
 import smartEditIcon from '../assets/edit.png';
 
-const ClipboardButtons = ({ toggleRecordingPopup, showEditPanel, toggleEditPanel }) => {
+const ClipboardButtons = ({ toggleRecordingPopup, toggleDictationPopup, showEditPanel, toggleEditPanel }) => {
   return (
     <div className="clipboard-actions">
       {/* Start a new conversation */}
@@ -17,7 +17,7 @@ const ClipboardButtons = ({ toggleRecordingPopup, showEditPanel, toggleEditPanel
       {/* Start a new dictation */}
       <button
         className="action-button"
-        onClick={() => toggleRecordingPopup('dictation_recording')}
+        onClick={toggleDictationPopup}
       >
         <img src={dictateIcon} alt="Dictate" className="button-icon" />
         New Dictation
