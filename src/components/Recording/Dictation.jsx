@@ -35,6 +35,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       rtRef.current = new RealtimeTranscriber({
         token: token,
         sampleRate: 16000,
+        endUtteranceSilenceThreshold: 1500,
       });
       rtRef.current.connect();
       
