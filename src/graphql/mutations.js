@@ -57,6 +57,7 @@ export const createUserSubscription = /* GraphQL */ `
     createUserSubscription(input: $input, condition: $condition) {
       owner
       tier
+      hoursleft
       __typename
     }
   }
@@ -69,6 +70,7 @@ export const updateUserSubscription = /* GraphQL */ `
     updateUserSubscription(input: $input, condition: $condition) {
       owner
       tier
+      hoursleft
       __typename
     }
   }
@@ -81,6 +83,7 @@ export const deleteUserSubscription = /* GraphQL */ `
     deleteUserSubscription(input: $input, condition: $condition) {
       owner
       tier
+      hoursleft
       __typename
     }
   }
