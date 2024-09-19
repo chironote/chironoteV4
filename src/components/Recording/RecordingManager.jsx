@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { getCurrentUser,fetchAuthSession } from 'aws-amplify/auth';
 
 function RecordingManager({ onTextStreamUpdate }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -15,7 +15,7 @@ function RecordingManager({ onTextStreamUpdate }) {
 
       if (!userId) {
         console.error('User not authenticated');
-        return;
+        return null;
       }
 
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
@@ -34,13 +34,18 @@ function RecordingManager({ onTextStreamUpdate }) {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error uploading audio chunk:', errorData.message);
-        return;
+        return null;
       }
 
       const data = await response.json();
       console.log('Lambda response:', data);
+
+      // Create and log the encounter object
+
+      return data.transcription;
     } catch (error) {
       console.error('Error sending audio to Lambda:', error);
+      return null;
     }
   };
 
@@ -51,7 +56,8 @@ function RecordingManager({ onTextStreamUpdate }) {
         console.error('User not authenticated');
         return;
       }
-  
+      const accessToken = await generateToken();
+
       const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
         method: "POST",
         headers: {
@@ -59,15 +65,16 @@ function RecordingManager({ onTextStreamUpdate }) {
         },
         body: JSON.stringify({
           userId: userId,
-          timeStamp: timeStampRef.current
+          timeStamp: timeStampRef.current,
+          accessToken: accessToken,
         }),
       });
-  
+      
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
         return;
       }
-  
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let chunk;
@@ -80,7 +87,7 @@ function RecordingManager({ onTextStreamUpdate }) {
           onTextStreamUpdate(newText);
           return newText;
         }); 
-  
+
         if (chunk.done) {
           break;
         } 
@@ -102,7 +109,7 @@ function RecordingManager({ onTextStreamUpdate }) {
       mediaRecorderRef.current = null;
     }
   };
-
+// The highest level recorder function
   const setupRecorder = async () => {
     try {
       setTextStream('');
@@ -114,7 +121,8 @@ function RecordingManager({ onTextStreamUpdate }) {
           await uploadAudioChunk(event.data);
           streamResponse();
         } else if (event.data.size > 0) {
-          uploadAudioChunk(event.data);
+          await uploadAudioChunk(event.data);
+          streamResponse();
         }
       };
     } catch (error) {
@@ -166,12 +174,20 @@ function RecordingManager({ onTextStreamUpdate }) {
   async function getUserId() {
     try {
       const userId = (await getCurrentUser()).userId;
-      console.log(userId);
+      console.log('Current session ID:' + userId);
       return userId;
     } catch (err) {
       console.log(err);
       return null;
     }
+  }
+
+  //function to get access token
+  async function generateToken() {
+    const session = await fetchAuthSession();
+    const accessToken = session.tokens.accessToken.toString();
+    console.log(accessToken);
+    return accessToken;
   }
 
   useEffect(() => {

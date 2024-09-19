@@ -57,8 +57,6 @@ export const createUserSubscription = /* GraphQL */ `
     createUserSubscription(input: $input, condition: $condition) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -71,8 +69,6 @@ export const updateUserSubscription = /* GraphQL */ `
     updateUserSubscription(input: $input, condition: $condition) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -85,8 +81,6 @@ export const deleteUserSubscription = /* GraphQL */ `
     deleteUserSubscription(input: $input, condition: $condition) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -101,8 +95,6 @@ export const createNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -117,8 +109,6 @@ export const updateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -133,8 +123,6 @@ export const deleteNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }

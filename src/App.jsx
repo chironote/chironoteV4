@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
-import { NOTES, TRANSCRIPTS } from './constants/constants';
 import Account from './components/Account/Account';
 import Feedback from './components/Feedback/Feedback';
 import Recording from './components/Recording/Recording';
@@ -15,14 +14,22 @@ import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
-import { Amplify, API, graphqlOperation } from 'aws-amplify';
+import { Amplify } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
+import * as subscriptions from './graphql/subscriptions';
 import TermsAndConditions from './components/AuthUI/TermsAndConditions';
+import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api'; // Test Code
+import { Hub } from 'aws-amplify/utils'; // Test Code
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
-import awsExports from './aws-exports';
-Amplify.configure(awsExports);
+import config from './amplifyconfiguration.json';
+import { getNotes } from './graphql/queries';
+Amplify.configure(config);
+
+const client = generateClient();
+
 const components = {
   Header: () => <Header />,
   SignUp: {
@@ -63,8 +70,8 @@ const extractPlainText = (html) => {
 
 // Component to render list items (Notes or Transcripts)
 const ListItem = ({ item, onClick }) => (
-  <div key={item} className="list-item" onClick={() => onClick(item)}>
-    {item.split('.')[0]}
+  <div key={item.id} className="list-item" onClick={() => onClick(item)}>
+    {item.content.split('.')[0]}
   </div>
 );
 
@@ -82,6 +89,8 @@ function App({ signOut, user }) {
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
   const [streamingText, setStreamingText] = useState('');
+  const [notes, setNotes] = useState([]);
+  const [transcripts, setTranscripts] = useState([]);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -93,6 +102,49 @@ function App({ signOut, user }) {
   }, []);
 
   const recordingManager = RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate });
+
+  // Subscribe to updates of Notes
+
+
+  useEffect(() => {
+    // Hub listener for connection state changes
+    const hubListener = Hub.listen('api', (data) => {
+      const { payload } = data;
+      if (payload.event === CONNECTION_STATE_CHANGE) {
+        const connectionState = payload.data.connectionState;
+        console.log('Connection state:', connectionState);
+      }
+    });
+
+    // GraphQL subscription
+    const subscription = client.graphql({ 
+      query: subscriptions.onUpdateNotes, 
+      variables: {owner: '213bd5d0-3081-7009-0d28-80f708758ab4'}
+    }).subscribe({
+      next: ({ data }) => {
+        console.log('Received data from subscription:', data);
+        if (data.onUpdateNotes.type === 'note') {
+          console.log('New note:', data.onUpdateNotes);
+          setNotes(prevNotes => {
+            const updatedNotes = [...prevNotes, data.onUpdateNotes];
+            return updatedNotes.slice(-10); // Keep only the most recent 10 notes
+          });
+        } else if (data.onUpdateNotes.type === 'transcript') {
+          console.log('New transcript:', data.onUpdateNotes);
+          setTranscripts(prevTranscripts => {
+            const updatedTranscripts = [...prevTranscripts, data.onUpdateNotes];
+            return updatedTranscripts.slice(-10); // Keep only the most recent 10 transcripts
+          });
+        }
+      },
+      error: (error) => console.warn(error)
+    });
+
+    // Cleanup function
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Toggle the visibility of the edit panel
   const toggleEditPanel = () => {
@@ -174,9 +226,9 @@ function App({ signOut, user }) {
 
   // Render notes or transcripts based on current state
   const renderItems = () => {
-    const items = showNotes ? NOTES : TRANSCRIPTS;
+    const items = showNotes ? notes : transcripts;
     return items.map(item => (
-      <ListItem key={item} item={item} onClick={toggleContentPopup} />
+      <ListItem key={item.id} item={item} onClick={toggleContentPopup} />
     ));
   };
 

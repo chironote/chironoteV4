@@ -6,14 +6,22 @@ type Todo @model @auth(rules: [{ allow: owner }]) {
   owner: String
 }
 
-type UserSubscription @model @auth(rules: [{ allow: owner }]) {
+type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey
   tier: String!
 }
 
-type Notes @model @auth(rules: [{ allow: owner }]) {
+type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey(sortKeyFields: ["timestamp"])
   timestamp: String!
   transcript: String!
   note: String!
 }
+
+type Subscription {
+  onCreateNotesByOwner(owner: String!): Notes
+    @aws_subscribe(mutations: ["createNotes"])
+  
+  onUpdateNotesByOwner(owner: String!): Notes
+    @aws_subscribe(mutations: ["updateNotes"])
+  }

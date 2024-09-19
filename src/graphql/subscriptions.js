@@ -1,6 +1,28 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
+export const onCreateNotesByOwner = /* GraphQL */ `
+  subscription OnCreateNotesByOwner($owner: String!) {
+    onCreateNotesByOwner(owner: $owner) {
+      owner
+      timestamp
+      transcript
+      note
+      __typename
+    }
+  }
+`;
+export const onUpdateNotesByOwner = /* GraphQL */ `
+  subscription OnUpdateNotesByOwner($owner: String!) {
+    onUpdateNotesByOwner(owner: $owner) {
+      owner
+      timestamp
+      transcript
+      note
+      __typename
+    }
+  }
+`;
 export const onCreateTodo = /* GraphQL */ `
   subscription OnCreateTodo(
     $filter: ModelSubscriptionTodoFilterInput
@@ -57,8 +79,6 @@ export const onCreateUserSubscription = /* GraphQL */ `
     onCreateUserSubscription(filter: $filter, owner: $owner) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -71,8 +91,6 @@ export const onUpdateUserSubscription = /* GraphQL */ `
     onUpdateUserSubscription(filter: $filter, owner: $owner) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -85,8 +103,6 @@ export const onDeleteUserSubscription = /* GraphQL */ `
     onDeleteUserSubscription(filter: $filter, owner: $owner) {
       owner
       tier
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -101,8 +117,6 @@ export const onCreateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -117,8 +131,6 @@ export const onUpdateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -133,8 +145,6 @@ export const onDeleteNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }

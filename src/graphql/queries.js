@@ -40,6 +40,7 @@ export const getUserSubscription = /* GraphQL */ `
     getUserSubscription(owner: $owner) {
       owner
       tier
+      __typename
     }
   }
 `;
@@ -61,8 +62,6 @@ export const listUserSubscriptions = /* GraphQL */ `
       items {
         owner
         tier
-        createdAt
-        updatedAt
         __typename
       }
       nextToken
@@ -77,8 +76,6 @@ export const getNotes = /* GraphQL */ `
       timestamp
       transcript
       note
-      createdAt
-      updatedAt
       __typename
     }
   }
@@ -105,8 +102,6 @@ export const listNotes = /* GraphQL */ `
         timestamp
         transcript
         note
-        createdAt
-        updatedAt
         __typename
       }
       nextToken
