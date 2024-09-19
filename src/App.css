@@ -23,6 +23,7 @@
   flex-direction: column;
   padding: 20px;
   background-color: var(--pale-green);
+  overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
 }
@@ -331,7 +332,7 @@
 /* Toggle switch */
 .toggle-container {
   position: relative;
-  min-height: 22px;
+  min-height: 40px;
   display: flex;
   padding: 4px;
   overflow: hidden;

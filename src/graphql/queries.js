@@ -40,6 +40,7 @@ export const getUserSubscription = /* GraphQL */ `
     getUserSubscription(owner: $owner) {
       owner
       tier
+      hoursleft
       __typename
     }
   }
@@ -62,6 +63,7 @@ export const listUserSubscriptions = /* GraphQL */ `
       items {
         owner
         tier
+        hoursleft
         __typename
       }
       nextToken

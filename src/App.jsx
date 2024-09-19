@@ -68,12 +68,24 @@ const extractPlainText = (html) => {
   return tempElement.textContent?.trim() || '';
 };
 
+// Helper function to get the first sentence or a substring
+const getFirstSentenceOrSubstring = (text, maxLength = 50) => {
+  if (!text) return 'Empty';
+  const firstSentence = text.split('.')[0].trim();
+  return firstSentence.length > maxLength ? firstSentence.substring(0, maxLength) + '...' : firstSentence;
+};
+
 // Component to render list items (Notes or Transcripts)
-const ListItem = ({ item, onClick, isNote }) => (
-  <div key={item.timestamp} className="list-item" onClick={() => onClick(item)}>
-    {isNote ? (item.note ? item.note.split('.')[0] : 'Empty note') : (item.transcript ? item.transcript.split('.')[0] : 'Empty transcript')}
-  </div>
-);
+const ListItem = ({ item, onClick, isNote }) => {
+  const content = isNote ? item.note : item.transcript;
+  const displayText = getFirstSentenceOrSubstring(content);
+
+  return (
+    <div className="list-item" onClick={() => onClick(item)}>
+      {displayText}
+    </div>
+  );
+};
 
 function App({ signOut, user }) {
   const [showNotes, setShowNotes] = useState(true);
@@ -188,7 +200,7 @@ function App({ signOut, user }) {
 
   // Show or hide content popup
   const toggleContentPopup = (content) => {
-    setSelectedContent(content);
+    setSelectedContent(showNotes ? content.note : content.transcript);
     setShowContentPopup(prev => !prev);
     setShowPopupMenu(false);
   };
@@ -337,7 +349,17 @@ function App({ signOut, user }) {
 
         {/* Content popup for displaying selected note or transcript */}
         {showContentPopup && (
-          <ContentPopup setShowContentPopup={setShowContentPopup} setShowPopupMenu={setShowPopupMenu} showNotes={showNotes} showPopupMenu={showPopupMenu} togglePopupMenu={togglePopupMenu} handleCopy={handleCopy} handleSendToClipboard={handleSendToClipboard} selectedContent={selectedContent} showPopupCopyMessage={showPopupCopyMessage} />
+          <ContentPopup 
+            setShowContentPopup={setShowContentPopup} 
+            setShowPopupMenu={setShowPopupMenu} 
+            showNotes={showNotes} 
+            showPopupMenu={showPopupMenu} 
+            togglePopupMenu={togglePopupMenu} 
+            handleCopy={handleCopy} 
+            handleSendToClipboard={handleSendToClipboard} 
+            selectedContent={selectedContent} 
+            showPopupCopyMessage={showPopupCopyMessage} 
+          />
         )}
       </div>
     </Router>

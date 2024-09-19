@@ -9,6 +9,7 @@ type Todo @model @auth(rules: [{ allow: owner }]) {
 type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey
   tier: String!
+  hoursleft: Int!
 }
 
 type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {

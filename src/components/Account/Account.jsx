@@ -48,11 +48,14 @@ function Account({ setCurrentPage }) {
         query: getUserSubscription,
         variables: { owner: owner }
       });
+      console.log(data);
       const currentTier = data.data.getUserSubscription.tier.toLowerCase();
+      const hoursLeft = data.data.getUserSubscription.hoursleft;
       console.log('Current Tier:', currentTier);
+      console.log('Hours Left:', hoursLeft);
       
       setCurrentPlan(currentTier);
-      setRemainingHours(data.data.getUserSubscription.remainingHours || 0);
+      setRemainingHours(hoursLeft || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     }

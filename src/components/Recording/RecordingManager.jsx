@@ -39,10 +39,6 @@ function RecordingManager({ onTextStreamUpdate }) {
 
       const data = await response.json();
       console.log('Lambda response:', data);
-
-      // Create and log the encounter object
-
-      return data.transcription;
     } catch (error) {
       console.error('Error sending audio to Lambda:', error);
       return null;
@@ -99,9 +95,9 @@ function RecordingManager({ onTextStreamUpdate }) {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
+      mediaRecorderRef.current.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
@@ -109,7 +105,7 @@ function RecordingManager({ onTextStreamUpdate }) {
       mediaRecorderRef.current = null;
     }
   };
-// The highest level recorder function
+// The 2nd highest level recorder function
   const setupRecorder = async () => {
     try {
       setTextStream('');
@@ -121,8 +117,7 @@ function RecordingManager({ onTextStreamUpdate }) {
           await uploadAudioChunk(event.data);
           streamResponse();
         } else if (event.data.size > 0) {
-          await uploadAudioChunk(event.data);
-          streamResponse();
+          uploadAudioChunk(event.data);
         }
       };
     } catch (error) {
@@ -134,9 +129,9 @@ function RecordingManager({ onTextStreamUpdate }) {
     await setupRecorder();
     if (mediaRecorderRef.current) {
       timeStampRef.current = Date.now();
-      mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPaused(false);
+      mediaRecorderRef.current.start();
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {

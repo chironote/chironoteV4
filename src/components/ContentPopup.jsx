@@ -1,7 +1,17 @@
+import React from 'react';
 import menuIcon from '../assets/menu.svg';
 
-const ContentPopup = ({ setShowContentPopup, setShowPopupMenu, showNotes, showPopupMenu, togglePopupMenu, handleCopy, handleSendToClipboard, selectedContent, showPopupCopyMessage }) => {
-
+const ContentPopup = ({ 
+  setShowContentPopup, 
+  setShowPopupMenu, 
+  showNotes, 
+  showPopupMenu, 
+  togglePopupMenu, 
+  handleCopy, 
+  handleSendToClipboard, 
+  selectedContent, 
+  showPopupCopyMessage 
+}) => {
   return (
     <div
       className="content-popup"
@@ -44,13 +54,18 @@ const ContentPopup = ({ setShowContentPopup, setShowPopupMenu, showNotes, showPo
         </div>
 
         {/* Display selected content */}
-        <p className="content-popup-text">{selectedContent}</p>
+        <div className="content-popup-text">
+          {selectedContent && typeof selectedContent === 'string' 
+            ? selectedContent
+            : 'No content available'}
+        </div>
+        
         {showPopupCopyMessage && (
           <div className="popup-copy-message">Content copied to clipboard</div>
         )}
       </div>
-    </div >
-  )
-}
+    </div>
+  );
+};
 
 export default ContentPopup;
