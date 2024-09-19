@@ -21,6 +21,7 @@ import * as queries from './graphql/queries';
 import TermsAndConditions from './components/AuthUI/TermsAndConditions';
 import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
+import PriceTable from './components/Account/PriceTable';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
@@ -321,6 +322,7 @@ function App({ signOut, user }) {
             <Route path="/account" element={<Account />} />
             <Route path="/feedback" element={<Feedback />} />
             <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+            <Route path="/pricingplans" element={<PriceTable />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import "./Feedback.css";
 
-// Component for feedback form
 function Feedback() {
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState('Feedback');
   const [message, setMessage] = useState('');
 
-  // Handle changes to the subject input
   const handleSubjectChange = (event) => {
     setSubject(event.target.value);
   };
 
-  // Handle changes to the message input
   const handleMessageChange = (event) => {
     setMessage(event.target.value);
   };
 
-  // Handle form submission
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    console.log('Feedback submitted:', { subject, message });
-    // In a real application, send feedback to the backend here
-    // Reset form fields after submission
-    setSubject('');
-    setMessage('');
+    
+    try {
+      const response = await fetch('https://xmryti2hkkvg5tosvv3p6lehsa0lysic.lambda-url.us-east-2.on.aws/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content: message, subject }),
+      });
+
+      if (response.ok) {
+        console.log('Successfully sent feedback');
+        setSubject('Feedback');
+        setMessage('');
+      } else {
+        alert('Failed to send feedback.');
+      }
+    } catch (error) {
+      alert('An error occurred while sending the feedback.');
+    }
   };
 
   return (
     <div className="feedback-container" >
       <h1>Leave Feedback</h1>
       <form onSubmit={handleSubmit}>
-        {/* Subject selection dropdown */}
         <div className="form-group">
           <label htmlFor="subject">Subject:</label>
           <select
@@ -40,14 +50,12 @@ function Feedback() {
             required
             className="feedback-select"
           >
-            <option value="">Select a subject</option>
+            <option value="Feedback">Feedback</option>
             <option value="Report Problem">Report Problem</option>
             <option value="Question">Question</option>
-            <option value="Feedback">Feedback</option>
           </select>
         </div>
 
-        {/* Message input field */}
         <div className="form-group">
           <label htmlFor="message">Your Message:</label>
           <textarea
@@ -61,7 +69,6 @@ function Feedback() {
           />
         </div>
 
-        {/* Submit button */}
         <button type="submit" className="submit-feedback-btn">
           Submit Feedback
         </button>

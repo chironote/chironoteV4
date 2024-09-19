@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Account.css';
 import { PLANS, getPlanFeatures } from '../../constants/constants';
 import config from '../../amplifyconfiguration.json';
@@ -6,12 +7,10 @@ import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
-import PriceTable from '../Account/PriceTable';
 
 Amplify.configure(config);
 
 const client = generateClient();
-
 
 // Component to render individual subscription options
 const SubscriptionOption = ({ plan, isActive }) => (
@@ -31,8 +30,8 @@ function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
   const [currentPlan, setCurrentPlan] = useState('');
   const [remainingHours, setRemainingHours] = useState(0);
-  const [showPriceTable, setShowPriceTable] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserSubscription();
@@ -84,7 +83,7 @@ function Account({ setCurrentPage }) {
 
   const handlePlanAction = async () => {
     if (currentPlan === 'free') {
-      setShowPriceTable(true);
+      navigate('/pricingplans');
     } else {
       setIsLoading(true);
       try {
@@ -119,60 +118,54 @@ function Account({ setCurrentPage }) {
 
   return (
     <div className="account-container">
-      {!showPriceTable ? (
-        <>
-          <h1>Account Information</h1>
+      <h1>Account Information</h1>
 
-          {/* Name change section */}
-          <div className="account-info">
-            <label htmlFor="change-name">Change Name:</label>
-            <input
-              type="text"
-              id="change-name"
-              name="change-name"
-              placeholder="Enter new name"
-              value={name}
-              onChange={handleNameChange}
+      {/* Name change section */}
+      <div className="account-info">
+        <label htmlFor="change-name">Change Name:</label>
+        <input
+          type="text"
+          id="change-name"
+          name="change-name"
+          placeholder="Enter new name"
+          value={name}
+          onChange={handleNameChange}
+        />
+        <button className="update-name-btn" onClick={handleUpdateName}>
+          Update Name
+        </button>
+      </div>
+
+      {/* Subscription management */}
+      <div className="subscription-info">
+        <h2>Subscription Plans</h2>
+        <div className="subscription-status">
+          {/* Render subscription options */}
+          {PLANS.map((plan) => (
+            <SubscriptionOption
+              key={plan}
+              plan={plan}
+              isActive={currentPlan === plan.toLowerCase()}
             />
-            <button className="update-name-btn" onClick={handleUpdateName}>
-              Update Name
-            </button>
-          </div>
+          ))}
+        </div>
+        <button 
+          className="manage-plan-btn" 
+          onClick={handlePlanAction}
+          disabled={isLoading}
+        >
+          {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Purchase Plan' : 'Manage Plan')}
+        </button>
 
-          {/* Subscription management */}
-          <div className="subscription-info">
-            <h2>Subscription Plans</h2>
-            <div className="subscription-status">
-              {/* Render subscription options */}
-              {PLANS.map((plan) => (
-                <SubscriptionOption
-                  key={plan}
-                  plan={plan}
-                  isActive={currentPlan === plan.toLowerCase()}
-                />
-              ))}
-            </div>
-            <button 
-              className="manage-plan-btn" 
-              onClick={handlePlanAction}
-              disabled={isLoading}
-            >
-              {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Purchase Plan' : 'Manage Plan')}
-            </button>
-
-            {/* Hours remaining this month */}
-            <div className="hours-remaining">
-              <h3>Hours Remaining this month</h3>
-              <div className="hours-box">
-                <span id="hours">{remainingHours}</span>
-                <span className="hours-label">Hrs</span>
-              </div>
-            </div>
+        {/* Hours remaining this month */}
+        <div className="hours-remaining">
+          <h3>Hours Remaining this month</h3>
+          <div className="hours-box">
+            <span id="hours">{remainingHours.toFixed(1)}</span>
+            <span className="hours-label">Hrs</span>
           </div>
-        </>
-      ) : (
-        <PriceTable setShowPriceTable={setShowPriceTable} />
-      )}
+        </div>
+      </div>
     </div>
   );
 }
