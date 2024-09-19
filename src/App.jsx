@@ -17,15 +17,15 @@ import RecordingManager from './components/Recording/RecordingManager';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
+import * as queries from './graphql/queries';
 import TermsAndConditions from './components/AuthUI/TermsAndConditions';
-import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api'; // Test Code
-import { Hub } from 'aws-amplify/utils'; // Test Code
+import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api';
+import { Hub } from 'aws-amplify/utils';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 
 import config from './amplifyconfiguration.json';
-import { getNotes } from './graphql/queries';
 Amplify.configure(config);
 
 const client = generateClient();
@@ -69,9 +69,9 @@ const extractPlainText = (html) => {
 };
 
 // Component to render list items (Notes or Transcripts)
-const ListItem = ({ item, onClick }) => (
-  <div key={item.id} className="list-item" onClick={() => onClick(item)}>
-    {item.content.split('.')[0]}
+const ListItem = ({ item, onClick, isNote }) => (
+  <div key={item.timestamp} className="list-item" onClick={() => onClick(item)}>
+    {isNote ? (item.note ? item.note.split('.')[0] : 'Empty note') : (item.transcript ? item.transcript.split('.')[0] : 'Empty transcript')}
   </div>
 );
 
@@ -103,9 +103,26 @@ function App({ signOut, user }) {
 
   const recordingManager = RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate });
 
-  // Subscribe to updates of Notes
+  // Fetch initial notes and transcripts
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const notesData = await client.graphql({
+          query: queries.listNotes,
+          variables: { filter: { owner: { eq: user.username } } }
+        });
+        const fetchedNotes = notesData.data.listNotes.items;
+        setNotes(fetchedNotes.filter(item => item.note && item.note.trim() !== "").slice(0, 10));
+        setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(0, 10));
+      } catch (error) {
+        console.error("Error fetching notes:", error);
+      }
+    };
 
+    fetchNotes();
+  }, [user.username]);
 
+  // Subscribe to updates of Notes and Transcripts
   useEffect(() => {
     // Hub listener for connection state changes
     const hubListener = Hub.listen('api', (data) => {
@@ -118,22 +135,28 @@ function App({ signOut, user }) {
 
     // GraphQL subscription
     const subscription = client.graphql({ 
-      query: subscriptions.onUpdateNotes, 
-      variables: {owner: '213bd5d0-3081-7009-0d28-80f708758ab4'}
+      query: subscriptions.onUpdateNotesByOwner,
+      variables: { owner: user.username }
     }).subscribe({
       next: ({ data }) => {
         console.log('Received data from subscription:', data);
-        if (data.onUpdateNotes.type === 'note') {
-          console.log('New note:', data.onUpdateNotes);
+        const updatedData = data.onUpdateNotesByOwner;
+        
+        // Handle note update
+        if (updatedData.note && updatedData.note.trim() !== "") {
+          console.log('New note:', updatedData);
           setNotes(prevNotes => {
-            const updatedNotes = [...prevNotes, data.onUpdateNotes];
-            return updatedNotes.slice(-10); // Keep only the most recent 10 notes
+            const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
+            return updatedNotes.slice(0, 10); // Keep only the most recent 10 notes
           });
-        } else if (data.onUpdateNotes.type === 'transcript') {
-          console.log('New transcript:', data.onUpdateNotes);
+        }
+        
+        // Handle transcript update
+        if (updatedData.transcript && updatedData.transcript.trim() !== "") {
+          console.log('New transcript:', updatedData);
           setTranscripts(prevTranscripts => {
-            const updatedTranscripts = [...prevTranscripts, data.onUpdateNotes];
-            return updatedTranscripts.slice(-10); // Keep only the most recent 10 transcripts
+            const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
+            return updatedTranscripts.slice(0, 10); // Keep only the most recent 10 transcripts
           });
         }
       },
@@ -144,7 +167,7 @@ function App({ signOut, user }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [user.username]);
 
   // Toggle the visibility of the edit panel
   const toggleEditPanel = () => {
@@ -228,7 +251,7 @@ function App({ signOut, user }) {
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
     return items.map(item => (
-      <ListItem key={item.id} item={item} onClick={toggleContentPopup} />
+      <ListItem key={item.timestamp} item={item} onClick={toggleContentPopup} isNote={showNotes} />
     ));
   };
 
