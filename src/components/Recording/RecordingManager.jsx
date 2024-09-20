@@ -9,6 +9,11 @@ function RecordingManager({ onTextStreamUpdate }) {
   const timeStampRef = useRef(null);
   const [textStream, setTextStream] = useState('');
 
+  const isRecordingRef = useRef(false);
+  useEffect(() => {
+    isRecordingRef.current = isRecording;
+  }, [isRecording]);
+
   const uploadAudioChunk = async (audioBlob) => {
     try {
       const userId = await getUserId();
@@ -113,7 +118,9 @@ function RecordingManager({ onTextStreamUpdate }) {
       mediaRecorderRef.current = new MediaRecorder(stream);
 
       mediaRecorderRef.current.ondataavailable = async (event) => {
-        if (event.data.size > 0 && !isRecording) {
+        console.log("=============== isRecording", isRecording);
+        console.log("=============== isRecordingRef", isRecordingRef.current);
+        if (event.data.size > 0 && !isRecordingRef.current) {
           await uploadAudioChunk(event.data);
           streamResponse();
         } else if (event.data.size > 0) {

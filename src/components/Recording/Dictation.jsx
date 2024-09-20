@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { RealtimeTranscriber } from 'assemblyai';
 import RecordRTC from 'recordrtc';
 import './Recording.css';
@@ -6,6 +6,8 @@ import './Recording.css';
 function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const [isActive, setIsActive] = useState(false);
   const [transcription, setTranscription] = useState('');
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [finalizationStatus, setFinalizationStatus] = useState('');
   const rtRef = useRef(null);
   const recorder = useRef(null);
 
@@ -60,7 +62,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
           .sort(([a], [b]) => a - b)
           .map(([, text]) => text)
           .join(' ');
-          setTranscription(sortedTexts);
+        setTranscription(sortedTexts);
       });
     });
   };
@@ -119,10 +121,33 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
           rtRef.current.close();
         }
         setIsActive(false);
+        setFinalizationStatus('Finalizing punctuation');
+        setTimeout(() => {
+          setIsFinalizing(true);
+          setFinalizationStatus('');
+        }, 2000);
       });
     }
-    toggleDictationPopup(); // Close the window after stopping the recording
   };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      console.log('Transcription copied to clipboard');
+    } catch (err) {
+      console.error('Failed to copy transcription: ', err);
+    }
+  };
+
+  useEffect(() => {
+    if (isFinalizing && transcription) {
+      console.log('Finalizing transcription');
+      onTextStreamUpdate(transcription);
+      copyToClipboard(transcription);
+      setIsFinalizing(false);
+      toggleDictationPopup();
+    }
+  }, [isFinalizing, transcription, onTextStreamUpdate, toggleDictationPopup]);
 
   return (
     <div className="create-note-popup">
@@ -148,6 +173,9 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
             )}
           </div>
         </div>
+        {finalizationStatus && (
+          <div className="finalization-status">{finalizationStatus}</div>
+        )}
         <textarea
           className="dictation-textarea"
           value={transcription}

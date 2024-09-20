@@ -1,24 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './Recording.css';
-import dictateIcon from '../../assets/mic.svg';
-import { getCurrentUser } from 'aws-amplify/auth';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { getCurrentUser,fetchAuthSession } from 'aws-amplify/auth';
 
-function Recording({ toggleRecordingPopup, recordingType }) {
+function RecordingManager({ onTextStreamUpdate }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null);
-  const [streamResult, setStreamResult] = useState('');
+  const [textStream, setTextStream] = useState('');
 
-  // Upload audio chunk to Lambda
   const uploadAudioChunk = async (audioBlob) => {
     try {
       const userId = await getUserId();
 
       if (!userId) {
         console.error('User not authenticated');
-        return;
+        return null;
       }
 
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
@@ -37,23 +34,17 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error uploading audio chunk:', errorData.message);
-        return;
+        return null;
       }
 
       const data = await response.json();
       console.log('Lambda response:', data);
     } catch (error) {
       console.error('Error sending audio to Lambda:', error);
+      return null;
     }
   };
 
-  const handleOuterClick = () => {
-    if (!isRecording) {
-      toggleRecordingPopup();
-    }
-  };
-
-  // Stream response from Lambda
   const streamResponse = async () => {
     try {
       const userId = await getUserId();
@@ -61,6 +52,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
         console.error('User not authenticated');
         return;
       }
+      const accessToken = await generateToken();
 
       const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
         method: "POST",
@@ -69,10 +61,11 @@ function Recording({ toggleRecordingPopup, recordingType }) {
         },
         body: JSON.stringify({
           userId: userId,
-          timeStamp: timeStampRef.current
+          timeStamp: timeStampRef.current,
+          accessToken: accessToken,
         }),
       });
-
+      
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
         return;
@@ -80,31 +73,31 @@ function Recording({ toggleRecordingPopup, recordingType }) {
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-
-      let result = '';
+      let chunk;
       while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          console.log("Stream complete");
+        chunk = await reader.read();
+        const text = decoder.decode(chunk.value, { stream: !chunk.done });
+        const formattedText = text.replace(/\n/g, '<br>');
+        setTextStream((prev) => {
+          const newText = prev + formattedText;
+          onTextStreamUpdate(newText);
+          return newText;
+        }); 
+
+        if (chunk.done) {
           break;
-        }
-        const text = decoder.decode(value, { stream: true });
-        result += text;
-        setStreamResult(prevResult => prevResult + text);
+        } 
       }
-
-      console.log("Final result:", result);
-
     } catch (error) {
       console.error("Streaming error:", error);
-    }
+    } 
   };
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
       setIsRecording(false);
       setIsPaused(false);
+      mediaRecorderRef.current.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
@@ -112,15 +105,10 @@ function Recording({ toggleRecordingPopup, recordingType }) {
       mediaRecorderRef.current = null;
     }
   };
-
-  useEffect(() => {
-    return () => {
-      stopRecording();
-    };
-  }, []);
-
+// The 2nd highest level recorder function
   const setupRecorder = async () => {
     try {
+      setTextStream('');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
 
@@ -141,9 +129,9 @@ function Recording({ toggleRecordingPopup, recordingType }) {
     await setupRecorder();
     if (mediaRecorderRef.current) {
       timeStampRef.current = Date.now();
-      mediaRecorderRef.current.start();
       setIsRecording(true);
       setIsPaused(false);
+      mediaRecorderRef.current.start();
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -181,7 +169,7 @@ function Recording({ toggleRecordingPopup, recordingType }) {
   async function getUserId() {
     try {
       const userId = (await getCurrentUser()).userId;
-      console.log(userId);
+      console.log('Current session ID:' + userId);
       return userId;
     } catch (err) {
       console.log(err);
@@ -189,75 +177,29 @@ function Recording({ toggleRecordingPopup, recordingType }) {
     }
   }
 
-  
+  //function to get access token
+  async function generateToken() {
+    const session = await fetchAuthSession();
+    const accessToken = session.tokens.accessToken.toString();
+    console.log(accessToken);
+    return accessToken;
+  }
 
-  return (
-    <div className="create-note-popup" onClick={handleOuterClick}>
-      <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-        {!isRecording ? (
-          <>
-            <h2>Create New Note</h2>
-            <button className="start-recording-btn" onClick={startRecording}>
-              <img src={dictateIcon} alt="Start Recording" />
-              Start Recording
-            </button>
+  useEffect(() => {
+    return () => {
+      stopRecording();
+    };
+  }, []);
 
-            <label htmlFor="language-select">Language:</label>
-            <select id="language-select" className="language-select">
-              <option value="auto">Auto</option>
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="zh">Chinese (Simplified)</option>
-              <option value="sk">Korean</option>
-              <option value="vi">Vietnamese</option>
-              <option value="ru">Russian</option>
-            </select>
-
-            <div className="settings-options">
-              <div className="checkbox-grid">
-                <div className="checkbox-group">
-                  <input type="checkbox" id="exam-layout-popup" name="layout" value="exam" />
-                  <label htmlFor="exam-layout-popup">Exam Layout</label>
-                </div>
-                <div className="checkbox-group">
-                  <input type="checkbox" id="bulleted-layout-popup" name="layout" value="bulleted" />
-                  <label htmlFor="bulleted-layout-popup">Bulleted Layout</label>
-                </div>
-                <div className="checkbox-group">
-                  <input type="checkbox" id="mva-intro-popup" name="layout" value="mva" />
-                  <label htmlFor="mva-intro-popup">MVA Intro</label>
-                </div>
-                <div className="checkbox-group">
-                  <input type="checkbox" id="pi-friendly-popup" name="layout" value="pi" />
-                  <label htmlFor="pi-friendly-popup">PI Friendly Mode</label>
-                </div>
-              </div>
-            </div>
-
-            <button className="close-btn" onClick={() => toggleRecordingPopup()}>Close</button>
-          </>
-        ) : (
-          <div className="recording-content">
-            <div className="recording-container">
-              {[...Array(5)].map((_, index) => (
-                <div key={index}
-                  style={{ 'animation-delay': `${index * 0.2}s` }}
-                  className={`sound-bar ${isPaused ? 'paused' : ''}`}
-                ></div>
-              ))}
-            </div>
-            <div className="recording-controls">
-              <button onClick={stopRecording}>Stop Recording</button>
-              <button onClick={isPaused ? resumeRecording : pauseRecording}>
-                {isPaused ? 'Resume' : 'Pause'}
-              </button>
-            </div>
-            <div>{streamResult}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return {
+    isRecording,
+    isPaused,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    textStream
+  };
 }
 
-export default Recording;
+export default RecordingManager;

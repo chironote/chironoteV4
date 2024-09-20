@@ -314,6 +314,7 @@ function App({ signOut, user }) {
                   editContent={editContent} 
                   setEditContent={setEditContent} 
                   clipboardContent={clipboardContent}
+                  setClipboardContent={setClipboardContent}
                   userId={user.username}
                   onTextStreamUpdate={handleTextStreamUpdate}
                 />

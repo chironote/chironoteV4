@@ -1,24 +1,45 @@
+import React, { useState } from 'react';
+
 const Clipboard = ({
   clipboardTextareaRef,
   clipboardContent,
   handleCopyPaste,
   setClipboardContent,
   showCopyMessage,
-  streamContent, // New prop for the stream from Recording.jsx
+  streamContent,
 }) => {
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const droppedText = e.dataTransfer.getData('text/plain');
+    setClipboardContent((prevContent) => prevContent + droppedText);
+  };
+
   return (
     <div className="clipboard">
-      {/* Textarea and icons container */}
       <div className="clipboard-textarea-container">
         <textarea
           ref={clipboardTextareaRef}
-          className="clipboard-textarea"
+          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''}`}
           placeholder="Enter your note here..."
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         />
 
-        {/* Stream content display */}
         {streamContent && (
           <div className="stream-content">
             <p>{streamContent}</p>
@@ -27,7 +48,6 @@ const Clipboard = ({
 
         <div className="textarea-icons">
           <div className="icon-wrapper">
-            {/* Copy/Paste icon */}
             <span
               onClick={handleCopyPaste}
               className="material-symbols-rounded textarea-icon"
@@ -35,7 +55,6 @@ const Clipboard = ({
               {showCopyMessage ? 'check' : 'content_copy'}
             </span>
 
-            {/* Copy confirmation message */}
             {showCopyMessage && (
               <span className="copy-message">Content copied to clipboard</span>
             )}
@@ -43,7 +62,6 @@ const Clipboard = ({
         </div>
       </div>
 
-      {/* Clear clipboard link */}
       <a
         href="#"
         className="clear-clipboard-link"

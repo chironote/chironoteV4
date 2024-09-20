@@ -576,7 +576,7 @@ input:checked~.slider {
   }
 
   .textarea-icons {
-    right: 5px;
+    right: -5px;
   }
 
   .clear-clipboard-link {
@@ -625,4 +625,19 @@ input:checked~.slider {
   --amplify-components-button-link-color: var(--medium-green);
   --amplify-components-authenticator-router-border-style: none;
   --amplify-components-authenticator-router-background-color: #f6fdf6;
+}
+
+/* Drag and Drop Styles */
+.draggable-div {
+  cursor: move;
+  transition: opacity 0.3s;
+}
+
+.draggable-div:active {
+  opacity: 0.7;
+}
+
+.clipboard-textarea.dragging-over {
+  border: 2px dashed var(--medium-green);
+  background-color: var(--pale-green);
 }
