@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
@@ -114,7 +114,7 @@ function App({ signOut, user }) {
     setClipboardContent(newText);
   }, []);
 
-  const recordingManager = RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate });
+  const recordingManager = useMemo(() => RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate }));
 
   // Fetch initial notes and transcripts
   useEffect(() => {
