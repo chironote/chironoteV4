@@ -73,7 +73,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
   return (
     <section className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
       <h4>Note Updater</h4>
-      <div className={`edit-container ${isDragging ? 'dragging' : ''}`}>
+      
         <textarea
           ref={textareaRef}
           className="edit-textarea"
@@ -84,7 +84,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         />
-      </div>
+      
 
       {/* Link to clear the text area */}
       <a
