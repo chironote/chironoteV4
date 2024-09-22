@@ -146,7 +146,7 @@ function RecordingManager({ onTextStreamUpdate }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 5000);
+      }, 50000);
     }
   };
 
@@ -170,7 +170,7 @@ function RecordingManager({ onTextStreamUpdate }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 5000);
+      }, 50000);
     }
   };
 
