@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { getCurrentUser,fetchAuthSession } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 
 function RecordingManager({ onTextStreamUpdate }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -26,7 +26,8 @@ function RecordingManager({ onTextStreamUpdate }) {
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
-      console.log(timeStampRef.current);
+      url.searchParams.append('language', localStorage.getItem('selectedLanguage'));
+
 
       const response = await fetch(url.toString(), {
         method: 'POST',
@@ -68,6 +69,7 @@ function RecordingManager({ onTextStreamUpdate }) {
           userId: userId,
           timeStamp: timeStampRef.current,
           accessToken: accessToken,
+          noteSettings: localStorage.getItem('noteSettings'),
         }),
       });
       
@@ -82,9 +84,8 @@ function RecordingManager({ onTextStreamUpdate }) {
       while (true) {
         chunk = await reader.read();
         const text = decoder.decode(chunk.value, { stream: !chunk.done });
-        const formattedText = text.replace(/\n/g, '<br>');
         setTextStream((prev) => {
-          const newText = prev + formattedText;
+          const newText = prev + text;
           onTextStreamUpdate(newText);
           return newText;
         }); 
@@ -110,7 +111,7 @@ function RecordingManager({ onTextStreamUpdate }) {
       mediaRecorderRef.current = null;
     }
   };
-// The 2nd highest level recorder function
+
   const setupRecorder = async () => {
     try {
       setTextStream('');
@@ -184,7 +185,6 @@ function RecordingManager({ onTextStreamUpdate }) {
     }
   }
 
-  //function to get access token
   async function generateToken() {
     const session = await fetchAuthSession();
     const accessToken = session.tokens.accessToken.toString();

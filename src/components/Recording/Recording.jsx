@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './Recording.css';
 import dictateIcon from '../../assets/mic.svg';
 
@@ -10,12 +10,44 @@ function Recording({
   startRecording, 
   stopRecording, 
   pauseRecording, 
-  resumeRecording 
+  resumeRecording
 }) {
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    return localStorage.getItem('selectedLanguage') || 'auto';
+  });
+
+  const [noteSettings, setNoteSettings] = useState(() => {
+    const storedSettings = localStorage.getItem('noteSettings');
+    return storedSettings ? JSON.parse(storedSettings) : {
+      examLayout: false,
+      bulletedLayout: false
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
+    console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
+  }, [noteSettings]);
+
   const handleOuterClick = () => {
     if (!isRecording) {
       toggleRecordingPopup();
     }
+  };
+
+  const handleLanguageChange = (event) => {
+    const newLanguage = event.target.value;
+    setSelectedLanguage(newLanguage);
+    localStorage.setItem('selectedLanguage', newLanguage);
+    console.log('Language changed. localStorage selectedLanguage:', localStorage.getItem('selectedLanguage'));
+  };
+
+  const handleCheckboxChange = (event) => {
+    const { name, checked } = event.target;
+    setNoteSettings(prevSettings => ({
+      ...prevSettings,
+      [name]: checked
+    }));
   };
 
   return (
@@ -30,9 +62,14 @@ function Recording({
             </button>
 
             <label htmlFor="language-select">Language:</label>
-            <select id="language-select" className="language-select">
+            <select 
+              id="language-select" 
+              className="language-select" 
+              value={selectedLanguage}
+              onChange={handleLanguageChange}
+            >
               <option value="auto">Auto</option>
-              <option value="en">English</option>
+              <option value="en_us">English</option>
               <option value="es">Spanish</option>
               <option value="zh">Chinese (Simplified)</option>
               <option value="sk">Korean</option>
@@ -43,20 +80,24 @@ function Recording({
             <div className="settings-options">
               <div className="checkbox-grid">
                 <div className="checkbox-group">
-                  <input type="checkbox" id="exam-layout-popup" name="layout" value="exam" />
+                  <input 
+                    type="checkbox" 
+                    id="exam-layout-popup" 
+                    name="examLayout" 
+                    checked={noteSettings.examLayout}
+                    onChange={handleCheckboxChange}
+                  />
                   <label htmlFor="exam-layout-popup">Exam Layout</label>
                 </div>
                 <div className="checkbox-group">
-                  <input type="checkbox" id="bulleted-layout-popup" name="layout" value="bulleted" />
+                  <input 
+                    type="checkbox" 
+                    id="bulleted-layout-popup" 
+                    name="bulletedLayout" 
+                    checked={noteSettings.bulletedLayout}
+                    onChange={handleCheckboxChange}
+                  />
                   <label htmlFor="bulleted-layout-popup">Bulleted Layout</label>
-                </div>
-                <div className="checkbox-group">
-                  <input type="checkbox" id="mva-intro-popup" name="layout" value="mva" />
-                  <label htmlFor="mva-intro-popup">MVA Intro</label>
-                </div>
-                <div className="checkbox-group">
-                  <input type="checkbox" id="pi-friendly-popup" name="layout" value="pi" />
-                  <label htmlFor="pi-friendly-popup">PI Friendly Mode</label>
                 </div>
               </div>
             </div>
@@ -67,7 +108,7 @@ function Recording({
             <div className="recording-container">
               {[...Array(5)].map((_, index) => (
                 <div key={index}
-                  style={{ 'animation-delay': `${index * 0.2}s` }}
+                  style={{ 'animationDelay': `${index * 0.2}s` }}
                   className={`sound-bar ${isPaused ? 'paused' : ''}`}
                 ></div>
               ))}

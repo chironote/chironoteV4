@@ -126,7 +126,9 @@ function App({ signOut, user }) {
     setClipboardContent(newText);
   }, []);
 
-  const recordingManager = RecordingManager({ onTextStreamUpdate: handleTextStreamUpdate });
+  const recordingManager = RecordingManager({ 
+    onTextStreamUpdate: handleTextStreamUpdate
+  });
 
   // Fetch initial notes and transcripts
   useEffect(() => {
@@ -172,7 +174,7 @@ function App({ signOut, user }) {
         
         // Handle note update
         if (updatedData.note && updatedData.note.trim() !== "") {
-          console.log('New note:', updatedData);
+          console.log('New note:', updatedData.note);
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
             return updatedNotes.slice(0, 10); // Keep only the most recent 10 notes
@@ -181,7 +183,7 @@ function App({ signOut, user }) {
         
         // Handle transcript update
         if (updatedData.transcript && updatedData.transcript.trim() !== "") {
-          console.log('New transcript:', updatedData);
+          console.log('New transcript:', updatedData.transcript);
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
             return updatedTranscripts.slice(0, 10); // Keep only the most recent 10 transcripts
