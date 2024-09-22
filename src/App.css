@@ -26,6 +26,7 @@
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
+  animation: slideInFromLeft 0.3s ease-out;
 }
 
 /* Header styles */
@@ -45,6 +46,7 @@
   position: relative;
   flex-direction: column;
   transition: flex 0.3s;
+  animation: slideInFromRight 0.3s ease-out;
 }
 
 /* Edit panel */
@@ -57,7 +59,7 @@
   align-items: center;
   overflow: hidden;
   background-color: var(--pale-green);
-  transition: opacity 0.3s, flex 0.3s, width 0.3s;
+  transition: opacity 0.1s, flex 0.3s, width 0.3s;
 }
 
 .edit-panel.visible {
@@ -92,10 +94,6 @@
   background-color: var(--pure-white);
 }
 
-.edit-textarea::placeholder {
-  color: #999;
-  font-style: italic;
-}
 
 /* Button styling */
 .apply-changes-button,
@@ -192,6 +190,7 @@
 .clear-clipboard-link {
   max-width: 800px;
   width: calc(100% - 40px);
+  margin-right: -7px;
 }
 
 /* Clipboard textarea */
@@ -211,6 +210,9 @@
   border: 2px solid var(--light-green);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--medium-green) var(--pale-green);
 }
 
 .clipboard-textarea:focus {
@@ -249,7 +251,6 @@
   color: var(--medium-green);
   text-decoration: none;
   font-size: 0.9em;
-  transition: color 0.3s, margin-right 0.3s;
 }
 
 .clear-clipboard-link {
@@ -266,7 +267,7 @@
 }
 
 .clear-edit-link {
-  margin-right: 7%;
+  margin-right: 9%;
   margin-top: 5px;
   align-self: flex-end;
 }
@@ -299,12 +300,10 @@
 
 /* Keyframes for tooltip animation */
 @keyframes fadeInOut {
-
   0%,
   100% {
     opacity: 0;
   }
-
   25%,
   75% {
     opacity: 1;
@@ -347,7 +346,6 @@
 
 .toggle-option {
   z-index: 1;
-  /* flex: 1; */
   display: flex;
   gap: 8px;
   align-items: center;
@@ -410,12 +408,18 @@ input:checked~.slider {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  animation: slideInFromLeft 0.5s ease-out;
 }
 
 .list-item:hover {
   background-color: var(--pale-green);
   transform: translateY(-2px);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
+}
+
+/* Placeholder text before first note generated */
+.empty-list-message {
+  font-size: 1rem;
 }
 
 /* Popup container */
@@ -612,7 +616,6 @@ input:checked~.slider {
 }
 
 /* This is the styling for the amplify authenticator */
-
 [data-amplify-authenticator] {
   --amplify-components-button-border-radius: 100px;
   --amplify-components-authenticator-modal-background-color: var(--pale-green);
@@ -640,4 +643,86 @@ input:checked~.slider {
 .clipboard-textarea.dragging-over {
   border: 2px dashed var(--medium-green);
   background-color: var(--pale-green);
+}
+
+/* Navbar animation */
+.navbar {
+  animation: fadeInFromTop 0.5s ease-out;
+}
+
+/* Keyframe animations for loading effects */
+@keyframes fadeInFromTop {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeOut 0.5s ease-out 0.5s forwards;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--light-green);
+  border-top: 3px solid var(--dark-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
 }

@@ -77,7 +77,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
         <textarea
           ref={textareaRef}
           className="edit-textarea"
-          placeholder="Enter any changes you wish applied to the note on the left"
+          placeholder="Enter any changes you wish applied to the note on the left here..."
           value={editContent}
           onChange={(e) => setEditContent(e.target.value)}
           draggable="true"

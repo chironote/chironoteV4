@@ -29,8 +29,8 @@ const StripePricingTable = () => {
   return (
     <div className="pricing-table-container">
       <stripe-pricing-table
-        pricing-table-id="prctbl_1PnBmnGW9XarT1STkRJVEynp"
-        publishable-key="pk_test_51OjRoLGW9XarT1STitbive9uLi8wemvrnBWCom1352qFV0pu87IzzFmE3eO1zxy4Qb8bA3xMwMojxMNUdVFoRnqX00j72cKeAO"
+        pricing-table-id="prctbl_1Q1a2WGqs3UPHJfyYUc8F4JO"
+        publishable-key="pk_live_51ORKrtGqs3UPHJfysiSYYEKHefOCNK1PLGDaAlP8kZxpIda4ecCUOO0ULYKaQHGiunqQnzYAiHJEgJtE9uako3wZ00LBmHLzpj"
         customer-email={userEmail}
       />
     </div>

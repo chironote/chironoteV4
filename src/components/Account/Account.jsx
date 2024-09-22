@@ -60,16 +60,6 @@ function Account({ setCurrentPage }) {
     }
   }
 
-  // Handle name input change
-  const handleNameChange = (event) => {
-    setName(event.target.value);
-  };
-
-  // Update name (mock functionality)
-  const handleUpdateName = () => {
-    console.log('Name updated:', name);
-    // In a real app, this would update the name in state or context
-  };
 
   async function getUserEmail() {
     try {
@@ -120,21 +110,6 @@ function Account({ setCurrentPage }) {
     <div className="account-container">
       <h1>Account Information</h1>
 
-      {/* Name change section */}
-      <div className="account-info">
-        <label htmlFor="change-name">Change Name:</label>
-        <input
-          type="text"
-          id="change-name"
-          name="change-name"
-          placeholder="Enter new name"
-          value={name}
-          onChange={handleNameChange}
-        />
-        <button className="update-name-btn" onClick={handleUpdateName}>
-          Update Name
-        </button>
-      </div>
 
       {/* Subscription management */}
       <div className="subscription-info">

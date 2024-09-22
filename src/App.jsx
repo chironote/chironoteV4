@@ -77,12 +77,22 @@ const getFirstSentenceOrSubstring = (text, maxLength = 50) => {
 };
 
 // Component to render list items (Notes or Transcripts)
-const ListItem = ({ item, onClick, isNote }) => {
+const ListItem = ({ item, onClick, isNote, onDragStart }) => {
   const content = isNote ? item.note : item.transcript;
   const displayText = getFirstSentenceOrSubstring(content);
 
+  const handleDragStart = (e) => {
+    e.dataTransfer.setData('text/plain', content);
+    onDragStart(content);
+  };
+
   return (
-    <div className="list-item" onClick={() => onClick(item)}>
+    <div
+      className="list-item"
+      onClick={() => onClick(item)}
+      draggable
+      onDragStart={handleDragStart}
+    >
       {displayText}
     </div>
   );
@@ -104,6 +114,8 @@ function App({ signOut, user }) {
   const [streamingText, setStreamingText] = useState('');
   const [notes, setNotes] = useState([]);
   const [transcripts, setTranscripts] = useState([]);
+  const [draggedContent, setDraggedContent] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -119,6 +131,7 @@ function App({ signOut, user }) {
   // Fetch initial notes and transcripts
   useEffect(() => {
     const fetchNotes = async () => {
+      setIsLoading(true);
       try {
         const notesData = await client.graphql({
           query: queries.listNotes,
@@ -129,6 +142,8 @@ function App({ signOut, user }) {
         setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(0, 10));
       } catch (error) {
         console.error("Error fetching notes:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -263,8 +278,24 @@ function App({ signOut, user }) {
   // Render notes or transcripts based on current state
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
+    if (isLoading) {
+      return <div className="loading-message">Loading recent history</div>;
+    }
+    if (items.length === 0) {
+      return (
+        <div className="empty-list-message">
+          Start recording to generate your first {showNotes ? 'note' : 'transcript'}
+        </div>
+      );
+    }
     return items.map(item => (
-      <ListItem key={item.timestamp} item={item} onClick={toggleContentPopup} isNote={showNotes} />
+      <ListItem
+        key={item.timestamp}
+        item={item}
+        onClick={toggleContentPopup}
+        isNote={showNotes}
+        onDragStart={setDraggedContent}
+      />
     ));
   };
 
@@ -305,7 +336,14 @@ function App({ signOut, user }) {
                   />
 
                   {/* Clipboard area for note taking */}
-                  <Clipboard clipboardTextareaRef={clipboardTextareaRef} clipboardContent={clipboardContent} handleCopyPaste={handleCopyPaste} setClipboardContent={setClipboardContent} showCopyMessage={showCopyMessage} />
+                  <Clipboard
+                    clipboardTextareaRef={clipboardTextareaRef}
+                    clipboardContent={clipboardContent}
+                    handleCopyPaste={handleCopyPaste}
+                    setClipboardContent={setClipboardContent}
+                    showCopyMessage={showCopyMessage}
+                    draggedContent={draggedContent}
+                  />
                 </section>
 
                 {/* Edit panel for updating notes */}
