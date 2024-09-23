@@ -224,8 +224,8 @@
 /* Icon container */
 .textarea-icons {
   position: absolute;
-  top: 10px;
-  right: -20px;
+  top: 0px;
+  right: -25px;
   display: flex;
   gap: 10px;
 }
@@ -580,7 +580,7 @@ input:checked~.slider {
   }
 
   .textarea-icons {
-    right: -5px;
+    right: -8px;
   }
 
   .clear-clipboard-link {

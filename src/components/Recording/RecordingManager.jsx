@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import NoSleep from 'nosleep.js';
 
 function RecordingManager({ onTextStreamUpdate }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -8,11 +9,21 @@ function RecordingManager({ onTextStreamUpdate }) {
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null);
   const [textStream, setTextStream] = useState('');
+  const noSleepRef = useRef(null);
 
   const isRecordingRef = useRef(false);
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
+
+  useEffect(() => {
+    noSleepRef.current = new NoSleep();
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+  }, []);
 
   const uploadAudioChunk = async (audioBlob) => {
     try {
@@ -109,15 +120,35 @@ function RecordingManager({ onTextStreamUpdate }) {
       }
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
     }
   };
 
   const setupRecorder = async () => {
     try {
       setTextStream('');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1, // Mono
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        }
+      });
+  
+      const uaString = navigator.userAgent;
+  
+      let options;
+      if (/iphone|ipad/i.test(uaString)) {
+        options = { mimeType: "video/mp4" }; // iPhone friendly mime type
+      } else {
+        options = { mimeType: "audio/webm; codecs=\"opus\"" }; // webm and specify codec
+      }
 
+      mediaRecorderRef.current = new MediaRecorder(stream, options);
+  
       mediaRecorderRef.current.ondataavailable = async (event) => {
         console.log("=============== isRecording", isRecording);
         console.log("=============== isRecordingRef", isRecordingRef.current);
@@ -140,6 +171,9 @@ function RecordingManager({ onTextStreamUpdate }) {
       setIsRecording(true);
       setIsPaused(false);
       mediaRecorderRef.current.start();
+      if (noSleepRef.current) {
+        noSleepRef.current.enable();
+      }
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
@@ -195,6 +229,9 @@ function RecordingManager({ onTextStreamUpdate }) {
   useEffect(() => {
     return () => {
       stopRecording();
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
     };
   }, []);
 

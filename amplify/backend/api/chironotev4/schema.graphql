@@ -14,8 +14,8 @@ type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) 
 type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey(sortKeyFields: ["timestamp"])
   timestamp: String!
-  transcript: String!
-  note: String!
+  transcript: String
+  note: String
 }
 
 type Subscription {

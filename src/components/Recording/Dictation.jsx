@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { RealtimeTranscriber } from 'assemblyai';
 import RecordRTC from 'recordrtc';
+import NoSleep from 'nosleep.js';
 import './Recording.css';
 
 function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
@@ -10,6 +11,17 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const [finalizationStatus, setFinalizationStatus] = useState('');
   const rtRef = useRef(null);
   const recorder = useRef(null);
+  const streamRef = useRef(null);
+  const noSleepRef = useRef(null);
+
+  useEffect(() => {
+    noSleepRef.current = new NoSleep();
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+  }, []);
 
   const fetchAssemblyAIToken = async () => {
     try {
@@ -85,13 +97,33 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       }
 
       console.log('Requesting user media');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1, // Mono
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        }
+      });
+      streamRef.current = stream;
       console.log('User media obtained');
+
+      const uaString = navigator.userAgent;
+      let mimeType;
+      let recorderType;
+  
+      if (/iphone|ipad/i.test(uaString)) {
+        mimeType = 'audio/mp4';
+        recorderType = RecordRTC.MediaStreamRecorder;
+      } else {
+        mimeType = 'audio/webm;codecs=pcm';
+        recorderType = RecordRTC.StereoAudioRecorder;
+      }
       
       recorder.current = new RecordRTC(stream, {
         type: 'audio',
-        mimeType: 'audio/webm;codecs=pcm',
-        recorderType: RecordRTC.StereoAudioRecorder,
+        mimeType: mimeType,
+        recorderType: recorderType,
         timeSlice: 250,
         desiredSampRate: 16000,
         numberOfAudioChannels: 1,
@@ -107,6 +139,9 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       console.log('Starting RecordRTC');
       recorder.current.startRecording();
       setIsActive(true);
+      if (noSleepRef.current) {
+        noSleepRef.current.enable();
+      }
     } catch (error) {
       console.error('Error starting recording:', error);
     }
@@ -116,16 +151,26 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
     if (recorder.current && recorder.current.state !== 'stopped') {
       console.log('Stopping RecordRTC');
       recorder.current.stopRecording(() => {
+        // Stop all tracks in the stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
+  
         if (rtRef.current) {
           console.log('Closing RealtimeTranscriber');
           rtRef.current.close();
         }
+        
         setIsActive(false);
         setFinalizationStatus('Finalizing punctuation');
         setTimeout(() => {
           setIsFinalizing(true);
           setFinalizationStatus('');
         }, 2000);
+
+        if (noSleepRef.current) {
+          noSleepRef.current.disable();
+        }
       });
     }
   };
@@ -148,6 +193,14 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       toggleDictationPopup();
     }
   }, [isFinalizing, transcription, onTextStreamUpdate, toggleDictationPopup]);
+
+  useEffect(() => {
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+  }, []);
 
   return (
     <div className="create-note-popup">
