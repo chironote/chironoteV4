@@ -6,11 +6,13 @@ function Recording({
   toggleRecordingPopup, 
   recordingType, 
   isRecording, 
-  isPaused, 
+  isPaused,
+  isPreparingTranscript,
+  isGeneratingSummary,
   startRecording, 
   stopRecording, 
   pauseRecording, 
-  resumeRecording
+  resumeRecording,
 }) {
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
     return localStorage.getItem('selectedLanguage') || 'auto';
@@ -30,7 +32,7 @@ function Recording({
   }, [noteSettings]);
 
   const handleOuterClick = () => {
-    if (!isRecording) {
+    if (!isRecording && !isPreparingTranscript && !isGeneratingSummary) {
       toggleRecordingPopup();
     }
   };
@@ -50,10 +52,14 @@ function Recording({
     }));
   };
 
+  const handleStopRecording = () => {
+    stopRecording();
+  };
+
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
       <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-        {!isRecording ? (
+        {!isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
             <h2>Create New Note</h2>
             <button className="start-recording-btn" onClick={startRecording}>
@@ -103,6 +109,16 @@ function Recording({
             </div>
             <button className="close-btn" onClick={() => toggleRecordingPopup()}>Close</button>
           </>
+        ) : isPreparingTranscript ? (
+          <div className="preparing-transcript">
+            <h2>Preparing Transcript</h2>
+            <div className="loading-spinner"></div>
+          </div>
+        ) : isGeneratingSummary ? (
+          <div className="preparing-transcript">
+            <h2>Generating Note</h2>
+            <div className="loading-spinner"></div>
+          </div>
         ) : (
           <div className="recording-content">
             <div className="recording-container">
@@ -114,7 +130,7 @@ function Recording({
               ))}
             </div>
             <div className="recording-controls">
-              <button onClick={stopRecording}>Stop Recording</button>
+              <button onClick={handleStopRecording}>Stop Recording</button>
               <button onClick={isPaused ? resumeRecording : pauseRecording}>
                 {isPaused ? 'Resume' : 'Pause'}
               </button>

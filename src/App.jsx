@@ -124,6 +124,7 @@ function App({ signOut, user }) {
   const handleTextStreamUpdate = useCallback((newText) => {
     setStreamingText(newText);
     setClipboardContent(newText);
+    setShowRecordingPopup(false); // Close the recording popup when text stream starts
   }, []);
 
   const recordingManager = RecordingManager({ 
@@ -207,8 +208,12 @@ function App({ signOut, user }) {
 
   // Toggle recording popup visibility
   const toggleRecordingPopup = (type) => {
-    setRecordingType(type);
-    setShowRecordingPopup(prev => !prev);
+    if (recordingManager.isRecording) {
+      recordingManager.stopRecording();
+    } else {
+      setRecordingType(type);
+      setShowRecordingPopup(prev => !prev);
+    }
   };
 
   // Toggle dictation popup visibility
@@ -375,6 +380,8 @@ function App({ signOut, user }) {
             recordingType={recordingType}
             isRecording={recordingManager.isRecording}
             isPaused={recordingManager.isPaused}
+            isPreparingTranscript={recordingManager.isPreparingTranscript}
+            isGeneratingSummary={recordingManager.isGeneratingSummary}
             startRecording={recordingManager.startRecording}
             stopRecording={recordingManager.stopRecording}
             pauseRecording={recordingManager.pauseRecording}

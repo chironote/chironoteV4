@@ -5,10 +5,10 @@ import NoSleep from 'nosleep.js';
 import './Recording.css';
 
 function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
-  const [isActive, setIsActive] = useState(false);
+  const [state, setState] = useState('initial'); // 'initial', 'loading', 'ready', 'recording', 'finalizing'
   const [transcription, setTranscription] = useState('');
-  const [isFinalizing, setIsFinalizing] = useState(false);
   const [finalizationStatus, setFinalizationStatus] = useState('');
+  const [isFinalizing, setIsFinalizing] = useState(false);
   const rtRef = useRef(null);
   const recorder = useRef(null);
   const streamRef = useRef(null);
@@ -25,7 +25,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const fetchAssemblyAIToken = async () => {
     try {
-      console.log('Fetching AssemblyAI token');
       const response = await fetch('https://llck5m4mzd6sa6do3joadjzzs40jtoef.lambda-url.us-east-2.on.aws', {
         method: 'GET'
       });
@@ -35,7 +34,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       }
 
       const { token } = await response.json();
-      console.log('Received AssemblyAI token:', token);
       return token;
     } catch (error) {
       console.error('Error fetching AssemblyAI token:', error);
@@ -45,7 +43,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const setupTranscription = (token) => {
     return new Promise((resolve, reject) => {
-      console.log('Setting up transcription with token:', token);
       rtRef.current = new RealtimeTranscriber({
         token: token,
         sampleRate: 16000,
@@ -53,19 +50,8 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       });
       rtRef.current.connect();
       
-      rtRef.current.on('open', () => {
-        console.log('WebSocket connection opened successfully');
-        resolve();
-      });
-  
-      rtRef.current.on('error', (error) => {
-        console.error('WebSocket error:', error);
-        reject(error);
-      });
-  
-      rtRef.current.on('close', () => {
-        console.log('WebSocket connection closed');
-      });
+      rtRef.current.on('open', resolve);
+      rtRef.current.on('error', reject);
       
       const texts = {};
       rtRef.current.on("transcript", (message) => {
@@ -81,44 +67,28 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const startRecording = async () => {
     try {
-      console.log('Starting recording process');
+      setState('loading');
       const token = await fetchAssemblyAIToken();
+      console.log('Token fetched');
       if (!token) {
         throw new Error('Failed to obtain AssemblyAI token');
       }
 
-      console.log('Token obtained, setting up transcription');
-      try {
-        await setupTranscription(token);
-        console.log('Transcription setup completed successfully');
-      } catch (error) {
-        console.error('Error during transcription setup:', error);
-        return;
-      }
+      await setupTranscription(token);
 
-      console.log('Requesting user media');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 1, // Mono
+          channelCount: 1,
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
         }
       });
       streamRef.current = stream;
-      console.log('User media obtained');
 
       const uaString = navigator.userAgent;
-      let mimeType;
-      let recorderType;
-  
-      if (/iphone|ipad/i.test(uaString)) {
-        mimeType = 'audio/mp4';
-        recorderType = RecordRTC.MediaStreamRecorder;
-      } else {
-        mimeType = 'audio/webm;codecs=pcm';
-        recorderType = RecordRTC.StereoAudioRecorder;
-      }
+      let mimeType = /iphone|ipad/i.test(uaString) ? 'audio/mp4' : 'audio/webm;codecs=pcm';
+      let recorderType = /iphone|ipad/i.test(uaString) ? RecordRTC.MediaStreamRecorder : RecordRTC.StereoAudioRecorder;
       
       recorder.current = new RecordRTC(stream, {
         type: 'audio',
@@ -136,14 +106,20 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
         },
       });
 
-      console.log('Starting RecordRTC');
+      setState('ready');
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      setState('initial');
+    }
+  };
+
+  const beginRecording = () => {
+    if (recorder.current && state === 'ready') {
       recorder.current.startRecording();
-      setIsActive(true);
+      setState('recording');
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
-    } catch (error) {
-      console.error('Error starting recording:', error);
     }
   };
 
@@ -151,23 +127,21 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
     if (recorder.current && recorder.current.state !== 'stopped') {
       console.log('Stopping RecordRTC');
       recorder.current.stopRecording(() => {
-        // Stop all tracks in the stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        }
+
   
         if (rtRef.current) {
           console.log('Closing RealtimeTranscriber');
           rtRef.current.close();
         }
         
-        setIsActive(false);
+        setState('finalizing');
         setFinalizationStatus('Finalizing punctuation');
+        
         setTimeout(() => {
           setIsFinalizing(true);
           setFinalizationStatus('');
         }, 2000);
-
+        
         if (noSleepRef.current) {
           noSleepRef.current.disable();
         }
@@ -190,41 +164,56 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       onTextStreamUpdate(transcription);
       copyToClipboard(transcription);
       setIsFinalizing(false);
+      streamRef.current.getTracks().forEach(track => track.stop());
       toggleDictationPopup();
     }
   }, [isFinalizing, transcription, onTextStreamUpdate, toggleDictationPopup]);
 
   useEffect(() => {
-    return () => {
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
-    };
-  }, []);
+    if (state === 'initial') {
+      startRecording();
+    }
+  }, [state]);
+
+  const handleClose = () => {
+    if (recorder.current && recorder.current.state !== 'stopped') {
+      stopRecording();
+    } else {
+      toggleDictationPopup();
+    }
+  };
 
   return (
     <div className="create-note-popup">
       <div className="popup-content">
-        <div className="recording-content">
-          <div className="recording-container">
-            {[...Array(5)].map((_, index) => (
-              <div key={index}
-                style={{ 'animationDelay': `${index * 0.2}s` }}
-                className={`sound-bar ${isActive ? 'active' : ''}`}
-              ></div>
-            ))}
-          </div>
-          <div className="recording-controls">
-            {!isActive ? (
-              <button onClick={startRecording}>
-                Start Recording
-              </button>
-            ) : (
-              <button onClick={stopRecording}>
+        <div className="close-button-container">
+          {state !== 'finalizing' && (
+            <button className="close-btn" onClick={handleClose}>×</button>
+          )}
+        </div>
+        <div className="recording-controls">
+          {state === 'loading' && <div>Loading Voice to Text...</div>}
+          {state === 'ready' && (
+            <button className="start-recording-btn" onClick={beginRecording}>
+              Start Recording
+            </button>
+          )}
+          {state === 'recording' && (
+            <div className="recording-column">
+              <div className="recording-status">Recording</div>
+              <div className="recording-container">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index}
+                    style={{ 'animationDelay': `${index * 0.2}s` }}
+                    className="sound-bar active"
+                  ></div>
+                ))}
+              </div>
+              <button className="stop-recording-btn" onClick={stopRecording}>
                 Stop Recording
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         {finalizationStatus && (
           <div className="finalization-status">{finalizationStatus}</div>

@@ -2,9 +2,11 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import NoSleep from 'nosleep.js';
 
-function RecordingManager({ onTextStreamUpdate }) {
+function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null);
@@ -39,7 +41,6 @@ function RecordingManager({ onTextStreamUpdate }) {
       url.searchParams.append('timeStamp', timeStampRef.current);
       url.searchParams.append('language', localStorage.getItem('selectedLanguage'));
 
-
       const response = await fetch(url.toString(), {
         method: 'POST',
         body: audioBlob,
@@ -63,6 +64,8 @@ function RecordingManager({ onTextStreamUpdate }) {
   };
 
   const streamResponse = async () => {
+    setIsGeneratingSummary(true);
+    setIsPreparingTranscript(false);
     try {
       const userId = await getUserId();
       if (!userId) {
@@ -92,12 +95,16 @@ function RecordingManager({ onTextStreamUpdate }) {
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let chunk;
+      let isFirstChunk = true;
       while (true) {
         chunk = await reader.read();
         const text = decoder.decode(chunk.value, { stream: !chunk.done });
         setTextStream((prev) => {
           const newText = prev + text;
           onTextStreamUpdate(newText);
+          if (isFirstChunk) {
+            isFirstChunk = false;
+          }
           return newText;
         }); 
 
@@ -107,7 +114,10 @@ function RecordingManager({ onTextStreamUpdate }) {
       }
     } catch (error) {
       console.error("Streaming error:", error);
-    } 
+    } finally {
+      setIsPreparingTranscript(false);
+      setIsGeneratingSummary(false);
+    }
   };
 
   const stopRecording = () => {
@@ -123,6 +133,7 @@ function RecordingManager({ onTextStreamUpdate }) {
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }
+      setIsPreparingTranscript(true);
     }
   };
 
@@ -150,8 +161,6 @@ function RecordingManager({ onTextStreamUpdate }) {
       mediaRecorderRef.current = new MediaRecorder(stream, options);
   
       mediaRecorderRef.current.ondataavailable = async (event) => {
-        console.log("=============== isRecording", isRecording);
-        console.log("=============== isRecordingRef", isRecordingRef.current);
         if (event.data.size > 0 && !isRecordingRef.current) {
           await uploadAudioChunk(event.data);
           streamResponse();
@@ -238,6 +247,8 @@ function RecordingManager({ onTextStreamUpdate }) {
   return {
     isRecording,
     isPaused,
+    isPreparingTranscript,
+    isGeneratingSummary,
     startRecording,
     stopRecording,
     pauseRecording,

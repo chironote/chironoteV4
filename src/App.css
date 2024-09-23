@@ -445,6 +445,8 @@ input:checked~.slider {
   width: 100%;
   text-align: left;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--medium-green) var(--pale-green);  
   background-color: var(--off-white);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
