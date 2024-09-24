@@ -13,6 +13,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const recorder = useRef(null);
   const streamRef = useRef(null);
   const noSleepRef = useRef(null);
+  const hasStartedRecording = useRef(false);
 
   useEffect(() => {
     noSleepRef.current = new NoSleep();
@@ -127,20 +128,18 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
     if (recorder.current && recorder.current.state !== 'stopped') {
       console.log('Stopping RecordRTC');
       recorder.current.stopRecording(() => {
-
-  
-        if (rtRef.current) {
-          console.log('Closing RealtimeTranscriber');
-          rtRef.current.close();
-        }
-        
         setState('finalizing');
         setFinalizationStatus('Finalizing punctuation');
         
         setTimeout(() => {
           setIsFinalizing(true);
           setFinalizationStatus('');
-        }, 2000);
+        }, 1500);
+        
+        if (rtRef.current) {
+          console.log('Closing RealtimeTranscriber');
+          rtRef.current.close();
+        }
         
         if (noSleepRef.current) {
           noSleepRef.current.disable();
@@ -170,53 +169,102 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   }, [isFinalizing, transcription, onTextStreamUpdate, toggleDictationPopup]);
 
   useEffect(() => {
-    if (state === 'initial') {
+    if (state === 'initial' && !hasStartedRecording.current) {
+      hasStartedRecording.current = true;
       startRecording();
     }
   }, [state]);
 
   const handleClose = () => {
+    console.log('Closing Dictation component');
+    
+    // Stop recording if it's in progress
     if (recorder.current && recorder.current.state !== 'stopped') {
-      stopRecording();
-    } else {
-      toggleDictationPopup();
+      console.log('Stopping recording');
+      recorder.current.stopRecording();
     }
+    
+    // Close WebSocket connection
+    if (rtRef.current) {
+      console.log('Closing WebSocket connection');
+      rtRef.current.close();
+    }
+    
+    // Stop media stream tracks
+    if (streamRef.current) {
+      console.log('Stopping media stream tracks');
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    
+    // Disable NoSleep
+    if (noSleepRef.current) {
+      console.log('Disabling NoSleep');
+      noSleepRef.current.disable();
+    }
+    
+    // Reset state
+    setState('initial');
+    setTranscription('');
+    setFinalizationStatus('');
+    setIsFinalizing(false);
+    
+    // Close the popup
+    console.log('Closing popup');
+    toggleDictationPopup();
   };
 
   return (
     <div className="create-note-popup">
       <div className="popup-content">
         <div className="close-button-container">
-          {state !== 'finalizing' && (
-            <button className="close-btn" onClick={handleClose}>×</button>
-          )}
+          <button className="close-btn" onClick={handleClose}>×</button>
         </div>
         <div className="recording-controls">
-          {state === 'loading' && <div>Loading Voice to Text...</div>}
-          {state === 'ready' && (
-            <button className="start-recording-btn" onClick={beginRecording}>
-              Start Recording
-            </button>
-          )}
-          {state === 'recording' && (
-            <div className="recording-column">
-              <div className="recording-status">Recording</div>
-              <div className="recording-container">
+          {state === 'loading' && (
+            <div>
+              <div>Loading Speech to Text...</div>
+              <div className="recording-container inactive">
                 {[...Array(5)].map((_, index) => (
-                  <div key={index}
-                    style={{ 'animationDelay': `${index * 0.2}s` }}
-                    className="sound-bar active"
-                  ></div>
+                  <div key={index} className="sound-bar standby"></div>
                 ))}
               </div>
+            </div>
+          )}
+          {state === 'ready' && (
+            <div>
+              <button 
+                className="stop-recording-btn" 
+                onClick={beginRecording}
+              >
+                Start Recording
+              </button>
+              <div className="recording-container inactive">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index} className="sound-bar standby"></div>
+                ))}
+              </div>
+            </div>
+          )}
+          {state === 'recording' && (
+            <div className="recording-status">
               <button className="stop-recording-btn" onClick={stopRecording}>
                 Stop Recording
               </button>
+              <div className="recording-container active">
+                {[...Array(5)].map((_, index) => (
+                  <div key={index}
+                    style={{ 'animationDelay': `${index * 0.2}s` }}
+                    className="sound-bar"
+                  ></div>
+                ))}
+              </div>
             </div>
           )}
         </div>
         {finalizationStatus && (
-          <div className="finalization-status">{finalizationStatus}</div>
+          <div className="recording-controls" style={{ marginBottom: '30px' }}>
+          {finalizationStatus}
+        </div>
         )}
         <textarea
           className="dictation-textarea"

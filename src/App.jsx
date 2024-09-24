@@ -141,8 +141,8 @@ function App({ signOut, user }) {
           variables: { filter: { owner: { eq: user.username } } }
         });
         const fetchedNotes = notesData.data.listNotes.items;
-        setNotes(fetchedNotes.filter(item => item.note && item.note.trim() !== "").slice(0, 10));
-        setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(0, 10));
+        setNotes(fetchedNotes.filter(item => item.note && item.note.trim() !== "").slice(-10).reverse());
+        setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(-10).reverse());
       } catch (error) {
         console.error("Error fetching notes:", error);
       } finally {

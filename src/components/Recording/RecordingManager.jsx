@@ -150,6 +150,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       });
   
       const uaString = navigator.userAgent;
+      alert(uaString);
+
   
       let options;
       if (/iphone|ipad/i.test(uaString)) {

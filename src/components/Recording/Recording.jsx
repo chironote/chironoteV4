@@ -107,7 +107,7 @@ function Recording({
                 </div>
               </div>
             </div>
-            <button className="close-btn" onClick={() => toggleRecordingPopup()}>Close</button>
+            <button className="start-recording-btn" onClick={() => toggleRecordingPopup()}>Close</button>
           </>
         ) : isPreparingTranscript ? (
           <div className="preparing-transcript">

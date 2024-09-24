@@ -31,6 +31,7 @@ function Account({ setCurrentPage }) {
   const [currentPlan, setCurrentPlan] = useState('');
   const [remainingHours, setRemainingHours] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isQueryLoading, setIsQueryLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,6 +39,7 @@ function Account({ setCurrentPage }) {
   }, []);
 
   async function fetchUserSubscription() {
+    setIsQueryLoading(true);
     try {
       const userAttributes = await fetchUserAttributes();
       const owner = userAttributes.sub;
@@ -57,9 +59,10 @@ function Account({ setCurrentPage }) {
       setRemainingHours(hoursLeft || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
+    } finally {
+      setIsQueryLoading(false);
     }
   }
-
 
   async function getUserEmail() {
     try {
@@ -108,8 +111,12 @@ function Account({ setCurrentPage }) {
 
   return (
     <div className="account-container">
+      {isQueryLoading && (
+        <div className="loading-overlay">
+          <div className="loading-spinner"></div>
+        </div>
+      )}
       <h1>Account Information</h1>
-
 
       {/* Subscription management */}
       <div className="subscription-info">
