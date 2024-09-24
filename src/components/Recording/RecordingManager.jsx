@@ -35,11 +35,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         console.error('User not authenticated');
         return null;
       }
-
+      const selectedLanguage = localStorage.getItem('selectedLanguage');
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', localStorage.getItem('selectedLanguage'));
+      url.searchParams.append('language', selectedLanguage || 'auto');
 
       const response = await fetch(url.toString(), {
         method: 'POST',
