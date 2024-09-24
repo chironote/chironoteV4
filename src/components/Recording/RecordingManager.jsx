@@ -149,7 +149,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
       });
   
-      const uaString = navigator.userAgent;
+      const uaString = navigator.userAgent.toLowerCase();
       alert(uaString);
 
   
