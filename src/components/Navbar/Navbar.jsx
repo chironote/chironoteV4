@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import tempLogo from '../../assets/temp-logo.png';
+import Logo from '../../assets/logo.svg';
 import { NAV_LINKS } from '../../constants/constants';
 import { signOut } from 'aws-amplify/auth';
 import "./Navbar.css"
@@ -41,7 +41,7 @@ function Navbar() {
   return (
     <header className="app-header">
       <div className="logo-container" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-        <img src={tempLogo} alt="ChiroNote Logo" className="logo" />
+        <img src={Logo} alt="ChiroNote Logo" className="logo" />
         <h1 className="logo-text">ChiroNote</h1>
       </div>
 

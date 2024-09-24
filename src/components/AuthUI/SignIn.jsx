@@ -1,14 +1,14 @@
 import React from 'react';
 import { useTheme, View, Image } from '@aws-amplify/ui-react';
-import textLogo from '../../assets/textlogo.png';
+import textLogo from '../../assets/fulllogo.svg';
 
 const Header = () => {
   const { tokens } = useTheme();
 
   return (
-    <View style={{ textAlign: 'center', padding: tokens.space.large }}>
+    <View style={{ textAlign: 'center', width: '100%', padding: tokens.space.large }}>
       <Image
-        alt="Temporary logo"
+        alt="ChiroNote"
         src={textLogo}
       />
     </View>
