@@ -150,9 +150,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       });
   
       const uaString = navigator.userAgent.toLowerCase();
-      alert(uaString);
-
-  
       let options;
       if (/iphone|ipad/i.test(uaString)) {
         options = { mimeType: "video/mp4" }; // iPhone friendly mime type
