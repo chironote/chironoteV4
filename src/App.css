@@ -525,6 +525,14 @@ input:checked~.slider {
   color: var(--dark-green);
 }
 
+/* New styles for content-popup-text pre */
+.content-popup-text pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* For screens with max-width: 880px */
 @media (max-width: 880px) {
   .left-panel {

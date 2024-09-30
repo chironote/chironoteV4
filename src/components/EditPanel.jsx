@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import arrowLeftIcon from '../assets/arrow-left.svg';
 
-const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws"; // Replace with your actual Lambda URL
+const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws";
 
 const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardContent, setClipboardContent, userId, onTextStreamUpdate }) => {
   const [textStream, setTextStream] = useState('');
@@ -11,9 +11,11 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
   const editStream = async (editInput) => {
     // Clear the clipboard content immediately when the button is clicked
     setClipboardContent("");
+    // Reset the textStream state at the beginning of each editStream call
+    setTextStream('');
 
     try {
-      const response = await fetch(LAMBDA_URL, {
+            const response = await fetch(LAMBDA_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
