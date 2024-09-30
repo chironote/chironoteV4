@@ -56,7 +56,7 @@ const ContentPopup = ({
         {/* Display selected content */}
         <div className="content-popup-text">
           {selectedContent && typeof selectedContent === 'string' 
-            ? selectedContent
+            ? <pre>{selectedContent}</pre>
             : 'No content available'}
         </div>
         

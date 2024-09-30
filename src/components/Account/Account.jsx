@@ -82,7 +82,7 @@ function Account({ setCurrentPage }) {
       try {
         const userEmail = await getUserEmail();
         
-        const response = await fetch('https://4ddkfzjq5omyvsfih3qcxhxpk40uavni.lambda-url.us-west-2.on.aws/', {
+        const response = await fetch('https://uvhaoef2myno3o4wvgyb32e5ae0dlevu.lambda-url.us-east-2.on.aws/', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

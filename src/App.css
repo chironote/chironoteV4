@@ -69,6 +69,16 @@
   margin-left: 30px;
 }
 
+.edit-panel h4 {
+  margin-top: 0;
+  padding: 15px 0;
+  width: 100%;
+  background-color: var(--pale-green);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
 .edit-panel>* {
   opacity: 0;
   margin-top: 33%;
@@ -89,7 +99,7 @@
   height: 100%;
   padding: 10px;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: .9rem;
   border: 2px solid var(--light-green);
   background-color: var(--pure-white);
 }
@@ -185,6 +195,7 @@
   justify-content: center;
   background-color: var(--off-white);
 }
+
 
 .clipboard-textarea-container,
 .clear-clipboard-link {
