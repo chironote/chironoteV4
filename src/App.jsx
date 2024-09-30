@@ -77,7 +77,7 @@ const getFirstSentenceOrSubstring = (text, maxLength = 50) => {
 };
 
 // Component to render list items (Notes or Transcripts)
-const ListItem = ({ item, onClick, isNote, onDragStart }) => {
+const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) => {
   const content = isNote ? item.note : item.transcript;
   const displayText = getFirstSentenceOrSubstring(content);
 
@@ -88,10 +88,11 @@ const ListItem = ({ item, onClick, isNote, onDragStart }) => {
 
   return (
     <div
-      className="list-item"
+      className={`list-item ${isNew ? 'highlight' : ''}`}
       onClick={() => onClick(item)}
       draggable
       onDragStart={handleDragStart}
+      onMouseEnter={onMouseEnter}
     >
       {displayText}
     </div>
@@ -116,6 +117,7 @@ function App({ signOut, user }) {
   const [transcripts, setTranscripts] = useState([]);
   const [draggedContent, setDraggedContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [newItems, setNewItems] = useState(new Set());
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -178,6 +180,7 @@ function App({ signOut, user }) {
           console.log('New note:', updatedData.note);
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
+            setNewItems(new Set([...newItems, updatedData.timestamp]));
             return updatedNotes.slice(0, 10); // Keep only the most recent 10 notes
           });
         }
@@ -187,6 +190,7 @@ function App({ signOut, user }) {
           console.log('New transcript:', updatedData.transcript);
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
+            setNewItems(new Set([...newItems, updatedData.timestamp]));
             return updatedTranscripts.slice(0, 10); // Keep only the most recent 10 transcripts
           });
         }
@@ -198,7 +202,7 @@ function App({ signOut, user }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user.username]);
+  }, [user.username, newItems]);
 
   // Toggle the visibility of the edit panel
   const toggleEditPanel = () => {
@@ -282,6 +286,15 @@ function App({ signOut, user }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Remove highlight on mouse enter
+  const removeHighlight = (timestamp) => {
+    setNewItems(prevNewItems => {
+      const updatedNewItems = new Set(prevNewItems);
+      updatedNewItems.delete(timestamp);
+      return updatedNewItems;
+    });
+  };
+
   // Render notes or transcripts based on current state
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
@@ -302,6 +315,8 @@ function App({ signOut, user }) {
         onClick={toggleContentPopup}
         isNote={showNotes}
         onDragStart={setDraggedContent}
+        isNew={newItems.has(item.timestamp)}
+        onMouseEnter={() => removeHighlight(item.timestamp)}
       />
     ));
   };

@@ -428,6 +428,26 @@ input:checked~.slider {
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
 }
 
+/* New styles for highlighting new items */
+.list-item.highlight {
+  background-color: var(--light-green);
+  border-color: var(--medium-green);
+  box-shadow: 0 0 10px rgba(46, 105, 48, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(46, 105, 48, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(46, 105, 48, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(46, 105, 48, 0);
+  }
+}
+
 /* Placeholder text before first note generated */
 .empty-list-message {
   font-size: 1rem;

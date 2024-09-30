@@ -39,6 +39,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
+      url.searchParams.append('language', selectedLanguage || 'auto');
+      console.log(selectedLanguage);
+   
      
 
       const response = await fetch(url.toString(), {
@@ -175,10 +178,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const startRecording = async () => {
     await setupRecorder();
     if (mediaRecorderRef.current) {
-      timeStampRef.current = Date.now();
-      setIsRecording(true);
+            setIsRecording(true);
       setIsPaused(false);
-      mediaRecorderRef.current.start();
+     mediaRecorderRef.current.onstart = () => {
+  timeStampRef.current = Date.now();
+};
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }

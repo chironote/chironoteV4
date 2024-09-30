@@ -14,9 +14,7 @@ function Recording({
   pauseRecording, 
   resumeRecording,
 }) {
-  const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    return localStorage.getItem('selectedLanguage') || 'auto';
-  });
+  const [selectedLanguage, setSelectedLanguage] = useState('auto');
 
   const [noteSettings, setNoteSettings] = useState(() => {
     const storedSettings = localStorage.getItem('noteSettings');
@@ -25,6 +23,17 @@ function Recording({
       bulletedLayout: false
     };
   });
+
+  useEffect(() => {
+    // Read the current value from the scroll menu and set it in localStorage
+    const languageSelect = document.getElementById('language-select');
+    if (languageSelect) {
+      const currentLanguage = languageSelect.value;
+      setSelectedLanguage(currentLanguage);
+      localStorage.setItem('selectedLanguage', currentLanguage);
+      console.log('Language set on load:', currentLanguage);
+    }
+  }, []); // Empty dependency array ensures this runs only once on component mount
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
