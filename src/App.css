@@ -430,7 +430,7 @@ input:checked~.slider {
 
 /* New styles for highlighting new items */
 .list-item.highlight {
-  background-color: var(--light-green);
+  background-color: var(--pale-green);
   border-color: var(--medium-green);
   box-shadow: 0 0 10px rgba(46, 105, 48, 0.3);
   animation: pulse 2s infinite;

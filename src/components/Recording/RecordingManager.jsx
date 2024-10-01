@@ -180,9 +180,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     if (mediaRecorderRef.current) {
             setIsRecording(true);
       setIsPaused(false);
-     mediaRecorderRef.current.onstart = () => {
-  timeStampRef.current = Date.now();
-};
+      timeStampRef.current = Date.now();
+      mediaRecorderRef.current.start();
+      
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
