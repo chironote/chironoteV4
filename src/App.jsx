@@ -118,6 +118,7 @@ function App({ signOut, user }) {
   const [draggedContent, setDraggedContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [newItems, setNewItems] = useState(new Set());
+  const [queryLoaded, setQueryLoaded] = useState(false);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -145,6 +146,7 @@ function App({ signOut, user }) {
         const fetchedNotes = notesData.data.listNotes.items;
         setNotes(fetchedNotes.filter(item => item.note && item.note.trim() !== "").slice(-10).reverse());
         setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(-10).reverse());
+        setQueryLoaded(true);
       } catch (error) {
         console.error("Error fetching notes:", error);
       } finally {
@@ -338,7 +340,7 @@ function App({ signOut, user }) {
             <Route path="/" element={
               <>
                 {/* Left panel: Toggle between Notes and Transcripts */}
-                <section className="left-panel">
+                <section className={`left-panel ${queryLoaded ? 'left-panel-animate' : ''}`}>
                   <h2 className="panel-header">History</h2>
                   <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
 

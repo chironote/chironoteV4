@@ -136,7 +136,7 @@ function Account({ setCurrentPage }) {
           onClick={handlePlanAction}
           disabled={isLoading}
         >
-          {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Purchase Plan' : 'Manage Plan')}
+          {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Browse Available Plans' : 'Manage Plan')}
         </button>
 
         {/* Hours remaining this month */}

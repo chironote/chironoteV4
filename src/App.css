@@ -26,6 +26,10 @@
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
+}
+
+/* Left panel animation */
+.left-panel-animate {
   animation: slideInFromLeft 0.3s ease-out;
 }
 
@@ -419,7 +423,6 @@ input:checked~.slider {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  animation: slideInFromLeft 0.5s ease-out;
 }
 
 .list-item:hover {
