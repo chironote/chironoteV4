@@ -89,7 +89,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
       const rawUaString = navigator.userAgent;
       let uaString = rawUaString.toLowerCase();
-      alert.uaString;
+      alert(uaString);
       let mimeType = /iphone|ipad/i.test(uaString) ? 'video/mp4' : 'audio/webm;codecs=pcm';
       let recorderType = /iphone|ipad/i.test(uaString) ? RecordRTC.MediaStreamRecorder : RecordRTC.StereoAudioRecorder;
       
