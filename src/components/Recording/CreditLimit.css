@@ -1,8 +1,5 @@
 .credit-popup-container {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative;
   background-color: var(--off-white);
   padding: 20px;
   border-radius: 8px;
@@ -10,6 +7,7 @@
   text-align: center;
   max-width: 400px;
   width: 90%;
+  z-index: 1001; /* Ensure it's above the wrapper */
 }
 
 .credit-popup-title {
@@ -78,10 +76,12 @@
 }
 
 .padlock-image {
-  width: 150px;
+  width: 60%;
   height: auto;
   margin-bottom: 10px;
 }
+
+/* We've removed the .credit-popup-wrapper styles from here as they are now inline in EditPanel.jsx */
 
 @media (max-width: 768px) {
   .credit-popup-container {

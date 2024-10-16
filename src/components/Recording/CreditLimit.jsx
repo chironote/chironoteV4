@@ -14,10 +14,10 @@ const CreditPopup = ({ onClose }) => {
   return (
     <div className="credit-popup-container">
       <img src={padlockImage} alt="Coins" className="padlock-image" />
-      <h2 className="credit-popup-title">Out of Transcription Credits</h2>
+      <h2 className="credit-popup-title">Out of Credits</h2>
       <p className="credit-popup-message">
-        You've used all your transcription credits. Upgrade to a higher tier to
-        continue using our services.
+        You've used all your transcription hours or notes. Upgrade to a higher tier to
+        increase your limits.
       </p>
       <button className="credit-popup-button" onClick={handleGoToAccount}>Go to Account Menu</button>
     </div>

@@ -23,54 +23,6 @@ export const onUpdateNotesByOwner = /* GraphQL */ `
     }
   }
 `;
-export const onCreateTodo = /* GraphQL */ `
-  subscription OnCreateTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onCreateTodo(filter: $filter, owner: $owner) {
-      id
-      name
-      description
-      owner
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onUpdateTodo = /* GraphQL */ `
-  subscription OnUpdateTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onUpdateTodo(filter: $filter, owner: $owner) {
-      id
-      name
-      description
-      owner
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
-export const onDeleteTodo = /* GraphQL */ `
-  subscription OnDeleteTodo(
-    $filter: ModelSubscriptionTodoFilterInput
-    $owner: String
-  ) {
-    onDeleteTodo(filter: $filter, owner: $owner) {
-      id
-      name
-      description
-      owner
-      createdAt
-      updatedAt
-      __typename
-    }
-  }
-`;
 export const onCreateUserSubscription = /* GraphQL */ `
   subscription OnCreateUserSubscription(
     $filter: ModelSubscriptionUserSubscriptionFilterInput
@@ -80,6 +32,7 @@ export const onCreateUserSubscription = /* GraphQL */ `
       owner
       tier
       hoursleft
+      notesleft
       __typename
     }
   }
@@ -93,6 +46,7 @@ export const onUpdateUserSubscription = /* GraphQL */ `
       owner
       tier
       hoursleft
+      notesleft
       __typename
     }
   }
@@ -106,6 +60,7 @@ export const onDeleteUserSubscription = /* GraphQL */ `
       owner
       tier
       hoursleft
+      notesleft
       __typename
     }
   }
