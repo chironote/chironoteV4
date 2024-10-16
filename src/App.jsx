@@ -18,7 +18,6 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
-import TermsAndConditions from './components/AuthUI/TermsAndConditions';
 import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
 import PriceTable from './components/Account/PriceTable';
@@ -43,7 +42,7 @@ const components = {
             value="yes"
             label={
               <>
-                I agree with the <a href="https://www.termsfeed.com/public/uploads/2021/12/sample-terms-conditions-agreement.pdf" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+                I agree with the <a href="http://public-docs-and-agreements.s3-website.us-east-2.amazonaws.com" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
               </>
             }
             required={true}
@@ -384,7 +383,6 @@ function App({ signOut, user }) {
             } />
             <Route path="/account" element={<Account />} />
             <Route path="/feedback" element={<Feedback />} />
-            <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
             <Route path="/pricingplans" element={<PriceTable />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

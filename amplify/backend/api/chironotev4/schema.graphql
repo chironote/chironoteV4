@@ -1,14 +1,8 @@
-type Todo @model @auth(rules: [{ allow: owner }]) {
-  id: ID!
-  name: String!
-  description: String
-  owner: String
-}
-
 type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey
   tier: String!
   hoursleft: Float!
+  notesleft: Int
 }
 
 type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {

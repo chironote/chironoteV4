@@ -1,11 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import "./Feedback.css";
+import { fetchUserAttributes } from 'aws-amplify/auth';
 
 function Feedback() {
   const [subject, setSubject] = useState('Feedback');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+
+  useEffect(() => {
+    async function getUserEmail() {
+      try {
+        const attributes = await fetchUserAttributes();
+        setUserEmail(attributes.email);
+      } catch (error) {
+        console.error('Error fetching user attributes:', error);
+      }
+    }
+    getUserEmail();
+  }, []);
 
   const handleSubjectChange = (event) => {
     setSubject(event.target.value);
@@ -30,7 +44,7 @@ function Feedback() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: message, subject }),
+        body: JSON.stringify({ content: message, subject, userEmail }),
       });
 
       if (response.ok) {

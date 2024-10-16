@@ -2,6 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import NoSleep from 'nosleep.js';
 
+
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -14,9 +15,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const noSleepRef = useRef(null);
 
   const isRecordingRef = useRef(false);
+  const isPausedRef = useRef(false);
+
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
 
   useEffect(() => {
     noSleepRef.current = new NoSleep();
@@ -126,7 +133,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
       setIsRecording(false);
+      isRecordingRef.current = false;
       setIsPaused(false);
+      isPausedRef.current = false;
       mediaRecorderRef.current.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -176,10 +185,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const startRecording = async () => {
+
+
     await setupRecorder();
     if (mediaRecorderRef.current) {
-            setIsRecording(true);
+      setIsRecording(true);
+      isRecordingRef.current = true;
       setIsPaused(false);
+      isPausedRef.current = false;
       timeStampRef.current = Date.now();
       mediaRecorderRef.current.start();
       
@@ -192,14 +205,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 50000);
+      }, 1000000);
     }
   };
 
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && isRecordingRef.current) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
+      isPausedRef.current = true;
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
@@ -207,16 +221,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const resumeRecording = () => {
-    if (mediaRecorderRef.current && isPaused) {
+    if (mediaRecorderRef.current && isPausedRef.current) {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
+      isPausedRef.current = false;
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 50000);
+      }, 1000000);
     }
   };
 

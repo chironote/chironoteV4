@@ -3,17 +3,28 @@ import { RealtimeTranscriber } from 'assemblyai';
 import RecordRTC from 'recordrtc';
 import NoSleep from 'nosleep.js';
 import './Recording.css';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import * as queries from '../../graphql/queries';
+import * as mutations from '../../graphql/mutations';
+import CreditPopup from './CreditLimit';
+
+const client = generateClient();
 
 function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
   const [state, setState] = useState('initial'); // 'initial', 'loading', 'ready', 'recording', 'finalizing'
   const [transcription, setTranscription] = useState('');
   const [finalizationStatus, setFinalizationStatus] = useState('');
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [userSubscription, setUserSubscription] = useState(null);
+  const [showCreditPopup, setShowCreditPopup] = useState(false);
+  const [timer, setTimer] = useState(0);
   const rtRef = useRef(null);
   const recorder = useRef(null);
   const streamRef = useRef(null);
   const noSleepRef = useRef(null);
   const hasStartedRecording = useRef(false);
+  const timerIntervalRef = useRef(null);
 
   useEffect(() => {
     noSleepRef.current = new NoSleep();
@@ -23,6 +34,39 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       }
     };
   }, []);
+
+  const fetchUserSubscription = async () => {
+    try {
+      const user = await getCurrentUser();
+      const subscriptionData = await client.graphql({
+        query: queries.getUserSubscription,
+        variables: { owner: user.username }
+      });
+      setUserSubscription(subscriptionData.data.getUserSubscription);
+      return subscriptionData.data.getUserSubscription;
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      return null;
+    }
+  };
+
+  const updateUserSubscriptionHours = async (hoursUsed) => {
+    try {
+      const user = await getCurrentUser();
+      const updatedSubscription = await client.graphql({
+        query: mutations.updateUserSubscription,
+        variables: {
+          input: {
+            owner: user.username,
+            hoursleft: userSubscription.hoursleft - hoursUsed
+          }
+        }
+      });
+      setUserSubscription(updatedSubscription.data.updateUserSubscription);
+    } catch (error) {
+      console.error("Error updating user subscription:", error);
+    }
+  };
 
   const fetchAssemblyAIToken = async () => {
     try {
@@ -68,6 +112,13 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const startRecording = async () => {
     try {
+      const subscription = await fetchUserSubscription();
+      if (!subscription || subscription.hoursleft <= 0) {
+        console.error('User has no remaining hours');
+        setShowCreditPopup(true);
+        return;
+      }
+
       setState('loading');
       const token = await fetchAssemblyAIToken();
       console.log('Token fetched');
@@ -123,6 +174,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
+      startTimer();
     }
   };
 
@@ -132,6 +184,7 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       recorder.current.stopRecording(() => {
         setState('finalizing');
         setFinalizationStatus('Finalizing punctuation');
+        stopTimer();
         
         setTimeout(() => {
           setIsFinalizing(true);
@@ -146,7 +199,23 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
         if (noSleepRef.current) {
           noSleepRef.current.disable();
         }
+
+        const hoursUsed = timer / 3600; // Convert seconds to hours
+        updateUserSubscriptionHours(hoursUsed);
       });
+    }
+  };
+
+  const startTimer = () => {
+    setTimer(0);
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(prevTimer => prevTimer + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
     }
   };
 
@@ -204,76 +273,91 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       noSleepRef.current.disable();
     }
     
+    // Stop timer
+    stopTimer();
+    
     // Reset state
     setState('initial');
     setTranscription('');
     setFinalizationStatus('');
     setIsFinalizing(false);
+    setTimer(0);
     
     // Close the popup
     console.log('Closing popup');
     toggleDictationPopup();
   };
 
+  const handleCloseCreditPopup = () => {
+    setShowCreditPopup(false);
+    toggleDictationPopup(); // Close the dictation popup
+  };
+
   return (
     <div className="create-note-popup">
       <div className="popup-content">
-        <div className="close-button-container">
-          <button className="close-btn" onClick={handleClose}>×</button>
-        </div>
-        <div className="recording-controls">
-          {state === 'loading' && (
-            <div>
-              <div>Loading Speech to Text...</div>
-              <div className="recording-container inactive">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="sound-bar standby"></div>
-                ))}
-              </div>
+        {showCreditPopup ? (
+          <CreditPopup onClose={handleCloseCreditPopup} />
+        ) : (
+          <>
+            <div className="close-button-container">
+              <button className="close-btn" onClick={handleClose}>×</button>
             </div>
-          )}
-          {state === 'ready' && (
-            <div>
-              <button 
-                className="stop-recording-btn" 
-                onClick={beginRecording}
-              >
-                Start Recording
-              </button>
-              <div className="recording-container inactive">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="sound-bar standby"></div>
-                ))}
-              </div>
+            <div className="recording-controls">
+              {state === 'loading' && (
+                <div>
+                  <div>Loading Speech to Text...</div>
+                  <div className="recording-container inactive">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="sound-bar standby"></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {state === 'ready' && (
+                <div>
+                  <button 
+                    className="stop-recording-btn" 
+                    onClick={beginRecording}
+                  >
+                    Start Recording
+                  </button>
+                  <div className="recording-container inactive">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index} className="sound-bar standby"></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {state === 'recording' && (
+                <div className="recording-status">
+                  <button className="stop-recording-btn" onClick={stopRecording}>
+                    Stop Recording
+                  </button>
+                  <div className="recording-container active">
+                    {[...Array(5)].map((_, index) => (
+                      <div key={index}
+                        style={{ 'animationDelay': `${index * 0.2}s` }}
+                        className="sound-bar"
+                      ></div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-          {state === 'recording' && (
-            <div className="recording-status">
-              <button className="stop-recording-btn" onClick={stopRecording}>
-                Stop Recording
-              </button>
-              <div className="recording-container active">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index}
-                    style={{ 'animationDelay': `${index * 0.2}s` }}
-                    className="sound-bar"
-                  ></div>
-                ))}
-              </div>
+            {finalizationStatus && (
+              <div className="recording-controls" style={{ marginBottom: '30px' }}>
+              {finalizationStatus}
             </div>
-          )}
-        </div>
-        {finalizationStatus && (
-          <div className="recording-controls" style={{ marginBottom: '30px' }}>
-          {finalizationStatus}
-        </div>
+            )}
+            <textarea
+              className="dictation-textarea"
+              value={transcription}
+              readOnly
+              placeholder="Transcription will appear here..."
+            />
+          </>
         )}
-        <textarea
-          className="dictation-textarea"
-          value={transcription}
-          readOnly
-          placeholder="Transcription will appear here..."
-        />
       </div>
     </div>
   );

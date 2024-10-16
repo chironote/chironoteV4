@@ -1,21 +1,67 @@
 import React, { useState, useRef, useEffect } from 'react';
 import arrowLeftIcon from '../assets/arrow-left.svg';
+import { generateClient } from 'aws-amplify/api';
+import { getCurrentUser } from 'aws-amplify/auth';
+import * as queries from '../graphql/queries';
+import * as mutations from '../graphql/mutations';
+import CreditPopup from './Recording/CreditLimit';
+import './Recording/CreditLimit.css';
 
 const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws";
+const client = generateClient();
 
 const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardContent, setClipboardContent, userId, onTextStreamUpdate }) => {
   const [textStream, setTextStream] = useState('');
   const [isDragging, setIsDragging] = useState(false);
+  const [userSubscription, setUserSubscription] = useState(null);
+  const [showCreditPopup, setShowCreditPopup] = useState(false);
   const textareaRef = useRef(null);
 
-  const editStream = async (editInput) => {
-    // Clear the clipboard content immediately when the button is clicked
-    setClipboardContent("Loading Updated Note...");
-    // Reset the textStream state at the beginning of each editStream call
-    setTextStream('');
-
+  const fetchUserSubscription = async () => {
     try {
-            const response = await fetch(LAMBDA_URL, {
+      const user = await getCurrentUser();
+      const subscriptionData = await client.graphql({
+        query: queries.getUserSubscription,
+        variables: { owner: user.username }
+      });
+      setUserSubscription(subscriptionData.data.getUserSubscription);
+      return subscriptionData.data.getUserSubscription;
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      return null;
+    }
+  };
+
+  const updateUserSubscriptionNotes = async (subscription) => {
+    try {
+      const updatedSubscription = await client.graphql({
+        query: mutations.updateUserSubscription,
+        variables: {
+          input: {
+            owner: subscription.owner,
+            notesleft: subscription.notesleft - 1
+          }
+        }
+      });
+      setUserSubscription(updatedSubscription.data.updateUserSubscription);
+    } catch (error) {
+      console.error("Error updating user subscription:", error);
+    }
+  };
+
+  const editStream = async (editInput) => {
+    try {
+      const subscription = await fetchUserSubscription();
+      if (!subscription || subscription.notesleft <= 0) {
+        console.error('User has no remaining notes');
+        setShowCreditPopup(true);
+        return;
+      }
+
+      setClipboardContent("Loading Updated Note...");
+      setTextStream('');
+
+      const response = await fetch(LAMBDA_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,13 +88,12 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
         
         setTextStream((prevText) => {
           const newText = prevText + text;
-          // Update the clipboard content directly with the streamed text
           onTextStreamUpdate(newText);
           return newText;
         });
       }
 
-      // Clear the edit content after streaming is complete
+      await updateUserSubscriptionNotes(subscription);
       setEditContent('');
       
     } catch (error) {
@@ -91,39 +136,47 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
     };
   }, [editContent]);
 
+  const handleCloseCreditPopup = () => {
+    setShowCreditPopup(false);
+  };
+
   return (
     <section className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
-      <h4>Note Updater</h4>
-      
-        <textarea
-          ref={textareaRef}
-          className="edit-textarea"
-          placeholder="Enter any changes you wish applied to the note on the left here..."
-          value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
-          draggable="true"
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        />
-      
+      {showCreditPopup ? (
+        <CreditPopup onClose={handleCloseCreditPopup} />
+      ) : (
+        <>
+          <h4>Note Updater</h4>
+          
+          <textarea
+            ref={textareaRef}
+            className="edit-textarea"
+            placeholder="Enter any changes you wish applied to the note on the left here..."
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            draggable="true"
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          />
+          
+          <a
+            href="javascript:void(0)"
+            className="clear-edit-link"
+            onClick={(e) => { e.preventDefault(); setEditContent(''); }}
+          >
+            Clear text
+          </a>
 
-      {/* Link to clear the text area */}
-      <a
-        href="javascript:void(0)"
-        className="clear-edit-link"
-        onClick={(e) => { e.preventDefault(); setEditContent(''); }}
-      >
-        Clear text
-      </a>
-
-      {/* Button to apply changes from the textarea to clipboard content */}
-      <button
-        className="apply-changes-button"
-        onClick={() => editStream(editContent)}
-      >
-        <img src={arrowLeftIcon} alt="Arrow Left" className="button-icon left-arrow" />
-        <span>Apply Changes</span>
-      </button>
+          <button
+            className="apply-changes-button"
+            onClick={() => editStream(editContent)}
+            disabled={showCreditPopup}
+          >
+            <img src={arrowLeftIcon} alt="Arrow Left" className="button-icon left-arrow" />
+            <span>Apply Changes</span>
+          </button>
+        </>
+      )}
     </section>
   )
 }
