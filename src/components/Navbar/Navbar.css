@@ -1,117 +1,42 @@
-/* Header styling */
-.app-header {
-  min-height: 70px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--off-white);
+/* Navbar styling */
+.navbar {
   background-color: var(--dark-green);
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Mobile navigation - hidden by default */
-.mobile-nav {
-  display: none;
-}
-
-/* Menu button */
-.mobile-nav .menu-button {
-  border: none;
-  margin-top: 5px;
-  background: none;
-  cursor: pointer;
-}
-
-.mobile-nav .menu-button span {
-  font-size: 1.5rem;
-  color: var(--off-white);
-}
-
-/* Dropdown menu */
-.mobile-nav .dropdown-menu {
-  position: absolute;
-  right: 0;
-  padding: 0;
-  z-index: 1000;
-  opacity: 0;
-  transform: scale(0.5);
-  transform-origin: top;
-  pointer-events: none;
-  overflow: hidden;
-  list-style-type: none;
-  border-radius: 0 0 8px 8px;
-  box-shadow: -6px 5px 5px rgba(0, 0, 0, 0.2);
-  transition: all 0.1s ease;
-  background-color: var(--dark-green);;
-}
-
-.mobile-nav .dropdown-menu .nav-item {
-  padding: 10px 20px;
-}
-
-.mobile-nav .dropdown-menu.open {
-  opacity: 1;
-  transform: scale(1);
-  pointer-events: auto;
-}
-
-.mobile-nav .dropdown-menu .nav-link {
-  color: var(--off-white);
+/* Brand section with logos */
+.navbar-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  text-decoration: none;
 }
 
-.mobile-nav .dropdown-menu .nav-link span {
-  font-size: 1.3rem;
+.navbar-logo {
+  display: none; /* Hide the icon logo */
 }
 
-/* Logo container */
-.app-header .logo-container {
-  display: flex;
-  align-items: center;
-  transition: transform 0.3s ease;
-}
-
-
-
-.logo {
-  width: 60px;
-  height: 60px;
-  background-color: var(--pale-green);
-  display:none;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: all 0.3s ease, clip-path 0.3s ease;
-  clip-path: polygon(50% 10%, 0% 82%, 100% 82%);/* Added triangle shape */
-}
-
-.logo-container .logo img {
-  width: 80%;
-  height: 80%;
-  object-fit: contain;
-}
-
-
-
-
-/* Text logo */
-.logo-container .text-logo {
-  height: 40px;
+.navbar-text-logo {
+  height: 30px;
   width: auto;
-  background-color: rgba(197, 225, 198, 0);
 }
 
-/* Navigation menu */
-.navbar .nav-list {
+/* Desktop Navigation */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+}
+
+.nav-list {
   display: flex;
   gap: 20px;
   list-style-type: none;
+  margin: 0;
+  padding: 0;
 }
 
-.nav-list .nav-item .nav-link {
+.nav-item .nav-link {
   color: var(--off-white);
   text-decoration: none;
   font-size: 1rem;
@@ -123,24 +48,51 @@
   transition: all 0.3s ease;
 }
 
-.nav-list .nav-item .nav-link span {
+.nav-item .nav-link span {
   font-size: 1.5rem;
 }
 
-.nav-list .nav-item .nav-link:hover {
+.nav-item .nav-link:hover {
   color: var(--pale-green);
   background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Logout link */
-.nav-list .nav-item .logout-link:hover {
+.nav-item .logout-link:hover {
   color: var(--pure-white);
   background-color: #ff4757;
 }
 
-/* Responsive styles for mobile */
+/* Mobile Navigation */
+.mobile-nav {
+  display: none;
+}
+
+.menu-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.menu-button img {
+  height: 24px;
+  width: auto;
+}
+
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--dark-green);
+  padding: 1rem;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive styles */
 @media (max-width: 768px) {
-  .app-header :where(.desktop-nav, .logo) {
+  .desktop-nav {
     display: none;
   }
 
@@ -148,30 +100,12 @@
     display: block;
   }
 
-  .app-header {
-    flex-direction: row;
-  }
-
-  .navbar .nav-list {
+  .mobile-menu .nav-list {
     flex-direction: column;
-    align-items: center;
-    margin-top: 10px;
+    gap: 10px;
   }
 
-  .navbar .nav-list .nav-item {
-    margin: 5px 0;
-  }
-
-  .logo-container .logo {
-    width: 50px;
-    height: 50px;
-  }
-
-  .logo-container .logo-text {
-    font-size: 1.6rem;
-  }
-
-  .logo-container .text-logo {
-    height: 30px;
+  .navbar-text-logo {
+    height: 25px;
   }
 }

@@ -76,7 +76,7 @@ function Account({ setCurrentPage }) {
 
   const handlePlanAction = async () => {
     if (currentPlan === 'free') {
-      navigate('/pricingplans');
+      navigate('/app/pricingplans');
     } else {
       setIsLoading(true);
       try {

@@ -1,107 +1,85 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import Logo from '../../assets/logo.svg';
-import TextLogo from '../../assets/textlogo.svg';
-import { NAV_LINKS } from '../../constants/constants';
-import { signOut } from 'aws-amplify/auth';
-import "./Navbar.css"
+import React, { useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import './Navbar.css';
+import logo from '../../assets/logo.svg';
+import textlogo from '../../assets/textlogo.svg';
+import menu from '../../assets/menu.svg';
 
-function Navbar() {
+export default function Navbar({ username, onSignOut }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const menuRef = useRef(null);
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      console.log('User signed out successfully');
-      navigate('/login');
-    } catch (error) {
-      console.log('error signing out: ', error);
-    }
+  const isOnDashboard = location.pathname === '/app';
+
+  const links = [
+    ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
+    { name: 'Account', path: '/app/account', icon: 'person' },
+    { name: 'Feedback', path: '/app/feedback', icon: 'feedback' }
+  ];
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    onSignOut();
   };
-
-  const toggleMenu = () => {
-    setIsMenuOpen(prev => !prev);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setIsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   return (
-    <header className="app-header">
-      <div className="logo-container" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-        <img src={Logo} alt="ChiroNote Logo" className="logo" />
-        <img src={TextLogo} alt="ChiroNote" className="text-logo" />
+    <nav className="navbar">
+      <div className="navbar-brand">
+        <img src={logo} alt="Logo" className="navbar-logo" />
+        <img src={textlogo} alt="Text Logo" className="navbar-text-logo" />
       </div>
 
-      <nav className="navbar desktop-nav">
+      {/* Desktop Navigation */}
+      <div className="navbar-nav desktop-nav">
         <ul className="nav-list">
-          {NAV_LINKS.map(link => {
-            if (link.path === '/' && location.pathname === '/') {
-              return null;
-            }
-
-            return link.path ? (
-              <li key={link.path} className="nav-item">
-                <a href="#" onClick={() => navigate(link.path)} className="nav-link">
-                  <span className="material-symbols-rounded">{link.icon}</span>
-                  {link.name}
-                </a>
-              </li>
-            ) : (
-              <li key={link.name} className="nav-item">
-                <a href="#" onClick={handleLogout} className="nav-link logout-link">
-                  <span className="material-symbols-rounded">{link.icon}</span>
-                  {link.name}
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="navbar mobile-nav" ref={menuRef}>
-        <button onClick={toggleMenu} className="menu-button">
-          <span className="material-symbols-rounded">menu</span>
-        </button>
-        <ul className={`dropdown-menu ${isMenuOpen ? 'open' : ''}`}>
-          {NAV_LINKS.map(link => {
-            if (link.path === '/' && location.pathname === '/') {
-              return null;
-            }
-
-            return link.path ? (
-              <li key={link.path} className="nav-item">
-                <a href="#" onClick={() => { setIsMenuOpen(false); navigate(link.path); }} className="nav-link">
-                  <span className="material-symbols-rounded">{link.icon}</span>
-                  {link.name}
-                </a>
-              </li>
-            ) : (
-              <li key={link.name} className="nav-item">
-                <a href="#" onClick={handleLogout} className="nav-link logout-link">
-                  <span className="material-symbols-rounded">{link.icon}</span>
-                  {link.name}
-                </a>
-              </li>
-            );
-          })}
+          {links.map((link) => (
+            <li key={link.path} className="nav-item">
+              <Link to={link.path} className="nav-link">
+                <span className="material-symbols-rounded">{link.icon}</span>
+                {link.name}
+              </Link>
+            </li>
+          ))}
+          <li key="logout" className="nav-item">
+            <a href="#" onClick={handleLogout} className="nav-link logout-link">
+              <span className="material-symbols-rounded">logout</span>
+              Logout
+            </a>
+          </li>
         </ul>
       </div>
-    </header>
+
+      {/* Mobile Navigation */}
+      <div className="mobile-nav">
+        <button className="menu-button" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+          <img src={menu} alt="Menu" />
+        </button>
+        {isMenuOpen && (
+          <div className="mobile-menu">
+            <ul className="nav-list">
+              {links.map((link) => (
+                <li key={link.name} className="nav-item">
+                  <Link 
+                    to={link.path} 
+                    className="nav-link"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <span className="material-symbols-rounded">{link.icon}</span>
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+              <li key="logout" className="nav-item">
+                <a href="#" onClick={handleLogout} className="nav-link logout-link">
+                  <span className="material-symbols-rounded">logout</span>
+                  Logout
+                </a>
+              </li>
+            </ul>
+          </div>
+        )}
+      </div>
+    </nav>
   );
 }
-
-export default Navbar;

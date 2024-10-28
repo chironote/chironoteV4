@@ -4,6 +4,7 @@
   margin: 0 auto;
   padding: 20px;
   box-sizing: border-box;
+  text-align: center;
 }
 
 /* Headings */
@@ -11,11 +12,13 @@ h1,
 h2,
 h3 {
   margin-bottom: 30px;
+  text-align: center;
 }
 
 /* Account info section */
 .account-container .account-info {
   margin-bottom: 50px;
+  text-align: center;
 }
 
 .account-info label {
@@ -64,6 +67,7 @@ h3 {
 /* Subscription options */
 .subscription-info {
   margin-top: 30px;
+  text-align: center;
 }
 
 .subscription-info .subscription-status {
@@ -71,7 +75,7 @@ h3 {
   gap: 15px;
   width: 100%;
   margin-bottom: 30px;
-  justify-content: space-between;
+  justify-content: center;
 }
 
 .subscription-option {
@@ -79,10 +83,11 @@ h3 {
   padding: 15px;
   cursor: pointer;
   border-radius: 8px;
-  width: calc(60vw / 3);
+  width: 30%;
   border: 1px solid var(--medium-green);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  text-align: center;
 }
 
 .subscription-option:hover {
@@ -100,16 +105,19 @@ h3 {
   font-size: 1.4rem;
   font-weight: bold;
   margin-bottom: 15px;
+  text-align: center;
 }
 
 .subscription-option .option-features li {
   list-style: none;
   margin-bottom: 10px;
+  text-align: center;
 }
 
 /* Hours remaining box */
 .subscription-info .hours-remaining {
   margin-top: 30px;
+  text-align: center;
 }
 
 .subscription-info .hours-box {

@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "{\"createdOn\":\"Windows\",\"createdBy\":\"Amplify\",\"createdWith\":\"12.12.6\",\"stackType\":\"hosting-S3AndCloudFront\",\"metadata\":{}}",
+  "Description": "{\"createdOn\":\"Windows\",\"createdBy\":\"Amplify\",\"createdWith\":\"12.13.0\",\"stackType\":\"hosting-S3AndCloudFront\",\"metadata\":{\"whyContinueWithGen1\":\"\"}}",
   "Parameters": {
     "env": {
       "Type": "String"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react'; 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
@@ -14,11 +14,12 @@ import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
+import LandingPage from './components/LandingPage/LandingPage';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
-import { CONNECTION_STATE_CHANGE, ConnectionState } from 'aws-amplify/api';
+import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
 import PriceTable from './components/Account/PriceTable';
 
@@ -69,10 +70,36 @@ const extractPlainText = (html) => {
 };
 
 // Helper function to get the first sentence or a substring
-const getFirstSentenceOrSubstring = (text, maxLength = 50) => {
+const getFirstSentenceOrSubstring = (text, maxLength = 89) => {
   if (!text) return 'Empty';
-  const firstSentence = text.split('.')[0].trim();
-  return firstSentence.length > maxLength ? firstSentence.substring(0, maxLength) + '...' : firstSentence;
+  
+  if (text.length <= maxLength) return text;
+  
+  const substring = text.substring(0, maxLength);
+  const lastSpaceIndex = substring.lastIndexOf(' ');
+  
+  if (lastSpaceIndex === -1) return substring + '...';
+  
+  return substring.substring(0, lastSpaceIndex) + '...';
+};
+
+// **Updated Helper Function to Format Timestamp**
+const formatTimestamp = (timestamp) => {
+  const numTimestamp = Number(timestamp);
+  const date = new Date(numTimestamp);
+  
+  // Get weekday and time separately
+  const weekday = date.toLocaleString(undefined, {
+    weekday: 'short'
+  });
+  
+  const time = date.toLocaleString(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  });
+
+  return { day: weekday, time: time };
 };
 
 // Component to render list items (Notes or Transcripts)
@@ -85,6 +112,9 @@ const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) =
     onDragStart(content);
   };
 
+  // **Format the timestamp**
+  const { day, time } = formatTimestamp(item.timestamp);
+
   return (
     <div
       className={`list-item ${isNew ? 'highlight' : ''}`}
@@ -92,13 +122,18 @@ const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) =
       draggable
       onDragStart={handleDragStart}
       onMouseEnter={onMouseEnter}
+      style={{ display: 'flex', alignItems: 'center' }}
     >
-      {displayText}
+      <div className="timestamp">
+        <span className="day">{day}</span>
+        <span className="time">{time}</span>
+      </div>
+      <div className="content">{displayText}</div>
     </div>
   );
 };
 
-function App({ signOut, user }) {
+function AuthenticatedApp({ signOut, user }) {
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
@@ -122,18 +157,16 @@ function App({ signOut, user }) {
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
 
-  // Define handleTextStreamUpdate before using it
   const handleTextStreamUpdate = useCallback((newText) => {
     setStreamingText(newText);
     setClipboardContent(newText);
-    setShowRecordingPopup(false); // Close the recording popup when text stream starts
+    setShowRecordingPopup(false);
   }, []);
 
   const recordingManager = RecordingManager({ 
     onTextStreamUpdate: handleTextStreamUpdate
   });
 
-  // Fetch initial notes and transcripts
   useEffect(() => {
     const fetchNotes = async () => {
       setIsLoading(true);
@@ -156,9 +189,7 @@ function App({ signOut, user }) {
     fetchNotes();
   }, [user.username]);
 
-  // Subscribe to updates of Notes and Transcripts
   useEffect(() => {
-    // Hub listener for connection state changes
     const hubListener = Hub.listen('api', (data) => {
       const { payload } = data;
       if (payload.event === CONNECTION_STATE_CHANGE) {
@@ -167,7 +198,6 @@ function App({ signOut, user }) {
       }
     });
 
-    // GraphQL subscription
     const subscription = client.graphql({ 
       query: subscriptions.onUpdateNotesByOwner,
       variables: { owner: user.username }
@@ -176,42 +206,38 @@ function App({ signOut, user }) {
         console.log('Received data from subscription:', data);
         const updatedData = data.onUpdateNotesByOwner;
         
-        // Handle note update
         if (updatedData.note && updatedData.note.trim() !== "") {
           console.log('New note:', updatedData.note);
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedNotes.slice(0, 10); // Keep only the most recent 10 notes
+            return updatedNotes.slice(0, 10);
           });
         }
         
-        // Handle transcript update
         if (updatedData.transcript && updatedData.transcript.trim() !== "") {
           console.log('New transcript:', updatedData.transcript);
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedTranscripts.slice(0, 10); // Keep only the most recent 10 transcripts
+            return updatedTranscripts.slice(0, 10);
           });
         }
       },
       error: (error) => console.warn(error)
     });
 
-    // Cleanup function
     return () => {
       subscription.unsubscribe();
+      hubListener();
     };
   }, [user.username, newItems]);
 
-  // Toggle the visibility of the edit panel
   const toggleEditPanel = () => {
     setShowEditPanel(prev => !prev);
     if (!showEditPanel) setEditContent('');
   };
 
-  // Toggle recording popup visibility
   const toggleRecordingPopup = (type) => {
     if (recordingManager.isRecording) {
       recordingManager.stopRecording();
@@ -221,25 +247,21 @@ function App({ signOut, user }) {
     }
   };
 
-  // Toggle dictation popup visibility
   const toggleDictationPopup = () => {
     setShowDictationPopup(prev => !prev);
   };
 
-  // Show or hide content popup
   const toggleContentPopup = (content) => {
     setSelectedContent(showNotes ? content.note : content.transcript);
     setShowContentPopup(prev => !prev);
     setShowPopupMenu(false);
   };
 
-  // Show or hide popup menu
   const togglePopupMenu = (e) => {
     e.stopPropagation();
     setShowPopupMenu(prev => !prev);
   };
 
-  // Copy text to clipboard and show feedback message
   const handleCopy = (isPopupMenu = false) => {
     const plainText = extractPlainText(selectedContent);
     navigator.clipboard.writeText(plainText)
@@ -253,7 +275,6 @@ function App({ signOut, user }) {
       .catch(err => alert('Failed to copy!'));
   };
 
-  // Send content to clipboard and update state
   const handleSendToClipboard = () => {
     const plainText = extractPlainText(selectedContent);
     setClipboardContent(plainText);
@@ -261,7 +282,6 @@ function App({ signOut, user }) {
     setShowContentPopup(false);
   };
 
-  // Handle copy-paste action from clipboard
   const handleCopyPaste = useCallback((e) => {
     const plainText = extractPlainText(clipboardContent);
     navigator.clipboard.writeText(plainText);
@@ -270,14 +290,12 @@ function App({ signOut, user }) {
     copyMessageTimeoutRef.current = setTimeout(() => setShowCopyMessage(false), 1000);
   }, [clipboardContent]);
 
-  // Cleanup on component unmount
   useEffect(() => {
     return () => {
       if (copyMessageTimeoutRef.current) clearTimeout(copyMessageTimeoutRef.current);
     };
   }, []);
 
-  // Handle keydown events for closing popups
   const handleKeyDown = (event) => {
     if (event.key === 'Escape') setShowContentPopup(false);
   };
@@ -287,7 +305,6 @@ function App({ signOut, user }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Remove highlight on mouse enter
   const removeHighlight = (timestamp) => {
     setNewItems(prevNewItems => {
       const updatedNewItems = new Set(prevNewItems);
@@ -296,7 +313,6 @@ function App({ signOut, user }) {
     });
   };
 
-  // Render notes or transcripts based on current state
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
     if (isLoading) {
@@ -327,110 +343,111 @@ function App({ signOut, user }) {
   }, []);
 
   return (
+    <div className="app">
+      <Navbar 
+        username={user.username}
+        onSignOut={signOut}
+      />
+
+      <Routes>
+        <Route path="/" element={
+          <main className="app-main">
+            <section className={`left-panel ${queryLoaded ? 'left-panel-animate' : ''}`}>
+              <h2 className="panel-header">History</h2>
+              <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
+              <div className="list-container">
+                {renderItems()}
+              </div>
+            </section>
+
+            <section className="clipboard-container">
+              <h2 className="section-header">Current Note</h2>
+              <ClipboardButtons 
+                toggleRecordingPopup={toggleRecordingPopup} 
+                toggleDictationPopup={toggleDictationPopup}
+                toggleEditPanel={toggleEditPanel} 
+              />
+
+              <Clipboard
+                clipboardTextareaRef={clipboardTextareaRef}
+                clipboardContent={clipboardContent}
+                handleCopyPaste={handleCopyPaste}
+                setClipboardContent={setClipboardContent}
+                showCopyMessage={showCopyMessage}
+                draggedContent={draggedContent}
+              />
+            </section>
+
+            <EditPanel 
+              showEditPanel={showEditPanel} 
+              editContent={editContent} 
+              setEditContent={setEditContent} 
+              clipboardContent={clipboardContent}
+              setClipboardContent={setClipboardContent}
+              userId={user.username}
+              onTextStreamUpdate={handleTextStreamUpdate}
+            />
+
+            {showRecordingPopup && (
+              <Recording
+                toggleRecordingPopup={toggleRecordingPopup}
+                recordingType={recordingType}
+                isRecording={recordingManager.isRecording}
+                isPaused={recordingManager.isPaused}
+                isPreparingTranscript={recordingManager.isPreparingTranscript}
+                isGeneratingSummary={recordingManager.isGeneratingSummary}
+                startRecording={recordingManager.startRecording}
+                stopRecording={recordingManager.stopRecording}
+                pauseRecording={recordingManager.pauseRecording}
+                resumeRecording={recordingManager.resumeRecording}
+              />
+            )}
+
+            {showDictationPopup && (
+              <Dictation
+                toggleDictationPopup={toggleDictationPopup}
+                onTextStreamUpdate={handleTextStreamUpdate}
+              />
+            )}
+
+            {showContentPopup && (
+              <ContentPopup 
+                setShowContentPopup={setShowContentPopup} 
+                setShowPopupMenu={setShowPopupMenu} 
+                showNotes={showNotes} 
+                showPopupMenu={showPopupMenu} 
+                togglePopupMenu={togglePopupMenu} 
+                handleCopy={handleCopy} 
+                handleSendToClipboard={handleSendToClipboard} 
+                selectedContent={selectedContent} 
+                showPopupCopyMessage={showPopupCopyMessage} 
+              />
+            )}
+          </main>
+        } />
+        <Route path="/account" element={<Account />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/pricingplans" element={<PriceTable />} />
+      </Routes>
+    </div>
+  );
+}
+
+const ProtectedApp = withAuthenticator(AuthenticatedApp, {
+  components,
+  services,
+});
+
+function App() {
+  return (
     <Router>
-      <div className="app">
-        <Navbar 
-          username={user.username}
-          onSignOut={signOut}
-        />
-
-        <main className="app-main">
-          <Routes>
-            <Route path="/" element={
-              <>
-                {/* Left panel: Toggle between Notes and Transcripts */}
-                <section className={`left-panel ${queryLoaded ? 'left-panel-animate' : ''}`}>
-                  <h2 className="panel-header">History</h2>
-                  <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
-
-                  {/* Render list of items based on selected toggle */}
-                  <div className="list-container">
-                    {renderItems()}
-                  </div>
-                </section>
-
-                {/* Clipboard container: Displays the current note with actions */}
-                <section className="clipboard-container">
-                  <h2 className="section-header">Current Note</h2>
-                  <ClipboardButtons 
-                    toggleRecordingPopup={toggleRecordingPopup} 
-                    toggleDictationPopup={toggleDictationPopup}
-                    toggleEditPanel={toggleEditPanel} 
-                  />
-
-                  {/* Clipboard area for note taking */}
-                  <Clipboard
-                    clipboardTextareaRef={clipboardTextareaRef}
-                    clipboardContent={clipboardContent}
-                    handleCopyPaste={handleCopyPaste}
-                    setClipboardContent={setClipboardContent}
-                    showCopyMessage={showCopyMessage}
-                    draggedContent={draggedContent}
-                  />
-                </section>
-
-                {/* Edit panel for updating notes */}
-                <EditPanel 
-                  showEditPanel={showEditPanel} 
-                  editContent={editContent} 
-                  setEditContent={setEditContent} 
-                  clipboardContent={clipboardContent}
-                  setClipboardContent={setClipboardContent}
-                  userId={user.username}
-                  onTextStreamUpdate={handleTextStreamUpdate}
-                />
-              </>
-            } />
-            <Route path="/account" element={<Account />} />
-            <Route path="/feedback" element={<Feedback />} />
-            <Route path="/pricingplans" element={<PriceTable />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
-
-        {/* Popup for recording options */}
-        {showRecordingPopup && (
-          <Recording
-            toggleRecordingPopup={toggleRecordingPopup}
-            recordingType={recordingType}
-            isRecording={recordingManager.isRecording}
-            isPaused={recordingManager.isPaused}
-            isPreparingTranscript={recordingManager.isPreparingTranscript}
-            isGeneratingSummary={recordingManager.isGeneratingSummary}
-            startRecording={recordingManager.startRecording}
-            stopRecording={recordingManager.stopRecording}
-            pauseRecording={recordingManager.pauseRecording}
-            resumeRecording={recordingManager.resumeRecording}
-          />
-        )}
-
-        {/* Popup for dictation options */}
-        {showDictationPopup && (
-          <Dictation
-            toggleDictationPopup={toggleDictationPopup}
-            onTextStreamUpdate={handleTextStreamUpdate}
-          />
-        )}
-
-        {/* Content popup for displaying selected note or transcript */}
-        {showContentPopup && (
-          <ContentPopup 
-            setShowContentPopup={setShowContentPopup} 
-            setShowPopupMenu={setShowPopupMenu} 
-            showNotes={showNotes} 
-            showPopupMenu={showPopupMenu} 
-            togglePopupMenu={togglePopupMenu} 
-            handleCopy={handleCopy} 
-            handleSendToClipboard={handleSendToClipboard} 
-            selectedContent={selectedContent} 
-            showPopupCopyMessage={showPopupCopyMessage} 
-          />
-        )}
-      </div>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app/*" element={<ProtectedApp />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </Router>
   );
 }
 
-export default withAuthenticator(App, {
-  components,
-});
+export default App;

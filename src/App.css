@@ -21,11 +21,34 @@
 .left-panel {
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 10px;
   background-color: var(--pale-green);
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
+}
+
+.timestamp {
+  flex: 0 0 20%;
+  margin-right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.timestamp .day {
+  font-size: 0.9rem;
+  color: var(--dark-green);
+  font-weight: bold;
+}
+
+.timestamp .time {
+  font-size: 0.8rem; 
+  color: var(--dark-green);
+}
+
+.content {
+  text-align: left;
 }
 
 /* Left panel animation */
@@ -412,17 +435,15 @@ input:checked~.slider {
   background-color: var(--off-white);
   border: 1px solid var(--light-green);
   border-radius: 8px;
-  padding: 14px 16px;
+  padding: 5px 3px 5px 10px;
   margin-bottom: 12px;
-  text-align: left;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--dark-green);
   line-height: 1.4;
-  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-word;
 }
 
 .list-item:hover {
@@ -512,6 +533,7 @@ input:checked~.slider {
   width: 24px;
   height: 24px;
   cursor: pointer;
+  display: none;
 }
 
 /* Popup menu */
