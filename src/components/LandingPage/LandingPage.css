@@ -1,365 +1,426 @@
-/* Landing Page Container */
+/* Base Container */
 .landing-page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header Styles */
+.landing-page__header {
+  padding: 20px;
+}
+
+.landing-page__header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 90vw;
+  margin: 0 auto;
+}
+
+.landing-page__logo {
+  height: 40px;
+}
+
+.landing-page__nav {
+  display: flex;
+  gap: 20px;
+}
+
+.landing-page__nav-item {
+  cursor: pointer;
+}
+
+/* Button Styles */
+.landing-page__get-started-button,
+.landing-page__action-button,
+.landing-page__cta-button {
+  padding: 10px 20px;
+  background-color: #075715;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.landing-page__get-started-button:hover,
+.landing-page__action-button:hover,
+.landing-page__cta-button:hover {
+  background-color: #053d0f;
+}
+
+/* Hero Section */
+.landing-page__hero-container {
+  position: relative;
+}
+
+.landing-page__hero-background {
+  position: absolute;
+  top: 50px;
+  left: 1px;
+  width: 100vw;
+  height: 600px;
+  background: url('../../assets/Hero.svg') no-repeat center / cover;
+  z-index: 0;
+  animation: fadeIn 2.2s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+.landing-page__main {
+  padding: 50px 20px;
+  text-align: center;
+  min-height: 600px;
+  position: relative;
+}
+
+.landing-page__main-content {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Entrance Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  
-  /* Header */
-  .landing-page__header {
-    padding: 20px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  .landing-page__header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1200px;
-    margin: 0 auto;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  
-  .landing-page__logo {
-    height: 40px;
+  to {
+    opacity: 1;
   }
-  
-  .landing-page__nav {
-    display: flex;
-    gap: 20px;
-  }
-  
-  .landing-page__nav-item {
-    cursor: pointer;
-  }
-  
-  /* Buttons Shared Styles */
-  .landing-page__get-started-button,
-  .landing-page__action-button,
-  .landing-page__cta-button {
-    padding: 10px 20px;
-    background-color: #086818;
-    color: #fff;
-    border-radius: 5px;
-    text-decoration: none;
-    cursor: pointer;
-  }
-  
-  /* Hero Section */
-  .landing-page__hero-container {
-    position: relative;
-  }
-  
-  .landing-page__main {
-    padding: 50px 20px;
-    text-align: center;
-    background: url('../../assets/Hero.svg') no-repeat center 22px / cover;
-    min-height: 600px;
-    position: relative;
-  }
-  
-  
-  .landing-page__main-content {
-    max-width: 800px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .landing-page__title {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    margin: -60px auto 24px;
-    line-height: 1.2;
-    font-weight: 700;
-    color: #1a1a1a;
-  }
-  
-  .landing-page__subtitle {
-    font-size: clamp(1.2rem, 2vw, 1.25rem);
-    font-weight: 500;
-    color: #666;
-    margin: 0 auto 32px;
-    max-width: 600px;
-    line-height: 1.6;
-  }
-  
-  /* Action Section */
-  .landing-page__action {
-    position: relative;
-    z-index: 1;
-  }
-  
-  /* Testimonials Section */
-  .landing-page__testimonials {
-    display: none;
-    padding: 50px 20px;
-    background-color: #f8f9fa;
-  }
-  
-  .landing-page__testimonials-header {
-    text-align: center;
-    margin-bottom: 40px;
-  }
-  
-  .landing-page__testimonials-title {
-    font-size: 2em;
-    margin-bottom: 20px;
-  }
-  
-  .landing-page__testimonial-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  
-  .landing-page__testimonial-card {
-    background-color: #fff;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .landing-page__testimonial-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
-  }
-  
-  .landing-page__testimonial-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    margin-right: 15px;
-  }
-  
-  .landing-page__testimonial-user {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .landing-page__testimonial-name {
-    font-weight: bold;
-  }
-  
-  .landing-page__testimonial-location {
-    color: #666;
-    font-size: 0.9em;
-  }
-  
-  .landing-page__testimonial-stars {
-    margin-left: auto;
-  }
-  
-  .landing-page__stars-icon {
-    width: 100px;
-  }
-  
-  .landing-page__testimonial-text {
-    color: #333;
-  }
-  
-  /* Features Section */
-  .landing-page__features {
-    padding: 50px 20px;
-  }
-  
-  .landing-page__feature:nth-child(even) {
-    flex-direction: row-reverse;
-  }
-  
+}
+
+.landing-page__title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  margin: -60px auto 24px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #1a1a1a;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.landing-page__subtitle {
+  font-size: clamp(1.2rem, 2vw, 1.25rem);
+  font-weight: 500;
+  color: #666;
+  margin: 0 auto 32px;
+  max-width: 600px;
+  line-height: 1.6;
+  animation: fadeInUp 0.8s ease-out 0.2s forwards;
+  opacity: 0;
+}
+
+/* Action Section */
+.landing-page__action {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-page__action-button {
+  animation: fadeIn 0.6s ease-out 0.4s forwards;
+  opacity: 0;
+}
+
+/* Features Section */
+.landing-page__features {
+  padding: 80px 20px;
+  background-color: none;
+}
+
+.landing-page__feature {
+  display: flex;
+  align-items: center;
+  gap: 50px;
+  max-width: 1200px;
+  margin: 0 auto 50px;
+  opacity: 0;
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.landing-page__feature:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.landing-page__feature:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.landing-page__feature:nth-child(even) {
+  flex-direction: row-reverse;
+}
+
+.landing-page__feature:nth-child(even) .landing-page__feature-content {
+  order: 2;
+}
+
+.landing-page__feature:nth-child(even) .landing-page__feature-image {
+  order: 1;
+}
+
+.landing-page__feature-image {
+  max-width: 500px;
+}
+
+.landing-page__feature-content {
+  flex: 1;
+}
+
+.landing-page__feature-tag,
+.landing-page__cta-tag {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 5px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.landing-page__feature-title,
+.landing-page__cta-title {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+}
+
+.landing-page__feature-description {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Testimonials Section */
+.landing-page__testimonials {
+  display: none;
+  padding: 50px 20px;
+  background-color: #f8f9fa;
+}
+
+.landing-page__testimonials-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.landing-page__testimonials-title {
+  font-size: 2em;
+  margin-bottom: 20px;
+}
+
+.landing-page__testimonial-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-page__testimonial-card {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.landing-page__testimonial-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.landing-page__testimonial-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+.landing-page__testimonial-user {
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-page__testimonial-name {
+  font-weight: bold;
+}
+
+.landing-page__testimonial-location {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.landing-page__testimonial-stars {
+  margin-left: auto;
+}
+
+.landing-page__stars-icon {
+  width: 100px;
+}
+
+.landing-page__testimonial-text {
+  color: #333;
+}
+
+/* Call to Action Section */
+.landing-page__cta {
+  position: relative;
+  padding: 50px 20px;
+  background-color: #f8f9fa;
+  overflow: hidden;
+  opacity: 0;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+.landing-page__cta-content {
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-page__cta-input {
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.landing-page__cta-image {
+  position: absolute;
+  right: 0;
+  bottom: -10px;
+  width: 500px;
+}
+
+.landing-page__cta-circle {
+  position: absolute;
+  left: -100px;
+  top: -100px;
+  width: 200px;
+  height: 200px;
+  background-color: #007bff;
+  border-radius: 50%;
+  opacity: 0.1;
+}
+
+/* Footer */
+.landing-page__footer-divider {
+  height: 1px;
+  background-color: #ddd;
+  margin: 50px 0;
+}
+
+/* Media Queries */
+@media only screen and (max-width: 768px) {
+  /* Features Section Mobile */
   .landing-page__feature {
-    display: flex;
-    align-items: center;
-    gap: 50px;
-    max-width: 1200px;
-    margin: 0 auto 50px;
+    flex-direction: column;
+    gap: 30px;
+    text-align: center;
+    padding: 0 15px;
   }
-  
-  .landing-page__feature:nth-child(even) .landing-page__feature-content {
-    order: 2;
-  }
-  
-  .landing-page__feature:nth-child(even) .landing-page__feature-image {
-    order: 1;
-  }
-  
+
   .landing-page__feature-image {
-    max-width: 500px;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
   }
-  
-  .landing-page__feature-content {
-    flex: 1;
+
+  .landing-page__feature:nth-child(even) .landing-page__feature-content,
+  .landing-page__feature:nth-child(even) .landing-page__feature-image {
+    order: unset;
   }
-  
-  .landing-page__feature-tag,
-  .landing-page__cta-tag {
-    background-color: #d4edda;
-    color: #155724;
-    padding: 5px 10px;
-    border-radius: 20px;
-    display: inline-block;
-    margin-bottom: 10px;
+
+  .landing-page__feature-title {
+    font-size: 1.5em;
   }
-  
-  .landing-page__feature-title,
-  .landing-page__cta-title {
-    font-size: 1.8em;
-    margin-bottom: 20px;
-  }
-  
+
   .landing-page__feature-description {
-    color: #666;
-    line-height: 1.6;
+    font-size: 1rem;
+    text-align: left;
   }
-  
-  /* Call to Action Section */
+
+  /* CTA Section Mobile */
   .landing-page__cta {
-    position: relative;
-    padding: 50px 20px;
-    background-color: #f8f9fa;
-    overflow: hidden;
+    padding: 40px 20px;
   }
-  
+
   .landing-page__cta-content {
-    max-width: 600px;
+    padding: 0 15px;
+  }
+
+  .landing-page__cta-title {
+    font-size: 1.5em;
+  }
+
+  .landing-page__cta-image {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    margin: 30px auto 0;
+    display: block;
+    right: unset;
+    bottom: unset;
+  }
+
+  .landing-page__cta-circle {
+    display: none;
+  }
+
+  .landing-page__cta-input {
+    margin: 20px auto;
+    max-width: 300px;
+  }
+
+  .landing-page__cta-button {
+    display: block;
+    max-width: 200px;
     margin: 0 auto;
     text-align: center;
-    position: relative;
-    z-index: 1;
   }
-  
-  .landing-page__cta-input {
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
+}
+
+@media only screen and (max-width: 600px) {
+  .landing-page__logo {
+    height: 20vw;
   }
-  
+
+  .landing-page__get-started-button,
+  .landing-page__nav {
+    display: none;
+  }
+
+  .landing-page__header {
+    align-self: center;
+  }
+
+  .landing-page__hero-container {
+    margin-top: 20px;
+  }
+
+  .landing-page__feature:nth-child(even) {
+    flex-direction: column-reverse;
+  }
+
+  .landing-page__action-button {
+    font-size: 1rem;
+    padding: 15px 25px;
+    display: block;
+    margin: 0 auto;
+    max-width: 280px;
+    line-height: 1.2;
+    content: "Start charting now";
+  }
+
   .landing-page__cta-image {
-    position: absolute;
-    right: 0;
-    bottom: -10px;
-    width: 500px;
+    display: none;
   }
-  
-  .landing-page__cta-circle {
-    position: absolute;
-    left: -100px;
-    top: -100px;
-    width: 200px;
-    height: 200px;
-    background-color: #007bff;
-    border-radius: 50%;
-    opacity: 0.1;
-  }
-  
-  /* Footer Divider */
-  .landing-page__footer-divider {
-    height: 1px;
-    background-color: #ddd;
-    margin: 50px 0;
-  } 
-  
-  /* Mobile Styles */
-  @media only screen and (max-width: 768px) {
-    /* Features Section Mobile */
-    .landing-page__feature {
-      flex-direction: column;
-      gap: 30px;
-      text-align: center;
-      padding: 0 15px;
-    }
-  
-    .landing-page__feature-image {
-      max-width: 100%;
-      width: 100%;
-      height: auto;
-    }
-  
-    .landing-page__feature:nth-child(even) .landing-page__feature-content,
-    .landing-page__feature:nth-child(even) .landing-page__feature-image {
-      order: unset;
-    }
-  
-    .landing-page__feature-title {
-      font-size: 1.5em;
-    }
-  
-    .landing-page__feature-description {
-      font-size: 1rem;
-      text-align: left;
-    }
-  
-    /* CTA Section Mobile */
-    .landing-page__cta {
-      padding: 40px 20px;
-    }
-  
-    .landing-page__cta-content {
-      padding: 0 15px;
-    }
-  
-    .landing-page__cta-title {
-      font-size: 1.5em;
-    }
-  
-    .landing-page__cta-image {
-      position: relative;
-      width: 100%;
-      max-width: 300px;
-      margin: 30px auto 0;
-      display: block;
-      right: unset;
-      bottom: unset;
-    }
-  
-    .landing-page__cta-circle {
-      display: none;
-    }
-  
-    .landing-page__cta-input {
-      margin: 20px auto;
-      max-width: 300px;
-    }
-  
-    .landing-page__cta-button {
-      display: block;
-      max-width: 200px;
-      margin: 0 auto;
-      text-align: center;
-    }
-  }
-  
-  @media only screen and (max-width: 600px) {
-    .landing-page__logo {
-      height: 20vw;
-    }
-  
-    .landing-page__get-started-button, .landing-page__nav {
-      display: none;
-    }
-  
-    .landing-page__header {
-      align-self: center;
-    }
-  
-    .landing-page__hero-container {
-      margin-top: 20px;
-    }
-  
-    .landing-page__feature:nth-child(even) {
-      flex-direction: column-reverse;
-    }
-  
-    .landing-page__action-button {
-      font-size: 0.9rem;
-      padding: 12px 15px;
-      display: block;
-      margin: 0 auto;
-      max-width: 280px;
-    }
-  
-    .landing-page__cta-image{
-      display: none;
-    }
-  }
-  
+}

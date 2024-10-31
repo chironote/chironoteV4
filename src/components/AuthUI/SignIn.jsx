@@ -11,6 +11,14 @@ const Header = () => {
         alt="ChiroNote"
         src={textLogo}
       />
+      <View style={{ 
+        color: '#006400',
+        fontSize: '1.2rem',
+        fontWeight: 'bold',
+        marginTop: tokens.space.medium
+      }}>
+        HIPAA compliant software
+      </View>
     </View>
   );
 };

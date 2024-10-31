@@ -20,9 +20,6 @@ export default function LandingPage(props) {
             className="landing-page__logo"
           />
           <div className="landing-page__nav">
-            <div className="landing-page__nav-item">Testimonials</div>
-            <div className="landing-page__nav-item">Features</div>
-            <div className="landing-page__nav-item">Contacts</div>
           </div>
           <a href="/app" className="landing-page__get-started-button">
             Launch App
@@ -32,7 +29,8 @@ export default function LandingPage(props) {
 
       {/* Main Section */}
       <div className="landing-page__hero-container">
-        <div className="landing-page__main landing-page__hero-background">
+        <div className="landing-page__hero-background"></div>
+        <div className="landing-page__main">
           <div className="landing-page__main-content">
             <div className="landing-page__title">
               Reduce charting time to mere seconds
@@ -43,7 +41,7 @@ export default function LandingPage(props) {
           </div>
           <div className="landing-page__action">
             <a href="/app" className="landing-page__action-button">
-              Start charting faster for free with just an email
+              Start charting now for free
             </a>
           </div>
         </div>
@@ -51,7 +49,7 @@ export default function LandingPage(props) {
       </div>
 
       {/* Testimonials Section */}
-      <div className="landing-page__testimonials">
+      <div id="testimonials" className="landing-page__testimonials">
         <div className="landing-page__testimonials-header">
           <div className="landing-page__testimonials-title">What people are saying</div>
         </div>
@@ -132,7 +130,7 @@ export default function LandingPage(props) {
       </div>
 
       {/* Feature Sections */}
-      <div className="landing-page__features">
+      <div id="features" className="landing-page__features">
         {/* Feature 1 */}
         <div className="landing-page__feature">
           <img
@@ -146,7 +144,6 @@ export default function LandingPage(props) {
               Speed up your notes and never stay late charting without sacrificing quality
             </div>
             <div className="landing-page__feature-description">
-            Speed up your notes and never stay late charting without sacrificing quality
             Complete your clinical documentation in half the time while maintaining comprehensive, high-quality notes. Our intuitive platform helps you capture patient encounters efficiently and accurately, letting you focus more on patient care and less on paperwork.
             </div>
           </div>

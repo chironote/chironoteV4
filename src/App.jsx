@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'; 
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
 import Feedback from './components/Feedback/Feedback';
@@ -22,6 +22,7 @@ import * as queries from './graphql/queries';
 import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
 import PriceTable from './components/Account/PriceTable';
+import ReactGA from 'react-ga4';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
@@ -30,6 +31,18 @@ import config from './amplifyconfiguration.json';
 Amplify.configure(config);
 
 const client = generateClient();
+
+// Analytics wrapper component to track page views
+function RouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Send pageview with current path
+    ReactGA.send({ hitType: "pageview", page: location.pathname });
+  }, [location]);
+
+  return null;
+}
 
 const components = {
   Header: () => <Header />,
@@ -43,7 +56,7 @@ const components = {
             value="yes"
             label={
               <>
-                I agree with the <a href="http://public-docs-and-agreements.s3-website.us-east-2.amazonaws.com" target="_blank" rel="noopener noreferrer">Terms and Conditions</a>
+                I agree with the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/PrivacyTermsConditions.pdf" target="_blank" rel="noopener noreferrer">Terms, Conditions and Privacy Policy</a>
               </>
             }
             required={true}
@@ -365,9 +378,9 @@ function AuthenticatedApp({ signOut, user }) {
               <ClipboardButtons 
                 toggleRecordingPopup={toggleRecordingPopup} 
                 toggleDictationPopup={toggleDictationPopup}
-                toggleEditPanel={toggleEditPanel} 
-              />
-
+                toggleEditPanel={toggleEditPanel}
+                showEditPanel={showEditPanel}
+             />
               <Clipboard
                 clipboardTextareaRef={clipboardTextareaRef}
                 clipboardContent={clipboardContent}
@@ -441,6 +454,7 @@ const ProtectedApp = withAuthenticator(AuthenticatedApp, {
 function App() {
   return (
     <Router>
+      <RouteTracker />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app/*" element={<ProtectedApp />} />

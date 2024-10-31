@@ -2,10 +2,10 @@
     display: flex;
     position: absolute;
     left: 0%;
-    top: 70px;
+    top: 50px;
     justify-content: center;
     align-items: center;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 50px);
     width: 100%;
     background-color: var(--pale-green);
     border: 2px solid var(--light-green);
