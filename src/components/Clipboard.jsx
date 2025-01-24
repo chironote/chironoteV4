@@ -32,7 +32,7 @@ const Clipboard = ({
         <textarea
           ref={clipboardTextareaRef}
           className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''}`}
-          placeholder="Enter your note here..."
+          placeholder="Note will appear here after you are done recording."
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
           onDragOver={handleDragOver}

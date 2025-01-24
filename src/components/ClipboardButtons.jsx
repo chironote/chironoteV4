@@ -9,6 +9,7 @@ const ClipboardButtons = ({ toggleRecordingPopup, toggleDictationPopup, showEdit
       <button
         className="action-button"
         onClick={() => toggleRecordingPopup('conversation')}
+        style={{ transform: 'scale(1.15)' }}
       >
         <img src={captureIcon} alt="Capture" className="button-icon" />
         New Conversation
