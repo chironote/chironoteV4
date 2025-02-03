@@ -184,13 +184,26 @@ function AuthenticatedApp({ signOut, user }) {
     const fetchNotes = async () => {
       setIsLoading(true);
       try {
-        const notesData = await client.graphql({
-          query: queries.listNotes,
-          variables: { filter: { owner: { eq: user.username } } }
-        });
+      const notesData = await client.graphql({
+        query: queries.listNotes,
+        variables: { 
+          owner: user.username,
+          sortDirection: "DESC",
+          limit: 50  // Fetch more items to ensure we have enough after filtering
+        }
+      });
         const fetchedNotes = notesData.data.listNotes.items;
-        setNotes(fetchedNotes.filter(item => item.note && item.note.trim() !== "").slice(-10).reverse());
-        setTranscripts(fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "").slice(-10).reverse());
+        console.log('Raw fetched notes:', fetchedNotes);
+        
+        const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== "");
+        const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "");
+        
+        console.log('Filtered notes:', filteredNotes);
+        console.log('Filtered transcripts:', filteredTranscripts);
+        
+        // Since we're already getting data in DESC order, just take the first 10
+        setNotes(filteredNotes.slice(0, 10));
+        setTranscripts(filteredTranscripts.slice(0, 10));
         setQueryLoaded(true);
       } catch (error) {
         console.error("Error fetching notes:", error);
