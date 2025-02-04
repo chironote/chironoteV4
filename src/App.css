@@ -200,24 +200,34 @@
   transition: all 0.3s;
 }
 
-.apply-changes-button:hover,
+/* Professional button hover animation */
+.action-button {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
+}
+
 .action-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(to right, var(--medium-green), var(--light-green));
 }
 
-.apply-changes-button:hover::before,
-.action-button:hover::before {
-  left: -100%;
-  top: -100%;
-}
-
-.apply-changes-button:active,
 .action-button:active {
-  transform: translateY(2px);
+  transform: translateY(1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
+}
+
+.action-button.active:hover {
+  background: linear-gradient(to right, var(--dark-green), var(--medium-green));
+}
+
+/* Override styles for ClipboardButtons action buttons for a more professional look */
+.clipboard-actions .action-button {
+  border-radius: 8px;
+}
+
+/* Remove diagonal moving lines effect for ClipboardButtons action buttons */
+.clipboard-actions .action-button::before {
+  display: none;
 }
 
 /* Section header */
@@ -820,9 +830,9 @@ input:checked~.slider {
 }
 
 /* Center div styles */
-.center-dive {
+.right-align-div {
   display: flex;
-  justify-content: center;
+  justify-content: right;
   align-items: center;
 }
 
@@ -833,4 +843,63 @@ input:checked~.slider {
 
 .left-panel.collapsed .fade-content {
   opacity: 0;
+}
+
+/* Left panel children animation similar to edit panel */
+.left-panel .fade-content > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.left-panel:not(.collapsed) .fade-content > * {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.3s;
+}
+
+.left-panel.collapsed .fade-content > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition-delay: 0s;
+}
+
+/* Adjust left panel fade-content children animation for staggered delays */
+.left-panel .fade-content > * {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* Expanded state: staggered delays for each child */
+.left-panel:not(.collapsed) .fade-content > *:nth-child(1) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.1s;
+}
+.left-panel:not(.collapsed) .fade-content > *:nth-child(2) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+.left-panel:not(.collapsed) .fade-content > *:nth-child(3) {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.3s;
+}
+
+/* Collapsed state: reverse order staggered delays */
+.left-panel.collapsed .fade-content > *:nth-child(1) {
+  transition-delay: 0.3s;
+}
+.left-panel.collapsed .fade-content > *:nth-child(2) {
+  transition-delay: 0.2s;
+}
+.left-panel.collapsed .fade-content > *:nth-child(3) {
+  transition-delay: 0.1s;
+}
+
+/* When left panel is collapsed, center the contents of .right-align-div */
+.left-panel.collapsed .right-align-div {
+  justify-content: center;
 }

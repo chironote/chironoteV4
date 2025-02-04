@@ -384,9 +384,9 @@ function AuthenticatedApp({ signOut, user }) {
         <Route path="/" element={
           <main className="app-main">
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''} ${queryLoaded ? 'left-panel-animate' : ''}`}>
-              <div className="center-dive">
+              <div className="right-align-div">
                 <div className="toggle-panel" onClick={togglePanel}>
-                  {isCollapsed ? '▶' : '◀'}
+                  {isCollapsed ? <span className="material-symbols-rounded">history</span> : '◀'}
                 </div>
               </div>
               <div className="fade-content">
@@ -488,5 +488,6 @@ function App() {
     </Router>
   );
 }
+
 
 export default App;
