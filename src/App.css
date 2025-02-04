@@ -23,9 +23,20 @@
   flex-direction: column;
   padding: 10px;
   background-color: var(--pale-green);
-  overflow: auto;
+  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  transition: width 0.3s ease, min-width 0.3s ease, max-width 0.3s ease;
+  flex-shrink: 0;
+}
+
+.left-panel.collapsed {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
 }
 
 .timestamp {
@@ -131,7 +142,6 @@
   background-color: var(--pure-white);
 }
 
-
 /* Button styling */
 .apply-changes-button,
 .action-button {
@@ -228,7 +238,6 @@
   justify-content: center;
   background-color: var(--off-white);
 }
-
 
 .clipboard-textarea-container,
 .clear-clipboard-link {
@@ -798,4 +807,30 @@ input:checked~.slider {
     opacity: 0;
     visibility: hidden;
   }
+}
+
+/* Toggle panel styles */
+.toggle-panel {
+  cursor: pointer;
+  padding: 0.5rem;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Center div styles */
+.center-dive {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.fade-content {
+  transition: opacity 0.3s ease;
+  opacity: 1;
+}
+
+.left-panel.collapsed .fade-content {
+  opacity: 0;
 }

@@ -166,6 +166,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -339,6 +340,10 @@ function AuthenticatedApp({ signOut, user }) {
     });
   };
 
+  const togglePanel = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
     if (isLoading) {
@@ -378,11 +383,18 @@ function AuthenticatedApp({ signOut, user }) {
       <Routes>
         <Route path="/" element={
           <main className="app-main">
-            <section className={`left-panel ${queryLoaded ? 'left-panel-animate' : ''}`}>
-              <h2 className="panel-header">History</h2>
-              <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
-              <div className="list-container">
-                {renderItems()}
+            <section className={`left-panel ${isCollapsed ? 'collapsed' : ''} ${queryLoaded ? 'left-panel-animate' : ''}`}>
+              <div className="center-dive">
+                <div className="toggle-panel" onClick={togglePanel}>
+                  {isCollapsed ? '▶' : '◀'}
+                </div>
+              </div>
+              <div className="fade-content">
+                <h2 className="panel-header">History</h2>
+                <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
+                <div className="list-container">
+                  {renderItems()}
+                </div>
               </div>
             </section>
 
