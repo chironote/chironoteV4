@@ -166,7 +166,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -203,8 +203,8 @@ function AuthenticatedApp({ signOut, user }) {
         console.log('Filtered transcripts:', filteredTranscripts);
         
         // Since we're already getting data in DESC order, just take the first 10
-        setNotes(filteredNotes.slice(0, 10));
-        setTranscripts(filteredTranscripts.slice(0, 10));
+        setNotes(filteredNotes.slice(0, 25));
+        setTranscripts(filteredTranscripts.slice(0, 25));
         setQueryLoaded(true);
       } catch (error) {
         console.error("Error fetching notes:", error);
@@ -384,7 +384,7 @@ function AuthenticatedApp({ signOut, user }) {
       <Routes>
         <Route path="/" element={
           <main className="app-main">
-            <section className={`left-panel ${isCollapsed ? 'collapsed' : ''} ${queryLoaded ? 'left-panel-animate' : ''}`}>
+            <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
               <div className="right-align-div">
                 <div className="toggle-panel" onClick={togglePanel}>
                   {isCollapsed ? <span className="material-symbols-rounded">history</span> : '◀'}

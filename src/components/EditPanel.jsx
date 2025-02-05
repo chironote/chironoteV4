@@ -161,7 +161,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
             onClick={() => editStream(editContent)}
           >
             <span className="material-symbols-rounded">edit</span>
-            Generate
+            Apply changes to Note
           </button>
           <button 
             className="edit-panel-button secondary" 
