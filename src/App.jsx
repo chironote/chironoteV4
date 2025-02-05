@@ -387,7 +387,7 @@ function AuthenticatedApp({ signOut, user }) {
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
               <div className="right-align-div">
                 <div className="toggle-panel" onClick={togglePanel}>
-                  {isCollapsed ? <span className="material-symbols-rounded">history</span> : '◀'}
+                  {isCollapsed ? <span className="material-symbols-rounded">left_panel_open</span> : <span className="material-symbols-rounded">left_panel_close</span>}
                 </div>
               </div>
               <div className="fade-content">
