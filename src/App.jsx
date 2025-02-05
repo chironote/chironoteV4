@@ -290,7 +290,8 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const handleCopy = (isPopupMenu = false) => {
-    const plainText = extractPlainText(selectedContent);
+    const contentToCopy = selectedContent || clipboardContent;
+    const plainText = extractPlainText(contentToCopy);
     navigator.clipboard.writeText(plainText)
       .then(() => {
         setShowPopupMenu(false);
@@ -405,7 +406,10 @@ function AuthenticatedApp({ signOut, user }) {
                 toggleDictationPopup={toggleDictationPopup}
                 toggleEditPanel={toggleEditPanel}
                 showEditPanel={showEditPanel}
-             />
+                setClipboardContent={setClipboardContent}
+                handleCopy={handleCopy}
+                showCopyMessage={showCopyMessage}
+              />
               <Clipboard
                 clipboardTextareaRef={clipboardTextareaRef}
                 clipboardContent={clipboardContent}

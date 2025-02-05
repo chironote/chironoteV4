@@ -1,4 +1,8 @@
 const TogglePanel = ({ showNotes, setShowNotes }) => {
+  const sliderStyle = {
+    transform: showNotes ? 'translateX(0)' : 'translateX(calc(100% + 4px))'
+  };
+
   return (
     <div className="toggle-container">
       {/* Toggle between Notes and Transcripts */}
@@ -25,10 +29,10 @@ const TogglePanel = ({ showNotes, setShowNotes }) => {
         style={{ display: 'none' }}
       />
 
-      {/* Slider for visual toggle indication */}
-      <span className="slider"></span>
+      {/* Slider for visual toggle indication with dynamic style */}
+      <span className="slider" style={sliderStyle}></span>
     </div>
-  )
+  );
 }
 
 export default TogglePanel;

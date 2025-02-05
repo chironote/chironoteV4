@@ -22,7 +22,7 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
-  background-color: var(--pale-green);
+  background-color: white;
   overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
@@ -37,6 +37,8 @@
   width: 50px;
   min-width: 50px;
   max-width: 50px;
+  margin-left: -20px;
+
 }
 
 .timestamp {
@@ -67,13 +69,45 @@
   animation: slideInFromLeft 0.3s ease-out;
 }
 
-/* Header styles */
-.panel-header,
+/* Panel Headers */
+.panel-header {
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+
 .section-header {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.edit-panel .panel-header {
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  padding: 16px;
+  background-color: white;
+  border-bottom: 1px solid #e0e0e0;
+  text-align: left;
+}
+
+.left-panel .panel-header {
+  background-color: white;
   color: var(--dark-green);
   text-align: center;
+  margin-top: -55px;
 }
 
 /* Clipboard container */
@@ -87,7 +121,7 @@
   animation: slideInFromRight 0.3s ease-out;
 }
 
-/* Edit panel */
+/* Edit Panel Styles */
 .edit-panel {
   opacity: 0;
   flex: 0;
@@ -96,356 +130,278 @@
   flex-direction: column;
   align-items: center;
   overflow: hidden;
-  background-color: var(--pale-green);
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.1s, flex 0.3s, width 0.3s;
 }
 
 .edit-panel.visible {
-  flex: 0.3;
+  flex: 0.5;
   width: auto;
   opacity: 1;
   margin-left: 30px;
 }
 
-.edit-panel h4 {
-  margin-top: 0;
-  padding: 15px 0;
+.edit-panel-content {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  background-color: var(--pale-green);
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  height: 100%;
+  padding: 16px;
 }
 
-.edit-panel>* {
-  opacity: 0;
-  margin-top: 33%;
-  transform: translateY(20px);
-  transition: opacity 0.3s, transform 0.3s;
+.edit-textarea {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  background-color: white;
+  transition: border-color 0.2s ease;
+  margin-bottom: 16px;
 }
 
-.edit-panel.visible>* {
-  opacity: 1;
-  transform: translateY(0);
-  transition-delay: 0.3s;
+.edit-textarea:focus {
+  outline: none;
+  border-color: var(--medium-green);
+  box-shadow: 0 0 0 1px var(--medium-green);
+}
+
+.edit-panel-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.edit-panel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.edit-panel-button .material-symbols-rounded {
+  font-size: 20px;
+}
+
+.edit-panel-button.primary {
+  background-color: var(--medium-green);
+  color: white;
+}
+
+.edit-panel-button.primary:hover {
+  background-color: var(--dark-green);
+}
+
+.edit-panel-button.secondary {
+  background-color: transparent;
+  border-color: #e0e0e0;
+  color: #666;
+  padding: 6px;
+  width: 32px;
+}
+
+.edit-panel-button.secondary:hover {
+  background-color: #f5f5f5;
+  border-color: #ccc;
 }
 
 /* Textarea */
-.edit-textarea {
-  resize: none;
-  width: 85%;
-  height: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  font-size: .9rem;
-  border: 2px solid var(--light-green);
-  background-color: var(--pure-white);
-}
-
-/* Button styling */
-.apply-changes-button,
-.action-button {
-  color: var(--off-white);
-  border: none;
-  border-radius: 25px;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Editor Toolbar Styles */
+.editor-toolbar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 90%;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  gap: 4px;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.toolbar-button-wrapper {
   position: relative;
-  overflow: hidden;
-  z-index: 1;
-  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
-}
-
-/* New style for active edit button */
-.action-button.active {
-  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
-  box-shadow: 0 0 15px rgba(46, 105, 48, 0.4);
-}
-
-.apply-changes-button {
-  margin: 20px 0 50px;
-}
-
-.apply-changes-button .button-icon.left-arrow {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  filter: brightness(0) invert(1);
-}
-
-.apply-changes-button span {
-  flex-grow: 1;
-}
-
-.apply-changes-button::before,
-.action-button::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  z-index: -1;
-  background: rgba(255, 255, 255, 0.1);
-  transform: rotate(45deg);
-  transition: all 0.3s;
-}
-
-/* Professional button hover animation */
-.action-button {
-  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.3s ease;
-}
-
-.action-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(to right, var(--medium-green), var(--light-green));
-}
-
-.action-button:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.action-button.active:hover {
-  background: linear-gradient(to right, var(--dark-green), var(--medium-green));
-}
-
-/* Override styles for ClipboardButtons action buttons for a more professional look */
-.clipboard-actions .action-button {
-  border-radius: 8px;
-}
-
-/* Remove diagonal moving lines effect for ClipboardButtons action buttons */
-.clipboard-actions .action-button::before {
-  display: none;
-}
-
-/* Section header */
-.section-header {
-  margin: 0;
-  padding: 15px 20px;
-  background-color: var(--pale-green);
-}
-
-/* Clipboard and edit panel div */
-.clipboard,
-.edit-panel>div {
-  flex: 1;
-  padding: 20px;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+}
+
+.toolbar-button {
+  display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--off-white);
-}
-
-.clipboard-textarea-container,
-.clear-clipboard-link {
-  max-width: 800px;
-  width: calc(100% - 40px);
-  margin-right: -7px;
-}
-
-/* Clipboard textarea */
-.clipboard-textarea-container {
-  flex: 1;
-  transform: translateX(-15px);
-}
-
-.clipboard-textarea {
-  width: 100%;
-  height: 95%;
-  padding: 25px 15px 15px;
-  font-size: 1rem;
-  border-radius: 8px;
-  resize: none;
-  background-color: #f9f9f9;
-  border: 2px solid var(--light-green);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--medium-green) var(--pale-green);
-}
-
-.clipboard-textarea:focus {
-  border-color: var(--medium-green);
-  background-color: var(--pure-white);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1), 0 0 5px rgba(46, 105, 48, 0.5);
-}
-
-/* Icon container */
-.textarea-icons {
-  position: absolute;
-  top: 0px;
-  right: -25px;
-  display: flex;
-  gap: 10px;
-}
-
-/* Icon styles */
-.textarea-icon {
-  width: 20px;
-  height: 20px;
-  opacity: 0.5;
+  height: 32px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.3s;
+  transition: all 0.2s ease;
+  gap: 6px;
 }
 
-.textarea-icon:hover {
+.toolbar-button:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.toolbar-button.active {
+  background-color: #e9ecef;
+  border-color: #ced4da;
+}
+
+.toolbar-icon {
+  width: 18px;
+  height: 18px;
+  filter: brightness(0) saturate(100%) invert(26%) sepia(45%) saturate(702%) hue-rotate(93deg) brightness(92%) contrast(89%);
+}
+
+.toolbar-button:hover .toolbar-icon {
   opacity: 0.8;
 }
 
-/* Links */
-.clear-clipboard-link,
-.clear-edit-link {
-  display: block;
-  margin: 20px 0 10px;
-  color: var(--medium-green);
-  text-decoration: none;
-  font-size: 0.9em;
+.material-symbols-rounded.toolbar-icon {
+  font-size: 20px;
+  width: auto;
+  height: auto;
 }
 
-.clear-clipboard-link {
-  text-align: right;
-  transform: translateX(15px);
-  margin-right: 60px;
-  margin-top: -20px;
-}
-
-.clear-clipboard-link:hover,
-.clear-edit-link:hover {
-  color: var(--dark-green);
-  text-decoration: underline;
-}
-
-.clear-edit-link {
-  margin-right: 9%;
-  margin-top: 5px;
-  align-self: flex-end;
-}
-
-/* Tooltip messages */
-.copy-message,
-.popup-copy-message {
-  position: absolute;
-  background-color: var(--dark-green);
-  color: var(--off-white);
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  opacity: 0;
-  white-space: nowrap;
-  animation: fadeInOut 1s ease-in-out;
-}
-
+/* Copy message tooltip */
 .copy-message {
-  right: 30px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.popup-copy-message {
-  bottom: 20px;
+  position: absolute;
+  bottom: -30px;
   left: 50%;
   transform: translateX(-50%);
+  background-color: var(--dark-green);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
-/* Keyframes for tooltip animation */
-@keyframes fadeInOut {
-  0%,
-  100% {
-    opacity: 0;
-  }
-  25%,
-  75% {
-    opacity: 1;
-  }
-}
-
-/* Clipboard actions */
-.clipboard-actions {
-  display: flex;
-  flex-wrap: wrap;
-  flex-direction: column;
-  gap: 10px;
-  padding: 20px;
-  background-color: var(--pale-green);
-  border-bottom: 2px solid var(--light-green);
-}
-
-/* Button icons */
-.button-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-}
-
-/* Toggle switch */
-.toggle-container {
-  position: relative;
-  min-height: 40px;
-  display: flex;
-  padding: 4px;
-  overflow: hidden;
-  align-items: center;
-  margin-bottom: 25px;
-  border-radius: 100px;
-  background-color: var(--off-white);
-  justify-content: space-between;
-  border: 2px solid var(--light-green);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.toggle-option {
-  z-index: 1;
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 16px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  position: relative;
-  transition: all 0.3s ease;
-}
-
-.toggle-option.active {
-  color: var(--off-white);
-  pointer-events: none;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.toggle-option span {
-  font-size: 1.4rem;
-}
-
-/* Slider for toggle switch */
-.slider {
+.copy-message::before {
+  content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
-  border-radius: 100px;
-  width: calc(50% - 4px);
-  height: calc(100% - 4px);
-  background: linear-gradient(135deg, var(--medium-green), var(--dark-green));
-  transition: transform 0.3s;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid var(--dark-green);
 }
 
-input:checked~.slider {
-  transform: translateX(calc(100% + 4px));
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 5px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* New Note Button Styles */
+.new-note-button {
+  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
+  color: white;
+  font-weight: 600;
+  padding: 6px 16px;
+  min-width: 120px;
+}
+
+.new-note-button:hover {
+  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
+  border-color: transparent;
+}
+
+.plus-icon {
+  font-size: 20px;
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.button-text {
+  font-size: 14px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 24px;
+  background-color: #dee2e6;
+  margin: 0 8px;
+}
+
+/* Clipboard and edit panel div */
+.clipboard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 0;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.clipboard-textarea-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  height: 100%;
+}
+
+.clipboard-textarea {
+  width: 96%;
+  height: 66vh;
+  padding: 16px;
+  margin: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  resize: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+  background-color: white;
+}
+
+.clipboard-textarea:focus {
+  outline: none;
+  border-color: #e0e0e0;
+  box-shadow: none;
+}
+
+.clipboard-textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+.clipboard-textarea.dragging-over {
+  border-color: var(--medium-green);
+  background-color: rgba(var(--medium-green-rgb), 0.05);
 }
 
 /* List container */
@@ -634,8 +590,7 @@ input:checked~.slider {
   }
 
   .left-panel.collapsed .panel-header,
-  .left-panel.collapsed .list-container,
-  .clipboard-actions .action-button:nth-child(3) {
+  .left-panel.collapsed .list-container {
     display: none;
   }
 
@@ -650,14 +605,7 @@ input:checked~.slider {
   }
 
   .clipboard-actions {
-    flex-direction: column;
-    gap: 30px;
-    padding: 50px 20px;
-  }
-
-  .action-button {
-    width: 90%;
-    align-self: center;
+    display: none;
   }
 
   .clipboard-textarea {
@@ -676,8 +624,7 @@ input:checked~.slider {
   }
 
   .clear-clipboard-link {
-    margin-top: -5px;
-    width: calc(100% - 30px);
+    display: none;
   }
 
   .section-header {
@@ -697,13 +644,7 @@ input:checked~.slider {
   }
 
   .clipboard-actions {
-    flex-direction: row;
-    justify-content: space-around;
-  }
-
-  .action-button {
-    width: auto;
-    font-size: 1rem;
+    display: none;
   }
 }
 
@@ -733,8 +674,8 @@ input:checked~.slider {
 }
 
 .clipboard-textarea.dragging-over {
-  border: 2px dashed var(--medium-green);
-  background-color: var(--pale-green);
+  border-color: var(--medium-green);
+  background-color: rgba(var(--medium-green-rgb), 0.05);
 }
 
 /* Navbar animation */
@@ -783,7 +724,6 @@ input:checked~.slider {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.8);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -820,6 +760,58 @@ input:checked~.slider {
 }
 
 /* Toggle panel styles */
+.toggle-container {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 4px;
+  position: relative;
+  margin: 8px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-option {
+  flex: 1;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #000000;
+  border-radius: 6px;
+}
+
+.toggle-option.active {
+  color: var(--dark-green);
+  color: #ffffff;
+}
+
+.toggle-option .material-symbols-rounded {
+  font-size: 16px;
+}
+
+.slider {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  bottom: 4px;
+  width: calc(50% - 4px);
+  background-color: var(--medium-green);
+  border-radius: 6px;
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+.toggle-option:last-child.active ~ .slider {
+  transform: translateX(calc(100% + 4px));
+}
+
 .toggle-panel {
   cursor: pointer;
   padding: 0.5rem;
@@ -834,6 +826,7 @@ input:checked~.slider {
   display: flex;
   justify-content: right;
   align-items: center;
+  z-index: 5;
 }
 
 .fade-content {
@@ -902,4 +895,8 @@ input:checked~.slider {
 /* When left panel is collapsed, center the contents of .right-align-div */
 .left-panel.collapsed .right-align-div {
   justify-content: center;
+}
+
+.clear-clipboard-link {
+  display: none;
 }

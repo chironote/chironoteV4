@@ -142,54 +142,42 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
   };
 
   return (
-    <section className={`edit-panel ${showEditPanel ? 'visible' : ''}`} style={{ position: 'relative', overflow: 'hidden' }}>
-      <h4>Note Updater</h4>
-      
-      <textarea
-        ref={textareaRef}
-        className="edit-textarea"
-        placeholder="Enter any changes you wish applied to the note on the left here..."
-        value={editContent}
-        onChange={(e) => setEditContent(e.target.value)}
-        draggable="true"
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      />
-      
-      <a
-        href="javascript:void(0)"
-        className="clear-edit-link"
-        onClick={(e) => { e.preventDefault(); setEditContent(''); }}
-      >
-        Clear text
-      </a>
-
-      <button
-        className="apply-changes-button"
-        onClick={() => editStream(editContent)}
-        disabled={showCreditPopup}
-      >
-        <img src={arrowLeftIcon} alt="Arrow Left" className="button-icon left-arrow" />
-        <span>Apply Changes</span>
-      </button>
-
-      {showCreditPopup && (
-        <div className="credit-popup-wrapper" style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1000
-        }}>
-          <CreditPopup onClose={handleCloseCreditPopup} />
+    <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
+      <h2 className="panel-header">Note Updater</h2>
+      <div className="edit-panel-content">
+        <textarea
+          ref={textareaRef}
+          className="edit-textarea"
+          placeholder="Enter any changes you wish applied to the note on the left here..."
+          value={editContent}
+          onChange={(e) => setEditContent(e.target.value)}
+          onDragOver={(e) => e.preventDefault()}
+          onDragLeave={(e) => e.preventDefault()}
+          onDrop={(e) => e.preventDefault()}
+        />
+        <div className="edit-panel-buttons">
+          <button 
+            className="edit-panel-button primary" 
+            onClick={() => editStream(editContent)}
+          >
+            <span className="material-symbols-rounded">edit</span>
+            Generate
+          </button>
+          <button 
+            className="edit-panel-button secondary" 
+            onClick={() => setEditContent('')}
+          >
+            <span className="material-symbols-rounded">delete</span>
+          </button>
         </div>
+      </div>
+      {showCreditPopup && (
+        <CreditPopup
+          onClose={() => setShowCreditPopup(false)}
+          subscription={userSubscription}
+        />
       )}
-    </section>
+    </div>
   )
 }
 

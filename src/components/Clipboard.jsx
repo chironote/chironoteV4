@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 const Clipboard = ({
   clipboardTextareaRef,
   clipboardContent,
-  handleCopyPaste,
   setClipboardContent,
-  showCopyMessage,
   streamContent,
 }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -28,11 +26,11 @@ const Clipboard = ({
 
   return (
     <div className="clipboard">
-      <div className="clipboard-textarea-container">
+      <div className="clipboard-content">
         <textarea
           ref={clipboardTextareaRef}
           className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''}`}
-          placeholder="Note will appear here after you are done recording."
+          placeholder="Note will appear here..."
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
           onDragOver={handleDragOver}
@@ -45,33 +43,7 @@ const Clipboard = ({
             <p>{streamContent}</p>
           </div>
         )}
-
-        <div className="textarea-icons">
-          <div className="icon-wrapper">
-            <span
-              onClick={handleCopyPaste}
-              className="material-symbols-rounded textarea-icon"
-            >
-              {showCopyMessage ? 'check' : 'content_copy'}
-            </span>
-
-            {showCopyMessage && (
-              <span className="copy-message">Content copied to clipboard</span>
-            )}
-          </div>
-        </div>
       </div>
-
-      <a
-        href="#"
-        className="clear-clipboard-link"
-        onClick={(e) => {
-          e.preventDefault();
-          setClipboardContent("");
-        }}
-      >
-        Clear text
-      </a>
     </div>
   );
 };
