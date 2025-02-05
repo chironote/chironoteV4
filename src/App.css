@@ -23,7 +23,6 @@
   flex-direction: column;
   padding: 10px;
   background-color: white;
-  overflow: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--pale-green);
   width: 250px;
@@ -31,14 +30,18 @@
   max-width: 250px;
   transition: width 0.3s ease, min-width 0.3s ease, max-width 0.3s ease;
   flex-shrink: 0;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--medium-green) var(--off-white);
 }
+
 
 .left-panel.collapsed {
   width: 50px;
   min-width: 50px;
   max-width: 50px;
   margin-left: -20px;
-
+  overflow: hidden;
 }
 
 .timestamp {
@@ -78,10 +81,10 @@
   padding: 16px;
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
-  text-align: left;
+  text-align: center;
 }
 
-.section-header {
+.panel-header {
   font-size: 20px;
   font-weight: 500;
   color: #333;
@@ -89,7 +92,7 @@
   padding: 16px;
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
-  text-align: left;
+  text-align: center;
 }
 
 .edit-panel .panel-header {
@@ -100,7 +103,7 @@
   padding: 16px;
   background-color: white;
   border-bottom: 1px solid #e0e0e0;
-  text-align: left;
+  text-align: center;
 }
 
 .left-panel .panel-header {
@@ -167,6 +170,9 @@
   margin-bottom: 16px;
 }
 
+.edit-textarea::placeholder{
+  color: #666666;
+}
 .edit-textarea:focus {
   outline: none;
   border-color: var(--medium-green);
@@ -395,8 +401,9 @@
 }
 
 .clipboard-textarea::placeholder {
-  color: #999;
-  font-style: italic;
+  color: #666666;
+  font-family: inherit;
+  font-size: 14px;
 }
 
 .clipboard-textarea.dragging-over {
@@ -409,6 +416,9 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  border-radius: 8px;
+  padding: 8px 0;
+  margin: 0 10px;
 }
 
 /* List items */
@@ -768,6 +778,7 @@
   position: relative;
   margin: 8px 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
 }
 
 .toggle-option {

@@ -400,7 +400,7 @@ function AuthenticatedApp({ signOut, user }) {
             </section>
 
             <section className="clipboard-container">
-              <h2 className="section-header">Current Note</h2>
+              <h2 className="panel-header">Current Note</h2>
               <ClipboardButtons 
                 toggleRecordingPopup={toggleRecordingPopup} 
                 toggleDictationPopup={toggleDictationPopup}
