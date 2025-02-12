@@ -166,7 +166,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);

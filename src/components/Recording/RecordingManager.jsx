@@ -127,6 +127,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     } finally {
       setIsPreparingTranscript(false);
       setIsGeneratingSummary(false);
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
     }
   };
 
@@ -142,9 +145,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
       setIsPreparingTranscript(true);
     }
   };
@@ -256,9 +256,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   useEffect(() => {
     return () => {
       stopRecording();
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
     };
   }, []);
 

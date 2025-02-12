@@ -67,6 +67,7 @@ function Account({ setCurrentPage }) {
   async function getUserEmail() {
     try {
       const userEmail = (await getCurrentUser()).signInDetails.loginId;
+      console.log(userEmail);
       return userEmail;
     } catch (err) {
       console.log(err);

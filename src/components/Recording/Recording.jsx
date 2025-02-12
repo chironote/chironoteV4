@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import './Recording.css';
 import dictateIcon from '../../assets/mic.svg';
 import { generateClient } from 'aws-amplify/api';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
+import ConfirmationPopup from './ConfirmationPopup';
 
 const client = generateClient();
 
@@ -23,6 +24,7 @@ function Recording({
   const [userSubscription, setUserSubscription] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('auto');
   const [showCreditPopup, setShowCreditPopup] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const [noteSettings, setNoteSettings] = useState(() => {
     const storedSettings = localStorage.getItem('noteSettings');
@@ -47,6 +49,16 @@ function Recording({
     }
   };
 
+  // Function for refreshing the auth session
+  const currentSession = async () => {
+    try {
+      const { tokens } = await fetchAuthSession({ forceRefresh: true });
+      console.log(tokens);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   const handleStartRecording = async () => {
     const subscription = await fetchUserSubscription();
     if (!subscription || subscription.hoursleft <= 0) {
@@ -56,6 +68,11 @@ function Recording({
       startRecording();
     }
   };
+
+  // Function for refreshing the auth session
+  useEffect(() => {
+    currentSession();
+  }, []);
 
   useEffect(() => {
     const languageSelect = document.getElementById('language-select');
@@ -72,10 +89,58 @@ function Recording({
     console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
   }, [noteSettings]);
 
+  useEffect(() => {
+    if (isRecording || isPreparingTranscript) {
+      // Push a new state to prevent direct back navigation
+      window.history.pushState({ recording: true }, '');
+    }
+  }, [isRecording, isPreparingTranscript]);
+
+  useEffect(() => {
+    const handleBackButton = (event) => {
+      if ((isRecording || isPreparingTranscript) && !showConfirmation) {
+        event.preventDefault();
+        // Push state again to prevent back navigation
+        window.history.pushState({ recording: true }, '');
+        setShowConfirmation(true);
+      }
+    };
+
+    const handleBeforeUnload = (event) => {
+      if (isRecording || isPreparingTranscript) {
+        event.preventDefault();
+        event.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('popstate', handleBackButton);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('popstate', handleBackButton);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isRecording, isPreparingTranscript, showConfirmation]);
+
   const handleOuterClick = () => {
     if (!isRecording && !isPreparingTranscript && !isGeneratingSummary) {
       toggleRecordingPopup();
+    } else if (isRecording && !isPreparingTranscript) {
+      setShowConfirmation(true);
     }
+  };
+
+  const handleConfirmDiscard = () => {
+    setShowConfirmation(false);
+    if (isRecording) {
+      stopRecording();
+    }
+    toggleRecordingPopup();
+  };
+
+  const handleCancelDiscard = () => {
+    setShowConfirmation(false);
   };
 
   const handleLanguageChange = (event) => {
@@ -105,6 +170,12 @@ function Recording({
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
       <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+        {showConfirmation && (
+          <ConfirmationPopup
+            onConfirm={handleConfirmDiscard}
+            onCancel={handleCancelDiscard}
+          />
+        )}
         {showCreditPopup ? (
           <CreditPopup onClose={handleCloseCreditPopup} />
         ) : !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
