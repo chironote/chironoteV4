@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './Recording.css';
-import dictateIcon from '../../assets/mic.svg';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
@@ -22,7 +21,10 @@ function Recording({
   resumeRecording,
 }) {
   const [userSubscription, setUserSubscription] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState('auto');
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    const storedLanguage = localStorage.getItem('selectedLanguage');
+    return storedLanguage || 'auto';
+  });
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -75,14 +77,9 @@ function Recording({
   }, []);
 
   useEffect(() => {
-    const languageSelect = document.getElementById('language-select');
-    if (languageSelect) {
-      const currentLanguage = languageSelect.value;
-      setSelectedLanguage(currentLanguage);
-      localStorage.setItem('selectedLanguage', currentLanguage);
-      console.log('Language set on load:', currentLanguage);
-    }
-  }, []);
+    localStorage.setItem('selectedLanguage', selectedLanguage);
+    console.log('Language changed:', selectedLanguage);
+  }, [selectedLanguage]);
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
@@ -146,7 +143,6 @@ function Recording({
   const handleLanguageChange = (event) => {
     const newLanguage = event.target.value;
     setSelectedLanguage(newLanguage);
-    localStorage.setItem('selectedLanguage', newLanguage);
     console.log('Language changed. localStorage selectedLanguage:', localStorage.getItem('selectedLanguage'));
   };
 
@@ -180,56 +176,68 @@ function Recording({
           <CreditPopup onClose={handleCloseCreditPopup} />
         ) : !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
-            <h2>Create New Note</h2>
-            <button className="start-recording-btn" onClick={handleStartRecording} aria-label="Start recording SOAP chiropractic note">
-              <img src={dictateIcon} alt="Start Recording" />
-              Start Recording
-            </button>
+            <h2>Begin Recording</h2>
+            <div className="settings-container">
+              <div className="language-section">
+                <label htmlFor="language-select">Language:</label>
+                <select 
+                  id="language-select" 
+                  className="language-select" 
+                  value={selectedLanguage}
+                  onChange={handleLanguageChange}
+                  aria-label="Select language for SOAP chiropractic note"
+                >
+                  <option value="auto">Auto</option>
+                  <option value="en_us">English</option>
+                  <option value="es">Spanish</option>
+                  <option value="zh">Chinese (Simplified)</option>
+                  <option value="sk">Korean</option>
+                  <option value="vi">Vietnamese</option>
+                  <option value="ru">Russian</option>
+                </select>
+              </div>
 
-            <label htmlFor="language-select">Language:</label>
-            <select 
-              id="language-select" 
-              className="language-select" 
-              value={selectedLanguage}
-              onChange={handleLanguageChange}
-              aria-label="Select language for SOAP chiropractic note"
-            >
-              <option value="auto">Auto</option>
-              <option value="en_us">English</option>
-              <option value="es">Spanish</option>
-              <option value="zh">Chinese (Simplified)</option>
-              <option value="sk">Korean</option>
-              <option value="vi">Vietnamese</option>
-              <option value="ru">Russian</option>
-            </select>
-
-            <div className="settings-options">
-              <div className="checkbox-grid">
-                <div className="checkbox-group">
-                  <input 
-                    type="checkbox" 
-                    id="exam-layout-popup" 
-                    name="examLayout" 
-                    checked={noteSettings.examLayout}
-                    onChange={handleCheckboxChange}
-                    aria-label="Use exam layout for SOAP chiropractic note"
-                  />
-                  <label htmlFor="exam-layout-popup">Exam Layout</label>
-                </div>
-                <div className="checkbox-group">
-                  <input 
-                    type="checkbox" 
-                    id="bulleted-layout-popup" 
-                    name="bulletedLayout" 
-                    checked={noteSettings.bulletedLayout}
-                    onChange={handleCheckboxChange}
-                    aria-label="Use bulleted layout for SOAP chiropractic note"
-                  />
-                  <label htmlFor="bulleted-layout-popup">Bulleted Layout</label>
+              <div className="settings-options">
+                <label className="options-label">Options:</label>
+                <div className="checkbox-grid">
+                  <div className="checkbox-group">
+                    <input 
+                      type="checkbox" 
+                      id="exam-layout-popup" 
+                      name="examLayout" 
+                      checked={noteSettings.examLayout}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label htmlFor="exam-layout-popup">Exam Layout</label>
+                  </div>
+                  <div className="checkbox-group">
+                    <input 
+                      type="checkbox" 
+                      id="bulleted-layout-popup" 
+                      name="bulletedLayout" 
+                      checked={noteSettings.bulletedLayout}
+                      onChange={handleCheckboxChange}
+                    />
+                    <label htmlFor="bulleted-layout-popup">Bulleted Layout</label>
+                  </div>
                 </div>
               </div>
             </div>
-            <button className="start-recording-btn" onClick={() => toggleRecordingPopup()} aria-label="Close SOAP note recording popup">Close</button>
+
+            <div className="button-container">
+              <button 
+                className="toolbar-button new-note-button"
+                onClick={handleStartRecording}
+              >
+                Start Recording
+              </button>
+              <button 
+                className="close-button"
+                onClick={() => toggleRecordingPopup()}
+              >
+                Back
+              </button>
+            </div>
           </>
         ) : isPreparingTranscript ? (
           <div className="preparing-transcript">
