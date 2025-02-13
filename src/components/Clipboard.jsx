@@ -5,6 +5,7 @@ const Clipboard = ({
   clipboardContent,
   setClipboardContent,
   streamContent,
+  setShowCopyMessage,
 }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [soapPositions, setSoapPositions] = useState({ S: 0, O: 0, A: 0, P: 0 });
@@ -53,7 +54,12 @@ const Clipboard = ({
 
     // Extract and copy the section text
     const sectionText = text.substring(startIndex + currentSection.length, endIndex).trim();
-    navigator.clipboard.writeText(sectionText);
+    navigator.clipboard.writeText(sectionText)
+      .then(() => {
+        setShowCopyMessage(true);
+        setTimeout(() => setShowCopyMessage(false), 1000);
+      })
+      .catch(err => console.error('Failed to copy:', err));
   };
 
   const updatePositions = useCallback(() => {

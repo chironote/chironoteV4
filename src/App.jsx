@@ -413,10 +413,9 @@ function AuthenticatedApp({ signOut, user }) {
               <Clipboard
                 clipboardTextareaRef={clipboardTextareaRef}
                 clipboardContent={clipboardContent}
-                handleCopyPaste={handleCopyPaste}
                 setClipboardContent={setClipboardContent}
-                showCopyMessage={showCopyMessage}
-                draggedContent={draggedContent}
+                streamContent={streamingText}
+                setShowCopyMessage={setShowCopyMessage}
               />
             </section>
 

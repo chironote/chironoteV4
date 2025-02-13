@@ -912,13 +912,13 @@
 .left-panel .fade-content > * {
   opacity: 0;
   transform: translateY(20px);
-  transition: opacity 0.3s, transform 0.3s;
+  transition: opacity 0.1s, transform 0.1s;
 }
 
 .left-panel:not(.collapsed) .fade-content > * {
   opacity: 1;
   transform: translateY(0);
-  transition-delay: 0.3s;
+  transition-delay: 0.1s;
 }
 
 .left-panel.collapsed .fade-content > * {
