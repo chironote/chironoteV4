@@ -130,7 +130,7 @@
 
 .close-button:hover {
   color: white;
-  background-color: var(--light-green);
+  background-color: var(--dark-green);
 }
 
 /* Close button container */

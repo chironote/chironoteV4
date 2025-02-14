@@ -23,7 +23,7 @@ const Clipboard = ({
     e.preventDefault();
     setIsDraggingOver(false);
     const droppedText = e.dataTransfer.getData('text/plain');
-    setClipboardContent((prevContent) => prevContent + droppedText);
+    setClipboardContent(droppedText);
   };
 
   const copySection = (section) => {
