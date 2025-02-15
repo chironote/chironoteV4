@@ -1,0 +1,14 @@
+{
+  "resourceName": "base64audiobucket",
+  "policyUUID": "26f0d6d8",
+  "bucketName": "chironoteaudiobucket",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}

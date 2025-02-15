@@ -27,5 +27,11 @@ export type AmplifyDependentResourcesAttributes = {
       "S3BucketSecureURL": "string",
       "WebsiteURL": "string"
     }
+  },
+  "storage": {
+    "base64audiobucket": {
+      "BucketName": "string",
+      "Region": "string"
+    }
   }
 }

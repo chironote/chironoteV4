@@ -58,5 +58,12 @@
       "providerPlugin": "awscloudformation",
       "service": "S3AndCloudFront"
     }
+  },
+  "storage": {
+    "base64audiobucket": {
+      "dependsOn": [],
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    }
   }
 }

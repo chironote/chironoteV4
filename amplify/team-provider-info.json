@@ -20,6 +20,9 @@
       },
       "hosting": {
         "S3AndCloudFront": {}
+      },
+      "storage": {
+        "base64audiobucket": {}
       }
     }
   }
