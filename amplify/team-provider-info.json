@@ -15,12 +15,6 @@
       "auth": {
         "chironotev4167c865f": {}
       },
-      "api": {
-        "chironotev4": {}
-      },
-      "hosting": {
-        "S3AndCloudFront": {}
-      },
       "storage": {
         "base64audiobucket": {}
       }

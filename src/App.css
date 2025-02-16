@@ -672,10 +672,24 @@
   }
 
   .clipboard-textarea {
-    height: 38vh;
+    height: 67vh;
     width: calc(100% - 30px);
     padding: 16px;
   }
+
+  .new-note-button {
+    min-width: 100px;
+    max-width: 100px;
+  }
+
+  .button-text {
+    font-weight: 400;
+  }
+
+  .plus-icon {
+    display: none;
+  } 
+
 
   .clipboard-textarea-container {
     width: 100%;
@@ -692,6 +706,10 @@
   }
 
   .section-header {
+    display: none;
+  }
+
+  .soap-buttons {
     display: none;
   }
 }

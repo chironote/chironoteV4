@@ -105,7 +105,6 @@
 
 .toolbar-button.new-note-button {
   flex: 1;
-  padding: 10px 20px;
   background-color: var(--medium-green);
   color: var(--pure-white);
   border: none;

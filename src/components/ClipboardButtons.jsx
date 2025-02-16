@@ -57,16 +57,24 @@ const ClipboardButtons = ({
           <span className="material-symbols-rounded toolbar-icon">delete</span>
         </button>
 
-        <div className="toolbar-divider"></div>
+        <div className="toolbar-divider hide-on-mobile"></div>
         
         <button
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
           onClick={toggleEditPanel}
         >
-          <span className="material-symbols-rounded toolbar-icon">edit</span>
+          <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
         </button>
         
       </div>
+      {/* Added media query to hide elements on mobile */}
+      <style jsx>{`
+        @media only screen and (max-width: 768px) {
+          .hide-on-mobile {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 };
