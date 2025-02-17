@@ -37,11 +37,12 @@
 
 
 .left-panel.collapsed {
-  width: 50px;
-  min-width: 50px;
-  max-width: 50px;
+  width: 30px;
+  min-width: 30px;
+  max-width: 30px;
   margin-left: -20px;
   overflow: hidden;
+  padding: 0px;
 }
 
 .timestamp {
@@ -73,17 +74,6 @@
 }
 
 /* Panel Headers */
-.panel-header {
-  font-size: 20px;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  padding: 16px;
-  background-color: white;
-  border-bottom: 1px solid #e0e0e0;
-  text-align: center;
-}
-
 .panel-header {
   font-size: 20px;
   font-weight: 500;
@@ -622,8 +612,42 @@
   overflow-x: auto;
 }
 
+/* Mobile Toggle Button - Base Styles */
+.mobile-toggle-button {
+  position: fixed;
+  left: -10px;
+  top: 90px;
+  z-index: 1001;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: left 0.3s ease, right 0.3s ease, background-color 0.3s ease;
+}
 
-/* For screens with max-width: 880px */
+.mobile-toggle-button:hover {
+  cursor: pointer;
+}
+
+.mobile-toggle-button .material-symbols-rounded {
+  font-size: 24px;
+  color: #333;
+}
+
+/* When panel is collapsed */
+.left-panel.collapsed ~ .mobile-toggle-button {
+  left: -5px;
+}
+
+/* When panel is not collapsed */
+.left-panel:not(.collapsed) ~ .mobile-toggle-button {
+  left: 342px;
+  top: 90px;
+}
+
 @media (max-width: 880px) {
   .left-panel {
     max-width: 250px;
@@ -638,24 +662,68 @@
     padding: 10px;
     gap: 20px;
     height: auto;
+    position: relative;
+  }
+
+  .mobile-toggle-button {
+    position: fixed;
+    left: 10px;
+    top: 90px;
+    z-index: 1001;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor:pointer;
+    transition: all 0.3s ease;
+  }
+
+  .left-panel.collapsed ~ .mobile-toggle-button {
+    left: 10px;
+  }
+
+  /* Higher specificity for mobile view */
+  .app-main .toggle-container {
+    margin-right: 50px !important;
+  }
+
+  .toggle-container {
+    margin-right: 0px;
+  }
+
+  /* When panel is open, move button to right and add background/shadow */
+  .left-panel:not(.collapsed) + .mobile-toggle-button,
+  .left-panel:not(.collapsed) ~ .mobile-toggle-button {
+    left: auto;
+    right: 32px;
+    top: 90px;
+    background-color: white;
+    transition: all 0.3s ease;
+  }
+
+  .mobile-toggle-button .material-symbols-rounded {
+    font-size: 24px;
+    color: #333;
   }
 
   .left-panel {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    height: calc(100vh - 70px);
+    width: 100%;
     max-width: 100%;
-    max-height: 200px;
-    overflow-y: auto;
-    transition: max-height 0.3s ease-in-out;
-    display: none;
+    background-color: white;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    transform: translateX(0);
   }
 
   .left-panel.collapsed {
-    max-height: 0;
-    padding: 0;
-  }
-
-  .left-panel.collapsed .panel-header,
-  .left-panel.collapsed .list-container {
-    display: none;
+    transform: translateX(-100%);
+    transition: all 0.3s ease;
   }
 
   .clipboard-container {
@@ -728,6 +796,7 @@
   .clipboard-actions {
     display: none;
   }
+
 }
 
 /* This is the styling for the amplify authenticator */

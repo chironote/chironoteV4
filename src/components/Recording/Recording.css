@@ -412,3 +412,20 @@
 .recording-controls button:hover {
   background-color: var(--dark-green);
 }
+
+.recording-start-button {
+  flex: 1;
+  width: auto;
+  background-color: var(--medium-green);
+  color: var(--pure-white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: 500;
+  padding: 10px 20px;
+}
+
+.recording-start-button:hover {
+  background-color: var(--dark-green);
+}

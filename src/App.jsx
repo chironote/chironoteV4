@@ -385,11 +385,6 @@ function AuthenticatedApp({ signOut, user }) {
         <Route path="/" element={
           <main className="app-main">
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
-              <div className="right-align-div">
-                <div className="toggle-panel" onClick={togglePanel}>
-                  {isCollapsed ? <span className="material-symbols-rounded">left_panel_open</span> : <span className="material-symbols-rounded">left_panel_close</span>}
-                </div>
-              </div>
               <div className="fade-content">
                 <h2 className="panel-header">History</h2>
                 <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
@@ -398,7 +393,9 @@ function AuthenticatedApp({ signOut, user }) {
                 </div>
               </div>
             </section>
-
+            <div className="mobile-toggle-button" onClick={togglePanel}>
+              {isCollapsed ? <span className="material-symbols-rounded">left_panel_open</span> : <span className="material-symbols-rounded">left_panel_close</span>}
+            </div>
             <section className="clipboard-container">
               <h2 className="panel-header">Current Note</h2>
               <ClipboardButtons 

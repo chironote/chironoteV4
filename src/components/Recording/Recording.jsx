@@ -226,7 +226,7 @@ function Recording({
 
             <div className="button-container">
               <button 
-                className="toolbar-button new-note-button"
+                className="recording-start-button"
                 onClick={handleStartRecording}
               >
                 Start Recording
