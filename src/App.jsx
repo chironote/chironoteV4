@@ -238,7 +238,7 @@ function AuthenticatedApp({ signOut, user }) {
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedNotes.slice(0, 10);
+            return updatedNotes.slice(0, 25);
           });
         }
         
@@ -247,7 +247,7 @@ function AuthenticatedApp({ signOut, user }) {
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedTranscripts.slice(0, 10);
+            return updatedTranscripts.slice(0, 25);
           });
         }
       },
@@ -386,7 +386,6 @@ function AuthenticatedApp({ signOut, user }) {
           <main className="app-main">
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
               <div className="fade-content">
-                <h2 className="panel-header">History</h2>
                 <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
                 <div className="list-container">
                   {renderItems()}
