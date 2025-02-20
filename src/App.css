@@ -73,19 +73,8 @@
   animation: slideInFromLeft 0.3s ease-out;
 }
 
-/* Panel Headers */
-.panel-header {
-  font-size: 20px;
-  font-weight: 500;
-  color: #333;
-  margin: 0;
-  padding: 16px;
-  background-color: white;
-  border-bottom: 1px solid #e0e0e0;
-  text-align: center;
-}
 
-.edit-panel .panel-header {
+.panel-header {
   font-size: 20px;
   font-weight: 500;
   color: #333;
@@ -614,9 +603,7 @@
 
 /* Mobile Toggle Button - Base Styles */
 .mobile-toggle-button {
-  position: fixed;
-  left: -10px;
-  top: 90px;
+  position: relative;
   z-index: 1001;
   width: 40px;
   height: 40px;
@@ -628,6 +615,7 @@
   transition: left 0.3s ease, right 0.3s ease, background-color 0.3s ease;
 }
 
+
 .mobile-toggle-button:hover {
   cursor: pointer;
 }
@@ -635,17 +623,6 @@
 .mobile-toggle-button .material-symbols-rounded {
   font-size: 24px;
   color: #333;
-}
-
-/* When panel is collapsed */
-.left-panel.collapsed ~ .mobile-toggle-button {
-  left: -5px;
-}
-
-/* When panel is not collapsed */
-.left-panel:not(.collapsed) ~ .mobile-toggle-button {
-  left: 342px;
-  top: 90px;
 }
 
 @media (max-width: 880px) {
@@ -658,54 +635,10 @@
 @media (max-width: 768px) {
   .app-main {
     display: flex;
-    flex-direction: column;
-    padding: 10px;
-    gap: 20px;
-    height: auto;
+    padding: 0;
+    height: calc(100vh - 70px);
     position: relative;
-  }
-
-  .mobile-toggle-button {
-    position: fixed;
-    left: 10px;
-    top: 90px;
-    z-index: 1001;
-    width: 40px;
-    height: 40px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor:pointer;
-    transition: all 0.3s ease;
-  }
-
-  .left-panel.collapsed ~ .mobile-toggle-button {
-    left: 10px;
-  }
-
-  /* Higher specificity for mobile view */
-  .app-main .toggle-container {
-    margin-right: 50px !important;
-  }
-
-  .toggle-container {
-    margin-right: 0px;
-  }
-
-  /* When panel is open, move button to right and add background/shadow */
-  .left-panel:not(.collapsed) + .mobile-toggle-button,
-  .left-panel:not(.collapsed) ~ .mobile-toggle-button {
-    left: auto;
-    right: 32px;
-    top: 90px;
-    background-color: white;
-    transition: all 0.3s ease;
-  }
-
-  .mobile-toggle-button .material-symbols-rounded {
-    font-size: 24px;
-    color: #333;
+    overflow: hidden;
   }
 
   .left-panel {
@@ -713,72 +646,91 @@
     top: 70px;
     left: 0;
     height: calc(100vh - 70px);
-    width: 100%;
-    max-width: 100%;
+    width: 90%;
+    max-width: 90%;
     background-color: white;
     z-index: 1000;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
     transform: translateX(0);
+    overflow-y: auto;
   }
 
   .left-panel.collapsed {
     transform: translateX(-100%);
-    transition: all 0.3s ease;
+  }
+
+
+
+  .left-panel.collapsed + .mobile-content-overlay {
+    background-color: transparent;
+  }
+
+  .mobile-toggle-button {
+    position: relative;
+    top: 20px;
+    margin-bottom: -20px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    z-index: 1003;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-toggle-button .material-symbols-rounded {
+    font-size: 33px;
+    color: var(--dark-green);
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-toggle-button .material-symbols-rounded:hover {
+    transform: scale(1.05);
+  }
+
+  .mobile-toggle-overlay {
+    position: fixed;
+    top: 70px;
+    right: 0;
+    width: 10%;
+    height: calc(100vh - 70px);
+    background-color: rgba(128, 128, 128, 0.5);
+    z-index: 1002;
   }
 
   .clipboard-container {
-    flex: 3;
+    margin-left: 90%;
+    margin-top: -11px;
     width: 100%;
+    transition: margin-left 0.3s ease;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+
+  .left-panel.collapsed ~ .clipboard-container {
     margin-left: 0;
   }
-  .edit-panel {
+
+  .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
+    transform: translateX(calc(92vw - 7px));
+  }
+
+  .left-panel:not(.collapsed) ~ .clipboard-container {
+    pointer-events: none;
+  }
+
+  .left-panel.collapsed ~ .mobile-toggle-overlay {
     display: none;
   }
-
-  .clipboard-actions {
-    display: none;
-  }
-
-  .clipboard-textarea {
-    height: 67vh;
-    width: calc(100% - 30px);
-    padding: 16px;
-  }
-
-  .new-note-button {
-    min-width: 100px;
-    max-width: 100px;
-  }
-
-  .button-text {
-    font-weight: 400;
-  }
-
-  .plus-icon {
-    display: none;
-  } 
-
 
   .clipboard-textarea-container {
     width: 100%;
-    transform: none;
-    position: relative;
+    padding: 15px;
   }
 
-  .textarea-icons {
-    right: -8px;
-  }
-
-  .clear-clipboard-link {
-    display: none;
-  }
-
-  .section-header {
-    display: none;
-  }
-
-  .soap-buttons {
-    display: none;
+  .app-main {
+    overflow: hidden;
   }
 }
 

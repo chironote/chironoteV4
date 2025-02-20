@@ -97,7 +97,7 @@
   border-radius: 0 0 4px 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   width: 200px;
-  z-index: 1000;
+  z-index: 1004;
   animation: slideIn 0.3s ease-out;
   transform-origin: top right;
 }

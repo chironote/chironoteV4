@@ -166,7 +166,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isLoading, setIsLoading] = useState(true);
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -392,6 +392,7 @@ function AuthenticatedApp({ signOut, user }) {
                 </div>
               </div>
             </section>
+            <div className="mobile-toggle-overlay"></div>
             <div className="mobile-toggle-button" onClick={togglePanel}>
               {isCollapsed ? <span className="material-symbols-rounded">left_panel_open</span> : <span className="material-symbols-rounded">left_panel_close</span>}
             </div>
