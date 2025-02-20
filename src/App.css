@@ -371,6 +371,8 @@
   line-height: 1.6;
   color: #333;
   background-color: white;
+  scrollbar-width: thin;
+  scrollbar-color: var(--medium-green) var(--off-white);
 }
 
 .clipboard-textarea:focus {
@@ -420,7 +422,6 @@
   font-weight: 900;
   color: var(--dark-green);
   opacity: 0.85;
-  transition: all 0.2s ease;
   z-index: 10;
   font-size: 18px;
   padding: 10px;
@@ -604,6 +605,8 @@
 /* Mobile Toggle Button - Base Styles */
 .mobile-toggle-button {
   position: relative;
+  margin-right: -20px;
+  top: 10px;
   z-index: 1001;
   width: 40px;
   height: 40px;
@@ -613,23 +616,32 @@
   justify-content: center;
   cursor: pointer;
   transition: left 0.3s ease, right 0.3s ease, background-color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
+.mobile-toggle-button .material-symbols-rounded:hover {
+  transform: scale(1.15);
+}
+
+.left-panel.collapsed ~ .mobile-toggle-button {
+  transform: translateX(-35px);
+  margin-right: -30px;
+}
+
+.right-panel.collapsed ~ .mobile-toggle-button {
+  transform: translateX(40px);
+}
 
 .mobile-toggle-button:hover {
   cursor: pointer;
+
 }
 
 .mobile-toggle-button .material-symbols-rounded {
-  font-size: 24px;
+  font-size: 28px;
   color: #333;
 }
 
-@media (max-width: 880px) {
-  .left-panel {
-    max-width: 250px;
-  }
-}
 
 /* For screens with max-width: 768px */
 @media (max-width: 768px) {
@@ -646,8 +658,8 @@
     top: 70px;
     left: 0;
     height: calc(100vh - 70px);
-    width: 90%;
-    max-width: 90%;
+    width: 85%;
+    max-width: 85%;
     background-color: white;
     z-index: 1000;
     transition: transform 0.3s ease;
@@ -667,7 +679,7 @@
 
   .mobile-toggle-button {
     position: relative;
-    top: 20px;
+    top: 17px;
     margin-bottom: -20px;
     right: 0;
     width: 40px;
@@ -685,18 +697,17 @@
     transition: transform 0.3s ease;
   }
 
-  .mobile-toggle-button .material-symbols-rounded:hover {
-    transform: scale(1.05);
-  }
 
   .mobile-toggle-overlay {
     position: fixed;
     top: 70px;
     right: 0;
-    width: 10%;
+    width: 15%;
     height: calc(100vh - 70px);
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 1002;
+    opacity: 1;
+    
   }
 
   .clipboard-container {
@@ -712,8 +723,20 @@
     margin-left: 0;
   }
 
+  .left-panel.collapsed ~ .mobile-toggle-button {
+    transform: translateX(10px);
+    margin-right: 0px;
+  }
+
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
-    transform: translateX(calc(92vw - 7px));
+    transform: translateX(86.5vw);
+    background-color: white;
+    border-radius: 4px;
+    padding: 3px;
+  }
+
+  .left-panel:not(.collapsed) ~ .mobile-toggle-button:active .material-symbols-rounded:active {
+    transform: scale(1.15) translateX(75vw);
   }
 
   .left-panel:not(.collapsed) ~ .clipboard-container {
@@ -722,6 +745,7 @@
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {
     display: none;
+    opacity: 0;
   }
 
   .clipboard-textarea-container {
@@ -1008,4 +1032,20 @@
 
 .clear-clipboard-link {
   display: none;
+}
+
+/* Added appearance animation for mobile-toggle-overlay */
+@keyframes fadeInFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-200px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.mobile-toggle-overlay {
+  animation: fadeInFromLeft 0.3s ease-out forwards;
 }

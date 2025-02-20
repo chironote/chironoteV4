@@ -96,7 +96,15 @@ const Clipboard = ({
           const textUpToHeader = text.substring(0, index);
           measureDiv.textContent = textUpToHeader;
           const height = measureDiv.offsetHeight;
-          newPositions[key] = height + verticalOffset;
+          const scrollTop = clipboardTextareaRef.current.scrollTop;
+          const position = height - scrollTop + verticalOffset;
+          
+          // Only show buttons if they're in a visible range
+          if (position > 0) {
+            newPositions[key] = position;
+          } else {
+            newPositions[key] = undefined; // This will hide the button
+          }
         }
       });
 
@@ -110,17 +118,25 @@ const Clipboard = ({
     updatePositions();
   }, [updatePositions]);
 
-  // Update positions when window resizes
+  // Update positions when window resizes or on scroll
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
       updatePositions();
     });
 
+    const handleScroll = () => {
+      requestAnimationFrame(updatePositions);
+    };
+
     if (clipboardTextareaRef.current) {
       resizeObserver.observe(clipboardTextareaRef.current);
+      clipboardTextareaRef.current.addEventListener('scroll', handleScroll);
     }
 
     return () => {
+      if (clipboardTextareaRef.current) {
+        clipboardTextareaRef.current.removeEventListener('scroll', handleScroll);
+      }
       resizeObserver.disconnect();
     };
   }, [updatePositions]);
@@ -129,7 +145,7 @@ const Clipboard = ({
     <div className="clipboard">
       <div className="soap-buttons">
         {Object.entries(soapPositions).map(([section, position]) => (
-          position !== undefined && (
+          position !== undefined && position > 0 && (
             <button
               key={section}
               className="soap-button"

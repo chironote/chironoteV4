@@ -394,7 +394,7 @@ function AuthenticatedApp({ signOut, user }) {
             </section>
             <div className="mobile-toggle-overlay"></div>
             <div className="mobile-toggle-button" onClick={togglePanel}>
-              {isCollapsed ? <span className="material-symbols-rounded">left_panel_open</span> : <span className="material-symbols-rounded">left_panel_close</span>}
+              {isCollapsed ? <span className="material-symbols-rounded">sort</span> : <span className="material-symbols-rounded">left_panel_close</span>}
             </div>
             <section className="clipboard-container">
               <h2 className="panel-header">Current Note</h2>
