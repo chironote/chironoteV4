@@ -733,6 +733,7 @@
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
+    transition: transform 0.1s ease;
     transform: translateX(86.5vw);
     background-color: white;
     border-radius: 4px;
@@ -1057,5 +1058,5 @@
 }
 
 .mobile-toggle-overlay {
-  animation: fadeInFromLeft 0.3s ease-out forwards;
+  animation: fadeInFromLeft 0.1s ease;
 }
