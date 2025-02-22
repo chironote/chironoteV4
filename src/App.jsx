@@ -290,7 +290,13 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const handleCopy = (isPopupMenu = false) => {
-    const contentToCopy = selectedContent || clipboardContent;
+    let contentToCopy;
+    if (isPopupMenu) {
+      contentToCopy = selectedContent || clipboardContent;
+    } else {
+      // When copying from clipboard buttons, directly use textarea value
+      contentToCopy = clipboardTextareaRef.current?.value || '';
+    }
     const plainText = extractPlainText(contentToCopy);
     navigator.clipboard.writeText(plainText)
       .then(() => {

@@ -63,23 +63,28 @@ const Clipboard = ({
   };
 
   const updatePositions = useCallback(() => {
-    if (clipboardTextareaRef.current) {
-      const text = clipboardContent;
-      const sections = {
-        'S': 'Subjective:',
-        'O': 'Objective:',
-        'A': 'Assessment:',
-        'P': 'Plan:'
-      };
+    if (!clipboardTextareaRef.current) return;
 
-      const newPositions = {};
-      const verticalOffset = -6;
-      
-      // Create a hidden div to measure text height
-      const measureDiv = document.createElement('div');
+    const text = clipboardContent;
+    const sections = {
+      'S': 'Subjective:',
+      'O': 'Objective:',
+      'A': 'Assessment:',
+      'P': 'Plan:'
+    };
+
+    const newPositions = {};
+    const verticalOffset = -6;
+    
+    // Create a hidden div to measure text height if it doesn't exist
+    let measureDiv = document.getElementById('soap-measure-div');
+    if (!measureDiv) {
+      measureDiv = document.createElement('div');
+      measureDiv.id = 'soap-measure-div';
       measureDiv.style.cssText = `
         position: absolute;
         visibility: hidden;
+        height: auto;
         width: ${clipboardTextareaRef.current.clientWidth}px;
         font-family: ${getComputedStyle(clipboardTextareaRef.current).fontFamily};
         font-size: ${getComputedStyle(clipboardTextareaRef.current).fontSize};
@@ -88,35 +93,52 @@ const Clipboard = ({
         word-wrap: break-word;
         padding: ${getComputedStyle(clipboardTextareaRef.current).padding};
       `;
-      document.body.appendChild(measureDiv);
-
-      Object.entries(sections).forEach(([key, header]) => {
-        const index = text.indexOf(header);
-        if (index !== -1) {
-          const textUpToHeader = text.substring(0, index);
-          measureDiv.textContent = textUpToHeader;
-          const height = measureDiv.offsetHeight;
-          const scrollTop = clipboardTextareaRef.current.scrollTop;
-          const position = height - scrollTop + verticalOffset;
-          
-          // Only show buttons if they're in a visible range
-          if (position > 0) {
-            newPositions[key] = position;
-          } else {
-            newPositions[key] = undefined; // This will hide the button
-          }
-        }
-      });
-
-      document.body.removeChild(measureDiv);
-      setSoapPositions(newPositions);
+      clipboardTextareaRef.current.parentElement.appendChild(measureDiv);
     }
+
+    // Update width in case textarea size changed
+    measureDiv.style.width = `${clipboardTextareaRef.current.clientWidth}px`;
+
+    Object.entries(sections).forEach(([key, header]) => {
+      const index = text.indexOf(header);
+      if (index !== -1) {
+        const textUpToHeader = text.substring(0, index);
+        measureDiv.textContent = textUpToHeader;
+        const height = measureDiv.offsetHeight;
+        const scrollTop = clipboardTextareaRef.current.scrollTop;
+        const position = height - scrollTop + verticalOffset;
+        
+        // Only show buttons if they're within the visible area of the textarea
+        const textareaHeight = clipboardTextareaRef.current.clientHeight;
+        if (position > 0 && position < textareaHeight) {
+          newPositions[key] = position;
+        } else {
+          newPositions[key] = undefined;
+        }
+      }
+    });
+
+    setSoapPositions(newPositions);
   }, [clipboardContent]);
 
-  // Update positions when content changes
+  // Debounced update positions when content changes
   useEffect(() => {
-    updatePositions();
+    const timeoutId = setTimeout(() => {
+      updatePositions();
+    }, 100); // Debounce for 100ms
+
+    return () => clearTimeout(timeoutId);
   }, [updatePositions]);
+
+  // Clean up measurement div on unmount
+  useEffect(() => {
+    return () => {
+      const measureDiv = document.getElementById('soap-measure-div');
+      if (measureDiv) {
+        measureDiv.remove();
+      }
+    };
+  }, []);
 
   // Update positions when window resizes or on scroll
   useEffect(() => {
@@ -168,12 +190,6 @@ const Clipboard = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         />
-
-        {streamContent && (
-          <div className="stream-content">
-            <p>{streamContent}</p>
-          </div>
-        )}
       </div>
     </div>
   );
