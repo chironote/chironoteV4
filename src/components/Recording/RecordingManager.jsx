@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { uploadData } from 'aws-amplify/storage';
 import NoSleep from 'nosleep.js';
 
 
@@ -46,7 +47,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', selectedLanguage || 'auto');
+      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage || 'auto');
       console.log(selectedLanguage);
    
      
@@ -70,6 +71,58 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     } catch (error) {
       console.error('Error sending audio to Lambda:', error);
       return null;
+    }
+  };
+
+  const uploadS3 = async (audioBlob) => {
+    const timestamp = timeStampRef.current;
+    const userId = await getUserId();
+
+    const filename = `public/${userId}/${timestamp}_recording.webm`;
+    try {
+      // First upload to S3
+      const uploadResult = await uploadData({
+        path: filename,
+        data: audioBlob,
+        options: {
+          contentType: 'audio/webm',
+          metadata: {
+            timestamp: timestamp.toString(),
+            userId: userId
+          }
+        }
+      }).result;
+
+      console.log(uploadResult);
+      
+      // Then notify Lambda about the upload
+      const selectedLanguage = localStorage.getItem('selectedLanguage');
+      const url = new URL('https://qush6yocc25lxrp4s7vexgd7ra0qdylu.lambda-url.us-east-2.on.aws');
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        body: JSON.stringify({
+          userId,
+          timestamp,
+          path: filename,
+          language: selectedLanguage === 'null' ? null : selectedLanguage || 'auto'
+        }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error notifying Lambda about S3 upload:', errorData.message);
+      } else {
+        const data = await response.json();
+        console.log('Lambda notification response:', data);
+      }
+
+      return uploadResult;
+    } catch (error) {
+      console.error('Error uploading audio to S3:', error);
+      throw error;
     }
   };
 
@@ -154,7 +207,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       setTextStream('');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 1, // Mono
+          channelCount: 2, // Stereo
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
@@ -173,10 +226,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   
       mediaRecorderRef.current.ondataavailable = async (event) => {
         if (event.data.size > 0 && !isRecordingRef.current) {
-          await uploadAudioChunk(event.data);
+          await uploadS3(event.data); // You left off here, this needs to upload to Transcription as path instead of base64body
+          //await uploadAudioChunk(event.data);
           streamResponse();
         } else if (event.data.size > 0) {
-          uploadAudioChunk(event.data);
+          uploadS3(event.data);
+          //uploadAudioChunk(event.data);
         }
       };
     } catch (error) {
@@ -205,7 +260,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 60000);
+      }, 300000);
     }
   };
 
@@ -231,7 +286,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 60000);
+      }, 300000);
     }
   };
 

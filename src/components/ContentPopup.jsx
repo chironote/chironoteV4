@@ -24,39 +24,41 @@ const ContentPopup = ({
       <div className="content-popup-inner" onClick={(e) => e.stopPropagation()}>
         <div className="popup-header">
           <h2>
-            {showNotes ? (
-              <>
-                <span className="material-symbols-rounded">description</span> Note
-              </>
-            ) : (
-              <>
-                <span className="material-symbols-rounded">record_voice_over</span> Transcript
-              </>
-            )}
+            {showNotes ? "Note" : "Transcript"}
           </h2>
-          <div className="popup-menu-container">
-            {/* Menu icon to toggle popup menu */}
-            <img
-              src={menuIcon}
-              alt="Menu"
-              className="popup-menu-icon"
-              onClick={togglePopupMenu}
-            />
+          <div className="popup-actions">
+            <div className="popup-menu-container">
+              {/* Menu icon to toggle popup menu */}
+              <img
+                src={menuIcon}
+                alt="Menu"
+                className="popup-menu-icon"
+                onClick={togglePopupMenu}
+              />
 
-            {/* Options for copying or sending content */}
-            {showPopupMenu && (
-              <div className="popup-menu">
-                <button onClick={() => handleCopy(true)}>Copy to Clipboard</button>
-                <button onClick={handleSendToClipboard}>Send to Dashboard</button>
-              </div>
-            )}
+              {/* Options for copying or sending content */}
+              {showPopupMenu && (
+                <div className="popup-menu">
+                  <button onClick={() => handleCopy(true)}>Copy to Clipboard</button>
+                  <button onClick={handleSendToClipboard}>Send to Dashboard</button>
+                </div>
+              )}
+            </div>
+            {/* Close button */}
+            <button 
+              className="popup-close-button"
+              onClick={() => setShowContentPopup(false)}
+              aria-label="Close"
+            >
+              <span className="material-symbols-rounded">close</span>
+            </button>
           </div>
         </div>
 
         {/* Display selected content */}
         <div className="content-popup-text">
           {selectedContent && typeof selectedContent === 'string' 
-            ? <pre>{selectedContent}</pre>
+            ? selectedContent
             : 'No content available'}
         </div>
         

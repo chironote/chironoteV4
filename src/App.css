@@ -130,12 +130,13 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 16px;
+  padding: 0px 4px 4px 4px;
 }
 
 .edit-textarea {
   width: 100%;
   height: 100%;
+  margin-top: 10px;
   padding: 16px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
@@ -146,7 +147,6 @@
   color: #333;
   background-color: white;
   transition: border-color 0.2s ease;
-  margin-bottom: 16px;
 }
 
 .edit-textarea::placeholder{
@@ -154,8 +154,8 @@
 }
 .edit-textarea:focus {
   outline: none;
-  border-color: var(--medium-green);
-  box-shadow: 0 0 0 1px var(--medium-green);
+  border-color: #c0c0c0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .edit-panel-buttons {
@@ -163,6 +163,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 4px;
+  margin-bottom: 4px;
 }
 
 .edit-panel-button {
@@ -207,14 +208,25 @@
 }
 
 /* Textarea */
-/* Editor Toolbar Styles */
-.editor-toolbar {
+/* Toolbar Styles - Common for both editor and clipboard */
+.editor-toolbar,
+.clipboard-toolbar {
   display: flex;
   align-items: center;
   padding: 8px;
   background-color: #f8f9fa;
   border-bottom: 1px solid #dee2e6;
   gap: 4px;
+}
+
+/* Editor toolbar specific styles */
+.editor-toolbar {
+  justify-content: space-between;
+  padding-left: 4px;
+}
+
+.clipboard-toolbar {
+  justify-content: flex-start;
 }
 
 .toolbar-group {
@@ -249,15 +261,28 @@
   border-color: #dee2e6;
 }
 
+.toolbar-button.primary-button {
+  background-color: var(--medium-green);
+  color: white;
+}
+
+.toolbar-button.primary-button:hover {
+  background-color: var(--dark-green);
+  border-color: transparent;
+}
+
+.toolbar-button.primary-button .material-symbols-rounded,
+.toolbar-button.primary-button .toolbar-icon {
+  color: white;
+}
+
 .toolbar-button.active {
   background-color: #e9ecef;
   border-color: #ced4da;
 }
 
 .toolbar-icon {
-  width: 18px;
-  height: 18px;
-  filter: brightness(0) saturate(100%) invert(26%) sepia(45%) saturate(702%) hue-rotate(93deg) brightness(92%) contrast(89%);
+  font-size: 18px;
 }
 
 .toolbar-button:hover .toolbar-icon {
@@ -268,6 +293,20 @@
   font-size: 20px;
   width: auto;
   height: auto;
+}
+
+.toolbar-button.delete-button {
+  color: #666;
+}
+
+.toolbar-button.delete-button:hover {
+  background-color: #f5f5f5;
+  border-color: #ccc;
+}
+
+.toolbar-button.active {
+  background-color: #e9ecef;
+  border-color: #ced4da;
 }
 
 /* Copy message tooltip */
@@ -377,8 +416,8 @@
 
 .clipboard-textarea:focus {
   outline: none;
-  border-color: #e0e0e0;
-  box-shadow: none;
+  border-color: #c0c0c0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .clipboard-textarea::placeholder {
@@ -511,7 +550,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1010;
   background-color: rgba(0, 0, 0, 0.5);
 }
 
@@ -528,6 +567,7 @@
   scrollbar-color: var(--medium-green) var(--pale-green);  
   background-color: var(--off-white);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: 'Roboto', sans-serif;
 }
 
 .popup-header {
@@ -539,14 +579,37 @@
 
 .popup-header h2 {
   margin: 0;
-  gap: 12px;
-  display: flex;
-  align-items: center;
   color: var(--dark-green);
+  font-size: 1.4rem;
+  font-weight: 500;
+  font-family: 'Roboto', sans-serif;
 }
 
-.popup-header h2 span {
-  font-size: 2rem;
+.popup-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.popup-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dark-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.popup-close-button:hover {
+  background-color: var(--pale-green);
+}
+
+.popup-close-button .material-symbols-rounded {
+  font-size: 24px;
 }
 
 .popup-menu-container {
@@ -565,7 +628,7 @@
   position: absolute;
   top: 100%;
   right: 0;
-  z-index: 1000;
+  z-index: 1011;
   border-radius: 4px;
   background-color: var(--off-white);
   border: 1px solid var(--light-green);
@@ -582,6 +645,7 @@
   cursor: pointer;
   font-size: 14px;
   color: var(--dark-green);
+  font-family: 'Roboto', sans-serif;
 }
 
 .popup-menu button:hover {
@@ -589,17 +653,38 @@
 }
 
 .content-popup-text {
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--dark-green);
-}
-
-/* New styles for content-popup-text pre */
-.content-popup-text pre {
   white-space: pre-wrap;
   word-wrap: break-word;
   max-width: 100%;
   overflow-x: auto;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Styles for mobile view */
+@media (max-width: 768px) {
+  .content-popup {
+    z-index: 1010;
+  }
+  
+  .content-popup-inner {
+    max-width: 85%;
+    max-height: 85vh;
+    width: 85%;
+    padding: 20px;
+    z-index: 1010;
+    margin-left: -15%; /* Stay out of grey area on right */
+  }
+  
+  .popup-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .content-popup-text {
+    font-size: 14px;
+  }
 }
 
 /* Mobile Toggle Button - Base Styles */
@@ -626,6 +711,7 @@
 .left-panel.collapsed ~ .mobile-toggle-button {
   transform: translateX(-35px);
   margin-right: -30px;
+  transition: transform 0.3s ease, margin-right 0.3s ease;
 }
 
 .right-panel.collapsed ~ .mobile-toggle-button {
@@ -710,8 +796,9 @@
     height: calc(100vh - 70px);
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 1002;
-    opacity: 1;
-    
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
   }
 
   .clipboard-container {
@@ -730,10 +817,11 @@
   .left-panel.collapsed ~ .mobile-toggle-button {
     transform: translateX(10px);
     margin-right: 0px;
+    transition: transform 0.3s ease, margin-right 0.3s ease;
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
-    transition: transform 0.1s ease;
+    transition: transform 0.3s ease;
     transform: translateX(86.5vw);
     background-color: white;
     border-radius: 4px;
@@ -748,9 +836,38 @@
     pointer-events: none;
   }
 
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
+    display: block;
+    opacity: 1;
+    animation: fadeInShadow 0.3s ease;
+  }
+
   .left-panel.collapsed ~ .mobile-toggle-overlay {
-    display: none;
-    opacity: 0;
+    display: block;
+    animation: fadeOutShadow 0.3s ease forwards;
+  }
+
+  @keyframes fadeInShadow {
+    from {
+      opacity: 0;
+      width: 0;
+    }
+    to {
+      opacity: 1;
+      width: 15%;
+    }
+  }
+  
+  @keyframes fadeOutShadow {
+    from {
+      opacity: 1;
+      width: 15%;
+    }
+    to {
+      opacity: 0;
+      width: 0;
+      display: none;
+    }
   }
 
   .clipboard-textarea-container {
@@ -950,10 +1067,6 @@
   border-radius: 6px;
   transition: transform 0.3s ease;
   z-index: 1;
-}
-
-.toggle-option:last-child.active ~ .slider {
-  transform: translateX(calc(100% + 4px));
 }
 
 .toggle-panel {

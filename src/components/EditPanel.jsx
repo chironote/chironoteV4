@@ -145,6 +145,23 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
     <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
       <h2 className="panel-header" style={{width: '90%'}}>Note Updater</h2>
       <div className="edit-panel-content">
+        <div className="editor-toolbar">
+          <button 
+            className="toolbar-button primary-button"
+            onClick={() => editStream(editContent)}
+          >
+            <span className="material-symbols-rounded">edit</span>
+            <span className="button-text">Apply Changes</span>
+          </button>
+          
+          <button 
+            className="toolbar-button delete-button"
+            onClick={() => setEditContent('')}
+            title="Clear text"
+          >
+            <span className="material-symbols-rounded">delete</span>
+          </button>
+        </div>
         <textarea
           ref={textareaRef}
           className="edit-textarea"
@@ -155,21 +172,6 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
           onDragLeave={(e) => e.preventDefault()}
           onDrop={(e) => e.preventDefault()}
         />
-        <div className="edit-panel-buttons">
-          <button 
-            className="edit-panel-button primary" 
-            onClick={() => editStream(editContent)}
-          >
-            <span className="material-symbols-rounded">edit</span>
-            Apply changes to Note
-          </button>
-          <button 
-            className="edit-panel-button secondary" 
-            onClick={() => setEditContent('')}
-          >
-            <span className="material-symbols-rounded">delete</span>
-          </button>
-        </div>
       </div>
       {showCreditPopup && (
         <CreditPopup

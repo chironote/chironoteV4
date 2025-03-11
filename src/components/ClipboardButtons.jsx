@@ -11,7 +11,7 @@ const ClipboardButtons = ({
   showCopyMessage 
 }) => {
   return (
-    <div className="editor-toolbar">
+    <div className="clipboard-toolbar">
       <div className="toolbar-group">
         <button
           className="toolbar-button new-note-button"

@@ -44,6 +44,26 @@ function RouteTracker() {
   return null;
 }
 
+// PWA detection component
+function PWARedirect() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  useEffect(() => {
+    // Check if app is running in standalone mode (as a PWA)
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                 window.navigator.standalone || 
+                 document.referrer.includes('android-app://');
+    
+    // If it's a PWA and we're on the landing page, redirect to /app
+    if (isPWA && location.pathname === '/') {
+      navigate('/app');
+    }
+  }, [navigate, location]);
+  
+  return null;
+}
+
 const components = {
   Header: () => <Header />,
   SignUp: {
@@ -403,7 +423,7 @@ function AuthenticatedApp({ signOut, user }) {
               {isCollapsed ? <span className="material-symbols-rounded">sort</span> : <span className="material-symbols-rounded">left_panel_close</span>}
             </div>
             <section className="clipboard-container">
-              <h2 className="panel-header">Current Note</h2>
+              <h2 className="panel-header">Your Clipboard</h2>
               <ClipboardButtons 
                 toggleRecordingPopup={toggleRecordingPopup} 
                 toggleDictationPopup={toggleDictationPopup}
@@ -486,6 +506,7 @@ function App() {
   return (
     <Router>
       <RouteTracker />
+      <PWARedirect />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app/*" element={<ProtectedApp />} />
@@ -494,6 +515,5 @@ function App() {
     </Router>
   );
 }
-
 
 export default App;

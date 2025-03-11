@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import './Navbar.css';
 import logo from '../../assets/logo.svg';
@@ -9,6 +9,7 @@ export default function Navbar({ username, onSignOut }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const menuRef = useRef(null);
 
   const isOnDashboard = location.pathname === '/app';
 
@@ -23,11 +24,26 @@ export default function Navbar({ username, onSignOut }) {
     onSignOut();
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <nav className="navbar">
       <div className="navbar-brand">
         <img src={logo} alt="Logo" className="navbar-logo" />
-        <img src={textlogo} alt="Text Logo" className="navbar-text-logo" />
+        <Link to="/app">
+          <img src={textlogo} alt="Text Logo" className="navbar-text-logo" />
+        </Link>
       </div>
 
       {/* Desktop Navigation */}
@@ -56,7 +72,7 @@ export default function Navbar({ username, onSignOut }) {
           <img src={menu} alt="Menu" />
         </button>
         {isMenuOpen && (
-          <div className="mobile-menu">
+          <div className="mobile-menu" ref={menuRef}>
             <ul className="nav-list">
               {links.map((link) => (
                 <li key={link.name} className="nav-item">

@@ -187,8 +187,8 @@ function Recording({
                   onChange={handleLanguageChange}
                   aria-label="Select language for SOAP chiropractic note"
                 >
-                  <option value="auto">Auto</option>
-                  <option value="en_us">English</option>
+                  <option value="null">Auto</option>
+                  <option value="en">English</option>
                   <option value="es">Spanish</option>
                   <option value="zh">Chinese (Simplified)</option>
                   <option value="sk">Korean</option>
