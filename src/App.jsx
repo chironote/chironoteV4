@@ -19,10 +19,15 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
+import * as mutations from './graphql/mutations';
 import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
+import { getCurrentUser } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
+import { RealtimeTranscriber } from 'assemblyai';
+import RecordRTC from 'recordrtc';
+import NoSleep from 'nosleep.js';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
@@ -187,6 +192,24 @@ function AuthenticatedApp({ signOut, user }) {
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
+  
+  // Dictation specific states
+  const [isDictationLoading, setIsDictationLoading] = useState(false);
+  const [isDictationActive, setIsDictationActive] = useState(false);
+  const [assemblyAIToken, setAssemblyAIToken] = useState(null);
+  const [tokenExpiry, setTokenExpiry] = useState(null);
+  const [userSubscription, setUserSubscription] = useState(null);
+  const [transcription, setTranscription] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [timer, setTimer] = useState(0);
+  
+  // Dictation specific refs
+  const rtRef = useRef(null);
+  const recorder = useRef(null);
+  const streamRef = useRef(null);
+  const noSleepRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const tokenRefreshTimeoutRef = useRef(null);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
@@ -200,6 +223,289 @@ function AuthenticatedApp({ signOut, user }) {
   const recordingManager = RecordingManager({ 
     onTextStreamUpdate: handleTextStreamUpdate
   });
+
+  // Fetch AssemblyAI token
+  const fetchAssemblyAIToken = async () => {
+    try {
+      setIsDictationLoading(true);
+      const response = await fetch('https://llck5m4mzd6sa6do3joadjzzs40jtoef.lambda-url.us-east-2.on.aws', {
+        method: 'GET'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const { token } = await response.json();
+      const now = new Date();
+      // Set expiry to 2.9 hours (just under 3 hours to be safe)
+      const expiry = new Date(now.getTime() + 2.9 * 60 * 60 * 1000);
+      
+      setAssemblyAIToken(token);
+      setTokenExpiry(expiry);
+      
+      // Schedule token refresh
+      scheduleTokenRefresh(expiry);
+      setIsDictationLoading(false);
+      
+      return token;
+    } catch (error) {
+      console.error('Error fetching AssemblyAI token:', error);
+      setIsDictationLoading(false);
+      return null;
+    }
+  };
+
+  const scheduleTokenRefresh = (expiry) => {
+    if (tokenRefreshTimeoutRef.current) {
+      clearTimeout(tokenRefreshTimeoutRef.current);
+    }
+    
+    const now = new Date();
+    const timeUntilRefresh = expiry.getTime() - now.getTime();
+    
+    if (timeUntilRefresh > 0) {
+      tokenRefreshTimeoutRef.current = setTimeout(() => {
+        fetchAssemblyAIToken();
+      }, timeUntilRefresh);
+    } else {
+      // If token is already expired, fetch immediately
+      fetchAssemblyAIToken();
+    }
+  };
+
+  // Fetch token on app start
+  useEffect(() => {
+    fetchAssemblyAIToken();
+    
+    return () => {
+      if (tokenRefreshTimeoutRef.current) {
+        clearTimeout(tokenRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Fetch user subscription data
+  const fetchUserSubscription = async () => {
+    try {
+      const subscriptionData = await client.graphql({
+        query: queries.getUserSubscription,
+        variables: { owner: user.username }
+      });
+      setUserSubscription(subscriptionData.data.getUserSubscription);
+      return subscriptionData.data.getUserSubscription;
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      return null;
+    }
+  };
+
+  // Update user subscription hours
+  const updateUserSubscriptionHours = async (hoursUsed) => {
+    try {
+      const updatedSubscription = await client.graphql({
+        query: mutations.updateUserSubscription,
+        variables: {
+          input: {
+            owner: user.username,
+            hoursleft: userSubscription.hoursleft - hoursUsed
+          }
+        }
+      });
+      setUserSubscription(updatedSubscription.data.updateUserSubscription);
+    } catch (error) {
+      console.error("Error updating user subscription:", error);
+    }
+  };
+
+  // Initialize NoSleep
+  useEffect(() => {
+    noSleepRef.current = new NoSleep();
+    return () => {
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+  }, []);
+
+  // Setup transcription
+  const setupTranscription = (token) => {
+    return new Promise((resolve, reject) => {
+      rtRef.current = new RealtimeTranscriber({
+        token: token,
+        sampleRate: 16000,
+        endUtteranceSilenceThreshold: 1500,
+      });
+      rtRef.current.connect();
+      
+      rtRef.current.on('open', resolve);
+      rtRef.current.on('error', reject);
+      
+      const texts = {};
+      rtRef.current.on("transcript", (message) => {
+        texts[message.audio_start] = message.text;
+        const sortedTexts = Object.entries(texts)
+          .sort(([a], [b]) => a - b)
+          .map(([, text]) => text)
+          .join(' ');
+        setTranscription(sortedTexts);
+        setClipboardContent(sortedTexts);
+      });
+    });
+  };
+
+  // Timer functions
+  const startTimer = () => {
+    setTimer(0);
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(prevTimer => prevTimer + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+  };
+
+  // Start dictation
+  const startDictation = async () => {
+    try {
+      setIsDictationLoading(true);
+      setClipboardContent(""); // Clear content before loading
+      
+      // Check subscription
+      const subscription = await fetchUserSubscription();
+      if (!subscription || subscription.hoursleft <= 0) {
+        console.error('User has no remaining hours');
+        alert('You have no remaining dictation hours. Please upgrade your subscription.');
+        setIsDictationLoading(false);
+        return;
+      }
+
+      // Check if token needs refresh
+      const now = new Date();
+      if (!assemblyAIToken || !tokenExpiry || now >= tokenExpiry) {
+        await fetchAssemblyAIToken();
+      }
+
+      await setupTranscription(assemblyAIToken);
+
+      // Request mic access
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+        }
+      });
+      streamRef.current = stream;
+
+      // Configure recorder
+      const rawUaString = navigator.userAgent;
+      let uaString = rawUaString.toLowerCase();
+      let mimeType = /iphone|ipad/i.test(uaString) ? 'audio/wav;codecs=pcm' : 'audio/webm;codecs=pcm';
+      let recorderType = /iphone|ipad/i.test(uaString) ? RecordRTC.StereoAudioRecorder : RecordRTC.StereoAudioRecorder;
+      
+      recorder.current = new RecordRTC(stream, {
+        type: 'audio',
+        mimeType: mimeType,
+        recorderType: recorderType,
+        timeSlice: 250,
+        desiredSampRate: 16000,
+        numberOfAudioChannels: 1,
+        bufferSize: 4096,
+        audioBitsPerSecond: 128000,
+        ondataavailable: async (blob) => {
+          if(!rtRef.current) return;
+          const buffer = await blob.arrayBuffer();
+          rtRef.current.sendAudio(buffer);
+        },
+      });
+
+      // Start recording
+      recorder.current.startRecording();
+      setIsTranscribing(true);
+      setIsDictationActive(true);
+      
+      if (noSleepRef.current) {
+        noSleepRef.current.enable();
+      }
+      
+      startTimer();
+      setIsDictationLoading(false);
+    } catch (error) {
+      console.error('Error starting dictation:', error);
+      setIsDictationLoading(false);
+      setIsDictationActive(false);
+      alert('Failed to start dictation. Please try again.');
+    }
+  };
+
+  // Stop dictation
+  const stopDictation = () => {
+    if (recorder.current && recorder.current.state !== 'stopped') {
+      recorder.current.stopRecording(() => {
+        if (rtRef.current) {
+          rtRef.current.close();
+        }
+        
+        if (noSleepRef.current) {
+          noSleepRef.current.disable();
+        }
+        
+        stopTimer();
+        
+        const hoursUsed = timer / 3600; // Convert seconds to hours
+        updateUserSubscriptionHours(hoursUsed);
+        
+        setIsTranscribing(false);
+        setIsDictationActive(false);
+        
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+      });
+    }
+  };
+
+  // Toggle dictation state
+  const toggleDictation = () => {
+    if (isTranscribing) {
+      stopDictation();
+    } else {
+      startDictation();
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recorder.current && recorder.current.state !== 'stopped') {
+        recorder.current.stopRecording();
+      }
+      
+      if (rtRef.current) {
+        rtRef.current.close();
+      }
+      
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+      
+      stopTimer();
+      
+      if (tokenRefreshTimeoutRef.current) {
+        clearTimeout(tokenRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -432,6 +738,9 @@ function AuthenticatedApp({ signOut, user }) {
                 setClipboardContent={setClipboardContent}
                 handleCopy={handleCopy}
                 showCopyMessage={showCopyMessage}
+                isDictationLoading={isDictationLoading}
+                isTranscribing={isTranscribing}
+                startDictation={toggleDictation}
               />
               <Clipboard
                 clipboardTextareaRef={clipboardTextareaRef}
@@ -439,6 +748,8 @@ function AuthenticatedApp({ signOut, user }) {
                 setClipboardContent={setClipboardContent}
                 streamContent={streamingText}
                 setShowCopyMessage={setShowCopyMessage}
+                isDisabled={isDictationLoading}
+                isTranscribing={isTranscribing}
               />
             </section>
 

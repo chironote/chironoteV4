@@ -670,12 +670,11 @@
   }
   
   .content-popup-inner {
-    max-width: 85%;
+    max-width: 90%;
     max-height: 85vh;
-    width: 85%;
+    width: 90%;
     padding: 20px;
     z-index: 1010;
-    margin-left: -15%; /* Stay out of grey area on right */
   }
   
   .popup-header h2 {
@@ -686,6 +685,11 @@
     font-size: 14px;
   }
 }
+
+  .content-popup-inner {
+    padding: 10px;
+
+  }
 
 /* Mobile Toggle Button - Base Styles */
 .mobile-toggle-button {
@@ -700,7 +704,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: left 0.3s ease, right 0.3s ease, background-color 0.3s ease;
+  transition: left 0.25s ease, right 0.2s ease, background-color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
 }
 

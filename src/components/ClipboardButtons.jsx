@@ -1,6 +1,7 @@
+import React, { useState, useEffect } from 'react';
 import captureIcon from '../assets/conversation.svg';
 
-// Updated ClipboardButtons component to use App's copy functionality -- using showCopyMessage from App.jsx
+// Updated ClipboardButtons component with clearer state styling
 const ClipboardButtons = ({ 
   toggleRecordingPopup, 
   toggleDictationPopup, 
@@ -8,8 +9,19 @@ const ClipboardButtons = ({
   toggleEditPanel, 
   setClipboardContent, 
   handleCopy,
-  showCopyMessage 
+  showCopyMessage,
+  isDictationLoading,
+  isTranscribing,
+  startDictation
 }) => {
+  const [isDictationActive, setIsDictationActive] = useState(false);
+
+  const handleDictationClick = () => {
+    if (!isDictationLoading) {
+      startDictation();
+    }
+  };
+
   return (
     <div className="clipboard-toolbar">
       <div className="toolbar-group">
@@ -24,10 +36,15 @@ const ClipboardButtons = ({
         <div className="toolbar-divider"></div>
 
         <button
-          className="toolbar-button"
-          onClick={toggleDictationPopup}
+          className={`toolbar-button 
+            ${isDictationLoading ? 'button-loading' : ''} 
+            ${isTranscribing ? 'button-recording' : ''}`
+          }
+          onClick={handleDictationClick}
+          disabled={isDictationLoading}
         >
           <span className="material-symbols-rounded toolbar-icon">mic</span>
+          {isTranscribing && <span className="recording-indicator"></span>}
         </button>
 
         <div className="toolbar-divider"></div>
@@ -72,6 +89,50 @@ const ClipboardButtons = ({
         @media only screen and (max-width: 768px) {
           .hide-on-mobile {
             display: none;
+          }
+        }
+
+        /* Pulsating animation for dictation button - darker */
+        .button-loading {
+          animation: pulse 1.5s infinite;
+          background-color: #dcdcdc !important;
+          pointer-events: none;
+        }
+
+        /* Recording state - green highlight */
+        .button-recording {
+          background-color: #2e6930 !important;
+          color: white !important;
+          position: relative;
+        }
+
+        /* Recording indicator - red dot */
+        .recording-indicator {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 8px;
+          height: 8px;
+          background-color: #ff3b30;
+          border-radius: 50%;
+          animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0.4; }
+          100% { opacity: 1; }
+        }
+
+        @keyframes pulse {
+          0% {
+            opacity: 0.7;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0.7;
           }
         }
       `}</style>

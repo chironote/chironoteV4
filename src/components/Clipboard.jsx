@@ -6,9 +6,19 @@ const Clipboard = ({
   setClipboardContent,
   streamContent,
   setShowCopyMessage,
+  isDisabled,
+  isTranscribing
 }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [soapPositions, setSoapPositions] = useState({ S: 0, O: 0, A: 0, P: 0 });
+
+  // Determine the appropriate placeholder text based on state
+  const getPlaceholderText = () => {
+    if (isDisabled && !isTranscribing) {
+      return "Loading Speech to Text, please wait...";
+    }
+    return "Click the New Note button to start...";
+  };
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -173,6 +183,7 @@ const Clipboard = ({
               className="soap-button"
               style={{ top: `${position}px` }}
               onClick={() => copySection(section)}
+              disabled={isDisabled || isTranscribing}
             >
               {section}
             </button>
@@ -182,15 +193,28 @@ const Clipboard = ({
       <div className="clipboard-content">
         <textarea
           ref={clipboardTextareaRef}
-          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''}`}
-          placeholder="Click the New Note button to start..."
+          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isDisabled || isTranscribing ? 'dictation-active' : ''}`}
+          placeholder={getPlaceholderText()}
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          disabled={isDisabled}
+          readOnly={isTranscribing}
         />
       </div>
+      <style jsx>{`
+        .clipboard-textarea.dictation-active {
+          background-color: rgba(0, 0, 0, 0.03);
+          pointer-events: none;
+        }
+        
+        .soap-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      `}</style>
     </div>
   );
 };
