@@ -10,6 +10,7 @@ export default function Navbar({ username, onSignOut }) {
   const navigate = useNavigate();
   const location = useLocation();
   const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
   const isOnDashboard = location.pathname === '/app';
 
@@ -24,8 +25,19 @@ export default function Navbar({ username, onSignOut }) {
     onSignOut();
   };
 
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    setIsMenuOpen(prevState => !prevState);
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Don't close if clicking on the menu button
+      if (menuButtonRef.current && menuButtonRef.current.contains(event.target)) {
+        return;
+      }
+      
+      // Close if clicking outside the menu
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
@@ -68,7 +80,11 @@ export default function Navbar({ username, onSignOut }) {
 
       {/* Mobile Navigation */}
       <div className="mobile-nav">
-        <button className="menu-button" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+        <button 
+          className="menu-button" 
+          onClick={toggleMenu}
+          ref={menuButtonRef}
+        >
           <img src={menu} alt="Menu" />
         </button>
         {isMenuOpen && (
@@ -87,7 +103,15 @@ export default function Navbar({ username, onSignOut }) {
                 </li>
               ))}
               <li key="logout" className="nav-item">
-                <a href="#" onClick={handleLogout} className="nav-link logout-link">
+                <a 
+                  href="#" 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMenuOpen(false);
+                    handleLogout(e);
+                  }} 
+                  className="nav-link logout-link"
+                >
                   <span className="material-symbols-rounded">logout</span>
                   Logout
                 </a>

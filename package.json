@@ -1,6 +1,6 @@
 {
   "name": "chironote",
-  "version": "0.9.8",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "@aws-amplify/api": "^6.0.45",

@@ -15,7 +15,7 @@ const Clipboard = ({
   // Determine the appropriate placeholder text based on state
   const getPlaceholderText = () => {
     if (isDisabled && !isTranscribing) {
-      return "Loading Speech to Text, please wait...";
+      return "Initializing Microphone...";
     }
     return "Click the New Note button to start...";
   };

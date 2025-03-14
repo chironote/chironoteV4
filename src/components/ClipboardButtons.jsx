@@ -12,14 +12,15 @@ const ClipboardButtons = ({
   showCopyMessage,
   isDictationLoading,
   isTranscribing,
-  startDictation
+  startDictation,
+  dictationButtonStatus,
+  dictationReady
 }) => {
   const [isDictationActive, setIsDictationActive] = useState(false);
 
   const handleDictationClick = () => {
-    if (!isDictationLoading) {
-      startDictation();
-    }
+    // Always call startDictation - the component will handle queuing if needed
+    startDictation();
   };
 
   return (
@@ -41,7 +42,7 @@ const ClipboardButtons = ({
             ${isTranscribing ? 'button-recording' : ''}`
           }
           onClick={handleDictationClick}
-          disabled={isDictationLoading}
+          // Remove the disabled attribute to allow clicks during loading
         >
           <span className="material-symbols-rounded toolbar-icon">mic</span>
           {isTranscribing && <span className="recording-indicator"></span>}
