@@ -7,7 +7,8 @@ const Clipboard = ({
   streamContent,
   setShowCopyMessage,
   isDisabled,
-  isTranscribing
+  isTranscribing,
+  isWebSocketConnecting
 }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [soapPositions, setSoapPositions] = useState({ S: 0, O: 0, A: 0, P: 0 });
@@ -16,6 +17,9 @@ const Clipboard = ({
   const getPlaceholderText = () => {
     if (isDisabled && !isTranscribing) {
       return "Initializing Microphone...";
+    }
+    if (isWebSocketConnecting) {
+      return ""; // Don't show placeholder when WebSocket is connecting
     }
     return "Click the New Note button to start...";
   };
@@ -193,7 +197,7 @@ const Clipboard = ({
       <div className="clipboard-content">
         <textarea
           ref={clipboardTextareaRef}
-          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isDisabled || isTranscribing ? 'dictation-active' : ''}`}
+          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isDisabled || isTranscribing || isWebSocketConnecting ? 'dictation-active' : ''}`}
           placeholder={getPlaceholderText()}
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
@@ -201,7 +205,7 @@ const Clipboard = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           disabled={isDisabled}
-          readOnly={isTranscribing}
+          readOnly={isTranscribing || isWebSocketConnecting}
         />
       </div>
       <style jsx>{`
