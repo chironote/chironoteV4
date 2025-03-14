@@ -15,11 +15,8 @@ const Clipboard = ({
 
   // Determine the appropriate placeholder text based on state
   const getPlaceholderText = () => {
-    if (isDisabled && !isTranscribing) {
+    if (isDisabled && !isTranscribing && !isWebSocketConnecting) {
       return "Initializing Microphone...";
-    }
-    if (isWebSocketConnecting) {
-      return ""; // Don't show placeholder when WebSocket is connecting
     }
     return "Click the New Note button to start...";
   };
@@ -197,7 +194,7 @@ const Clipboard = ({
       <div className="clipboard-content">
         <textarea
           ref={clipboardTextareaRef}
-          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isDisabled || isTranscribing || isWebSocketConnecting ? 'dictation-active' : ''}`}
+          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isTranscribing || isWebSocketConnecting ? 'dictation-active' : ''}`}
           placeholder={getPlaceholderText()}
           value={clipboardContent}
           onChange={(e) => setClipboardContent(e.target.value)}
