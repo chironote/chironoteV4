@@ -47,7 +47,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage || 'auto');
+      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage || null);
       console.log(selectedLanguage);
    
      
@@ -104,7 +104,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           userId,
           timestamp,
           path: filename,
-          language: selectedLanguage === 'null' ? null : selectedLanguage || 'auto'
+          language: selectedLanguage === 'null' ? null : selectedLanguage || null
         }),
         headers: {
           'Content-Type': 'application/json',
