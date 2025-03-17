@@ -15,8 +15,10 @@ const Clipboard = ({
 
   // Determine the appropriate placeholder text based on state
   const getPlaceholderText = () => {
-    if (isDisabled && !isTranscribing && !isWebSocketConnecting) {
-      return "Initializing Microphone...";
+    // Only show "Initializing Microphone..." during active microphone initialization
+    // but not during or after dictation has started
+    if (isTranscribing || isWebSocketConnecting) {
+      return ""; // No placeholder during active dictation states
     }
     return "Click the New Note button to start...";
   };
@@ -201,7 +203,7 @@ const Clipboard = ({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          disabled={isDisabled}
+          disabled={isTranscribing || isWebSocketConnecting}
           readOnly={isTranscribing || isWebSocketConnecting}
         />
       </div>

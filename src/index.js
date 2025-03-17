@@ -11,14 +11,14 @@ Amplify.configure(config);
 
 const client = generateClient();
 
-// Initialize GA4 with cookies disabled
+// Initialize GA4 with default privacy settings
+// Full configuration with user consent will be handled in CookieConsent component
 try {
   ReactGA.initialize("G-02117DNZDH", {
-    client_storage: 'none', // Disable cookies
-    anonymize_ip: true // Additional privacy measure
+    client_storage: 'none', // Default to cookies disabled
+    anonymize_ip: true // Default to anonymize IP
   });
-  // Send initial pageview
-  ReactGA.send({ hitType: "pageview", page: window.location.pathname });
+  // Initial pageview will be sent after consent check
 } catch (error) {
   console.error("Error initializing Google Analytics:", error);
 }

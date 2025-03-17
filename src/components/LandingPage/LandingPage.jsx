@@ -7,8 +7,13 @@ import feature1 from '../../assets/Feature1.svg';
 import feature2 from '../../assets/Feature2.svg';
 import feature3 from '../../assets/Feature3.svg';
 import avatar from '../../assets/conversation.svg';
+import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 export default function LandingPage(props) {
+  const handleButtonClick = (buttonName) => {
+    trackLandingPageButtonClick(buttonName);
+  };
+
   return (
     <div className="landing-page">
       {/* Header Section */}
@@ -21,7 +26,11 @@ export default function LandingPage(props) {
           />
           <div className="landing-page__nav">
           </div>
-          <a href="/app" className="landing-page__get-started-button">
+          <a 
+            href="/app" 
+            className="landing-page__get-started-button"
+            onClick={() => handleButtonClick('Header_Launch_App')}
+          >
             Launch App
           </a>
         </div>
@@ -40,7 +49,11 @@ export default function LandingPage(props) {
             </div>
           </div>
           <div className="landing-page__action">
-            <a href="/app" className="landing-page__action-button">
+            <a 
+              href="/app" 
+              className="landing-page__action-button"
+              onClick={() => handleButtonClick('Hero_Start_Charting')}
+            >
               Start charting now for free
             </a>
           </div>
@@ -50,80 +63,79 @@ export default function LandingPage(props) {
 
       {/* Testimonials Section */}
       <div id="testimonials" className="landing-page__testimonials">
-        <div className="landing-page__testimonials-header">
-          <div className="landing-page__testimonials-title">What people are saying</div>
-        </div>
         <div className="landing-page__testimonial-cards">
           {/* Testimonial Card 1 */}
           <div className="landing-page__testimonial-card">
             <div className="landing-page__testimonial-header">
-              <img
-                src={avatar}
-                alt="Emily Johnson"
-                className="landing-page__testimonial-avatar"
-              />
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Emily Johnson</div>
-                <div className="landing-page__testimonial-location">New York, NY</div>
-              </div>
-              <div className="landing-page__testimonial-stars">
+              <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src={stars}
-                  alt="Stars"
-                  className="landing-page__stars-icon"
+                  src="https://randomuser.me/api/portraits/women/32.jpg"
+                  alt="Dr. Matt Fryauf"
+                  className="landing-page__testimonial-avatar"
                 />
+              </div>
+              <div className="landing-page__testimonial-user">
+                <div className="landing-page__testimonial-name">Dr. Matt Fryauf</div>
+                <div className="landing-page__testimonial-stars">
+                  <img
+                    src={stars}
+                    alt="5 Stars"
+                    className="landing-page__stars-icon"
+                  />
+                </div>
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              I couldn't be happier with my kitchen remodel! The team was professional and attentive to every detail. They turned my vision into reality!
-            </div>
+              I highly recommend this app for high volume practices            </div>
           </div>
           {/* Testimonial Card 2 */}
           <div className="landing-page__testimonial-card">
             <div className="landing-page__testimonial-header">
-              <img
-                src={avatar}
-                alt="Michael Smith"
-                className="landing-page__testimonial-avatar"
-              />
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Michael Smith</div>
-                <div className="landing-page__testimonial-location">Los Angeles, CA</div>
-              </div>
-              <div className="landing-page__testimonial-stars">
+              <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src={stars}
-                  alt="Stars"
-                  className="landing-page__stars-icon"
+                  src="https://randomuser.me/api/portraits/men/45.jpg"
+                  alt="Dr. Jessica Yeung"
+                  className="landing-page__testimonial-avatar"
                 />
+              </div>
+              <div className="landing-page__testimonial-user">
+                <div className="landing-page__testimonial-name">Dr. Jessica Yeung</div>
+                <div className="landing-page__testimonial-stars">
+                  <img
+                    src={stars}
+                    alt="5 Stars"
+                    className="landing-page__stars-icon"
+                  />
+                </div>
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              The bathroom renovation exceeded my expectations. The craftsmanship is top-notch, and the entire process was smooth and stress-free. Highly recommend!
+              "The voice-to-text feature is a game-changer, allowing me to focus on my patients instead of my screen."
             </div>
           </div>
           {/* Testimonial Card 3 */}
           <div className="landing-page__testimonial-card">
             <div className="landing-page__testimonial-header">
-              <img
-                src={avatar}
-                alt="Sarah Brown"
-                className="landing-page__testimonial-avatar"
-              />
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Sarah Brown</div>
-                <div className="landing-page__testimonial-location">Chicago, IL</div>
-              </div>
-              <div className="landing-page__testimonial-stars">
+              <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src={stars}
-                  alt="Stars"
-                  className="landing-page__stars-icon"
+                  src="https://randomuser.me/api/portraits/women/68.jpg"
+                  alt="Dr. Sam Battochio"
+                  className="landing-page__testimonial-avatar"
                 />
+              </div>
+              <div className="landing-page__testimonial-user">
+                <div className="landing-page__testimonial-name">Sam Battochio</div>
+                <div className="landing-page__testimonial-stars">
+                  <img
+                    src={stars}
+                    alt="5 Stars"
+                    className="landing-page__stars-icon"
+                  />
+                </div>
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              I couldn't be happier with my kitchen remodel! The team was professional and attentive to every detail. They turned my vision into reality!
+              "I'm now able to see more patients and still leave the office on time thanks to ChiroNote."
             </div>
           </div>
         </div>
@@ -196,7 +208,11 @@ export default function LandingPage(props) {
           <div className="landing-page__cta-input">
             First 45 minutes free. Get started with just an email
           </div>
-          <a href="/app" className="landing-page__cta-button">
+          <a 
+            href="/app" 
+            className="landing-page__cta-button"
+            onClick={() => handleButtonClick('Footer_Get_Started')}
+          >
             Get started
           </a>
         </div>

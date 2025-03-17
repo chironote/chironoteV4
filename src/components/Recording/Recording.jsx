@@ -5,6 +5,7 @@ import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
 import ConfirmationPopup from './ConfirmationPopup';
+import { trackRecordingStart } from '../../utils/analytics';
 
 const client = generateClient();
 
@@ -62,12 +63,22 @@ function Recording({
   };
 
   const handleStartRecording = async () => {
-    const subscription = await fetchUserSubscription();
-    if (!subscription || subscription.hoursleft <= 0) {
-      console.error('User has no remaining hours');
-      setShowCreditPopup(true);
-    } else {
+    try {
+      // Track the start recording action
+      trackRecordingStart();
+      
+      // Check user subscription
+      const subscription = await fetchUserSubscription();
+      
+      if (!subscription || subscription.hoursleft <= 0) {
+        console.error('User has no remaining hours');
+        setShowCreditPopup(true);
+        return;
+      }
+      
       startRecording();
+    } catch (error) {
+      console.error("Error in handleStartRecording:", error);
     }
   };
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import captureIcon from '../assets/conversation.svg';
+import { trackDictationStart } from '../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
 const ClipboardButtons = ({ 
@@ -14,11 +15,20 @@ const ClipboardButtons = ({
   isTranscribing,
   startDictation,
   dictationButtonStatus,
-  dictationReady
+  dictationReady,
+  isWebSocketConnecting
 }) => {
   const [isDictationActive, setIsDictationActive] = useState(false);
 
+  // Update the dictation active state based on props
+  useEffect(() => {
+    setIsDictationActive(isDictationLoading || isTranscribing || isWebSocketConnecting);
+  }, [isDictationLoading, isTranscribing, isWebSocketConnecting]);
+
   const handleDictationClick = () => {
+    // Track the dictation button click
+    trackDictationStart();
+    
     // Always call startDictation - the component will handle queuing if needed
     startDictation();
   };
@@ -38,7 +48,7 @@ const ClipboardButtons = ({
 
         <button
           className={`toolbar-button 
-            ${isDictationLoading ? 'button-loading' : ''} 
+            ${isDictationLoading || isWebSocketConnecting ? 'button-loading' : ''} 
             ${isTranscribing ? 'button-recording' : ''}`
           }
           onClick={handleDictationClick}

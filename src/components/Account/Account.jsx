@@ -7,6 +7,7 @@ import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
+import { trackPageView } from '../../utils/analytics';
 
 Amplify.configure(config);
 
@@ -35,8 +36,17 @@ function Account({ setCurrentPage }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Track page view when the Account component mounts
+    trackPageView('Account_Page');
+    
+    // Set the current page in the parent component
+    if (setCurrentPage) {
+      setCurrentPage('account');
+    }
+    
+    // Fetch user data
     fetchUserSubscription();
-  }, []);
+  }, [setCurrentPage]);
 
   async function fetchUserSubscription() {
     setIsQueryLoading(true);

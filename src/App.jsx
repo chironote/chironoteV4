@@ -15,6 +15,7 @@ import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
 import LandingPage from './components/LandingPage/LandingPage';
+import CookieConsent from './components/CookieConsent/CookieConsent';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
@@ -192,6 +193,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
+  const [isWebSocketConnecting, setIsWebSocketConnecting] = useState(false);
   
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
@@ -221,7 +223,8 @@ function AuthenticatedApp({ signOut, user }) {
   useEffect(() => {
     setIsDictationLoading(dictation.isDictationLoading);
     setIsTranscribing(dictation.isTranscribing);
-  }, [dictation.isDictationLoading, dictation.isTranscribing]);
+    setIsWebSocketConnecting(dictation.isWebSocketConnecting);
+  }, [dictation.isDictationLoading, dictation.isTranscribing, dictation.isWebSocketConnecting]);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -264,6 +267,7 @@ function AuthenticatedApp({ signOut, user }) {
       if (payload.event === CONNECTION_STATE_CHANGE) {
         const connectionState = payload.data.connectionState;
         console.log('Connection state:', connectionState);
+        setIsWebSocketConnecting(connectionState === 'connecting');
       }
     });
 
@@ -456,6 +460,7 @@ function AuthenticatedApp({ signOut, user }) {
                 showCopyMessage={showCopyMessage}
                 isDictationLoading={isDictationLoading}
                 isTranscribing={isTranscribing}
+                isWebSocketConnecting={isWebSocketConnecting}
                 startDictation={dictation.toggleDictation}
                 dictationReady={dictation.isInitialized}
               />
@@ -535,6 +540,7 @@ function App() {
     <Router>
       <RouteTracker />
       <PWARedirect />
+      <CookieConsent />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/app/*" element={<ProtectedApp />} />
