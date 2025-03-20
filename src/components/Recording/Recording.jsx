@@ -33,7 +33,7 @@ function Recording({
     const storedSettings = localStorage.getItem('noteSettings');
     return storedSettings ? JSON.parse(storedSettings) : {
       examLayout: false,
-      bulletedLayout: false
+      PILayout: false
     };
   });
 
@@ -187,7 +187,7 @@ function Recording({
           <CreditPopup onClose={handleCloseCreditPopup} />
         ) : !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
-            <h2>Begin Recording</h2>
+            <h2>Recording Settings</h2>
             <div className="settings-container">
               <div className="language-section">
                 <label htmlFor="language-select">Language:</label>
@@ -224,12 +224,15 @@ function Recording({
                   <div className="checkbox-group">
                     <input 
                       type="checkbox" 
-                      id="bulleted-layout-popup" 
-                      name="bulletedLayout" 
-                      checked={noteSettings.bulletedLayout}
+                      id="pi-layout-popup" 
+                      name="PILayout" 
+                      checked={noteSettings.PILayout}
                       onChange={handleCheckboxChange}
                     />
-                    <label htmlFor="bulleted-layout-popup">Bulleted Layout</label>
+                    <label htmlFor="pi-layout-popup">
+                      <span className="desktop-label">Personal Injury Case</span>
+                      <span className="mobile-label">PI Case</span>
+                    </label>
                   </div>
                 </div>
               </div>

@@ -11,7 +11,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
-  const timeStampRef = useRef(null);
+  const timeStampRef = useRef(null); // Conversation identifier timestamp
+  const pathStampRef = useRef(null); // For uniquely identifying file paths
+  const filePathRef = useRef(null); // Add a ref to store the file path
+  const lastUploadedChunkRef = useRef(0); // Track chunk number for unique paths
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
 
@@ -47,8 +50,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
       url.searchParams.append('userId', userId);
       url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage || null);
-      console.log(selectedLanguage);
+      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage);
+      console.log('Selected language:', selectedLanguage);
    
      
 
@@ -74,11 +77,18 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }
   };
 
-  const uploadS3 = async (audioBlob) => {
-    const timestamp = timeStampRef.current;
+  const uploadS3 = async (audioBlob, filePath) => {
+    // Use provided filePath instead of generating it here to prevent race conditions
+    const timestamp = timeStampRef.current; // Conversation identifier
+    const pathstamp = pathStampRef.current; // Unique path identifier
     const userId = await getUserId();
-
-    const filename = `public/${userId}/${timestamp}_recording.webm`;
+    
+    // If path isn't provided, create one with pathstamp and chunk number
+    const filename = filePath || `public/${userId}/${timestamp}_recording_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+    
+    // Store the last used path in the ref
+    filePathRef.current = filename;
+    
     try {
       // First upload to S3
       const uploadResult = await uploadData({
@@ -93,7 +103,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
       }).result;
 
-      console.log(uploadResult);
+      console.log(`Successfully uploaded to: ${filename}`, uploadResult);
       
       // Then notify Lambda about the upload
       const selectedLanguage = localStorage.getItem('selectedLanguage');
@@ -104,7 +114,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           userId,
           timestamp,
           path: filename,
-          language: selectedLanguage === 'null' ? null : selectedLanguage || null
+          language: selectedLanguage === 'null' ? null : selectedLanguage
         }),
         headers: {
           'Content-Type': 'application/json',
@@ -226,12 +236,24 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   
       mediaRecorderRef.current.ondataavailable = async (event) => {
         if (event.data.size > 0 && !isRecordingRef.current) {
-          await uploadS3(event.data); // You left off here, this needs to upload to Transcription as path instead of base64body
-          //await uploadAudioChunk(event.data);
+          // This is the final chunk when recording stops
+          const userId = await getUserId();
+          const timestamp = timeStampRef.current; // Conversation identifier
+          const pathstamp = pathStampRef.current; // Unique path identifier
+          const finalPath = `public/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+          
+          // Always await the upload to prevent race conditions
+          await uploadS3(event.data, finalPath);
           streamResponse();
         } else if (event.data.size > 0) {
-          uploadS3(event.data);
-          //uploadAudioChunk(event.data);
+          // This is an intermediate chunk during recording
+          const userId = await getUserId();
+          const timestamp = timeStampRef.current; // Conversation identifier
+          const pathstamp = pathStampRef.current; // Unique path identifier
+          const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+          
+          // Always await to prevent race conditions
+          await uploadS3(event.data, chunkPath);
         }
       };
     } catch (error) {
@@ -240,15 +262,22 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const startRecording = async () => {
-
-
+    // Reset the chunk counter when starting a new recording
+    lastUploadedChunkRef.current = 0;
+    
+    // Set the conversation timestamp (identifies the conversation)
+    timeStampRef.current = Date.now();
+    
+    // Set a unique path identifier (for ensuring unique file paths)
+    pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+    
     await setupRecorder();
     if (mediaRecorderRef.current) {
       setIsRecording(true);
       isRecordingRef.current = true;
       setIsPaused(false);
       isPausedRef.current = false;
-      timeStampRef.current = Date.now();
+      
       mediaRecorderRef.current.start();
       
       if (noSleepRef.current) {
@@ -260,7 +289,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 300000);
+      }, 300000); //was 300000
     }
   };
 

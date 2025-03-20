@@ -27,7 +27,8 @@
   scrollbar-color: var(--medium-green) var(--pale-green);
   width: 250px;
   min-width: 250px;
-  max-width: 250px;
+  max-width: 330px;
+  max-height: auto;
   transition: width 0.3s ease, min-width 0.3s ease, max-width 0.3s ease;
   flex-shrink: 0;
   overflow: auto;
@@ -35,6 +36,71 @@
   scrollbar-color: var(--medium-green) var(--off-white);
 }
 
+/* Add styles to fix cut-off content */
+.list-container {
+  overflow-y: auto;
+  height: auto;
+}
+
+.list-item {
+  margin-bottom: 8px; /* Ensure spacing between items */
+  overflow: visible; /* Prevent content from being cut off */
+}
+
+.content {
+  text-align: left;
+  overflow-wrap: break-word; /* Ensure text wraps properly */
+  word-break: break-word; /* Allow breaking of long words */
+}
+
+/* Week grouping styles */
+.week-group {
+  margin-bottom: 12px;
+  border-radius: 6px;
+  overflow: auto;
+  background-color: #f9f9f9;
+  border: 1px solid #eaeaea;
+}
+
+.week-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f2f2f2;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+  color: var(--dark-green);
+}
+
+.week-header:hover {
+  background-color: #e8e8e8;
+}
+
+.week-label {
+  font-size: 0.9rem;
+}
+
+.collapse-icon {
+  font-size: 0.8rem;
+  transition: transform 0.2s;
+}
+
+.week-items {
+  max-height: auto;
+  transition: max-height 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.week-items.collapsed {
+  max-height: 0;
+  padding-bottom: 0; /* Remove padding when collapsed */
+}
+
+.week-group:last-child {
+  margin-bottom: -10px;
+}
 
 .left-panel.collapsed {
   width: 30px;
@@ -62,10 +128,6 @@
 .timestamp .time {
   font-size: 0.8rem; 
   color: var(--dark-green);
-}
-
-.content {
-  text-align: left;
 }
 
 /* Left panel animation */
@@ -495,6 +557,7 @@
   border-radius: 8px;
   padding: 8px 0;
   margin: 0 10px;
+  overflow-y: hidden;
 }
 
 /* List items */
@@ -898,11 +961,6 @@
 @media (min-width: 768px) {
   .app-main {
     flex-direction: row;
-  }
-
-  .left-panel {
-    max-width: 330px;
-    max-height: 100vh;
   }
 
   .clipboard-actions {

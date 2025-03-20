@@ -138,7 +138,50 @@ const formatTimestamp = (timestamp) => {
     hour12: true
   });
 
-  return { day: weekday, time: time };
+  // Get ISO week number and year for grouping
+  const weekStart = getWeekStartDate(date);
+  const weekLabel = weekStart.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+  
+  return { 
+    day: weekday, 
+    time: time, 
+    weekStart: weekStart.getTime(),
+    weekLabel: weekLabel
+  };
+};
+
+// Helper function to get the start of the week (Monday)
+const getWeekStartDate = (date) => {
+  const d = new Date(date);
+  const day = d.getDay();
+  // Adjust to make Monday the first day (0 = Sunday, 1 = Monday, etc.)
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  // Reset to midnight
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+// Helper function to group items by week
+const groupItemsByWeek = (items) => {
+  const groupedItems = {};
+  
+  items.forEach(item => {
+    const { weekStart, weekLabel } = formatTimestamp(item.timestamp);
+    if (!groupedItems[weekStart]) {
+      groupedItems[weekStart] = {
+        weekStart,
+        weekLabel,
+        items: []
+      };
+    }
+    groupedItems[weekStart].items.push(item);
+  });
+  
+  return Object.values(groupedItems).sort((a, b) => b.weekStart - a.weekStart);
 };
 
 // Component to render list items (Notes or Transcripts)
@@ -194,6 +237,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [queryLoaded, setQueryLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
   const [isWebSocketConnecting, setIsWebSocketConnecting] = useState(false);
+  const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
   
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
@@ -248,9 +292,30 @@ function AuthenticatedApp({ signOut, user }) {
         console.log('Filtered transcripts:', filteredTranscripts);
         
         // Since we're already getting data in DESC order, just take the first 10
-        setNotes(filteredNotes.slice(0, 25));
-        setTranscripts(filteredTranscripts.slice(0, 25));
+        setNotes(filteredNotes.slice(0, 40));
+        setTranscripts(filteredTranscripts.slice(0, 40));
         setQueryLoaded(true);
+
+        // Initialize collapsed weeks - collapse all except the most recent week
+        if (filteredNotes.length > 0 || filteredTranscripts.length > 0) {
+          // Get all items and find the most recent week
+          const allItems = [...filteredNotes, ...filteredTranscripts];
+          const groupedWeeks = groupItemsByWeek(allItems);
+          
+          if (groupedWeeks.length > 0) {
+            // Get the most recent week start timestamp
+            const mostRecentWeekStart = groupedWeeks[0].weekStart;
+            
+            // Create a set of all week starts except the most recent
+            const initialCollapsedWeeks = new Set(
+              groupedWeeks
+                .slice(1) // Skip the first (most recent) week
+                .map(week => week.weekStart)
+            );
+            
+            setCollapsedWeeks(initialCollapsedWeeks);
+          }
+        }
       } catch (error) {
         console.error("Error fetching notes:", error);
       } finally {
@@ -284,7 +349,7 @@ function AuthenticatedApp({ signOut, user }) {
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedNotes.slice(0, 25);
+            return updatedNotes.slice(0, 40);
           });
         }
         
@@ -293,7 +358,7 @@ function AuthenticatedApp({ signOut, user }) {
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedTranscripts.slice(0, 25);
+            return updatedTranscripts.slice(0, 40);
           });
         }
       },
@@ -397,11 +462,25 @@ function AuthenticatedApp({ signOut, user }) {
     setIsCollapsed(!isCollapsed);
   };
 
+  const toggleWeekCollapse = (weekStart) => {
+    setCollapsedWeeks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(weekStart)) {
+        newSet.delete(weekStart);
+      } else {
+        newSet.add(weekStart);
+      }
+      return newSet;
+    });
+  };
+
   const renderItems = () => {
     const items = showNotes ? notes : transcripts;
+    
     if (isLoading) {
       return <div className="loading-message">Loading recent history</div>;
     }
+    
     if (items.length === 0) {
       return (
         <div className="empty-list-message">
@@ -409,16 +488,35 @@ function AuthenticatedApp({ signOut, user }) {
         </div>
       );
     }
-    return items.map(item => (
-      <ListItem
-        key={item.timestamp}
-        item={item}
-        onClick={toggleContentPopup}
-        isNote={showNotes}
-        onDragStart={setDraggedContent}
-        isNew={newItems.has(item.timestamp)}
-        onMouseEnter={() => removeHighlight(item.timestamp)}
-      />
+    
+    const groupedByWeek = groupItemsByWeek(items);
+    
+    return groupedByWeek.map(week => (
+      <div key={week.weekStart} className="week-group">
+        <div 
+          className="week-header" 
+          onClick={() => toggleWeekCollapse(week.weekStart)}
+        >
+          <span className="week-label">Week of {week.weekLabel}</span>
+          <span className="collapse-icon">
+            {collapsedWeeks.has(week.weekStart) ? '▶' : '▼'}
+          </span>
+        </div>
+        
+        <div className={`week-items ${collapsedWeeks.has(week.weekStart) ? 'collapsed' : ''}`}>
+          {week.items.map(item => (
+            <ListItem
+              key={item.timestamp}
+              item={item}
+              onClick={toggleContentPopup}
+              isNote={showNotes}
+              onDragStart={setDraggedContent}
+              isNew={newItems.has(item.timestamp)}
+              onMouseEnter={() => removeHighlight(item.timestamp)}
+            />
+          ))}
+        </div>
+      </div>
     ));
   };
 

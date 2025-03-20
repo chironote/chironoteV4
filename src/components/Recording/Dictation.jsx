@@ -396,6 +396,29 @@ const Dictation = ({
           
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
+          
+          // Attempt to reconnect after connection close if not actively stopping
+          if (!status.isStopping && !status.isLoading) {
+            console.log('[Dictation] Connection closed unexpectedly, will attempt reconnection');
+            setTimeout(async () => {
+              try {
+                // Use the same reconnection pattern as in startDictation
+                let currentToken = token.value;
+                if (!isTokenValid()) {
+                  console.log('[Dictation] Token invalid, fetching new token for reconnection');
+                  currentToken = await fetchAssemblyAIToken();
+                }
+                
+                if (currentToken) {
+                  console.log('[Dictation] Attempting to reconnect after unexpected close');
+                  await setupTranscriptionConnection(currentToken);
+                  console.log('[Dictation] Successfully reconnected after unexpected close');
+                }
+              } catch (error) {
+                console.error('[Dictation] Failed to reconnect after unexpected close:', error);
+              }
+            }, 2000); // Wait 2 seconds before attempting reconnection
+          }
         });
         
         // Setup transcript handler

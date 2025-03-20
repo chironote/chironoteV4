@@ -7,6 +7,8 @@ import feature1 from '../../assets/Feature1.svg';
 import feature2 from '../../assets/Feature2.svg';
 import feature3 from '../../assets/Feature3.svg';
 import avatar from '../../assets/conversation.svg';
+import fryaufImg from '../../assets/Fryauf.png';
+import samImg from '../../assets/Sam.jpg';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 export default function LandingPage(props) {
@@ -69,9 +71,9 @@ export default function LandingPage(props) {
             <div className="landing-page__testimonial-header">
               <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src="https://randomuser.me/api/portraits/women/32.jpg"
+                  src={fryaufImg}
                   alt="Dr. Matt Fryauf"
-                  className="landing-page__testimonial-avatar"
+                  className="landing-page__testimonial-avatar matt-image"
                 />
               </div>
               <div className="landing-page__testimonial-user">
@@ -118,8 +120,8 @@ export default function LandingPage(props) {
             <div className="landing-page__testimonial-header">
               <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src="https://randomuser.me/api/portraits/women/68.jpg"
-                  alt="Dr. Sam Battochio"
+                  src={samImg}
+                  alt="Sam Battochio"
                   className="landing-page__testimonial-avatar"
                 />
               </div>
@@ -135,7 +137,7 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              "I'm now able to see more patients and still leave the office on time thanks to ChiroNote."
+            Its speed and accuracy make it an invaluable tool
             </div>
           </div>
         </div>

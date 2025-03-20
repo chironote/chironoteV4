@@ -95,6 +95,26 @@
   color: var(--dark-green);
 }
 
+/* Responsive labels for desktop/mobile */
+.mobile-label {
+  display: none;
+}
+
+.desktop-label {
+  display: inline;
+}
+
+/* Media query for mobile devices */
+@media (max-width: 480px) {
+  .mobile-label {
+    display: inline;
+  }
+  
+  .desktop-label {
+    display: none;
+  }
+}
+
 .button-container {
   display: flex;
   justify-content: space-between;
