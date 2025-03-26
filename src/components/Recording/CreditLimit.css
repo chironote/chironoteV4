@@ -1,105 +1,148 @@
-.credit-popup-container {
+.popup-content {
   position: relative;
-  background-color: var(--off-white);
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   text-align: center;
-  max-width: 400px;
-  width: 90%;
-  z-index: 1001; /* Ensure it's above the wrapper */
+  max-width: none;
+  width: auto;
+  z-index: 1001;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Apply the green borders only to the credit limit popup */
+.credit-limit-container.popup-content {
+  border-left: 20px solid var(--light-green);
+  border-right: 20px solid var(--light-green);
 }
 
 .credit-popup-title {
   color: var(--dark-green);
-  margin-bottom: 10px;
-  font-size: 1.5rem;
-  font-weight: 600;
+  margin: 0 0 20px;
+  font-size: 2rem;
+  font-weight: 700;
+  width: 100%;
+  line-height: 1.2;
 }
 
 .credit-popup-message {
   color: var(--medium-green);
-  margin-bottom: 20px;
-  font-size: 1rem;
+  margin-bottom: 25px;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  width: 100%;
+}
+
+.credit-popup-redirect {
+  color: var(--dark-green);
+  margin-bottom: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+  width: 100%;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
 }
 
 .credit-popup-button {
-  color: var(--off-white);
+  color: #ffffff;
   border: none;
-  border-radius: 25px;
-  padding: 12px 24px;
-  font-size: 1rem;
+  border-radius: 8px;
+  padding: 14px 28px;
+  font-size: 1.1rem;
   font-weight: 600;
-  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.3s;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 90%;
-  margin: 0 auto;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
-  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
+  margin: 10px auto 0;
+  background-color: var(--medium-green);
 }
 
 .credit-popup-button:hover {
+  background-color: var(--light-green);
   transform: translateY(-2px);
   box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
 }
 
 .credit-popup-button:active {
   transform: translateY(2px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
+  background-color: var(--dark-green);
 }
 
-.credit-popup-button::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  z-index: -1;
-  background: rgba(255, 255, 255, 0.1);
-  transform: rotate(45deg);
-  transition: all 0.3s;
-}
-
-.credit-popup-button:hover::before {
-  left: -100%;
-  top: -100%;
-}
-
-.padlock-image {
-  width: 60%;
-  height: auto;
-  margin-bottom: 10px;
-}
-
-/* We've removed the .credit-popup-wrapper styles from here as they are now inline in EditPanel.jsx */
-
+/* Media Queries for Better Responsiveness */
 @media (max-width: 768px) {
-  .credit-popup-container {
-    width: 95%;
-    padding: 15px;
+  .popup-content {
+    padding: 30px;
+  }
+  
+  .credit-limit-container.popup-content {
+    border-left-width: 15px;
+    border-right-width: 15px;
   }
 
   .credit-popup-title {
-    font-size: 1.3rem;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
   }
 
   .credit-popup-message {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+  }
+  
+  .credit-popup-redirect {
+    font-size: 1rem;
+    margin-bottom: 20px;
   }
 
   .credit-popup-button {
-    width: 100%;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    padding: 12px 24px;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 480px) {
+  .popup-content {
+    padding: 25px 20px;
+  }
+  
+  .credit-limit-container.popup-content {
+    border-left-width: 10px;
+    border-right-width: 10px;
+  }
+
+  .credit-popup-title {
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+  }
+
+  .credit-popup-message {
+    font-size: 1rem;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+  
+  .credit-popup-redirect {
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+  }
+
+  .credit-popup-button {
+    font-size: 0.95rem;
     padding: 10px 20px;
   }
 }

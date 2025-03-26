@@ -154,7 +154,7 @@ function Account({ setCurrentPage }) {
         <div className="hours-remaining">
           <h3>Hours Remaining this month</h3>
           <div className="hours-box">
-            <span id="hours">{remainingHours.toFixed(1)}</span>
+            <span id="hours">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
             <span className="hours-label">Hrs</span>
           </div>
         </div>

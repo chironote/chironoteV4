@@ -7,6 +7,7 @@ import { generateClient } from 'aws-amplify/api';
 import * as queries from '../../graphql/queries';
 import * as mutations from '../../graphql/mutations';
 import { getCurrentUser } from 'aws-amplify/auth';
+import CreditPopup from './CreditLimit';
 
 const client = generateClient();
 
@@ -42,6 +43,7 @@ const Dictation = ({
     hasHours: false
   });
   const [timer, setTimer] = useState(0);
+  const [showCreditPopup, setShowCreditPopup] = useState(false);
   
   // Refs
   const rtRef = useRef(null);
@@ -472,6 +474,11 @@ const Dictation = ({
     }
   }, []);
   
+  // Handle closing the credit popup
+  const handleCloseCreditPopup = () => {
+    setShowCreditPopup(false);
+  };
+  
   // Start dictation
   const startDictation = async () => {
     // If already loading or stopping, queue the action
@@ -494,7 +501,7 @@ const Dictation = ({
         const updatedSubscription = await fetchUserSubscription();
         if (!updatedSubscription || updatedSubscription.hoursleft <= 0) {
           console.error('[Dictation] User has no remaining hours');
-          alert('You have no remaining dictation hours. Please upgrade your subscription.');
+          setShowCreditPopup(true);
           setStatus(prev => ({ ...prev, isLoading: false }));
           return;
         }
@@ -719,6 +726,15 @@ const Dictation = ({
     }
   };
   
+  // Render the CreditPopup component if showCreditPopup is true
+  const creditPopupElement = showCreditPopup ? (
+    <div className="create-note-popup">
+      <div className="credit-limit-container popup-content" onClick={(e) => e.stopPropagation()}>
+        <CreditPopup onClose={handleCloseCreditPopup} />
+      </div>
+    </div>
+  ) : null;
+  
   return {
     isDictationLoading: status.isLoading,
     isTranscribing: status.isTranscribing,
@@ -726,6 +742,7 @@ const Dictation = ({
     isTranscriberReady: status.isTranscriberReady,
     dictationQueued: status.isQueued,
     isStoppingDictation: status.isStopping,
+    creditPopupElement,
     startDictation,
     stopDictation,
     toggleDictation

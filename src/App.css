@@ -135,7 +135,6 @@
   animation: slideInFromLeft 0.3s ease-out;
 }
 
-
 .panel-header {
   font-size: 20px;
   font-weight: 500;
@@ -158,10 +157,24 @@
 .clipboard-container {
   display: flex;
   overflow: hidden;
-  margin-left: 30px;
   position: relative;
   flex-direction: column;
-  transition: flex 0.3s;
+  margin-left: 0;
+  margin-top: -11px;
+  width: 100%;
+  transition: margin-left 0.3s ease, flex 0.3s;
+  height: calc(100vh - 70px);
+  overflow-y: auto;
+}
+
+@media (min-width: 769px) {
+  .clipboard-container {
+    margin-left: 30px;
+  }
+}
+
+/* Add animation class for clipboard container that can be added dynamically */
+.clipboard-container-animate {
   animation: slideInFromRight 0.3s ease-out;
 }
 
@@ -877,17 +890,23 @@
     position: fixed;
     top: 70px;
     right: 0;
-    width: 15%;
+    width: 0;
     height: calc(100vh - 70px);
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 1002;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease, width 0.3s ease;
     pointer-events: none;
+    display: none;
+  }
+
+  /* Add a class for the animation that can be added dynamically */
+  .mobile-toggle-overlay-animate {
+    animation: fadeInShadow 0.3s ease;
   }
 
   .clipboard-container {
-    margin-left: 90%;
+    margin-left: 0;
     margin-top: -11px;
     width: 100%;
     transition: margin-left 0.3s ease;
@@ -924,12 +943,13 @@
   .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
     display: block;
     opacity: 1;
-    animation: fadeInShadow 0.3s ease;
+    width: 15%;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {
-    display: block;
-    animation: fadeOutShadow 0.3s ease forwards;
+    display: none;
+    width: 0;
+    opacity: 0;
   }
 
   @keyframes fadeInShadow {

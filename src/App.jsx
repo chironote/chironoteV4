@@ -16,6 +16,7 @@ import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
 import LandingPage from './components/LandingPage/LandingPage';
 import CookieConsent from './components/CookieConsent/CookieConsent';
+import CreditPopup from './components/Recording/CreditLimit';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
@@ -275,7 +276,11 @@ function AuthenticatedApp({ signOut, user }) {
     setIsDictationLoading(dictation.isDictationLoading);
     setIsTranscribing(dictation.isTranscribing);
     setIsWebSocketConnecting(dictation.isWebSocketConnecting);
-  }, [dictation.isDictationLoading, dictation.isTranscribing, dictation.isWebSocketConnecting]);
+  }, [
+    dictation.isDictationLoading, 
+    dictation.isTranscribing, 
+    dictation.isWebSocketConnecting
+  ]);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -602,11 +607,22 @@ function AuthenticatedApp({ signOut, user }) {
               />
             )}
 
+            {dictation.creditPopupElement}
+            
             {showDictationPopup && (
-              <Dictation
-                toggleDictationPopup={toggleDictationPopup}
-                onTextStreamUpdate={handleTextStreamUpdate}
-              />
+              <div className="create-note-popup" onClick={toggleDictationPopup}>
+                <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+                  <h2>Dictation</h2>
+                  <p>Click the button below to start or stop dictation.</p>
+                  <button 
+                    className={`dictation-button ${isTranscribing ? 'recording' : ''}`}
+                    onClick={dictation.toggleDictation}
+                    disabled={isDictationLoading}
+                  >
+                    {isDictationLoading ? 'Initializing...' : isTranscribing ? 'Stop Dictation' : 'Start Dictation'}
+                  </button>
+                </div>
+              </div>
             )}
 
             {showContentPopup && (
