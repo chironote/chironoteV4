@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
 import NoSleep from 'nosleep.js';
-
+import RecordRTC from 'recordrtc';
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -17,9 +17,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const lastUploadedChunkRef = useRef(0); // Track chunk number for unique paths
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
-
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
+  const currentBlobRef = useRef(null); // Add a ref to store the current blob
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -38,57 +38,18 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     };
   }, []);
 
-  const uploadAudioChunk = async (audioBlob) => {
-    try {
-      const userId = await getUserId();
-
-      if (!userId) {
-        console.error('User not authenticated');
-        return null;
-      }
-      const selectedLanguage = localStorage.getItem('selectedLanguage');
-      const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage);
-      console.log('Selected language:', selectedLanguage);
-   
-     
-
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        body: audioBlob,
-        headers: {
-          'Content-Type': 'audio/webm',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error uploading audio chunk:', errorData.message);
-        return null;
-      }
-
-      const data = await response.json();
-      console.log('Lambda response:', data);
-    } catch (error) {
-      console.error('Error sending audio to Lambda:', error);
-      return null;
-    }
-  };
-
   const uploadS3 = async (audioBlob, filePath) => {
     // Use provided filePath instead of generating it here to prevent race conditions
     const timestamp = timeStampRef.current; // Conversation identifier
     const pathstamp = pathStampRef.current; // Unique path identifier
     const userId = await getUserId();
-    
+
     // If path isn't provided, create one with pathstamp and chunk number
     const filename = filePath || `public/${userId}/${timestamp}_recording_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-    
+
     // Store the last used path in the ref
     filePathRef.current = filename;
-    
+
     try {
       // First upload to S3
       const uploadResult = await uploadData({
@@ -104,7 +65,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }).result;
 
       console.log(`Successfully uploaded to: ${filename}`, uploadResult);
-      
+
       // Then notify Lambda about the upload
       const selectedLanguage = localStorage.getItem('selectedLanguage');
       const url = new URL('https://qush6yocc25lxrp4s7vexgd7ra0qdylu.lambda-url.us-east-2.on.aws');
@@ -159,7 +120,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           noteSettings: localStorage.getItem('noteSettings'),
         }),
       });
-      
+
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
         return;
@@ -179,11 +140,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
             isFirstChunk = false;
           }
           return newText;
-        }); 
+        });
 
         if (chunk.done) {
           break;
-        } 
+        }
       }
     } catch (error) {
       console.error("Streaming error:", error);
@@ -193,22 +154,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      setIsRecording(false);
-      isRecordingRef.current = false;
-      setIsPaused(false);
-      isPausedRef.current = false;
-      mediaRecorderRef.current.stop();
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
+      
+      // Call the callback to transition back to the main app
+      if (onTransitionToMainApp) {
+        onTransitionToMainApp();
       }
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
-      setIsPreparingTranscript(true);
     }
   };
 
@@ -217,45 +167,35 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       setTextStream('');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 2, // Stereo
+          channelCount: 1, // Mono instead of stereo
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,
         }
       });
-  
+
       const uaString = navigator.userAgent.toLowerCase();
-      let options;
+      let mimeType;
       if (/iphone|ipad/i.test(uaString)) {
-        options = { mimeType: "video/mp4" }; // iPhone friendly mime type
+        mimeType = "video/mp4"; // iPhone friendly mime type
       } else {
-        options = { mimeType: "audio/webm; codecs=\"opus\"" }; // webm and specify codec
+        mimeType = "audio/webm;codecs=pcm"; // webm and specify codec
       }
 
-      mediaRecorderRef.current = new MediaRecorder(stream, options);
-  
-      mediaRecorderRef.current.ondataavailable = async (event) => {
-        if (event.data.size > 0 && !isRecordingRef.current) {
-          // This is the final chunk when recording stops
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const finalPath = `public/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Always await the upload to prevent race conditions
-          await uploadS3(event.data, finalPath);
-          streamResponse();
-        } else if (event.data.size > 0) {
-          // This is an intermediate chunk during recording
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Always await to prevent race conditions
-          await uploadS3(event.data, chunkPath);
-        }
-      };
+      // Create RecordRTC instance
+      const recorder = new RecordRTC(stream, {
+        type: 'audio',
+        mimeType: mimeType,
+        recorderType: RecordRTC.StereoAudioRecorder,
+        numberOfAudioChannels: 1, // Mono instead of stereo
+        desiredSampRate: 16000,
+        disableLogs: false,
+      });
+      
+      // Store the original stream on the recorder for later cleanup
+      recorder.stream = stream;
+      
+      mediaRecorderRef.current = recorder;
     } catch (error) {
       console.error('Error accessing microphone', error);
     }
@@ -263,39 +203,92 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const startRecording = async () => {
     // Reset the chunk counter when starting a new recording
+    currentBlobRef.current = null;
     lastUploadedChunkRef.current = 0;
-    
+
     // Set the conversation timestamp (identifies the conversation)
     timeStampRef.current = Date.now();
-    
+
     // Set a unique path identifier (for ensuring unique file paths)
     pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    
+
     await setupRecorder();
     if (mediaRecorderRef.current) {
       setIsRecording(true);
       isRecordingRef.current = true;
       setIsPaused(false);
       isPausedRef.current = false;
-      
-      mediaRecorderRef.current.start();
-      
+
+      // Start RecordRTC recording
+      mediaRecorderRef.current.startRecording();
+
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
 
+      // Use the same interval to periodically stop and restart recording
+      // This creates chunks of audio similar to the MediaRecorder implementation
       recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+        if (mediaRecorderRef.current && isRecordingRef.current && !isPausedRef.current) {
+          // Stop the current recording
+          const currentRecorder = mediaRecorderRef.current;
+
+          currentRecorder.stopRecording(() => {
+            // Get the blob and verify it's a valid blob
+            const rawBlob = currentRecorder.getBlob();
+            console.log('Raw blob type:', typeof rawBlob, 'Size:', rawBlob.size, 'MIME:', rawBlob.type);
+            
+            // Force the correct type and create a new blob
+            currentBlobRef.current = new Blob([rawBlob], { type: 'audio/webm' });
+            console.log('New blob size:', currentBlobRef.current.size, 'MIME:', currentBlobRef.current.type);
+
+            // Process the intermediate chunk
+            if (currentBlobRef.current && currentBlobRef.current.size > 0) {
+              // This is handled like a non-final ondataavailable event
+              (async () => {
+                const userId = await getUserId();
+                const timestamp = timeStampRef.current;
+                const pathstamp = pathStampRef.current;
+                const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+
+                // Upload the chunk using the stored blob
+                uploadS3(currentBlobRef.current, chunkPath);
+              })();
+            }
+
+            // Start a new recording session if we're still recording
+            if (isRecordingRef.current && !isPausedRef.current) {
+              // Create a new recorder with the same stream to avoid issues
+              const stream = currentRecorder.stream;
+              
+              // Create a new RecordRTC instance with the existing stream
+              const newRecorder = new RecordRTC(stream, {
+                type: 'audio',
+                mimeType: 'audio/webm;codecs=pcm',
+                recorderType: RecordRTC.StereoAudioRecorder,
+                numberOfAudioChannels: 1, // Mono instead of stereo
+                desiredSampRate: 16000,
+                disableLogs: false,
+              });
+              
+              // Store the stream reference
+              newRecorder.stream = stream;
+              
+              // Replace the old recorder
+              mediaRecorderRef.current = newRecorder;
+              
+              // Start the new recorder
+              mediaRecorderRef.current.startRecording();
+            }
+          });
         }
-      }, 300000); //was 300000
+      }, 300000); // 5 min
     }
   };
 
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecordingRef.current) {
-      mediaRecorderRef.current.pause();
+      mediaRecorderRef.current.pauseRecording();
       setIsPaused(true);
       isPausedRef.current = true;
       if (recordingIntervalRef.current) {
@@ -306,16 +299,138 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPausedRef.current) {
-      mediaRecorderRef.current.resume();
+      // Get the existing stream
+      const stream = mediaRecorderRef.current.stream;
+      
+      // Create a new RecordRTC instance with the existing stream
+      const newRecorder = new RecordRTC(stream, {
+        type: 'audio',
+        mimeType: 'audio/webm;codecs=pcm', // Force webm format
+        recorderType: RecordRTC.StereoAudioRecorder,
+        numberOfAudioChannels: 1,
+        desiredSampRate: 16000,
+        disableLogs: false,
+      });
+      
+      // Store the stream reference
+      newRecorder.stream = stream;
+      
+      // Replace the old recorder
+      mediaRecorderRef.current = newRecorder;
+      
+      // Start the new recorder
+      mediaRecorderRef.current.startRecording();
+      
       setIsPaused(false);
       isPausedRef.current = false;
 
       recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+        if (mediaRecorderRef.current && isRecordingRef.current && !isPausedRef.current) {
+          // Stop the current recording
+          const currentRecorder = mediaRecorderRef.current;
+
+          currentRecorder.stopRecording(() => {
+            // Get the blob and verify it's a valid blob
+            const rawBlob = currentRecorder.getBlob();
+            console.log('Resume - Raw blob type:', typeof rawBlob, 'Size:', rawBlob.size, 'MIME:', rawBlob.type);
+            
+            // Force the correct type and create a new blob
+            currentBlobRef.current = new Blob([rawBlob], { type: 'audio/webm' });
+            console.log('Resume - New blob size:', currentBlobRef.current.size, 'MIME:', currentBlobRef.current.type);
+
+            // Process the intermediate chunk
+            if (currentBlobRef.current && currentBlobRef.current.size > 0) {
+              // This is handled like a non-final ondataavailable event
+              (async () => {
+                const userId = await getUserId();
+                const timestamp = timeStampRef.current;
+                const pathstamp = pathStampRef.current;
+                const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+
+                // Upload the chunk using the stored blob
+                await uploadS3(currentBlobRef.current, chunkPath);
+              })();
+            }
+
+            // Start a new recording session if we're still recording
+            if (isRecordingRef.current && !isPausedRef.current) {
+              // Create a new recorder with the same stream to avoid issues
+              const stream = currentRecorder.stream;
+              
+              // Create a new RecordRTC instance with the existing stream
+              const newRecorder = new RecordRTC(stream, {
+                type: 'audio',
+                mimeType: 'audio/webm;codecs=pcm',
+                recorderType: RecordRTC.StereoAudioRecorder,
+                numberOfAudioChannels: 1,
+                desiredSampRate: 16000,
+                disableLogs: false,
+              });
+              
+              // Store the stream reference
+              newRecorder.stream = stream;
+              
+              // Replace the old recorder
+              mediaRecorderRef.current = newRecorder;
+              
+              // Start the new recorder
+              mediaRecorderRef.current.startRecording();
+            }
+          });
         }
       }, 300000);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current) {
+      // Set recording states to false BEFORE stopping to signal this is the final chunk
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      setIsPaused(false);
+      isPausedRef.current = false;
+      
+      // Set isPreparingTranscript to true BEFORE clearing the interval
+      // This ensures the UI shows the preparing state immediately
+      setIsPreparingTranscript(true);
+
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+      }
+
+      // Stop recording and process final blob
+      mediaRecorderRef.current.stopRecording(async () => {
+        // Get the blob and verify it's a valid blob
+        const rawBlob = mediaRecorderRef.current.getBlob();
+        console.log('Stop - Raw blob type:', typeof rawBlob, 'Size:', rawBlob.size, 'MIME:', rawBlob.type);
+        
+        // Force the correct type and create a new blob
+        currentBlobRef.current = new Blob([rawBlob], { type: 'audio/webm' });
+        console.log('Stop - New blob size:', currentBlobRef.current.size, 'MIME:', currentBlobRef.current.type);
+
+        if (currentBlobRef.current && currentBlobRef.current.size > 0) {
+          // This is the final chunk when recording stops
+          const userId = await getUserId();
+          const timestamp = timeStampRef.current;
+          const pathstamp = pathStampRef.current;
+          const finalPath = `public/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+
+          // AWAIT the final upload to prevent race conditions
+          await uploadS3(currentBlobRef.current, finalPath);
+
+          // Clean up stream tracks
+          if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+          }
+
+          mediaRecorderRef.current = null;
+          
+          // We already set isPreparingTranscript to true above, so we don't need to set it again here
+
+          // Now that the final upload is complete, call streamResponse
+          streamResponse();
+        }
+      });
     }
   };
 
@@ -352,7 +467,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     stopRecording,
     pauseRecording,
     resumeRecording,
-    textStream
+    textStream,
+    isProcessing: isRecording || isPreparingTranscript || isGeneratingSummary
   };
 }
 

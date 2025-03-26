@@ -269,14 +269,14 @@
 .landing-page__testimonial-header {
   display: flex;
   align-items: center;
-  margin-bottom: 22px;
+  margin-bottom: 25px;
   position: relative;
 }
 
 .landing-page__testimonial-avatar-container {
   position: relative;
-  width: 70px;
-  height: 70px;
+  width: 90px;
+  height: 90px;
   margin-right: 15px;
   border-radius: 50%;
   overflow: hidden;
@@ -311,7 +311,7 @@
 .landing-page__testimonial-name {
   font-weight: 600;
   color: #1a1a1a;
-  font-size: 1.1em;
+  font-size: 1.2em;
   margin-bottom: 5px;
 }
 

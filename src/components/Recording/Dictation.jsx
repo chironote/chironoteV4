@@ -528,7 +528,7 @@ const Dictation = ({
       console.log('[Dictation] Requesting microphone access');
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
-          channelCount: 2,
+          channelCount: 1,
           echoCancellation: false,
           noiseSuppression: false,
           autoGainControl: false,

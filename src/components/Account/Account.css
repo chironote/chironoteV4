@@ -8,66 +8,69 @@
 }
 
 /* Headings */
-h1,
-h2,
-h3 {
-  margin-bottom: 30px;
+.account-container h1 {
+  margin-bottom: 10px;
   text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: var(--dark-green);
+  position: relative;
+  padding-bottom: 15px;
+}
+
+.account-container h1:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 3px;
+  background: linear-gradient(to right, var(--medium-green), var(--light-green));
+}
+
+.account-container h2 {
+  display: none; /* Hide the second heading */
+}
+
+.account-container h3 {
+  margin: 20px 0 15px;
+  text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-size: 1.1rem;
+  color: var(--dark-green);
 }
 
 /* Account info section */
 .account-container .account-info {
-  margin-bottom: 50px;
+  margin-bottom: 40px;
   text-align: center;
 }
 
 .account-info label {
   display: block;
-  font-size: 1.3rem;
-  margin-bottom: 15px;
+  font-size: 1.1rem;
+  margin-bottom: 12px;
   color: var(--dark-green);
+  font-family: 'Montserrat', Arial, sans-serif;
+  font-weight: 500;
 }
 
 .account-info input[type="text"] {
   width: 90%;
   max-width: 350px;
-  padding: 12px;
-  font-size: 1rem;
-  border-radius: 6px;
-  margin-bottom: 20px;
+  padding: 10px;
+  font-size: 0.95rem;
+  border-radius: 8px;
+  margin-bottom: 18px;
   border: 2px solid var(--light-green);
-}
-
-/* Buttons */
-.account-container :where(.update-name-btn, .manage-plan-btn) {
-  color: var(--pure-white);
-  margin-top: 10px;
-  border: none;
-  border-radius: 30px;
-  padding: 14px 28px;
-  font-size: 1.125rem;
-  font-weight: bold;
-  cursor: pointer;
-  text-transform: uppercase;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
-  transition: all 0.3s ease;
-}
-
-.account-container :where(.update-name-btn, .manage-plan-btn):hover {
-  transform: translateY(-3px);
-  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-}
-
-.account-container .account-info .update-name-btn {
-  margin-left: 20px;
+  font-family: 'Roboto', Arial, sans-serif;
 }
 
 /* Subscription options */
 .subscription-info {
-  margin-top: 30px;
+  margin-top: 25px;
   text-align: center;
+  position: relative;
 }
 
 .subscription-info .subscription-status {
@@ -79,19 +82,21 @@ h3 {
 }
 
 .subscription-option {
-  height: 110px;
-  padding: 15px;
+  height: 100px;
+  padding: 12px;
   cursor: pointer;
   border-radius: 8px;
   width: 30%;
   border: 1px solid var(--medium-green);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
 .subscription-option:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
@@ -100,54 +105,141 @@ h3 {
   color: var(--pure-white);
 }
 
+.subscription-option.active:before {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  font-size: 0.8rem;
+  background: var(--dark-green);
+  color: white;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* Option name and features */
 .subscription-option .option-name {
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   font-weight: bold;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
   text-align: center;
+  font-family: 'Montserrat', Arial, sans-serif;
 }
 
 .subscription-option .option-features li {
   list-style: none;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   text-align: center;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 0.9rem;
+}
+
+/* Buttons */
+.account-container :where(.update-name-btn, .manage-plan-btn) {
+  color: var(--pure-white);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, var(--medium-green), var(--dark-green));
+  transition: all 0.3s ease;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+.account-container :where(.update-name-btn, .manage-plan-btn):hover {
+  transform: translateY(-2px);
+  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.account-container .account-info .update-name-btn {
+  margin-left: 15px;
+}
+
+/* Manage plan button - make it more prominent */
+.subscription-info .manage-plan-btn {
+  position: relative;
+  padding: 14px 30px;
+  font-size: 1rem;
+  margin: 0 auto 35px;
+  display: block;
+  letter-spacing: 0.5px;
+  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.subscription-info .manage-plan-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+.subscription-info .manage-plan-btn:after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  border-radius: 8px;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.subscription-info .manage-plan-btn:hover:after {
+  opacity: 1;
 }
 
 /* Hours remaining box */
 .subscription-info .hours-remaining {
-  margin-top: 30px;
+  margin-top: 10px;
   text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .subscription-info .hours-box {
   color: var(--pure-white);
-  border-radius: 50%;
-  width: 120px;
-  height: 120px;
+  border-radius: 8px;
+  width: 100px;
+  height: 100px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 20px auto 1.5vh;
-  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+  margin: 15px auto 1.5vh;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   background: linear-gradient(145deg, var(--light-green), var(--medium-green));
   transition: all 0.3s ease;
 }
 
 .subscription-info .hours-box:hover {
-  transform: scale(1.08);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+  transform: scale(1.05);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
 
 .subscription-info #hours {
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: bold;
+  font-family: 'Montserrat', Arial, sans-serif;
 }
 
 .subscription-info .hours-label {
-  margin-top: 5px;
+  margin-top: 4px;
   text-transform: uppercase;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.8rem;
 }
 
 /* Responsive adjustments */
@@ -168,8 +260,12 @@ h3 {
   }
 
   .subscription-info .hours-box {
-    width: 100px;
-    height: 100px;
+    width: 90px;
+    height: 90px;
+  }
+  
+  .subscription-info #hours {
+    font-size: 1.8rem;
   }
 }
 
@@ -189,8 +285,8 @@ h3 {
 }
 
 .loading-spinner {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border: 3px solid var(--light-green);
   border-top: 3px solid var(--dark-green);
   border-radius: 50%;
@@ -207,10 +303,10 @@ h3 {
 }
 
 @keyframes fadeIn {
-  0% {
+  from {
     opacity: 0;
   }
-  100% {
+  to {
     opacity: 1;
   }
 }

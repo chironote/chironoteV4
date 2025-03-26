@@ -249,11 +249,18 @@ function AuthenticatedApp({ signOut, user }) {
   const handleTextStreamUpdate = useCallback((newText) => {
     setStreamingText(newText);
     setClipboardContent(newText);
+    // Don't automatically close the recording popup here
+    // setShowRecordingPopup(false);
+  }, []);
+
+  const handleTransitionToMainApp = useCallback(() => {
+    // Close the recording popup when transcript generation is complete
     setShowRecordingPopup(false);
   }, []);
 
   const recordingManager = RecordingManager({ 
-    onTextStreamUpdate: handleTextStreamUpdate
+    onTextStreamUpdate: handleTextStreamUpdate,
+    onTransitionToMainApp: handleTransitionToMainApp
   });
 
   // Initialize dictation functionality
@@ -279,21 +286,17 @@ function AuthenticatedApp({ signOut, user }) {
         variables: { 
           owner: user.username,
           sortDirection: "DESC",
-          limit: 50  // Fetch more items to ensure we have enough after filtering
+          limit: 120  // Increased from 50 to 120 to ensure we have enough after filtering
         }
       });
         const fetchedNotes = notesData.data.listNotes.items;
-        console.log('Raw fetched notes:', fetchedNotes);
         
         const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== "");
         const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "");
         
-        console.log('Filtered notes:', filteredNotes);
-        console.log('Filtered transcripts:', filteredTranscripts);
-        
-        // Since we're already getting data in DESC order, just take the first 10
-        setNotes(filteredNotes.slice(0, 40));
-        setTranscripts(filteredTranscripts.slice(0, 40));
+        // Since we're already getting data in DESC order, just take the first 100
+        setNotes(filteredNotes.slice(0, 100));
+        setTranscripts(filteredTranscripts.slice(0, 100));
         setQueryLoaded(true);
 
         // Initialize collapsed weeks - collapse all except the most recent week
@@ -345,20 +348,18 @@ function AuthenticatedApp({ signOut, user }) {
         const updatedData = data.onUpdateNotesByOwner;
         
         if (updatedData.note && updatedData.note.trim() !== "") {
-          console.log('New note:', updatedData.note);
           setNotes(prevNotes => {
             const updatedNotes = [updatedData, ...prevNotes.filter(note => note.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedNotes.slice(0, 40);
+            return updatedNotes.slice(0, 100);
           });
         }
         
         if (updatedData.transcript && updatedData.transcript.trim() !== "") {
-          console.log('New transcript:', updatedData.transcript);
           setTranscripts(prevTranscripts => {
             const updatedTranscripts = [updatedData, ...prevTranscripts.filter(transcript => transcript.timestamp !== updatedData.timestamp)];
             setNewItems(new Set([...newItems, updatedData.timestamp]));
-            return updatedTranscripts.slice(0, 40);
+            return updatedTranscripts.slice(0, 100);
           });
         }
       },
@@ -525,7 +526,7 @@ function AuthenticatedApp({ signOut, user }) {
   }, []);
 
   return (
-    <div className="app">
+    <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
       <Navbar 
         username={user.username}
         onSignOut={signOut}
@@ -543,7 +544,10 @@ function AuthenticatedApp({ signOut, user }) {
               </div>
             </section>
             <div className="mobile-toggle-overlay"></div>
-            <div className="mobile-toggle-button" onClick={togglePanel}>
+            <div 
+              className={`mobile-toggle-button ${showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary ? 'disabled' : ''}`} 
+              onClick={(showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary) ? undefined : togglePanel}
+            >
               {isCollapsed ? <span className="material-symbols-rounded">sort</span> : <span className="material-symbols-rounded">left_panel_close</span>}
             </div>
             <section className="clipboard-container">
@@ -583,7 +587,7 @@ function AuthenticatedApp({ signOut, user }) {
               onTextStreamUpdate={handleTextStreamUpdate}
             />
 
-            {showRecordingPopup && (
+            {(showRecordingPopup || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary) && (
               <Recording
                 toggleRecordingPopup={toggleRecordingPopup}
                 recordingType={recordingType}

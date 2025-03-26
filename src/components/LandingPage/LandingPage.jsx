@@ -7,8 +7,9 @@ import feature1 from '../../assets/Feature1.svg';
 import feature2 from '../../assets/Feature2.svg';
 import feature3 from '../../assets/Feature3.svg';
 import avatar from '../../assets/conversation.svg';
-import fryaufImg from '../../assets/Fryauf.png';
-import samImg from '../../assets/Sam.jpg';
+import mattImg from '../../assets/Matt.png';
+import samImg from '../../assets/Sam.png';
+import jessImg from '../../assets/Jess.png';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 export default function LandingPage(props) {
@@ -71,9 +72,9 @@ export default function LandingPage(props) {
             <div className="landing-page__testimonial-header">
               <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src={fryaufImg}
+                  src={mattImg}
                   alt="Dr. Matt Fryauf"
-                  className="landing-page__testimonial-avatar matt-image"
+                  className="landing-page__testimonial-avatar"
                 />
               </div>
               <div className="landing-page__testimonial-user">
@@ -95,7 +96,7 @@ export default function LandingPage(props) {
             <div className="landing-page__testimonial-header">
               <div className="landing-page__testimonial-avatar-container">
                 <img
-                  src="https://randomuser.me/api/portraits/men/45.jpg"
+                  src={jessImg}
                   alt="Dr. Jessica Yeung"
                   className="landing-page__testimonial-avatar"
                 />
@@ -112,7 +113,7 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              "The voice-to-text feature is a game-changer, allowing me to focus on my patients instead of my screen."
+              Enables me to concentrate my time on patient care instead of paperwork
             </div>
           </div>
           {/* Testimonial Card 3 */}

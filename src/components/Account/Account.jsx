@@ -127,7 +127,7 @@ function Account({ setCurrentPage }) {
           <div className="loading-spinner"></div>
         </div>
       )}
-      <h1>Account Information</h1>
+      <h1>Your Account</h1>
 
       {/* Subscription management */}
       <div className="subscription-info">
@@ -147,7 +147,7 @@ function Account({ setCurrentPage }) {
           onClick={handlePlanAction}
           disabled={isLoading}
         >
-          {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Browse Available Plans' : 'Manage Plan')}
+          {isLoading ? 'Processing...' : (currentPlan === 'free' ? 'Browse Available Plans' : 'Manage Billing')}
         </button>
 
         {/* Hours remaining this month */}
