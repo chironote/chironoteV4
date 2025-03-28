@@ -135,6 +135,7 @@
   animation: slideInFromLeft 0.3s ease-out;
 }
 
+
 .panel-header {
   font-size: 20px;
   font-weight: 500;
@@ -160,11 +161,10 @@
   position: relative;
   flex-direction: column;
   margin-left: 0;
-  margin-top: -11px;
   width: 100%;
   transition: margin-left 0.3s ease, flex 0.3s;
-  height: calc(100vh - 70px);
-  overflow-y: auto;
+  height: calc(100vh - 110px);
+  overflow-y: hidden;
 }
 
 @media (min-width: 769px) {
