@@ -1,14 +1,19 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
+import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
 import NoSleep from 'nosleep.js';
+import { generateClient } from 'aws-amplify/api';
+import * as subscriptions from '../../graphql/subscriptions';
 
+const client = generateClient();
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+  const [isTranscriptCompleted, setIsTranscriptCompleted] = useState(false);
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const timeStampRef = useRef(null); // Conversation identifier timestamp
@@ -17,6 +22,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const lastUploadedChunkRef = useRef(0); // Track chunk number for unique paths
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
+  const subscriptionRef = useRef(null);
+  const uploadQueueRef = useRef([]); // Queue for uploads
+  const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
+  const finalChunkRef = useRef(null); // Reference to store the final chunk
 
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
@@ -38,43 +47,50 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     };
   }, []);
 
-  const uploadAudioChunk = async (audioBlob) => {
-    try {
-      const userId = await getUserId();
-
-      if (!userId) {
-        console.error('User not authenticated');
-        return null;
-      }
-      const selectedLanguage = localStorage.getItem('selectedLanguage');
-      const url = new URL('https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws');
-      url.searchParams.append('userId', userId);
-      url.searchParams.append('timeStamp', timeStampRef.current);
-      url.searchParams.append('language', selectedLanguage === 'null' ? null : selectedLanguage);
-      console.log('Selected language:', selectedLanguage);
-   
-     
-
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        body: audioBlob,
-        headers: {
-          'Content-Type': 'audio/webm',
-        },
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error uploading audio chunk:', errorData.message);
-        return null;
-      }
-
-      const data = await response.json();
-      console.log('Lambda response:', data);
-    } catch (error) {
-      console.error('Error sending audio to Lambda:', error);
-      return null;
+  // Process uploads from the queue one at a time
+  const processUploadQueue = async () => {
+    if (isProcessingUploadsRef.current || uploadQueueRef.current.length === 0) {
+      return;
     }
+
+    isProcessingUploadsRef.current = true;
+
+    try {
+      // Process all regular chunks first
+      const regularChunks = uploadQueueRef.current.filter(item => !item.filePath.includes('_final_'));
+      for (const item of regularChunks) {
+        await uploadS3(item.audioBlob, item.filePath);
+        // Remove this item from the queue
+        uploadQueueRef.current = uploadQueueRef.current.filter(
+          queueItem => queueItem !== item
+        );
+      }
+
+      // Then process the final chunk if it exists
+      const finalChunk = uploadQueueRef.current.find(item => item.filePath.includes('_final_'));
+      if (finalChunk) {
+        await uploadS3(finalChunk.audioBlob, finalChunk.filePath);
+        // Remove the final chunk from the queue
+        uploadQueueRef.current = uploadQueueRef.current.filter(
+          queueItem => queueItem !== finalChunk
+        );
+      }
+    } catch (error) {
+      console.error('Error processing upload queue:', error);
+    } finally {
+      isProcessingUploadsRef.current = false;
+      
+      // If there are more items in the queue, process them
+      if (uploadQueueRef.current.length > 0) {
+        processUploadQueue();
+      }
+    }
+  };
+
+  // Add to upload queue instead of uploading directly
+  const queueUpload = (audioBlob, filePath) => {
+    uploadQueueRef.current.push({ audioBlob, filePath });
+    processUploadQueue();
   };
 
   const uploadS3 = async (audioBlob, filePath) => {
@@ -83,16 +99,35 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     const pathstamp = pathStampRef.current; // Unique path identifier
     const userId = await getUserId();
     
-    // If path isn't provided, create one with pathstamp and chunk number
-    const filename = filePath || `public/${userId}/${timestamp}_recording_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-    
+    if (!userId) {
+      console.error('User not authenticated for S3 upload');
+      return null; 
+    }
+
     // Store the last used path in the ref
-    filePathRef.current = filename;
+    filePathRef.current = filePath;
     
     try {
-      // First upload to S3
+      // Fetch credentials first
+      const session = await fetchAuthSession(); // Get fresh session/credentials
+      const credentials = session.credentials; 
+      if (!credentials) {
+        console.error("AWS Credentials not found in session");
+        return null; // Or throw an error
+      }
+
+      // Generate access token
+      const accessToken = await generateToken();
+
+      // Initialize SQS Client here with fetched credentials
+      const sqsClient = new SQSClient({ 
+        region: "us-east-2", 
+        credentials 
+      });
+
+      // First upload to S3 (Amplify Storage handles its own credentials)
       const uploadResult = await uploadData({
-        path: filename,
+        path: filePath,
         data: audioBlob,
         options: {
           contentType: 'audio/webm',
@@ -103,37 +138,112 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
       }).result;
 
-      console.log(`Successfully uploaded to: ${filename}`, uploadResult);
+      console.log(`Successfully uploaded to: ${filePath}`, uploadResult);
       
-      // Then notify Lambda about the upload
+      // Then send a message to SQS to trigger transcription Lambda
       const selectedLanguage = localStorage.getItem('selectedLanguage');
-      const url = new URL('https://qush6yocc25lxrp4s7vexgd7ra0qdylu.lambda-url.us-east-2.on.aws');
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        body: JSON.stringify({
-          userId,
-          timestamp,
-          path: filename,
-          language: selectedLanguage === 'null' ? null : selectedLanguage
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const queueUrl = "https://sqs.us-east-2.amazonaws.com/026090532772/AudioTranscriptionQueue.fifo"; 
+      const messageBody = JSON.stringify({
+        userId,
+        timestamp,
+        path: filePath,
+        language: selectedLanguage === 'null' ? null : selectedLanguage,
+        isFinalAudio: filePath.includes('_final_'),
+        accessToken: accessToken
+      });
+      // Create a shorter, valid deduplication ID (max 128 chars, alphanumeric, hyphens, underscores only)
+      // Use the last part of the filename which should be unique enough
+      const filenameParts = filePath.split('/');
+      const lastPart = filenameParts[filenameParts.length - 1];
+      const deduplicationId = `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
+      console.log('Deduplication ID:', deduplicationId);
+
+      const command = new SendMessageCommand({
+        QueueUrl: queueUrl,
+        MessageBody: messageBody,
+        MessageGroupId: userId, 
+        MessageDeduplicationId: deduplicationId 
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error notifying Lambda about S3 upload:', errorData.message);
-      } else {
-        const data = await response.json();
-        console.log('Lambda notification response:', data);
+      try {
+        const data = await sqsClient.send(command);
+        console.log("Successfully sent message to SQS:", data.MessageId);
+        console.log(`Queue notified of new audio segment. Is final? ${filePath.includes('_final_') ? 'True' : 'False'}`);
+        
+        // Set up subscription to monitor when transcript processing completes
+        if (filePath.includes('_final_')) {
+          console.log("Final recording uploaded, waiting for transcript completion...");
+          setIsTranscriptCompleted(false);
+          subscribeToNoteCompletion(userId, timestamp);
+        }
+      } catch (error) {
+        console.error("Error sending message to SQS:", error);
+        // Decide if you want to throw the error or handle it (e.g., retry logic)
       }
 
       return uploadResult;
     } catch (error) {
       console.error('Error uploading audio to S3:', error);
-      throw error;
+      throw error; 
     }
+  };
+
+  const subscribeToNoteCompletion = async (userId, timestamp) => {
+    // Clean up previous subscription if it exists
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+    }
+
+    // Set up timeout to automatically move on after 80 seconds
+    const timeoutId = setTimeout(() => {
+      console.log('Subscription wait timeout (40 seconds) - moving on automatically');
+      // Make sure to unsubscribe before moving on
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+      setIsTranscriptCompleted(true);
+      streamResponse();
+    }, 80000); // 80 seconds
+
+    // Set up new subscription
+    subscriptionRef.current = client.graphql({
+      query: subscriptions.onUpdateNotesByOwner,
+      variables: { owner: userId }
+    }).subscribe({
+      next: ({ data }) => {
+        console.log('Received data from notes subscription:', data);
+        const updatedNote = data.onUpdateNotesByOwner;
+        
+        // Check if this is the note we're waiting for
+        if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
+          console.log('Found matching note:', updatedNote);
+          
+          // Check if the note processing is completed
+          if (updatedNote.isCompleted === true) {
+            console.log('Transcript processing completed!');
+            // Clear the timeout since we got a response
+            clearTimeout(timeoutId);
+            setIsTranscriptCompleted(true);
+            // Unsubscribe since we found our match
+            if (subscriptionRef.current) {
+              subscriptionRef.current.unsubscribe();
+              subscriptionRef.current = null;
+            }
+            // Proceed to stream response
+            streamResponse();
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Subscription error:', error);
+        // Clear the timeout since we're handling the error
+        clearTimeout(timeoutId);
+        // If there's an error with subscription, proceed anyway to avoid blocking
+        setIsTranscriptCompleted(true);
+        streamResponse();
+      }
+    });
   };
 
   const streamResponse = async () => {
@@ -210,6 +320,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
       setIsPreparingTranscript(true);
+      setIsTranscriptCompleted(false);
     }
   };
 
@@ -243,9 +354,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           const pathstamp = pathStampRef.current; // Unique path identifier
           const finalPath = `public/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           
-          // Always await the upload to prevent race conditions
-          await uploadS3(event.data, finalPath);
-          streamResponse();
+          // Queue the final chunk instead of uploading directly
+          queueUpload(event.data, finalPath);
         } else if (event.data.size > 0) {
           // This is an intermediate chunk during recording
           const userId = await getUserId();
@@ -253,8 +363,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           const pathstamp = pathStampRef.current; // Unique path identifier
           const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           
-          // Always await to prevent race conditions
-          await uploadS3(event.data, chunkPath);
+          // Queue the chunk instead of uploading directly
+          queueUpload(event.data, chunkPath);
         }
       };
     } catch (error) {
@@ -290,7 +400,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 300000); //was 300000
+      }, 240000); 
     }
   };
 
@@ -316,7 +426,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 300000);
+      }, 240000);
     }
   };
 
@@ -341,6 +451,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   useEffect(() => {
     return () => {
       stopRecording();
+      // Clean up subscription when component unmounts
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+      }
     };
   }, []);
 

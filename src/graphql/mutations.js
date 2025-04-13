@@ -53,6 +53,7 @@ export const createNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -67,6 +68,7 @@ export const updateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -81,6 +83,7 @@ export const deleteNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }

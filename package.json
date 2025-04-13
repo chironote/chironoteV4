@@ -1,12 +1,13 @@
 {
   "name": "chironote",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "dependencies": {
     "@aws-amplify/api": "^6.0.45",
     "@aws-amplify/auth": "^6.3.14",
     "@aws-amplify/cli": "^12.12.6",
     "@aws-amplify/ui-react": "^6.2.0",
+    "@aws-sdk/client-sqs": "^3.777.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",

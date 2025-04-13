@@ -46,6 +46,7 @@ export const getNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -72,6 +73,7 @@ export const listNotes = /* GraphQL */ `
         timestamp
         transcript
         note
+        isCompleted
         __typename
       }
       nextToken

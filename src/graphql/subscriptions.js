@@ -8,6 +8,7 @@ export const onCreateNotesByOwner = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -19,6 +20,7 @@ export const onUpdateNotesByOwner = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -75,6 +77,7 @@ export const onCreateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -89,6 +92,7 @@ export const onUpdateNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }
@@ -103,6 +107,7 @@ export const onDeleteNotes = /* GraphQL */ `
       timestamp
       transcript
       note
+      isCompleted
       __typename
     }
   }

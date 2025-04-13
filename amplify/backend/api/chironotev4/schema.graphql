@@ -10,6 +10,7 @@ type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   timestamp: String!
   transcript: String
   note: String
+  isCompleted: Boolean
 }
 
 type Subscription {

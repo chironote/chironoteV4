@@ -6,7 +6,13 @@
 
 /* eslint-disable */
 import * as React from "react";
-import { Button, Flex, Grid, TextField } from "@aws-amplify/ui-react";
+import {
+  Button,
+  Flex,
+  Grid,
+  SwitchField,
+  TextField,
+} from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
 import { createNotes } from "../graphql/mutations";
@@ -27,17 +33,22 @@ export default function NotesCreateForm(props) {
     timestamp: "",
     transcript: "",
     note: "",
+    isCompleted: false,
   };
   const [owner, setOwner] = React.useState(initialValues.owner);
   const [timestamp, setTimestamp] = React.useState(initialValues.timestamp);
   const [transcript, setTranscript] = React.useState(initialValues.transcript);
   const [note, setNote] = React.useState(initialValues.note);
+  const [isCompleted, setIsCompleted] = React.useState(
+    initialValues.isCompleted
+  );
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     setOwner(initialValues.owner);
     setTimestamp(initialValues.timestamp);
     setTranscript(initialValues.transcript);
     setNote(initialValues.note);
+    setIsCompleted(initialValues.isCompleted);
     setErrors({});
   };
   const validations = {
@@ -45,6 +56,7 @@ export default function NotesCreateForm(props) {
     timestamp: [{ type: "Required" }],
     transcript: [],
     note: [],
+    isCompleted: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -76,6 +88,7 @@ export default function NotesCreateForm(props) {
           timestamp,
           transcript,
           note,
+          isCompleted,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -142,6 +155,7 @@ export default function NotesCreateForm(props) {
               timestamp,
               transcript,
               note,
+              isCompleted,
             };
             const result = onChange(modelFields);
             value = result?.owner ?? value;
@@ -169,6 +183,7 @@ export default function NotesCreateForm(props) {
               timestamp: value,
               transcript,
               note,
+              isCompleted,
             };
             const result = onChange(modelFields);
             value = result?.timestamp ?? value;
@@ -196,6 +211,7 @@ export default function NotesCreateForm(props) {
               timestamp,
               transcript: value,
               note,
+              isCompleted,
             };
             const result = onChange(modelFields);
             value = result?.transcript ?? value;
@@ -223,6 +239,7 @@ export default function NotesCreateForm(props) {
               timestamp,
               transcript,
               note: value,
+              isCompleted,
             };
             const result = onChange(modelFields);
             value = result?.note ?? value;
@@ -237,6 +254,34 @@ export default function NotesCreateForm(props) {
         hasError={errors.note?.hasError}
         {...getOverrideProps(overrides, "note")}
       ></TextField>
+      <SwitchField
+        label="Is completed"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={isCompleted}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              owner,
+              timestamp,
+              transcript,
+              note,
+              isCompleted: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.isCompleted ?? value;
+          }
+          if (errors.isCompleted?.hasError) {
+            runValidationTasks("isCompleted", value);
+          }
+          setIsCompleted(value);
+        }}
+        onBlur={() => runValidationTasks("isCompleted", isCompleted)}
+        errorMessage={errors.isCompleted?.errorMessage}
+        hasError={errors.isCompleted?.hasError}
+        {...getOverrideProps(overrides, "isCompleted")}
+      ></SwitchField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

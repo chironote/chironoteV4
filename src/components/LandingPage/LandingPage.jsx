@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './LandingPage.css';
-import logo from '../../assets/FullLogo2.svg';
+import logo from '../../assets/logo.svg';
+import textLogo from '../../assets/textlogo.svg';
 import footermockup from '../../assets/Footermockup.svg';
 import stars from '../../assets/stars.svg';
 import feature1 from '../../assets/Feature1.svg';
@@ -13,8 +14,22 @@ import jessImg from '../../assets/Jess.png';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 export default function LandingPage(props) {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
   const handleButtonClick = (buttonName) => {
     trackLandingPageButtonClick(buttonName);
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const handleNavClick = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+    }
   };
 
   return (
@@ -22,13 +37,30 @@ export default function LandingPage(props) {
       {/* Header Section */}
       <div className="landing-page__header">
         <div className="landing-page__header-content">
+          {/* Logo - show text logo on mobile, regular logo otherwise */}
           <img
             src={logo}
-            alt="Full Logo"
-            className="landing-page__logo"
+            alt="ChiroNote Logo"
+            className="landing-page__logo landing-page__desktop-logo"
           />
+          <img
+            src={textLogo}
+            alt="ChiroNote"
+            className="landing-page__logo landing-page__mobile-logo"
+          />
+          
+          {/* Hamburger menu for mobile */}
+          <div className="landing-page__mobile-menu-button" onClick={toggleMobileMenu}>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          
+          {/* Desktop navigation */}
           <div className="landing-page__nav">
           </div>
+          
+          {/* Launch app button */}
           <a 
             href="/app" 
             className="landing-page__get-started-button"
@@ -36,6 +68,24 @@ export default function LandingPage(props) {
           >
             Launch App
           </a>
+          
+          {/* Mobile navigation dropdown */}
+          <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
+            <div className="landing-page__mobile-nav-items">
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('features')}>Features</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('note-creation')}>Note Creation</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('security')}>Security</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('ai-tech')}>New AI Tech</div>
+              <a 
+                href="/app" 
+                className="landing-page__mobile-nav-button"
+                onClick={() => handleButtonClick('Mobile_Nav_Launch_App')}
+              >
+                Launch App
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -59,6 +109,7 @@ export default function LandingPage(props) {
             >
               Start charting now for free
             </a>
+            <div className="landing-page__no-payment-text">No payment required</div>
           </div>
         </div>
         <div className="landing-page__hero-reflection"></div>
@@ -146,8 +197,8 @@ export default function LandingPage(props) {
 
       {/* Feature Sections */}
       <div id="features" className="landing-page__features">
-        {/* Feature 1 */}
-        <div className="landing-page__feature">
+        {/* Feature 1 - Note Creation */}
+        <div id="note-creation" className="landing-page__feature">
           <img
             src={feature1}
             alt="Feature Image 1"
@@ -165,7 +216,7 @@ export default function LandingPage(props) {
         </div>
 
         {/* Feature 2 (Security) */}
-        <div className="landing-page__feature">
+        <div id="security" className="landing-page__feature">
           <div className="landing-page__feature-content">
             <div className="landing-page__feature-tag">Security</div>
             <div className="landing-page__feature-title">
@@ -182,8 +233,8 @@ export default function LandingPage(props) {
           />
         </div>
 
-        {/* Feature 3 */}
-        <div className="landing-page__feature">
+        {/* Feature 3 - AI Tech */}
+        <div id="ai-tech" className="landing-page__feature">
           <img
             src={feature3}
             alt="Feature Image 3"

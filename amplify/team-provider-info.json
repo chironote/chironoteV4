@@ -17,6 +17,12 @@
       },
       "storage": {
         "base64audiobucket": {}
+      },
+      "api": {
+        "chironotev4": {}
+      },
+      "hosting": {
+        "S3AndCloudFront": {}
       }
     }
   }

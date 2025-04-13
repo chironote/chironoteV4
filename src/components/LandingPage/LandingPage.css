@@ -1,8 +1,14 @@
 /* Base Container */
+html {
+  scroll-padding-top: 50px;
+}
+
 .landing-page {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 /* Header Styles */
@@ -20,6 +26,75 @@
 
 .landing-page__logo {
   height: 40px;
+}
+
+.landing-page__mobile-logo {
+  display: none;
+}
+
+/* Mobile menu button (hamburger) */
+.landing-page__mobile-menu-button {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 101;
+}
+
+.landing-page__mobile-menu-button span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+/* Mobile navigation */
+.landing-page__mobile-nav {
+  position: fixed;
+  top: 60px;
+  left: -100%;
+  width: 100%;
+  height: auto;
+  background-color: white;
+  z-index: 100;
+  transition: left 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.landing-page__mobile-nav.open {
+  left: 0;
+}
+
+.landing-page__mobile-nav-items {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-page__mobile-nav-item {
+  font-size: 1.1rem;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.landing-page__mobile-nav-item:last-child {
+  border-bottom: none;
+}
+
+.landing-page__mobile-nav-button {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #075715;
+  color: white;
+  text-align: center;
+  border-radius: 5px;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .landing-page__nav {
@@ -53,17 +128,21 @@
 /* Hero Section */
 .landing-page__hero-container {
   position: relative;
-  margin-bottom: 20px; /* Create overlap with testimonials */
+  margin-bottom: -20px; /* Create negative margin to pull testimonials closer */
   z-index: 1;
+  overflow: hidden;
 }
 
 .landing-page__hero-background {
   position: absolute;
-  top: 50px;
-  left: 1px;
-  width: 100vw;
+  top: 80px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100%;
   height: 600px;
   background: url('../../assets/Hero.svg') no-repeat center / cover;
+  background-size: contain;
   z-index: 0;
   animation: fadeIn 2.2s ease-out 0.4s forwards;
   opacity: 0;
@@ -71,18 +150,18 @@
 
 .landing-page__hero-reflection {
   position: absolute;
-  bottom: -100px;
+  bottom: -20px;
   left: 0;
   width: 100%;
-  height: 150px;
+  height: 70px;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #f9fbfa);
   z-index: 2;
 }
 
 .landing-page__main {
-  padding: 50px 20px;
+  padding: 50px 20px 0;
   text-align: center;
-  min-height: 600px;
+  min-height: 450px;
   position: relative;
 }
 
@@ -115,7 +194,7 @@
 }
 
 .landing-page__title {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-size: clamp(2rem, 4vw, 4rem);
   margin: -60px auto 24px;
   line-height: 1.2;
   font-weight: 700;
@@ -141,8 +220,60 @@
 }
 
 .landing-page__action-button {
-  animation: fadeIn 0.6s ease-out 0.4s forwards;
+  animation: fadeIn 0.6s ease-out 0.4s forwards, pulse 2s infinite;
   opacity: 0;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  background-color: #075715;
+  color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(7, 87, 21, 0.3);
+  letter-spacing: 0.5px;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.landing-page__action-button:hover {
+  background-color: #053d0f;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(7, 87, 21, 0.4);
+}
+
+.landing-page__no-payment-text {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  color: #444;
+  font-weight: 500;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 4px 10px;
+  border-radius: 4px;
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.6s ease-out 0.6s forwards;
+  opacity: 0;
+}
+
+.landing-page__action-button:active {
+  transform: translateY(-1px);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(7, 87, 21, 0.3);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 6px 18px rgba(7, 87, 21, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 12px rgba(7, 87, 21, 0.3);
+  }
 }
 
 /* Features Section */
@@ -212,11 +343,12 @@
 
 /* Testimonials Section */
 .landing-page__testimonials {
-  padding: 60px 20px;
+  padding: 20px 20px 30px;
   position: relative;
   background-color: #f9fbfa;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  border-top: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  margin-top: 0;
 }
 
 .landing-page__testimonial-cards {
@@ -417,6 +549,28 @@
 
 /* Media Queries */
 @media only screen and (max-width: 768px) {
+  /* Testimonials mobile */
+  .landing-page__testimonials {
+    padding: 0 20px 20px;
+    margin-top: -5px;
+  }
+
+  .landing-page__testimonial-cards {
+    gap: 15px;
+  }
+
+  /* Main Section Mobile */
+  .landing-page__title {
+    font-size: 2.2rem;
+    margin: -40px auto 20px;
+  }
+
+  .landing-page__subtitle {
+    font-size: 1.1rem;
+    max-width: 90%;
+    margin: 0 auto 24px;
+  }
+
   /* Features Section Mobile */
   .landing-page__feature {
     flex-direction: column;
@@ -486,8 +640,44 @@
 }
 
 @media only screen and (max-width: 600px) {
-  .landing-page__logo {
-    height: 20vw;
+  /* Adjust scroll padding for section links */
+  html {
+    scroll-padding-top: 100px; /* Fixed header height + 40px offset */
+  }
+  
+  /* Green header bar for mobile */
+  .landing-page__header {
+    background-color: #075715;
+    padding: 10px 15px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+  }
+  
+  .landing-page__header-content {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  /* Logo display for mobile */
+  .landing-page__desktop-logo {
+    display: none;
+  }
+  
+  .landing-page__mobile-logo {
+    display: block;
+    height: 30px;
+    margin: 0;
+    position: relative;
+  }
+  
+  /* Show hamburger menu on right */
+  .landing-page__mobile-menu-button {
+    display: flex;
+    margin-left: auto;
   }
 
   .landing-page__get-started-button,
@@ -496,11 +686,44 @@
   }
 
   .landing-page__header {
-    align-self: center;
+    padding: 15px 20px;
+  }
+
+  .landing-page__header-content {
+    justify-content: flex-start;
   }
 
   .landing-page__hero-container {
-    margin-top: 20px;
+    margin-top: 50px; /* Add space for the fixed header */
+  }
+
+  .landing-page__title {
+    font-size: 1.8rem;
+    margin: -20px auto 16px;
+    max-width: 85%;
+  }
+  
+  .landing-page__hero-background {
+    top: 100px;
+    background-size: 150%;
+    height: 450px;
+    opacity: 0.9;
+  }
+
+  .landing-page__subtitle {
+    font-size: 1rem;
+    max-width: 85%;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+  }
+
+  .landing-page__main {
+    padding: 70px 15px 30px;
+    min-height: 450px;
+  }
+  
+  .landing-page__action {
+    margin-top: 30px;
   }
 
   .landing-page__feature:nth-child(even) {
@@ -508,16 +731,32 @@
   }
 
   .landing-page__action-button {
-    font-size: 1rem;
-    padding: 15px 25px;
+    font-size: 1.1rem;
+    padding: 16px 24px;
     display: block;
-    margin: 0 auto;
-    max-width: 280px;
+    margin: 10px auto 0;
+    max-width: 260px;
     line-height: 1.2;
     content: "Start charting now";
+    box-shadow: 0 4px 10px rgba(7, 87, 21, 0.35);
+    border-radius: 6px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
   }
 
   .landing-page__cta-image {
     display: none;
+  }
+
+  .landing-page__no-payment-text {
+    background-color: rgba(255, 255, 255, 0.9);
+    margin-top: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+  }
+  
+  /* Add additional top margin for testimonials on mobile */
+  .landing-page__testimonials {
+    margin-top: 10px;
   }
 }

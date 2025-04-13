@@ -5,7 +5,7 @@
  **************************************************************************/
 
 import * as React from "react";
-import { GridProps, TextFieldProps } from "@aws-amplify/ui-react";
+import { GridProps, SwitchFieldProps, TextFieldProps } from "@aws-amplify/ui-react";
 export declare type EscapeHatchProps = {
     [elementHierarchy: string]: Record<string, unknown>;
 } | null;
@@ -26,12 +26,14 @@ export declare type NotesCreateFormInputValues = {
     timestamp?: string;
     transcript?: string;
     note?: string;
+    isCompleted?: boolean;
 };
 export declare type NotesCreateFormValidationValues = {
     owner?: ValidationFunction<string>;
     timestamp?: ValidationFunction<string>;
     transcript?: ValidationFunction<string>;
     note?: ValidationFunction<string>;
+    isCompleted?: ValidationFunction<boolean>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type NotesCreateFormOverridesProps = {
@@ -40,6 +42,7 @@ export declare type NotesCreateFormOverridesProps = {
     timestamp?: PrimitiveOverrideProps<TextFieldProps>;
     transcript?: PrimitiveOverrideProps<TextFieldProps>;
     note?: PrimitiveOverrideProps<TextFieldProps>;
+    isCompleted?: PrimitiveOverrideProps<SwitchFieldProps>;
 } & EscapeHatchProps;
 export declare type NotesCreateFormProps = React.PropsWithChildren<{
     overrides?: NotesCreateFormOverridesProps | undefined | null;

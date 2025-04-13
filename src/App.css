@@ -2,6 +2,8 @@
 .app-main {
   display: flex;
   height: calc(100vh - 70px);
+  max-height: 100vh;
+  overflow-y: hidden;
   padding: 20px;
   text-align: center;
   flex-direction: column;
@@ -818,9 +820,7 @@
   pointer-events: none;
 }
 
-.mobile-toggle-button.disabled .material-symbols-rounded {
-  color: #999;
-}
+
 
 .mobile-toggle-button.disabled:hover {
   cursor: not-allowed;
