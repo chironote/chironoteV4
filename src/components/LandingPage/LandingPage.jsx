@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './LandingPage.css';
 import logo from '../../assets/logo.svg';
 import textLogo from '../../assets/textlogo.svg';
+import textLogoClr from '../../assets/textlogo-clr.svg';
 import footermockup from '../../assets/Footermockup.svg';
 import stars from '../../assets/stars.svg';
 import feature1 from '../../assets/Feature1.svg';
@@ -47,6 +48,13 @@ export default function LandingPage(props) {
             src={textLogo}
             alt="ChiroNote"
             className="landing-page__logo landing-page__mobile-logo"
+          />
+          
+          {/* Colored text logo centered for desktop only */}
+          <img
+            src={textLogoClr}
+            alt="ChiroNote"
+            className="landing-page__textlogo-clr"
           />
           
           {/* Hamburger menu for mobile */}
@@ -98,7 +106,7 @@ export default function LandingPage(props) {
               Reduce charting time to mere seconds
             </div>
             <div className="landing-page__subtitle">
-              With our medical-grade chiropractic software. A note editor that turns your patient conversations into insurance-grade notes
+              Turn your patient conversations into insurance-grade notes with a single click
             </div>
           </div>
           <div className="landing-page__action">
