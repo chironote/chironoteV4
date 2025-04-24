@@ -1,5 +1,5 @@
 /* Fullscreen overlay for popup */
-.create-note-popup {
+.recording-menu-popup, .create-note-popup {
   position: fixed;
   top: 0;
   left: 0;
@@ -66,6 +66,8 @@
   border-radius: 4px;
   border: 1px solid var(--light-green);
   background-color: var(--pure-white);
+  accent-color: var(--medium-green); /* Fix iOS blue dropdown */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .settings-options {
@@ -88,6 +90,8 @@
   margin: 0;
   width: 16px;
   height: 16px;
+  accent-color: var(--medium-green); /* Fix iOS blue checkbox */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .checkbox-group label {
@@ -279,6 +283,7 @@
   border-radius: 5px;
   background-color: var(--medium-green);
   transition: background-color 0.3s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .recording-controls button:hover {

@@ -292,6 +292,304 @@ html {
   background-color: none;
 }
 
+/* Pricing Section */
+.landing-page__pricing-section {
+  flex-direction: column !important;
+  max-width: 1200px;
+  margin: 0 auto 80px;
+  gap: 40px;
+  width: 100%;
+}
+
+.landing-page__pricing-section .landing-page__feature-content {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.landing-page__pricing-table-container {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.landing-page__pricing-button {
+  padding: 12px 30px;
+  background-color: #075715;
+  color: #fff;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 600;
+  margin-top: 30px;
+  display: inline-block;
+  animation: pulse 2s infinite;
+}
+
+.landing-page__pricing-button:hover {
+  background-color: #053d0f;
+  animation: none;
+}
+
+/* Landing Page Pricing Table Styles */
+.landing-pricing-table {
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.landing-pricing-table table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 320px;
+  background: #fff;
+  font-family: 'Montserrat', Arial, sans-serif;
+  border: 1px solid #e0f7e9;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.landing-pricing-table th,
+.landing-pricing-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e0f7e9;
+  font-size: 0.95rem;
+  transition: background 0.2s, border 0.2s;
+  text-align: center;
+  width: calc((100% - 120px) / 3);
+}
+
+/* Highlight the active plan column (landing page) */
+.landing-highlight-plan-table .plan-active {
+  background: rgba(224, 247, 233, 0.3);
+  border-right: 1px solid #b1e5c7;
+  border-left: 1px solid #b1e5c7;
+  font-weight: 500;
+  color: #20613b;
+  position: relative;
+}
+
+.landing-highlight-plan-table th.plan-active {
+  background: #48c78e;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Checkmark style */
+.plan-check {
+  margin-left: 7px;
+  color: #fff;
+  font-size: 0.9rem;
+  vertical-align: middle;
+  font-weight: normal;
+}
+
+.row-label {
+  font-weight: 500;
+  color: #20613b;
+  background: #f7faf7;
+  font-size: 0.9rem;
+  width: 120px;
+  max-width: 120px;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+/* Price row styling */
+.landing-pricing-table tr:first-child .row-label {
+  font-weight: 600;
+}
+
+.landing-pricing-table tr:first-child td {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.landing-pricing-table th {
+  background: #e0f7e9;
+  color: #20613b;
+  font-weight: 600;
+  padding: 12px 8px;
+}
+
+.plan-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.plan-desc {
+  font-weight: 400;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.landing-pricing-table th:first-child {
+  width: 120px;
+  max-width: 120px;
+  background: #f7faf7;
+  border-right: 1px solid #e0f7e9;
+}
+
+.landing-pricing-table tr:last-child td {
+  border-bottom: none;
+}
+
+.landing-pricing-table td:first-child {
+  font-weight: 600;
+  color: #20613b;
+  background: #f7faf7;
+}
+
+/* Responsive styles for pricing table */
+@media (max-width: 768px) {
+  .landing-pricing-table .row-label {
+    display: none;
+  }
+  .landing-pricing-table th,
+  .landing-pricing-table td {
+    width: 33.33%;
+  }
+  .landing-pricing-table td:nth-child(2):before,
+  .landing-pricing-table td:nth-child(3):before,
+  .landing-pricing-table td:nth-child(4):before {
+    content: attr(data-category);
+    display: block;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  .landing-pricing-table th:first-child {
+    display: none;
+  }
+  .landing-pricing-table table, .landing-pricing-table th, .landing-pricing-table td {
+    font-size: 0.9rem;
+    padding: 10px 4px;
+  }
+  .plan-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+  .landing-pricing-table tr {
+    margin-bottom: 8px;
+  }
+}
+  .landing-page__pricing-section {
+    padding-left: 2vw !important;
+    padding-right: 2vw !important;
+    /* Remove margin-left/right override on desktop to allow centering */
+  }
+  .landing-page__pricing-table-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  /* Hide the categories column */
+  .plan-comparison-table .row-label {
+    display: none;
+  }
+  
+  /* Make plan columns take full width */
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    width: 33.33%;
+  }
+  
+  /* Add data labels before content on mobile */
+  .plan-comparison-table td:nth-child(2):before,
+  .plan-comparison-table td:nth-child(3):before,
+  .plan-comparison-table td:nth-child(4):before {
+    content: attr(data-category);
+    display: block;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  
+  /* First column header also hidden */
+  .plan-comparison-table th:first-child {
+    display: none;
+  }
+  
+  /* Adjust font size and padding */
+  .plan-comparison-table table, .plan-comparison-table th, .plan-comparison-table td {
+    font-size: 0.9rem;
+    padding: 10px 4px;
+  }
+  
+  /* Make plan descriptions more visible */
+  .plan-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+  
+  /* Increase vertical spacing between rows */
+  .plan-comparison-table tr {
+    margin-bottom: 8px;
+  }
+
+
+@media (max-width: 480px) {
+  .landing-page__pricing-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .landing-pricing-table {
+    margin: 0 -4vw;
+    width: calc(100% + 8vw);
+  }
+  
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    padding: 8px 2px;
+    font-size: 0.85rem;
+  }
+  
+  /* Reduce font size for plan names in header */
+  .plan-comparison-table th {
+    font-size: 0.8rem;
+  }
+  
+  /* Smaller checkmark */
+  .plan-check {
+    margin-left: 3px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .landing-page__pricing-section {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .landing-pricing-table {
+    margin: 0 -6vw;
+    width: calc(100% + 12vw);
+  }
+  
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    padding: 6px 1px;
+    font-size: 0.8rem;
+  }
+  
+  /* Smaller category labels */
+  .plan-comparison-table td:before {
+    font-size: 0.7rem !important;
+    margin-bottom: 2px !important;
+  }
+}
+
 .landing-page__feature {
   display: flex;
   align-items: center;
@@ -358,7 +656,7 @@ html {
   background-color: #f9fbfa;
   border-top: none;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  margin-top: 0;
+  margin-top: 30px;
 }
 
 .landing-page__testimonial-cards {
@@ -421,11 +719,6 @@ html {
   display: block;
 }
 
-.matt-image {
-  filter: contrast(0.95) brightness(1.05) saturate(0.95) blur(0.5px);
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}
 
 .landing-page__testimonial-user {
   display: flex;
@@ -720,11 +1013,7 @@ html {
   }
   
   .landing-page__hero-background {
-    top: 130px;
-    background-size: 150%;
-    height: 350px;
-    opacity: 0.8;
-    background-position: top center;
+    display: none; /* Hide the original background on mobile */
   }
 
   .landing-page__subtitle {
@@ -790,23 +1079,28 @@ html {
   .landing-page__hero-container::after {
     content: '';
     position: absolute;
-    bottom: 0;
+    top: 130px;
     left: 0;
     width: 100%;
-    height: 120px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(249, 251, 250, 0.9) 60%, #f9fbfa 100%);
-    z-index: 1;
+    height: 350px;
+    background: url('../../assets/Hero.svg') no-repeat center / cover;
+    background-size: 150%;
+    background-position: top center;
+    opacity: 0;
+    animation: fadeIn 2.2s ease-out 0.4s forwards;
+    z-index: 0;
   }
 }
 
 /* Phone screens up to 400px (iPhone SE, iPhone 12/13/14, etc.) */
 @media only screen and (max-width: 400px) {
-  .landing-page__hero-background {
+  .landing-page__hero-container::after {
     top: 160px;
     background-size: 200%;
     height: 280px;
     background-position: top center;
-    opacity: 0.75;
+    opacity: 0;
+    animation: fadeIn 2.2s ease-out 0.4s forwards;
   }
   
   .landing-page__main {

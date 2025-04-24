@@ -147,7 +147,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
 
   return (
     <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
-      <h2 className="panel-header" style={{width: '90%'}}>Note Updater</h2>
+      <h2 className="panel-header" style={{width: '90%'}}>Smart Editor</h2>
       <div className="edit-panel-content">
         <div className="editor-toolbar">
           <button 

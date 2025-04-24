@@ -8,7 +8,6 @@ import stars from '../../assets/stars.svg';
 import feature1 from '../../assets/Feature1.svg';
 import feature2 from '../../assets/Feature2.svg';
 import feature3 from '../../assets/Feature3.svg';
-import avatar from '../../assets/conversation.svg';
 import mattImg from '../../assets/Matt.png';
 import samImg from '../../assets/Sam.png';
 import jessImg from '../../assets/Jess.png';
@@ -74,23 +73,22 @@ export default function LandingPage(props) {
             className="landing-page__get-started-button"
             onClick={() => handleButtonClick('Header_Launch_App')}
           >
-            Launch App
+            Sign In
           </a>
           
           {/* Mobile navigation dropdown */}
           <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="landing-page__mobile-nav-items">
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('features')}>Features</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('note-creation')}>Note Creation</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('security')}>Security</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('ai-tech')}>New AI Tech</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('prices')}>Pricing</div>
               <a 
                 href="/app" 
                 className="landing-page__mobile-nav-button"
                 onClick={() => handleButtonClick('Mobile_Nav_Launch_App')}
               >
-                Launch App
+                Sign In
               </a>
             </div>
           </div>
@@ -115,7 +113,7 @@ export default function LandingPage(props) {
               className="landing-page__action-button"
               onClick={() => handleButtonClick('Hero_Start_Charting')}
             >
-              Start charting now for free
+              Click to Start
             </a>
             <div className="landing-page__no-payment-text">No payment required</div>
           </div>
@@ -215,10 +213,10 @@ export default function LandingPage(props) {
           <div className="landing-page__feature-content">
             <div className="landing-page__feature-tag">Note Creation</div>
             <div className="landing-page__feature-title">
-              Speed up your notes and never stay late charting without sacrificing quality
+              Stop charting after hours—reclaim up to 2 extra hours every day
             </div>
             <div className="landing-page__feature-description">
-            Complete your clinical documentation in half the time while maintaining comprehensive, high-quality notes. Our intuitive platform helps you capture patient encounters efficiently and accurately, letting you focus more on patient care and less on paperwork.
+              Late‑night documentation steals time from family dinners, workouts, and that long‑overdue Netflix queue. ChiroNote writes your notes while you treat by understanding the conversation that drives the appointment.
             </div>
           </div>
         </div>
@@ -228,7 +226,7 @@ export default function LandingPage(props) {
           <div className="landing-page__feature-content">
             <div className="landing-page__feature-tag">Security</div>
             <div className="landing-page__feature-title">
-              HIPAA Compliant handling of phi and medical grade security
+              HIPAA Compliant handling of PHI and medical grade security
             </div>
             <div className="landing-page__feature-description">
             Your patients' data security is our top priority. We maintain the highest standards of HIPAA compliance and use enterprise-grade encryption to protect all protected health information. Our platform undergoes regular security audits to ensure your practice stays protected.
@@ -241,49 +239,70 @@ export default function LandingPage(props) {
           />
         </div>
 
-        {/* Feature 3 - AI Tech */}
-        <div id="ai-tech" className="landing-page__feature">
-          <img
-            src={feature3}
-            alt="Feature Image 3"
-            className="landing-page__feature-image"
-          />
+        {/* Pricing Section */}
+        <div id="prices" className="landing-page__feature landing-page__pricing-section">
           <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">New AI tech</div>
+            <div className="landing-page__feature-tag">Pricing</div>
             <div className="landing-page__feature-title">
-              Touch-up and even edit your notes faster by leveraging AI technology
+              Simple, transparent pricing for practices of all sizes
             </div>
             <div className="landing-page__feature-description">
-            Harness the power of advanced AI to streamline your documentation workflow. Our smart assistant helps auto-complete routine sections, suggests relevant medical terminology, and helps structure your notes - all while keeping you in full control of the final content.
+              Choose the plan that fits your practice needs. All plans include our core features with no hidden fees or long-term contracts. Upgrade or downgrade anytime as your practice grows.
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Call to Action Section */}
-      <div className="landing-page__cta">
-        <div className="landing-page__cta-content">
-          <div className="landing-page__cta-tag">Try it now</div>
-          <div className="landing-page__cta-title">
-            Transform your medical documentation today
+          
+          {/* Pricing Table */}
+          <div className="landing-page__pricing-table-container">
+            <div className="landing-pricing-table">
+              <table className="landing-highlight-plan-table">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th>
+                      <div className="plan-name">Free</div>
+                      <div className="plan-desc">Essential Care</div>
+                    </th>
+                    <th>
+                      <div className="plan-name">Standard</div>
+                      <div className="plan-desc">Enhanced Practice</div>
+                    </th>
+                    <th>
+                      <div className="plan-name">Professional</div>
+                      <div className="plan-desc">Complete Automation</div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="row-label">Price</td>
+                    <td data-category="Price">No Charge</td>
+                    <td data-category="Price">$19/mo</td>
+                    <td data-category="Price">$75/mo</td>
+                  </tr>
+                  <tr>
+                    <td className="row-label">Dictation Hours</td>
+                    <td data-category="Dictation Hours">1 hour/month</td>
+                    <td data-category="Dictation Hours">15 hours/month</td>
+                    <td data-category="Dictation Hours">Unlimited</td>
+                  </tr>
+                  <tr>
+                    <td className="row-label">Note Edits</td>
+                    <td data-category="Note Edits">Up to 15</td>
+                    <td data-category="Note Edits">Unlimited</td>
+                    <td data-category="Note Edits">Unlimited</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <a 
+              href="/app" 
+              className="landing-page__pricing-button"
+              onClick={() => handleButtonClick('Pricing_Start_Free')}
+            >
+              Start with Free Plan
+            </a>
           </div>
-          <div className="landing-page__cta-input">
-            First 45 minutes free. Get started with just an email
-          </div>
-          <a 
-            href="/app" 
-            className="landing-page__cta-button"
-            onClick={() => handleButtonClick('Footer_Get_Started')}
-          >
-            Get started
-          </a>
         </div>
-        <img
-          src={footermockup}
-          alt="CTA Image"
-          className="landing-page__cta-image"
-        />
-        <div className="landing-page__cta-circle"></div>
       </div>
 
       {/* Footer Divider */}

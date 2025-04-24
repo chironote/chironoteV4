@@ -6,20 +6,6 @@ export const NAV_LINKS = [
   { name: 'Log Out', action: 'logout', icon: "logout" }
 ];
 
-// List of available subscription plans
-export const PLANS = ['free', 'standard', 'pro'];
-
-// Features based on the plan
-export const PLAN_FEATURES = {
-  free: ['Essential Care'],
-  standard: ['Enhanced Practice'],
-  pro: ['Unlimited Charting']
-};
-
-// Helper function to get features based on the plan
-export const getPlanFeatures = (plan) => {
-  return PLAN_FEATURES[plan] || [];
-};
 
 // SEO-friendly content
 export const SEO_CONTENT = {

@@ -477,7 +477,8 @@
 .clipboard-textarea {
   width: 96%;
   min-width: 200px; /* Minimum width before horizontal scroll appears */
-  height: 66vh;
+  height: 95%;
+  max-height: 95%;
   padding: 16px;
   margin: 10px 10px 10px 20px;
   border: 1px solid #e0e0e0;

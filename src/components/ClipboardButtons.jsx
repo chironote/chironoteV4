@@ -37,6 +37,7 @@ const ClipboardButtons = ({
     <div className="clipboard-toolbar">
       <div className="toolbar-group">
         <button
+          id="new-note-btn"
           className="toolbar-button new-note-button"
           onClick={() => toggleRecordingPopup('conversation')}
         >
@@ -47,6 +48,7 @@ const ClipboardButtons = ({
         <div className="toolbar-divider"></div>
 
         <button
+          id="dictation-mic-btn"
           className={`toolbar-button 
             ${isDictationLoading || isWebSocketConnecting ? 'button-loading' : ''} 
             ${isTranscribing ? 'button-recording' : ''}`
@@ -88,6 +90,7 @@ const ClipboardButtons = ({
         <div className="toolbar-divider hide-on-mobile"></div>
         
         <button
+          id="edit-panel-btn"
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
           onClick={toggleEditPanel}
         >
@@ -97,6 +100,20 @@ const ClipboardButtons = ({
       </div>
       {/* Added media query to hide elements on mobile */}
       <style jsx>{`
+        /* Fix iOS/Safari blue tap highlight and force icon color */
+        .toolbar-button {
+          -webkit-tap-highlight-color: transparent;
+        }
+        .toolbar-icon, .material-symbols-rounded.toolbar-icon {
+          color: var(--dark-green) !important;
+        }
+        .toolbar-button.active {
+          background-color: var(--dark-green) !important;
+        }
+        .toolbar-button.active .toolbar-icon,
+        .toolbar-button.button-recording .toolbar-icon {
+          color: white !important;
+        }
         @media only screen and (max-width: 768px) {
           .hide-on-mobile {
             display: none;

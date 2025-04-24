@@ -1,31 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Account.css';
-import { PLANS, getPlanFeatures } from '../../constants/constants';
 import config from '../../amplifyconfiguration.json';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
 import { trackPageView } from '../../utils/analytics';
+// Plan constants moved here from constants.js
+const PLANS = ['free', 'standard', 'pro'];
 
 Amplify.configure(config);
 
 const client = generateClient();
-
-// Component to render individual subscription options
-const SubscriptionOption = ({ plan, isActive }) => (
-  <div className={`subscription-option ${isActive ? 'active' : ''}`}>
-    <div className="option-name">{plan.toUpperCase()}</div>
-    <div className="option-features">
-      <ul>
-        {getPlanFeatures(plan).map((feature, index) => (
-          <li key={index}>{feature}</li>
-        ))}
-      </ul>
-    </div>
-  </div>
-);
 
 function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
@@ -53,17 +40,13 @@ function Account({ setCurrentPage }) {
     try {
       const userAttributes = await fetchUserAttributes();
       const owner = userAttributes.sub;
-      console.log('User id:', owner);
 
       const data = await client.graphql({
         query: getUserSubscription,
         variables: { owner: owner }
       });
-      console.log(data);
       const currentTier = data.data.getUserSubscription.tier.toLowerCase();
       const hoursLeft = data.data.getUserSubscription.hoursleft;
-      console.log('Current Tier:', currentTier);
-      console.log('Hours Left:', hoursLeft);
       
       setCurrentPlan(currentTier);
       setRemainingHours(hoursLeft || 0);
@@ -77,10 +60,9 @@ function Account({ setCurrentPage }) {
   async function getUserEmail() {
     try {
       const userEmail = (await getCurrentUser()).signInDetails.loginId;
-      console.log(userEmail);
       return userEmail;
     } catch (err) {
-      console.log(err);
+      console.error('Error getting user email:', err);
       return null;
     }
   }
@@ -109,7 +91,6 @@ function Account({ setCurrentPage }) {
         }
 
         const result = await response.text();
-        console.log('Checkout successful, opening in new tab:', result);
         window.open(result, '_blank');
       } catch (error) {
         console.error('Error during checkout:', error);
@@ -132,15 +113,62 @@ function Account({ setCurrentPage }) {
       {/* Subscription management */}
       <div className="subscription-info">
         <h2>Subscription Plans</h2>
-        <div className="subscription-status">
-          {/* Render subscription options */}
-          {PLANS.map((plan) => (
-            <SubscriptionOption
-              key={plan}
-              plan={plan}
-              isActive={currentPlan === plan.toLowerCase()}
-            />
-          ))}
+
+        {/* Plan comparison table */}
+        <div className="plan-comparison-table">
+          <table className="highlight-plan-table">
+            <thead>
+              {/* Tick Row */}
+              <tr className="tick-row">
+                <th></th>
+                <th className={currentPlan === 'free' ? 'plan-active' : ''}>
+                  {currentPlan === 'free' && <span className="plan-check plan-check-row">✔</span>}
+                </th>
+                <th className={currentPlan === 'standard' ? 'plan-active' : ''}>
+                  {currentPlan === 'standard' && <span className="plan-check plan-check-row">✔</span>}
+                </th>
+                <th className={currentPlan === 'pro' ? 'plan-active' : ''}>
+                  {currentPlan === 'pro' && <span className="plan-check plan-check-row">✔</span>}
+                </th>
+              </tr>
+              {/* Plan Names Row */}
+              <tr>
+                <th></th>
+                <th className={currentPlan === 'free' ? 'plan-active' : ''}>
+                  <div className="plan-name">Free</div>
+                  <div className="plan-desc">Essential Care</div>
+                </th>
+                <th className={currentPlan === 'standard' ? 'plan-active' : ''}>
+                  <div className="plan-name">Standard</div>
+                  <div className="plan-desc">Enhanced Practice</div>
+                </th>
+                <th className={currentPlan === 'pro' ? 'plan-active' : ''}>
+                  <div className="plan-name">Professional</div>
+                  <div className="plan-desc">Total Automation</div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="row-label">Price</td>
+                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Price">No Charge</td>
+                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Price">$19/mo</td>
+                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Price">$75/mo</td>
+              </tr>
+              <tr>
+                <td className="row-label">Dictation Hours</td>
+                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Dictation Hours">1 hour/month</td>
+                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Dictation Hours">15 hours/month</td>
+                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Dictation Hours">Unlimited</td>
+              </tr>
+              <tr>
+                <td className="row-label">Note Edits</td>
+                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Note Edits">Up to 15</td>
+                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Note Edits">Unlimited</td>
+                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Note Edits">Unlimited</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
         <button 
           className="manage-plan-btn" 
@@ -154,8 +182,17 @@ function Account({ setCurrentPage }) {
         <div className="hours-remaining">
           <h3>Hours Remaining this month</h3>
           <div className="hours-box">
-            <span id="hours">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
-            <span className="hours-label">Hrs</span>
+            {currentPlan === 'pro' ? (
+              <>
+                <span id="hours">∞</span>
+                <span className="hours-label">Unlimited</span>
+              </>
+            ) : (
+              <>
+                <span id="hours">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
+                <span className="hours-label">Hrs</span>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -17,6 +17,7 @@ import RecordingManager from './components/Recording/RecordingManager';
 import LandingPage from './components/LandingPage/LandingPage';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
+import IntroTour from './components/IntroTour/IntroTour';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
@@ -449,6 +450,41 @@ function AuthenticatedApp({ signOut, user }) {
 
   const handleKeyDown = (event) => {
     if (event.key === 'Escape') setShowContentPopup(false);
+    
+    // Only enable keyboard shortcuts on desktop (window width > 768px)
+    if (window.innerWidth > 768) {
+      // Ctrl+B shortcut to toggle edit panel and focus on edit text field
+      if (event.ctrlKey && event.key === 'b') {
+        event.preventDefault();
+        // Toggle edit panel
+        setShowEditPanel(prev => !prev);
+        // If we're opening the panel, we need to wait for it to render before focusing
+        if (!showEditPanel) {
+          setTimeout(() => {
+            const editTextarea = document.querySelector('.edit-textarea');
+            if (editTextarea) editTextarea.focus();
+          }, 100);
+        }
+      }
+      
+      // Ctrl+Backspace shortcut to clear the clipboard textarea
+      if (event.ctrlKey && event.key === 'Backspace') {
+        event.preventDefault();
+        // Clear clipboard content
+        setClipboardContent("");
+      }
+      
+      // Ctrl+` (backtick) shortcut to toggle the left side panel
+      if (event.ctrlKey && event.key === '`') {
+        event.preventDefault();
+        // Only toggle if not disabled during recording or transcript generation
+        if (!(showRecordingPopup || recordingManager.isRecording || 
+              recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary)) {
+          // Toggle the left panel by directly updating the state
+          setIsCollapsed(prev => !prev);
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -530,8 +566,11 @@ function AuthenticatedApp({ signOut, user }) {
     setClipboardContent(newContent);
   }, []);
 
+
+
   return (
     <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
+      <IntroTour />
       <Navbar 
         username={user.username}
         onSignOut={signOut}

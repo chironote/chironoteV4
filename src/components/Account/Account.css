@@ -1,3 +1,300 @@
+/* Plan Comparison Table (Account Page only) */
+.plan-comparison-table {
+  width: 100%;
+  margin: 0 auto 2rem auto;
+  overflow-x: auto;
+}
+.plan-comparison-table table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 320px;
+  background: #fff;
+  font-family: 'Montserrat', Arial, sans-serif;
+  border: 1px solid #e0f7e9;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  overflow: hidden;
+}
+.plan-comparison-table th,
+.plan-comparison-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e0f7e9;
+  font-size: 0.95rem;
+  transition: background 0.2s, border 0.2s;
+  text-align: center;
+  width: calc((100% - 120px) / 3); /* Divide remaining space equally among 3 plan columns */
+}
+
+/* Highlight the active plan column */
+.highlight-plan-table .plan-active {
+  background: rgba(224, 247, 233, 0.3); /* Very light green with transparency */
+  border-right: 1px solid var(--light-green, #b1e5c7);
+  border-left: 1px solid var(--light-green, #b1e5c7);
+  font-weight: 500;
+  color: #20613b;
+  position: relative;
+}
+.highlight-plan-table th.plan-active {
+  background: var(--medium-green, #48c78e);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* Checkmark style */
+.plan-check {
+  margin-left: 7px;
+  color: #fff;
+  font-size: 0.9rem;
+  vertical-align: middle;
+  font-weight: normal;
+}
+
+.plan-check-above {
+  display: block;
+  margin: 0 auto 6px auto;
+  width: 28px;
+  height: 28px;
+  background: #20613b;
+  color: #fff;
+  border-radius: 50%;
+  line-height: 28px;
+  font-size: 1.15rem;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(32,97,59,0.10);
+}
+
+.plan-check-row {
+  display: inline-block;
+  margin: 0 auto;
+  width: 20px;
+  height: 20px;
+  background: #20613b;
+  color: #fff;
+  border-radius: 50%;
+  line-height: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+  box-shadow: 0 1px 4px rgba(32,97,59,0.08);
+}
+
+/* Remove border radius from plan-active headers */
+.highlight-plan-table th.plan-active {
+  background: var(--medium-green, #48c78e);
+  color: #fff;
+  font-weight: 500;
+  position: relative;
+}
+
+/* Tick row minimal height */
+.tick-row th {
+  max-height: 20px;
+  padding: 5px 0 0 0 !important;
+  background: transparent;
+  border-bottom: none;
+}
+
+/* Highlight the tick cell above the active plan */
+.tick-row th.plan-active {
+  background: var(--medium-green, #48c78e);
+}
+
+
+.row-label {
+  font-weight: 500;
+  color: var(--dark-green, #20613b);
+  background: #f7faf7;
+  font-size: 0.9rem;
+  width: 120px;
+  max-width: 120px;
+  white-space: nowrap;
+  padding: 8px 12px;
+}
+
+/* Price row styling */
+tr:first-child .row-label {
+  font-weight: 600;
+}
+
+tr:first-child td {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.plan-comparison-table th {
+  background: var(--light-green, #e0f7e9);
+  color: var(--dark-green, #20613b);
+  font-weight: 600;
+  padding: 12px 8px;
+}
+
+.plan-name {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.plan-desc {
+  font-weight: 400;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.plan-comparison-table th:first-child {
+  width: 120px;
+  max-width: 120px;
+  background: #f7faf7;
+  border-right: 1px solid #e0f7e9;
+}
+.plan-comparison-table tr:last-child td {
+  border-bottom: none;
+}
+.plan-comparison-table td:first-child {
+  font-weight: 600;
+  color: var(--dark-green, #20613b);
+  background: #f7faf7;
+}
+/* Responsive layout */
+@media (max-width: 768px) {
+  /* Hide the categories column */
+  .plan-comparison-table .row-label {
+    display: none;
+  }
+  
+  /* Make plan columns take full width */
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    width: 33.33%;
+  }
+  
+  /* Add data labels before content on mobile */
+  .plan-comparison-table td:nth-child(2):before,
+  .plan-comparison-table td:nth-child(3):before,
+  .plan-comparison-table td:nth-child(4):before {
+    content: attr(data-category);
+    display: block;
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: #666;
+    margin-bottom: 4px;
+  }
+  
+  /* First column header also hidden */
+  .plan-comparison-table th:first-child {
+    display: none;
+  }
+  
+  /* Adjust font size and padding */
+  .plan-comparison-table table, .plan-comparison-table th, .plan-comparison-table td {
+    font-size: 0.9rem;
+    padding: 10px 4px;
+  }
+  
+  /* Make plan descriptions more visible */
+  .plan-desc {
+    font-size: 0.8rem;
+    opacity: 0.9;
+  }
+  
+  /* Increase vertical spacing between rows */
+  .plan-comparison-table tr {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .plan-comparison-table {
+    margin: 0 -10px 1.5rem -10px; /* Negative margin to extend beyond container */
+    width: calc(100% + 20px);
+  }
+  
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    padding: 8px 2px;
+    font-size: 0.85rem;
+  }
+  
+  /* Reduce font size for plan names in header */
+  .plan-comparison-table th {
+    font-size: 0.8rem;
+  }
+  
+  /* Smaller checkmark */
+  .plan-check {
+    margin-left: 3px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Extra small screens */
+@media (max-width: 360px) {
+  .plan-comparison-table {
+    margin: 0 -15px 1.5rem -15px; /* Even more negative margin */
+    width: calc(100% + 30px);
+  }
+  
+  .plan-comparison-table th,
+  .plan-comparison-table td {
+    padding: 6px 1px;
+    font-size: 0.8rem;
+  }
+  
+  /* Smaller category labels */
+  .plan-comparison-table td:before {
+    font-size: 0.7rem !important;
+    margin-bottom: 2px !important;
+  }
+}
+
+/* SubscriptionOption card tweaks */
+.subscription-option {
+  border: 1.5px solid var(--light-green, #b1e5c7);
+  border-radius: 10px;
+  margin: 0 8px 18px 8px;
+  padding: 18px 12px 12px 12px;
+  background: #f7faf7;
+  box-shadow: 0 1px 6px rgba(60, 120, 80, 0.04);
+  display: inline-block;
+  min-width: 210px;
+  max-width: 270px;
+  vertical-align: top;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.subscription-option.active {
+  border: 2.5px solid var(--medium-green, #48c78e);
+  box-shadow: 0 2px 10px rgba(60, 120, 80, 0.09);
+  background: #eafff1;
+}
+.option-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--dark-green, #20613b);
+  letter-spacing: 1px;
+}
+.option-features ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.option-features li {
+  font-size: 0.98rem;
+  color: #20613b;
+  margin-bottom: 4px;
+  text-align: left;
+  padding-left: 0.5em;
+  position: relative;
+}
+.option-features li:before {
+  content: '\2022';
+  color: var(--medium-green, #48c78e);
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
 /* Account container */
 .account-container {
   max-width: 1200px;
