@@ -588,7 +588,7 @@ function IntroTour() {
         tour.addStep({
           id: 'edit-panel-step',
           title: 'Edit Panel',
-          text: 'By typing instructions into this window and pressing Apply Changes, you can change the note in your Clipboard area in any way you want. Thats it! If you wish for more guidance we highly recommend our <a href="https://www.youtube.com/watch?v=nIZENIRW3oM&list=PLPvf-I14UfXbsROni5UdeKj4ezLmmnmBg&si=Boj07wDZhJY0PmT1" target="_blank" rel="noopener noreferrer">Youtube tutorials</a> for an easy start.',
+          text: 'By typing instructions into this window and pressing Apply Changes, you can change the note in your Clipboard area in any way you want. That\'s it! If you wish for more guidance we highly recommend our <a href="https://www.youtube.com/watch?v=nIZENIRW3oM&list=PLPvf-I14UfXbsROni5UdeKj4ezLmmnmBg&si=Boj07wDZhJY0PmT1" target="_blank" rel="noopener noreferrer">Youtube tutorials</a> for an easy start.',
           attachTo: {
             element: '.edit-panel', // The edit panel element
             on: 'left'

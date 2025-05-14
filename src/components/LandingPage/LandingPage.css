@@ -165,7 +165,8 @@ html {
   width: 100%;
   height: 70px;
   background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #f9fbfa);
-  z-index: 2;
+  z-index: 1; /* Lower z-index so it doesn't cover buttons */
+  pointer-events: none; /* Make it non-interactive so clicks pass through */
 }
 
 .landing-page__main {
@@ -267,8 +268,36 @@ html {
   opacity: 0;
 }
 
+/* Action buttons container */
+.landing-page__action-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 10; /* Higher z-index to ensure buttons are clickable */
+}
+
+/* Base action button */
 .landing-page__action-button:active {
   transform: translateY(-1px);
+}
+
+/* Sign Up button */
+.landing-page__signup-button {
+  background-color: #075715;
+}
+
+/* Book Demo button - darker to stand out */
+.landing-page__demo-button {
+  background-color: #053d0f;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(7, 87, 21, 0.3);
+}
+
+/* Custom hover effect for the demo button - lighter instead of darker */
+.landing-page__demo-button:hover {
+  background-color: #075715; /* Lighter green on hover */
 }
 
 @keyframes pulse {
@@ -851,8 +880,21 @@ html {
   margin: 50px 0;
 }
 
-/* Media Queries */
+/* Mobile Styles */
 @media only screen and (max-width: 768px) {
+  /* Make action buttons stack on smaller screens */
+  .landing-page__action-buttons {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .landing-page__action-button {
+    padding: 12px 15px;
+  }
   /* Testimonials mobile */
   .landing-page__testimonials {
     padding: 0 20px 20px;
@@ -1055,7 +1097,7 @@ html {
   }
 
   .landing-page__no-payment-text {
-    background-color: rgba(255, 255, 255, 0.9);
+    display: none; /* Hide on mobile */
     margin-top: 12px;
     font-size: 0.85rem;
     font-weight: 600;

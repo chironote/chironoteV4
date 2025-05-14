@@ -108,13 +108,22 @@ export default function LandingPage(props) {
             </div>
           </div>
           <div className="landing-page__action">
-            <a 
-              href="/app" 
-              className="landing-page__action-button"
-              onClick={() => handleButtonClick('Hero_Start_Charting')}
-            >
-              Click to Start
-            </a>
+            <div className="landing-page__action-buttons">
+              <a 
+                href="/app" 
+                className="landing-page__action-button landing-page__signup-button"
+                onClick={() => handleButtonClick('Hero_Sign_Up')}
+              >
+                Sign Up
+              </a>
+              <a 
+                href="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo" 
+                className="landing-page__action-button landing-page__demo-button"
+                onClick={() => handleButtonClick('Hero_Book_Demo')}
+              >
+                Book Demo
+              </a>
+            </div>
             <div className="landing-page__no-payment-text">No payment required</div>
           </div>
         </div>

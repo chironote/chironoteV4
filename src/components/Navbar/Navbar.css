@@ -1,16 +1,20 @@
 /* Navbar styling */
 .navbar {
   background-color: var(--dark-green);
-  padding: 0.5rem 1rem;
+  padding: .5rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: 60px; /* Ensures consistent height */
 }
 
 /* Brand section with logos */
 .navbar-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 40px;
 }
 
 .navbar-logo {
@@ -20,12 +24,15 @@
 .navbar-text-logo {
   height: 30px;
   width: auto;
+  display: flex; /* Better for alignment */
+  margin: auto 0; /* Centers vertically */
 }
 
 /* Desktop Navigation */
 .navbar-nav {
   display: flex;
   align-items: center;
+  height: 40px; /* Match the height of navbar-brand */
 }
 
 .nav-list {
@@ -73,6 +80,7 @@
   border: none;
   background: none;
   cursor: pointer;
+  transform: translateY(3px);
   padding: 8px;
   border-radius: 4px;
   transition: background-color 0.3s ease;
