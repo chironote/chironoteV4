@@ -6,7 +6,7 @@ import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
-import { trackPageView } from '../../utils/analytics';
+import { trackPageView, trackAccountPageButtonClick } from '../../utils/analytics';
 // Plan constants moved here from constants.js
 const PLANS = ['free', 'standard', 'pro'];
 
@@ -69,8 +69,10 @@ function Account({ setCurrentPage }) {
 
   const handlePlanAction = async () => {
     if (currentPlan === 'free') {
+      trackAccountPageButtonClick('Click_Account_BrowsePlans');
       navigate('/app/pricingplans');
     } else {
+      trackAccountPageButtonClick('Click_Account_ManageBilling');
       setIsLoading(true);
       try {
         const userEmail = await getUserEmail();

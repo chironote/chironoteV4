@@ -1,6 +1,31 @@
 import React from 'react';
 import menuIcon from '../assets/menu.svg';
 
+// Helper function to format timestamp for display in popup
+const formatPopupDate = (timestamp) => {
+  if (!timestamp) return '';
+  
+  const date = new Date(Number(timestamp));
+  
+  // Format: "8:00 AM Tue 06/19/2025"
+  const time = date.toLocaleString('en-US', {
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: true
+  });
+  
+  const day = date.toLocaleString('en-US', {
+    weekday: 'short'
+  });
+  
+  // Format month/day/year as MM/DD/YYYY
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const dayNum = String(date.getDate()).padStart(2, '0');
+  const year = date.getFullYear();
+  
+  return `     ${time} ${day} ${month}/${dayNum}/${year}`;
+};
+
 const ContentPopup = ({ 
   setShowContentPopup, 
   setShowPopupMenu, 
@@ -10,7 +35,8 @@ const ContentPopup = ({
   handleCopy, 
   handleSendToClipboard, 
   selectedContent, 
-  showPopupCopyMessage 
+  showPopupCopyMessage,
+  timestamp
 }) => {
   return (
     <div
@@ -25,6 +51,9 @@ const ContentPopup = ({
         <div className="popup-header">
           <h2>
             {showNotes ? "Note" : "Transcript"}
+            {timestamp && (
+              <span className="popup-date">{formatPopupDate(timestamp)}</span>
+            )}
           </h2>
           <div className="popup-actions">
             <div className="popup-menu-container">

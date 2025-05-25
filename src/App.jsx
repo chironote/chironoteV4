@@ -30,6 +30,7 @@ import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
 import { RealtimeTranscriber } from 'assemblyai';
 import RecordRTC from 'recordrtc';
+import { trackPageView } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
@@ -45,8 +46,33 @@ function RouteTracker() {
   const location = useLocation();
 
   useEffect(() => {
-    // Send pageview with current path
-    ReactGA.send({ hitType: "pageview", page: location.pathname });
+    // Standard GA pageview based on path
+    ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
+
+    // Custom, more descriptive page view event
+    let descriptivePageName = '';
+    const path = location.pathname;
+
+    if (path === '/') {
+      descriptivePageName = 'LandingPage_View';
+    } else if (path.startsWith('/app')) {
+      // For /app, you might want to distinguish further if there are key sub-sections
+      // For now, a general 'App' view. If /app is the main recording/dictation area:
+      descriptivePageName = 'App_Main_View'; 
+    } else if (path.startsWith('/account')) {
+      descriptivePageName = 'AccountPage_View';
+    }
+    // Add more 'else if' blocks here for other distinct sections of your application
+    // e.g., if you had a dedicated /settings page, /help, etc.
+
+    if (descriptivePageName) {
+      trackPageView(descriptivePageName);
+    } else {
+      // Fallback for paths not explicitly named, using a cleaned-up version of the path
+      // This helps catch any new/unhandled routes
+      const fallbackPageName = path.substring(1).replace(/\//g, '_') || 'UnknownPage_View';
+      trackPageView(fallbackPageName.charAt(0).toUpperCase() + fallbackPageName.slice(1) + '_View');
+    }
   }, [location]);
 
   return null;
@@ -225,6 +251,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [showDictationPopup, setShowDictationPopup] = useState(false);
   const [showContentPopup, setShowContentPopup] = useState(false);
   const [selectedContent, setSelectedContent] = useState('');
+  const [selectedTimestamp, setSelectedTimestamp] = useState(null);
   const [showPopupMenu, setShowPopupMenu] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
   const [editContent, setEditContent] = useState('');
@@ -398,6 +425,8 @@ function AuthenticatedApp({ signOut, user }) {
 
   const toggleContentPopup = (content) => {
     setSelectedContent(showNotes ? content.note : content.transcript);
+    // Store the timestamp for use in the ContentPopup
+    setSelectedTimestamp(content.timestamp);
     setShowContentPopup(prev => !prev);
     setShowPopupMenu(false);
   };
@@ -674,7 +703,8 @@ function AuthenticatedApp({ signOut, user }) {
                 handleCopy={handleCopy} 
                 handleSendToClipboard={handleSendToClipboard} 
                 selectedContent={selectedContent} 
-                showPopupCopyMessage={showPopupCopyMessage} 
+                showPopupCopyMessage={showPopupCopyMessage}
+                timestamp={selectedTimestamp}
               />
             )}
           </main>
@@ -687,10 +717,32 @@ function AuthenticatedApp({ signOut, user }) {
   );
 }
 
-const ProtectedApp = withAuthenticator(AuthenticatedApp, {
-  components,
-  services,
-});
+// Custom wrapper to handle initialState parameter
+function AuthWrapper() {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialAuthState = searchParams.get('initialState');
+  
+  // Configure authenticator props based on URL parameters
+  const authenticatorProps = {
+    components,
+    services,
+    initialState: initialAuthState === 'signUp' ? 'signUp' : 'signIn'
+  };
+  
+  // Clear URL parameters after reading them
+  useEffect(() => {
+    if (initialAuthState) {
+      // Remove the query parameter without causing a navigation
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, document.title, newUrl);
+    }
+  }, [initialAuthState]);
+  
+  return withAuthenticator(AuthenticatedApp, authenticatorProps)();
+}
+
+const ProtectedApp = () => <AuthWrapper />;
 
 function App() {
   return (

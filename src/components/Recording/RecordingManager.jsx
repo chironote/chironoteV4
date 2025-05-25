@@ -337,11 +337,19 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       });
   
       const uaString = navigator.userAgent.toLowerCase();
-      let options;
+      let options = {};
+      
+      // iOS devices need mp4
       if (/iphone|ipad/i.test(uaString)) {
-        options = { mimeType: "video/mp4" }; // iPhone friendly mime type
-      } else {
-        options = { mimeType: "audio/webm; codecs=\"pcm\"" }; // webm and specify codec
+        options = { mimeType: "video/mp4" };
+      } 
+      // Firefox doesn't support PCM codec
+      else if (/firefox/i.test(uaString)) {
+        options = { mimeType: "audio/webm" };
+      }
+      // Default for Chrome and others
+      else if (MediaRecorder.isTypeSupported("audio/webm; codecs=\"pcm\"")) {
+        options = { mimeType: "audio/webm; codecs=\"pcm\"" };
       }
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
@@ -352,7 +360,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
           const pathstamp = pathStampRef.current; // Unique path identifier
-          const finalPath = `public/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+          const finalPath = `protected/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           
           // Queue the final chunk instead of uploading directly
           queueUpload(event.data, finalPath);
@@ -361,7 +369,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
           const pathstamp = pathStampRef.current; // Unique path identifier
-          const chunkPath = `public/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+          const chunkPath = `protected/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           
           // Queue the chunk instead of uploading directly
           queueUpload(event.data, chunkPath);
