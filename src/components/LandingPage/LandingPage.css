@@ -770,6 +770,12 @@ html {
   gap: 30px;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+}
+
+/* Testimonial Cards Container - Only used in mobile view */
+.landing-page__testimonial-cards-container {
+  display: none; /* Hidden by default, shown on mobile */
 }
 
 .landing-page__testimonial-card {
@@ -1051,14 +1057,188 @@ html {
     display: none;
   }
   
+  .landing-page__features {
+    padding: 20px 20px;
+  }
+
+  .landing-page__what-you-need {
+    padding: 70px 20px 10px !important;
+  }
+
+  .landing-page__cta {
+    padding: 20px 20px;
+  }
+
+  .landing-page__faq {
+    padding: 20px 20px;
+  }
+
+  .landing-page__footer {
+    padding: 20px 20px;
+  }
+  /* Testimonial Carousel for Mobile */
+  .landing-page__testimonials {
+    padding: 40px 0 50px;
+    overflow: hidden;
+  }
+  
+  /* Hide the regular testimonial cards display */
+  .landing-page__testimonial-cards {
+    display: none;
+  }
+  
+  /* Show the carousel container */
+  .landing-page__testimonial-cards-container {
+    display: block;
+    position: relative;
+    overflow: visible;
+    width: 90%;
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  
+  /* Style the carousel */
+  .landing-page__testimonial-cards-container .landing-page__testimonial-cards {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0;
+    width: 300%;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    transition: transform 0.3s ease;
+  }
+  
+  /* Style the cards inside the carousel */
+  .landing-page__testimonial-cards-container .landing-page__testimonial-card {
+    flex: 0 0 33.333%;
+    min-width: 33.333%;
+    transform: none;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 25px 30px;
+    border-radius: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  }
+  
+  /* Style the testimonial text in carousel */
+  .landing-page__testimonial-cards-container .landing-page__testimonial-text {
+    font-style: italic;
+    position: relative;
+    padding: 0 5px;
+    margin-top: 5px;
+  }
+  
+  .landing-page__testimonial-cards-container .landing-page__testimonial-text::before {
+    content: '\201C';
+    position: absolute;
+    left: -15px;
+    top: -5px;
+    color: #075715;
+    font-size: 28px;
+    opacity: 0.7;
+  }
+  
+  .landing-page__testimonial-cards-container .landing-page__testimonial-text::after {
+    content: '\201D';
+    position: absolute;
+    right: -5px;
+    bottom: -20px;
+    color: #075715;
+    font-size: 28px;
+    opacity: 0.7;
+  }
+  
+  /* Carousel Navigation */
+  .testimonial-carousel-nav {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 25px;
+    margin-left: 3.5vw;
+  }
+  
+  .testimonial-carousel-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #d4edda;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  .testimonial-carousel-dot.active {
+    background-color: #075715;
+    transform: scale(1.2);
+  }
+  
+  /* Carousel Arrows */
+  .testimonial-carousel-arrow {
+    position: absolute;
+    top: calc(50% - 15px);
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    background-color: #075715;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    border: none;
+    transition: background-color 0.2s ease;
+  }
+  
+  .testimonial-carousel-arrow:hover {
+    background-color: #053d0f;
+  }
+  
+  .testimonial-carousel-prev {
+    left: -18px;
+  }
+  
+  .testimonial-carousel-next {
+    right: -18px;
+  }
+  
+  /* Additional media queries for different mobile screen sizes */
+  @media (min-width: 330px) and (max-width: 600px) {
+    .landing-page__testimonial-cards-container {
+      width: 85%;
+      max-width: 450px;
+      padding: 0;
+    }
+  }
+  
+  /* Ensure arrows are visible on very small screens */
+  @media (max-width: 329px) {
+    .testimonial-carousel-prev {
+      left: -12px;
+    }
+    
+    .testimonial-carousel-next {
+      right: -12px;
+    }
+  }
+  
   /* What You Need Section - Mobile Responsive */
   .landing-page__what-you-need {
     padding: 40px 15px;
+    margin-top: -50px;
   }
   
   .landing-page__requirements {
     flex-direction: column;
-    gap: 30px;
+    gap: 0px !important;
+    margin-bottom: -40px;
   }
   
   .landing-page__requirement-item {
@@ -1083,7 +1263,7 @@ html {
   
   .landing-page__requirement-icon {
     min-height: 70px;
-    margin-bottom: 0 !important;
+    margin-bottom: -10px !important;
   }
   
   /* Browser icons layout for mobile */
@@ -1270,6 +1450,7 @@ html {
   .landing-page__testimonials {
     margin-top: -90px;
     padding-top: 5px;
+    padding-bottom: 20px;
     position: relative;
     z-index: 3;
   }
@@ -1284,7 +1465,7 @@ html {
   /* Hero SVG mobile adjustments */
   .landing-page__hero-svg {
     bottom: 100px;
-    min-width: 800px; /* Ensure it's still large enough on mobile */
+    min-width: 600px; /* Ensure it's still large enough on mobile */
   }
 }
 
@@ -1293,7 +1474,7 @@ html {
   /* Further adjustments for very small screens */
   .landing-page__hero-svg {
     bottom: 100px;
-    min-width: 700px; /* Still large enough but slightly smaller */
+    min-width: 500px; /* Still large enough but slightly smaller */
   }
   
   .landing-page__hero-container::after {

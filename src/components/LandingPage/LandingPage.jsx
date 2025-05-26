@@ -24,6 +24,8 @@ import { trackLandingPageButtonClick } from '../../utils/analytics';
 export default function LandingPage(props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaqItem, setActiveFaqItem] = useState(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const testimonialCount = 3; // Total number of testimonials
   
   const handleButtonClick = (actionName) => {
     trackLandingPageButtonClick(actionName); // Google Analytics tracking
@@ -52,6 +54,18 @@ export default function LandingPage(props) {
   
   const toggleFaqItem = (index) => {
     setActiveFaqItem(activeFaqItem === index ? null : index);
+  };
+  
+  const handleTestimonialChange = (index) => {
+    setActiveTestimonial(index);
+  };
+  
+  const handleNextTestimonial = () => {
+    setActiveTestimonial((prev) => (prev + 1) % testimonialCount);
+  };
+  
+  const handlePrevTestimonial = () => {
+    setActiveTestimonial((prev) => (prev - 1 + testimonialCount) % testimonialCount);
   };
 
   const plansData = [
@@ -192,6 +206,7 @@ export default function LandingPage(props) {
 
       {/* Testimonials Section */}
       <div id="testimonials" className="landing-page__testimonials">
+        {/* Regular testimonial cards for desktop/tablet */}
         <div className="landing-page__testimonial-cards">
           {/* Testimonial Card 1 */}
           <div className="landing-page__testimonial-card">
@@ -215,7 +230,8 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-              I highly recommend this app for high volume practices            </div>
+              I highly recommend this app for high volume practices
+            </div>
           </div>
           {/* Testimonial Card 2 */}
           <div className="landing-page__testimonial-card">
@@ -264,9 +280,112 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__testimonial-text">
-            Its speed and accuracy make it an invaluable tool
+              Its speed and accuracy make it an invaluable tool
             </div>
           </div>
+        </div>
+        
+        {/* Mobile carousel version */}
+        <div className="landing-page__testimonial-cards-container">
+          <div 
+            className="landing-page__testimonial-cards"
+            style={{ transform: `translateX(-${activeTestimonial * 33.333}%)` }}
+          >
+            {/* Testimonial Card 1 */}
+            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 0 ? 1 : 0 }}>
+              <div className="landing-page__testimonial-header">
+                <div className="landing-page__testimonial-avatar-container">
+                  <img
+                    src={mattImg}
+                    alt="Dr. Matt Fryauf"
+                    className="landing-page__testimonial-avatar"
+                  />
+                </div>
+                <div className="landing-page__testimonial-user">
+                  <div className="landing-page__testimonial-name">Dr. Matt Fryauf</div>
+                  <div className="landing-page__testimonial-stars">
+                    <img
+                      src={stars}
+                      alt="5 Stars"
+                      className="landing-page__stars-icon"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="landing-page__testimonial-text">
+                I highly recommend this app for high volume practices
+              </div>
+            </div>
+            {/* Testimonial Card 2 */}
+            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 1 ? 1 : 0 }}>
+              <div className="landing-page__testimonial-header">
+                <div className="landing-page__testimonial-avatar-container">
+                  <img
+                    src={jessImg}
+                    alt="Dr. Jessica Yeung"
+                    className="landing-page__testimonial-avatar"
+                  />
+                </div>
+                <div className="landing-page__testimonial-user">
+                  <div className="landing-page__testimonial-name">Dr. Jessica Yeung</div>
+                  <div className="landing-page__testimonial-stars">
+                    <img
+                      src={stars}
+                      alt="5 Stars"
+                      className="landing-page__stars-icon"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="landing-page__testimonial-text">
+                Enables me to concentrate my time on patient care instead of paperwork
+              </div>
+            </div>
+            {/* Testimonial Card 3 */}
+            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 2 ? 1 : 0 }}>
+              <div className="landing-page__testimonial-header">
+                <div className="landing-page__testimonial-avatar-container">
+                  <img
+                    src={samImg}
+                    alt="Sam Battochio"
+                    className="landing-page__testimonial-avatar"
+                  />
+                </div>
+                <div className="landing-page__testimonial-user">
+                  <div className="landing-page__testimonial-name">Sam Battochio</div>
+                  <div className="landing-page__testimonial-stars">
+                    <img
+                      src={stars}
+                      alt="5 Stars"
+                      className="landing-page__stars-icon"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="landing-page__testimonial-text">
+                Its speed and accuracy make it an invaluable tool
+              </div>
+            </div>
+          </div>
+          
+          {/* Carousel Navigation Arrows - Only visible on mobile */}
+          <div className="testimonial-carousel-arrow testimonial-carousel-prev" onClick={handlePrevTestimonial}>
+            ‹
+          </div>
+          <div className="testimonial-carousel-arrow testimonial-carousel-next" onClick={handleNextTestimonial}>
+            ›
+          </div>
+        </div>
+        
+        {/* Carousel Dots Navigation - Only visible on mobile */}
+        <div className="testimonial-carousel-nav">
+          {Array.from({ length: testimonialCount }).map((_, index) => (
+            <div 
+              key={index}
+              className={`testimonial-carousel-dot ${activeTestimonial === index ? 'active' : ''}`}
+              onClick={() => handleTestimonialChange(index)}
+            />
+          ))}
         </div>
       </div>
 

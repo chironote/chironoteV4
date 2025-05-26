@@ -213,13 +213,14 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 0px 4px 4px 4px;
+  padding: 0px 4px 0px 4px;
+  box-sizing: border-box;
 }
 
 .edit-textarea {
-  width: 100%;
+  width: calc(100% - 20px);
   height: 100%;
-  margin-top: 10px;
+  margin: 10px 10px 10px 10px;
   padding: 16px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
@@ -230,6 +231,8 @@
   color: #333;
   background-color: white;
   transition: border-color 0.2s ease;
+  box-sizing: border-box;
+  overflow: auto;
 }
 
 .edit-textarea::placeholder{
@@ -483,8 +486,8 @@
 .clipboard-textarea {
   width: 96%;
   min-width: 200px; /* Minimum width before horizontal scroll appears */
-  height: 95%;
-  max-height: 95%;
+  height: 100%;
+  max-height: 100%;
   padding: 16px;
   margin: 10px 10px 10px 20px;
   border: 1px solid #e0e0e0;
