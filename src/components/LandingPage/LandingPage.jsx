@@ -43,6 +43,13 @@ export default function LandingPage(props) {
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
+  
+  // Close mobile menu when clicking outside
+  const handleOutsideClick = (e) => {
+    if (mobileMenuOpen && !e.target.closest('.landing-page__mobile-nav') && !e.target.closest('.landing-page__mobile-menu-button')) {
+      setMobileMenuOpen(false);
+    }
+  };
 
   const handleNavClick = (sectionId) => {
     const element = document.getElementById(sectionId);
@@ -76,7 +83,7 @@ export default function LandingPage(props) {
       features: [
         '1 hour/month dictation',
         'Up to 15 note edits',
-        'Basic EHR Integration',
+        'Unlimited devices',
       ],
       highlight: false,
     },
@@ -87,8 +94,7 @@ export default function LandingPage(props) {
       features: [
         '15 hours/month dictation',
         'Unlimited note edits',
-        'Full EHR Integration',
-        'Priority Support'
+        'Unlimited devices'
       ],
       highlight: true,
     },
@@ -99,12 +105,21 @@ export default function LandingPage(props) {
       features: [
         'Unlimited dictation',
         'Unlimited note edits',
-        'Advanced EHR Workflow Automation',
-        'Dedicated Account Manager'
+        'Unlimited devices'
       ],
       highlight: false,
     },
   ];
+
+  // Add event listener for outside clicks when component mounts
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.addEventListener('click', handleOutsideClick);
+      return () => {
+        document.removeEventListener('click', handleOutsideClick);
+      };
+    }
+  }, [mobileMenuOpen]);
 
   return (
     <div className="landing-page">
@@ -154,7 +169,7 @@ export default function LandingPage(props) {
           <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="landing-page__mobile-nav-items">
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('note-creation')}>Note Creation</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('what-you-need')}>How It Works</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('security')}>Security</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('prices')}>Pricing</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('faq')}>FAQ</div>
@@ -440,7 +455,7 @@ export default function LandingPage(props) {
               Chart Patient Visits in Seconds, Not Hours
             </div>
             <div className="landing-page__feature-description">
-              ChiroNote automatically converts your patient conversations into detailed notes while you treat, eliminating after-hours documentation.
+              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
             </div>
           </div>
         </div>
@@ -561,7 +576,7 @@ export default function LandingPage(props) {
               </div>
               <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 2 ? 'block' : 'none'}}>
                 <div itemProp="text">
-                  Absolutely! While ChiroNote generates highly accurate notes, you always have full control to review and edit any part of the note before finalizing it. The Free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.
+                  Absolutely! While ChiroNote generates highly accurate notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient's shoulder pain" - and the system intelligently updates your note. The Free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.
                 </div>
               </div>
             </div>
@@ -598,6 +613,18 @@ export default function LandingPage(props) {
               <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 5 ? 'block' : 'none'}}>
                 <div itemProp="text">
                   Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.
+                </div>
+              </div>
+            </div>
+            
+            {/* FAQ Item 7 */}
+            <div className={`landing-page__faq-item ${activeFaqItem === 6 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
+              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(6)}>
+                Is using AI for medical note generation legally acceptable?
+              </div>
+              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 6 ? 'block' : 'none'}}>
+                <div itemProp="text">
+                  Yes. AI-assisted medical documentation is becoming standard practice in the healthcare field. Insurance companies typically welcome more accurate and detailed clinical notes, even when they contain more technical language. As with any documentation tool, the provider remains responsible for reviewing and approving all notes for accuracy before finalizing them.
                 </div>
               </div>
             </div>

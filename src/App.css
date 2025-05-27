@@ -499,6 +499,8 @@
   background-color: white;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--off-white);
+  box-sizing: border-box; /* Ensure padding is included in width calculation */
+  max-width: calc(100% - 30px); /* Ensure right margin is maintained */
 }
 
 .clipboard-textarea:focus {

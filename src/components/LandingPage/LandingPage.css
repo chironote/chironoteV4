@@ -476,7 +476,7 @@ html {
   align-items: center;
   background: transparent;
   position: relative;
-  margin: -230px 0 -200px;
+  margin: -130px 0 -100px;
 }
 
 .landing-page__mockup-container {
@@ -1330,7 +1330,7 @@ html {
   }
 
   .landing-page__mockup-showcase {
-    margin: -100px 0 -50px;
+    margin: -75px 0 -30px;
   }
   
   /* Adjust scroll padding for section links */
