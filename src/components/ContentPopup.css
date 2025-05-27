@@ -1,0 +1,117 @@
+/* src/components/ContentPopup.css */
+
+.content-popup .popup-header {
+  /* Ensure the header items are aligned nicely.
+     The title/date block on the left, actions on the right. */
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Align to top for potentially multi-line title/date */
+  margin-bottom: 12px; /* Add some space below the header */
+}
+
+.content-popup .popup-header h2 {
+  margin-top: 0; /* Remove default h2 margin if it interferes */
+  margin-bottom: 4px; /* Space between title and date */
+  font-size: 1.4em; /* Example size, adjust as needed */
+}
+
+.content-popup .popup-date {
+  font-size: 0.8em;  /* Smaller font size, relative to parent */
+  color: #888;      /* Lighter grey color */
+  margin: 0;         /* Remove default paragraph margin */
+  line-height: 1.2;  /* Adjust line height if needed */
+}
+
+.content-popup .popup-actions {
+  display: flex; /* Align buttons in a row */
+  align-items: center; /* Vertically center align buttons */
+}
+
+/* Styling for the new copy button, similar to close button */
+.content-popup .popup-copy-button,
+.content-popup .popup-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px; /* Reduced padding to bring icons closer */
+  /* margin-left is now handled specifically for .popup-close-button or defaults to 0 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%; /* Circular shape for icon buttons */
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* Add specific margin only to the close button to control spacing from the copy button */
+.content-popup .popup-close-button {
+  margin-left: 1px; /* Minimal space between copy and close buttons */
+}
+
+.content-popup .popup-copy-button {
+  margin-right: -10px; /* Minimal space between copy and close buttons */
+}
+
+.content-popup .popup-copy-button:hover,
+.content-popup .popup-close-button:hover {
+  background-color: rgba(0, 0, 0, 0.1); /* Subtle hover effect */
+}
+
+.content-popup .popup-copy-button .material-symbols-rounded,
+.content-popup .popup-close-button .material-symbols-rounded {
+  font-size: 24px; /* Adjust icon size as needed */
+  color: var(--dark-green); /* Use app's dark green for icons */
+}
+
+/* Styles for clickable SOAP headers and feedback messages */
+.clickable-header {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--dark-green);
+  margin-right: 8px; /* Space between header and feedback message */
+  display: inline-block; /* Allows margin and keeps it inline */
+  transition: filter 0.2s ease-in-out; /* Smooth transition for brightness */
+}
+
+.clickable-header:hover,
+.clickable-header:focus {
+  text-decoration: underline;
+  filter: brightness(0.8); /* Subtle darkening effect */
+}
+
+.section-copy-feedback {
+  font-size: 0.9em;
+  margin-left: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block; /* Keep it on the same line as header */
+}
+
+.section-copy-feedback.success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.section-copy-feedback.warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+}
+
+.section-copy-feedback.error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+/* Ensure content within sections maintains line breaks */
+.content-popup-text span[style*="white-space: pre-wrap"] {
+  /* display: block; removed for inline flow */
+  margin-bottom: 0; /* Adjust if more space is needed between distinct blocks of text */
+}
+
+/* Adjust spacing if a section text block is directly after a header */
+.clickable-header + span[style*="white-space: pre-wrap"] {
+  /* margin-top: 0.25em; removed */
+  margin-left: 0.25em; /* Add a small space after the header if on the same line */
+}
