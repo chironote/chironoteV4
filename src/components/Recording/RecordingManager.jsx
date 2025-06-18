@@ -26,9 +26,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const uploadQueueRef = useRef([]); // Queue for uploads
   const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
   const finalChunkRef = useRef(null); // Reference to store the final chunk
-
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
+  const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -329,6 +329,65 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }
   };
 
+  const discardRecording = () => {
+    // Set flag to prevent any data processing
+    isDiscardingRef.current = true;
+    
+    // Immediately stop recording and clean up without processing
+    if (mediaRecorderRef.current) {
+      setIsRecording(false);
+      isRecordingRef.current = false;
+      setIsPaused(false);
+      isPausedRef.current = false;
+      
+      // Stop the media recorder
+      mediaRecorderRef.current.stop();
+      
+      // Clear the recording interval
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+      
+      // Stop all media tracks
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      mediaRecorderRef.current = null;
+    }
+    
+    // Clear all upload queues and processing flags
+    uploadQueueRef.current = [];
+    isProcessingUploadsRef.current = false;
+    finalChunkRef.current = null;
+    
+    // Reset all states immediately
+    setIsPreparingTranscript(false);
+    setIsGeneratingSummary(false);
+    setIsTranscriptCompleted(false);
+    setTextStream('');
+    
+    // Clear all refs
+    timeStampRef.current = null;
+    pathStampRef.current = null;
+    filePathRef.current = null;
+    lastUploadedChunkRef.current = 0;
+    
+    // Disable NoSleep
+    if (noSleepRef.current) {
+      noSleepRef.current.disable();
+    }
+    
+    // Cancel any active subscriptions
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+    
+    // Reset the discarding flag after cleanup
+    setTimeout(() => {
+      isDiscardingRef.current = false;
+    }, 100);
+  };
+
   const setupRecorder = async () => {
     try {
       setTextStream('');
@@ -360,6 +419,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       mediaRecorderRef.current = new MediaRecorder(stream, options);
   
       mediaRecorderRef.current.ondataavailable = async (event) => {
+        if (isDiscardingRef.current) {
+          return;
+        }
+        
         if (event.data.size > 0 && !isRecordingRef.current) {
           // This is the final chunk when recording stops
           const userId = await getUserId();
@@ -478,6 +541,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     isGeneratingSummary,
     startRecording,
     stopRecording,
+    discardRecording,
     pauseRecording,
     resumeRecording,
     textStream

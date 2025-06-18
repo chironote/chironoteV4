@@ -18,6 +18,7 @@ function Recording({
   isGeneratingSummary,
   startRecording, 
   stopRecording, 
+  discardRecording,
   pauseRecording, 
   resumeRecording,
 }) {
@@ -142,7 +143,7 @@ function Recording({
   const handleConfirmDiscard = () => {
     setShowConfirmation(false);
     if (isRecording) {
-      stopRecording();
+      discardRecording();
     }
     toggleRecordingPopup();
   };

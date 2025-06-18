@@ -28,8 +28,6 @@ import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { RealtimeTranscriber } from 'assemblyai';
-import RecordRTC from 'recordrtc';
 import { trackPageView } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
 
@@ -406,13 +404,23 @@ function AuthenticatedApp({ signOut, user }) {
   }, [user.username, newItems]);
 
   const toggleEditPanel = () => {
+    const screenWidth = window.innerWidth;
+    
+    // For medium screens (780px-1200px), close history panel when opening edit panel
+    if (screenWidth >= 780 && screenWidth < 1200) {
+      if (!showEditPanel) {
+        // Opening edit panel - close history panel
+        setIsCollapsed(true);
+      }
+    }
+    
     setShowEditPanel(prev => !prev);
     if (!showEditPanel) setEditContent('');
   };
 
   const toggleRecordingPopup = (type) => {
     if (recordingManager.isRecording) {
-      recordingManager.stopRecording();
+      recordingManager.discardRecording();
     } else {
       setRecordingType(type);
       setShowRecordingPopup(prev => !prev);
@@ -434,6 +442,20 @@ function AuthenticatedApp({ signOut, user }) {
   const togglePopupMenu = (e) => {
     e.stopPropagation();
     setShowPopupMenu(prev => !prev);
+  };
+
+  const togglePanel = () => {
+    const screenWidth = window.innerWidth;
+    
+    // For medium screens (780px-1200px), close edit panel when opening history panel
+    if (screenWidth >= 780 && screenWidth < 1200) {
+      if (isCollapsed) {
+        // Opening history panel - close edit panel
+        setShowEditPanel(false);
+      }
+    }
+    
+    setIsCollapsed(!isCollapsed);
   };
 
   const handleCopy = (isPopupMenu = false) => {
@@ -485,6 +507,16 @@ function AuthenticatedApp({ signOut, user }) {
       // Ctrl+B shortcut to toggle edit panel and focus on edit text field
       if (event.ctrlKey && event.key === 'b') {
         event.preventDefault();
+        const screenWidth = window.innerWidth;
+        
+        // For medium screens (780px-1200px), close history panel when opening edit panel
+        if (screenWidth >= 780 && screenWidth < 1200) {
+          if (!showEditPanel) {
+            // About to open edit panel - close history panel
+            setIsCollapsed(true);
+          }
+        }
+        
         // Toggle edit panel
         setShowEditPanel(prev => !prev);
         // If we're opening the panel, we need to wait for it to render before focusing
@@ -509,6 +541,16 @@ function AuthenticatedApp({ signOut, user }) {
         // Only toggle if not disabled during recording or transcript generation
         if (!(showRecordingPopup || recordingManager.isRecording || 
               recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary)) {
+          const screenWidth = window.innerWidth;
+          
+          // For medium screens (780px-1200px), close edit panel when opening history panel
+          if (screenWidth >= 780 && screenWidth < 1200) {
+            if (isCollapsed) {
+              // Opening history panel - close edit panel
+              setShowEditPanel(false);
+            }
+          }
+          
           // Toggle the left panel by directly updating the state
           setIsCollapsed(prev => !prev);
         }
@@ -527,10 +569,6 @@ function AuthenticatedApp({ signOut, user }) {
       updatedNewItems.delete(timestamp);
       return updatedNewItems;
     });
-  };
-
-  const togglePanel = () => {
-    setIsCollapsed(!isCollapsed);
   };
 
   const toggleWeekCollapse = (weekStart) => {
@@ -670,6 +708,7 @@ function AuthenticatedApp({ signOut, user }) {
                 isGeneratingSummary={recordingManager.isGeneratingSummary}
                 startRecording={recordingManager.startRecording}
                 stopRecording={recordingManager.stopRecording}
+                discardRecording={recordingManager.discardRecording}
                 pauseRecording={recordingManager.pauseRecording}
                 resumeRecording={recordingManager.resumeRecording}
               />
