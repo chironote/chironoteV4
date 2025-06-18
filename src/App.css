@@ -849,10 +849,6 @@
     overflow: hidden;
   }
 
-  .soap-buttons {
-    display: none;
-  }
-
   .left-panel {
     position: fixed;
     top: 70px;
@@ -870,8 +866,6 @@
   .left-panel.collapsed {
     transform: translateX(-100%);
   }
-
-
 
   .left-panel.collapsed + .mobile-content-overlay {
     background-color: transparent;
@@ -896,7 +890,6 @@
     color: var(--dark-green);
     transition: transform 0.3s ease;
   }
-
 
   .mobile-toggle-overlay {
     position: fixed;
@@ -995,7 +988,7 @@
 
   .clipboard-textarea {
     height: 100%;
-    margin: 10px auto !important;
+    margin: 10px 10px 10px 20px;
   }
 
   .app-main {
@@ -1309,4 +1302,149 @@
 
 .app.processing-active > *:not(.create-note-popup) {
   pointer-events: none;
+}
+
+/* Mobile View Styles */
+@media (max-width: 768px) {
+  .left-panel {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    height: calc(100vh - 70px);
+    width: 85%;
+    max-width: 85%;
+    background-color: white;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+    overflow-y: auto;
+  }
+
+  .left-panel.collapsed {
+    transform: translateX(-100%);
+  }
+
+  .left-panel.collapsed + .mobile-content-overlay {
+    background-color: transparent;
+  }
+
+  .mobile-toggle-button {
+    position: relative;
+    top: 17px;
+    margin-bottom: -20px;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    z-index: 1003;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-toggle-button .material-symbols-rounded {
+    font-size: 33px;
+    color: var(--dark-green);
+    transition: transform 0.3s ease;
+  }
+
+  .mobile-toggle-overlay {
+    position: fixed;
+    top: 70px;
+    right: 0;
+    width: 0;
+    height: calc(100vh - 70px);
+    background-color: rgba(128, 128, 128, 0.5);
+    z-index: 1002;
+    opacity: 0;
+    transition: opacity 0.3s ease, width 0.3s ease;
+    pointer-events: none;
+    display: none;
+  }
+
+  /* Add a class for the animation that can be added dynamically */
+  .mobile-toggle-overlay-animate {
+    animation: fadeInShadow 0.3s ease;
+  }
+
+  .clipboard-container {
+    margin-left: 0;
+    margin-top: -11px;
+    width: 100%;
+    transition: margin-left 0.3s ease;
+    height: calc(100vh - 70px);
+    overflow-y: auto;
+  }
+
+  .left-panel.collapsed ~ .clipboard-container {
+    margin-left: 0;
+  }
+
+  .left-panel.collapsed ~ .mobile-toggle-button {
+    transform: translateX(10px);
+    margin-right: 0px;
+    transition: transform 0.3s ease, margin-right 0.3s ease;
+  }
+
+  .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
+    transition: transform 0.3s ease;
+    transform: translateX(86.5vw);
+    background-color: white;
+    border-radius: 4px;
+    padding: 3px;
+  }
+
+  .left-panel:not(.collapsed) ~ .mobile-toggle-button:active .material-symbols-rounded:active {
+    transform: scale(1.15) translateX(75vw);
+  }
+
+  .left-panel:not(.collapsed) ~ .clipboard-container {
+    pointer-events: none;
+  }
+
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
+    display: block;
+    opacity: 1;
+    width: 15%;
+  }
+
+  .left-panel.collapsed ~ .mobile-toggle-overlay {
+    display: none;
+    width: 0;
+    opacity: 0;
+  }
+
+  @keyframes fadeInShadow {
+    from {
+      opacity: 0;
+      width: 0;
+    }
+    to {
+      opacity: 1;
+      width: 15%;
+    }
+  }
+  
+  @keyframes fadeOutShadow {
+    from {
+      opacity: 1;
+      width: 15%;
+    }
+    to {
+      opacity: 0;
+      width: 0;
+      display: none;
+    }
+  }
+
+  .clipboard-textarea-container {
+    width: 100%;
+    height: 100%;
+    padding: 15px;
+  }
+
+  .clipboard-textarea {
+    height: 100%;
+    margin: 10px 10px 10px 20px;
+  }
 }
