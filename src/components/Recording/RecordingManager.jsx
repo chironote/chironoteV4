@@ -279,6 +279,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const decoder = new TextDecoder("utf-8");
       let chunk;
       let isFirstChunk = true;
+      
+      // Hide the "Generating Note" window as soon as streaming starts
+      setIsGeneratingSummary(false);
+      
+      // Close the recording popup so user can see the streaming text
+      onTransitionToMainApp();
+      
       while (true) {
         chunk = await reader.read();
         const text = decoder.decode(chunk.value, { stream: !chunk.done });
@@ -299,11 +306,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       console.error("Streaming error:", error);
     } finally {
       setIsPreparingTranscript(false);
-      setIsGeneratingSummary(false);
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }
-      onTransitionToMainApp(); // Add transition to main app after streaming is complete
     }
   };
 
@@ -408,7 +413,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           mediaRecorderRef.current.start();
         }
-      }, 240000); 
+      }, 240000); // 240 seconds
     }
   };
 
