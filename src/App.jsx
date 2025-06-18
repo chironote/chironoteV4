@@ -512,7 +512,7 @@ function AuthenticatedApp({ signOut, user }) {
         // For medium screens (780px-1200px), close history panel when opening edit panel
         if (screenWidth >= 780 && screenWidth < 1200) {
           if (!showEditPanel) {
-            // About to open edit panel - close history panel
+            // Opening edit panel - close history panel
             setIsCollapsed(true);
           }
         }
@@ -543,9 +543,12 @@ function AuthenticatedApp({ signOut, user }) {
               recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary)) {
           const screenWidth = window.innerWidth;
           
+          console.log('Ctrl+` pressed - Screen width:', screenWidth, 'isCollapsed:', isCollapsed, 'showEditPanel:', showEditPanel);
+          
           // For medium screens (780px-1200px), close edit panel when opening history panel
           if (screenWidth >= 780 && screenWidth < 1200) {
             if (isCollapsed) {
+              console.log('Medium screen: About to open history panel, closing edit panel');
               // Opening history panel - close edit panel
               setShowEditPanel(false);
             }
