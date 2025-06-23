@@ -35,9 +35,33 @@ const ContentPopup = ({
   // handleSendToClipboard, // Not directly used by the new logic but retained
   selectedContent, 
   showPopupCopyMessage, // For the main copy button feedback
-  timestamp
+  timestamp,
+  noteLabel, // Add noteLabel prop
+  onLabelUpdate // Add callback for label updates
 }) => {
   const [copiedSectionHeader, setCopiedSectionHeader] = useState(''); // e.g., "Subjective:" or "Subjective: Copied!"
+  const [isEditingLabel, setIsEditingLabel] = useState(false);
+  const [editedLabel, setEditedLabel] = useState('');
+
+  // Helper function to get the first sentence or a substring (same as in App.jsx)
+  const getFirstSentenceOrSubstring = (text, maxLength = 89) => {
+    if (!text) return 'Empty';
+    
+    if (text.length <= maxLength) return text;
+    
+    const substring = text.substring(0, maxLength);
+    const lastSpaceIndex = substring.lastIndexOf(' ');
+    
+    if (lastSpaceIndex === -1) return substring + '...';
+    
+    return substring.substring(0, lastSpaceIndex) + '...';
+  };
+
+  // Get the display label with proper fallback logic
+  const getDisplayLabel = () => {
+    if (noteLabel) return noteLabel;
+    return getFirstSentenceOrSubstring(selectedContent);
+  };
 
   const handleSectionCopy = async (header, textToCopy) => {
     const sectionName = header.slice(0, -1); // Remove trailing colon for messages
@@ -144,9 +168,47 @@ const ContentPopup = ({
       <div className="content-popup-inner" onClick={(e) => e.stopPropagation()}>
         <div className="popup-header">
           <div>
-            <h2>
-              {showNotes ? "Note" : "Transcript"}
-            </h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {isEditingLabel ? (
+                <input
+                  type="text"
+                  value={editedLabel}
+                  onChange={(e) => setEditedLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      onLabelUpdate(editedLabel);
+                      setIsEditingLabel(false);
+                    } else if (e.key === 'Escape') {
+                      setIsEditingLabel(false);
+                    }
+                  }}
+                  onBlur={() => {
+                    onLabelUpdate(editedLabel);
+                    setIsEditingLabel(false);
+                  }}
+                  onFocus={(e) => e.target.select()}
+                  autoFocus
+                  className="label-edit-input"
+                />
+              ) : (
+                <div className="popup-header-content">
+                  <button
+                    className="popup-edit-button"
+                    onClick={() => {
+                      setEditedLabel(getDisplayLabel());
+                      setIsEditingLabel(true);
+                    }}
+                    aria-label="Edit label"
+                    title="Edit label"
+                  >
+                    <span className="material-symbols-rounded">edit</span>
+                  </button>
+                  <h2>
+                    {getDisplayLabel()}
+                  </h2>
+                </div>
+              )}
+            </div>
             {timestamp && (
               <p className="popup-date">{formatPopupDate(timestamp)}</p>
             )}

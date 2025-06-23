@@ -212,8 +212,8 @@ const groupItemsByWeek = (items) => {
 
 // Component to render list items (Notes or Transcripts)
 const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) => {
-  const content = isNote ? item.note : item.transcript;
-  const displayText = getFirstSentenceOrSubstring(content);
+  const content = (isNote ? item.note : item.transcript) || '';
+  const displayText = item.noteLabel || getFirstSentenceOrSubstring(content);
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData('text/plain', content);
@@ -250,6 +250,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [showContentPopup, setShowContentPopup] = useState(false);
   const [selectedContent, setSelectedContent] = useState('');
   const [selectedTimestamp, setSelectedTimestamp] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null); // Add selectedItem to track full item object
   const [showPopupMenu, setShowPopupMenu] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
   const [editContent, setEditContent] = useState('');
@@ -431,10 +432,11 @@ function AuthenticatedApp({ signOut, user }) {
     setShowDictationPopup(prev => !prev);
   };
 
-  const toggleContentPopup = (content) => {
-    setSelectedContent(showNotes ? content.note : content.transcript);
+  const toggleContentPopup = (item) => {
+    setSelectedItem(item);
+    setSelectedContent(showNotes ? item.note : item.transcript);
     // Store the timestamp for use in the ContentPopup
-    setSelectedTimestamp(content.timestamp);
+    setSelectedTimestamp(item.timestamp);
     setShowContentPopup(prev => !prev);
     setShowPopupMenu(false);
   };
@@ -483,6 +485,56 @@ function AuthenticatedApp({ signOut, user }) {
     setClipboardContent(plainText);
     setShowPopupMenu(false);
     setShowContentPopup(false);
+  };
+
+  const handleLabelUpdate = async (newLabel) => {
+    if (!selectedItem) return;
+    
+    try {
+      // TODO: Uncomment when noteLabel field is deployed to backend
+      // Update the item in the backend
+      // await client.graphql({
+      //   query: mutations.updateNotes,
+      //   variables: {
+      //     input: {
+      //       owner: selectedItem.owner,
+      //       timestamp: selectedItem.timestamp,
+      //       noteLabel: newLabel
+      //     }
+      //   }
+      // });
+      
+      // Update local state
+      const uniqueId = selectedItem.owner + selectedItem.timestamp;
+      
+      // Update notes array if the item has note content
+      if (selectedItem.note && selectedItem.note.trim() !== "") {
+        setNotes(prevNotes => 
+          prevNotes.map(note => 
+            (note.owner + note.timestamp) === uniqueId 
+              ? { ...note, noteLabel: newLabel }
+              : note
+          )
+        );
+      }
+      
+      // Update transcripts array if the item has transcript content
+      if (selectedItem.transcript && selectedItem.transcript.trim() !== "") {
+        setTranscripts(prevTranscripts => 
+          prevTranscripts.map(transcript => 
+            (transcript.owner + transcript.timestamp) === uniqueId 
+              ? { ...transcript, noteLabel: newLabel }
+              : transcript
+          )
+        );
+      }
+      
+      // Update the selected item
+      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
+      
+    } catch (error) {
+      console.error("Error updating note label:", error);
+    }
   };
 
   const handleCopyPaste = useCallback((e) => {
@@ -636,8 +688,6 @@ function AuthenticatedApp({ signOut, user }) {
     setClipboardContent(newContent);
   }, []);
 
-
-
   return (
     <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
       <IntroTour />
@@ -744,9 +794,11 @@ function AuthenticatedApp({ signOut, user }) {
                 togglePopupMenu={togglePopupMenu} 
                 handleCopy={handleCopy} 
                 handleSendToClipboard={handleSendToClipboard} 
-                selectedContent={selectedContent} 
+                selectedContent={selectedContent}
                 showPopupCopyMessage={showPopupCopyMessage}
                 timestamp={selectedTimestamp}
+                noteLabel={selectedItem?.noteLabel}
+                onLabelUpdate={handleLabelUpdate}
               />
             )}
           </main>
