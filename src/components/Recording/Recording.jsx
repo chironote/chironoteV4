@@ -98,45 +98,30 @@ function Recording({
     console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
   }, [noteSettings]);
 
+  // Keyboard event listener for Esc key during active recording
   useEffect(() => {
-    if (isRecording || isPreparingTranscript) {
-      // Push a new state to prevent direct back navigation
-      window.history.pushState({ recording: true }, '');
-    }
-  }, [isRecording, isPreparingTranscript]);
-
-  useEffect(() => {
-    const handleBackButton = (event) => {
-      if ((isRecording || isPreparingTranscript) && !showConfirmation) {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && isRecording) {
         event.preventDefault();
-        // Push state again to prevent back navigation
-        window.history.pushState({ recording: true }, '');
         setShowConfirmation(true);
       }
     };
 
-    const handleBeforeUnload = (event) => {
-      if (isRecording || isPreparingTranscript) {
-        event.preventDefault();
-        event.returnValue = '';
-        return '';
-      }
-    };
-
-    window.addEventListener('popstate', handleBackButton);
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('keydown', handleKeyDown);
     
     return () => {
-      window.removeEventListener('popstate', handleBackButton);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isRecording, isPreparingTranscript, showConfirmation]);
+  }, [isRecording]);
+
+  const handleCancelRecording = () => {
+    setShowConfirmation(true);
+  };
 
   const handleOuterClick = () => {
+    // Remove previous cancellation logic - only close if not in any active state
     if (!isRecording && !isPreparingTranscript && !isGeneratingSummary) {
       toggleRecordingPopup();
-    } else if (isRecording && !isPreparingTranscript) {
-      setShowConfirmation(true);
     }
   };
 
@@ -266,6 +251,13 @@ function Recording({
           </div>
         ) : (
           <div className="recording-content">
+            <button 
+              className="close-x-button"
+              onClick={handleCancelRecording}
+              aria-label="Cancel recording"
+            >
+              ×
+            </button>
             <div className="recording-container" aria-label="Audio visualization for SOAP note recording">
               {[...Array(5)].map((_, index) => (
                 <div key={index}

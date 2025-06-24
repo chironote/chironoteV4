@@ -84,11 +84,11 @@
   min-width: 32px;
   min-height: 32px;
   flex-shrink: 0;
-  margin-top: -3px;
+  margin-top: -5px;
 }
 
 .content-popup .popup-edit-button:hover {
-  background-color: var(--light-gray, #f5f5f5);
+  background-color: var(--light-gray, #b7e9c1);
   transform: scale(1.1);
 }
 
