@@ -61,12 +61,12 @@
 
 .nav-item .nav-link:hover {
   color: var(--pale-green);
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 /* Logout link */
 .nav-item .logout-link:hover {
-  color: var(--pure-white);
+  color: #000000;
   background-color: #ff4757;
 }
 
@@ -186,6 +186,6 @@
   }
 
   .mobile-menu .nav-item .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(0, 0, 0, 0.25);
   }
 }

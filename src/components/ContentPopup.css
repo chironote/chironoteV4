@@ -9,10 +9,16 @@
   margin-bottom: 12px; /* Add some space below the header */
 }
 
-.content-popup .popup-header h2 {
+.content-popup .popup-header-left {
+  flex: 1;
+  min-width: 0; /* Allow content to shrink */
+}
+
+.content-popup .popup-header h2,
+.content-popup .label-title {
   margin-top: 0; /* Remove default h2 margin if it interferes */
-  margin-bottom: 4px; /* Space between title and date */
   font-size: 1.4em; /* Example size, adjust as needed */
+  line-height: 1.3;
 }
 
 .content-popup .popup-date {
@@ -65,48 +71,109 @@
 /* New layout for header content with edit button and title */
 .content-popup .popup-header-content {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
 }
 
-/* Edit button styling */
+/* Container for label/input to maintain consistent height */
+.content-popup .label-container {
+  flex: 1;
+  min-height: 42px; /* Match the approximate height of h2 */
+  display: flex;
+  align-items: center;
+}
+
+/* Edit button styling - text-based design */
 .content-popup .popup-edit-button {
-  background: none;
+  background: white;
   border: 1px solid var(--dark-green, #2d5a27);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 8px 12px; /* Horizontal padding for text button */
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease-in-out;
   color: var(--dark-green, #2d5a27);
-  min-width: 32px;
   min-height: 32px;
   flex-shrink: 0;
-  margin-top: -5px;
+  margin-top: 5px; /* Align with label baseline */
+  font-family: inherit; /* Use app's font family */
+  font-size: 14px;
+  font-weight: 500; /* Medium weight for clarity */
+  letter-spacing: 0.3px;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 
 .content-popup .popup-edit-button:hover {
-  background-color: var(--light-gray, #b7e9c1);
-  transform: scale(1.1);
+  background-color: var(--light-green, #4caf50);
+  color: white;
+  border-color: var(--light-green, #4caf50);
+  transform: translateY(-1px); /* Subtle lift effect */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Active editing state for button */
+.content-popup .popup-edit-button.editing {
+  background-color: var(--dark-green, #2d5a27);
+  color: white;
+  border-color: var(--dark-green, #2d5a27);
+  font-weight: 600; /* Slightly bolder when active */
+}
+
+.content-popup .popup-edit-button.editing:hover {
+  background-color: #1e3d1a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Text button styling */
+.content-popup .edit-button-text {
+  font-size: 0.9em; 
+  transition: opacity 0.2s ease-in-out;
+  line-height: 1;
+  position: relative;
+  top: 1.2px;
+  
+}
+
+/* Focus state for accessibility */
+.content-popup .popup-edit-button:focus {
+  outline: 2px solid var(--light-green, #4caf50);
+  outline-offset: 2px;
+}
+
+/* Active/pressed state */
+.content-popup .popup-edit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Input field for editing labels */
 .content-popup .label-edit-input {
   font-size: 1.4em;
   font-weight: bold;
+  font-family: inherit;
   border: 2px solid var(--light-green, #4caf50);
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   background: white;
-  min-width: 200px;
+  width: 100%;
+  max-width: 100%; /* Wider default width for better editing experience */
   outline: none;
-  transition: border-color 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  line-height: 1.3;
+  margin: 0;
 }
 
 .content-popup .label-edit-input:focus {
   border-color: var(--dark-green, #2d5a27);
+  box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+}
+
+.content-popup .label-edit-input::placeholder {
+  color: #999;
+  font-weight: normal;
 }
 
 /* Styles for clickable SOAP headers and feedback messages */
@@ -149,6 +216,20 @@
   color: #721c24;
   background-color: #f8d7da;
   border: 1px solid #f5c6cb;
+}
+
+/* Responsive behavior - show Edit button on mobile */
+@media (max-width: 768px) {
+  .content-popup .popup-edit-button {
+    /* Ensure button remains visible and functional on mobile */
+    display: flex;
+    font-size: 14px; /* Maintain readability on smaller screens */
+    padding: 6px 10px; /* Slightly smaller padding for mobile */
+  }
+  
+  .content-popup .popup-header-content {
+    gap: 8px; /* Slightly reduce gap on mobile */
+  }
 }
 
 /* Ensure content within sections maintains line breaks */

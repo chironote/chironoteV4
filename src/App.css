@@ -342,6 +342,10 @@
   gap: 6px;
 }
 
+.toolbar-button.new-note-button {
+  transition: none !important;
+}
+
 .toolbar-button:hover {
   background-color: #e9ecef;
   border-color: #dee2e6;
@@ -434,17 +438,26 @@
 }
 
 /* New Note Button Styles */
-.new-note-button {
-  background: linear-gradient(45deg, var(--medium-green), var(--light-green));
-  color: white;
+.toolbar-button.new-note-button {
+  background: linear-gradient(135deg, var(--medium-green) 0%, var(--dark-green) 35%, var(--dark-green) 100%) !important;
+  color: white !important;
   font-weight: 600;
   padding: 6px 16px;
   min-width: 120px;
+  transition: none !important;
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  animation: none !important;
+  -webkit-animation: none !important;
 }
 
-.new-note-button:hover {
-  background: linear-gradient(45deg, var(--dark-green), var(--medium-green));
-  border-color: transparent;
+.toolbar-button.new-note-button:hover {
+  background: var(--dark-green) !important;
+  border-color: transparent !important;
+  transition: none !important;
+  -webkit-transition: none !important;
+  animation: none !important;
 }
 
 .plus-icon {
@@ -489,7 +502,7 @@
   height: 100%;
   max-height: 100%;
   padding: 16px;
-  margin: 10px 10px 10px 20px;
+  margin: 10px 10px 10px 0;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   resize: none;
@@ -500,7 +513,7 @@
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--off-white);
   box-sizing: border-box; /* Ensure padding is included in width calculation */
-  max-width: calc(100% - 30px); /* Ensure right margin is maintained */
+  max-width: 100%;
 }
 
 .clipboard-textarea:focus {
@@ -529,12 +542,12 @@
   display: flex;
   position: relative;
   min-width: 0; /* Allows container to shrink below content size */
+  flex-direction: row; /* Two columns: buttons left, content right */
 }
 
 .soap-buttons {
-  position: relative;
+  position: relative; /* Take space as a column */
   width: 30px;
-  margin-right: 10px;
   flex-shrink: 0; /* Prevent SOAP buttons from shrinking */
 }
 
@@ -564,6 +577,7 @@
   align-items: center;
   justify-content: center;
   text-decoration: none;
+  left: 5px; /* Stable horizontal anchor inside the buttons column */
 }
 
 .soap-button:hover {
@@ -605,7 +619,6 @@
 
 .list-item:hover {
   background-color: var(--pale-green);
-  transform: translateY(-2px);
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.1);
 }
 
@@ -988,7 +1001,7 @@
 
   .clipboard-textarea {
     height: 100%;
-    margin: 10px 10px 10px 20px;
+    margin: 10px 10px 10px 0;
   }
 
   .app-main {
@@ -1445,6 +1458,6 @@
 
   .clipboard-textarea {
     height: 100%;
-    margin: 10px 10px 10px 20px;
+    margin: 10px 10px 10px 0;
   }
 }

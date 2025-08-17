@@ -23,7 +23,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
   const subscriptionRef = useRef(null);
-  const uploadQueueRef = useRef([]); // Queue for uploads
+  const generateTimeoutRef = useRef(null);
+  const uploadQueueRef = useRef([]); // Queue for audio uploads
   const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
   const finalChunkRef = useRef(null); // Reference to store the final chunk
   const isRecordingRef = useRef(false);
@@ -149,7 +150,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         path: filePath,
         language: selectedLanguage === 'null' ? null : selectedLanguage,
         isFinalAudio: filePath.includes('_final_'),
-        accessToken: accessToken
+        accessToken: accessToken,
+        noteSettings: localStorage.getItem('noteSettings')
       });
       // Create a shorter, valid deduplication ID (max 128 chars, alphanumeric, hyphens, underscores only)
       // Use the last part of the filename which should be unique enough
@@ -249,6 +251,16 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const streamResponse = async () => {
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
+    // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
+    generateTimeoutRef.current = setTimeout(() => {
+      console.warn('Generating Note timeout (4 minutes) - closing spinner and returning to main app');
+      setIsGeneratingSummary(false);
+      setIsPreparingTranscript(false);
+      onTransitionToMainApp();
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    }, 240000);
     try {
       const userId = await getUserId();
       if (!userId) {
@@ -281,6 +293,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       let isFirstChunk = true;
       
       // Hide the "Generating Note" window as soon as streaming starts
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
       setIsGeneratingSummary(false);
       
       // Close the recording popup so user can see the streaming text
@@ -306,6 +322,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       console.error("Streaming error:", error);
     } finally {
       setIsPreparingTranscript(false);
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }

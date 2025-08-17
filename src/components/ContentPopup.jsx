@@ -43,6 +43,22 @@ const ContentPopup = ({
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [editedLabel, setEditedLabel] = useState('');
 
+  // Handle saving the edited label
+  const handleSaveLabel = () => {
+    const trimmedLabel = editedLabel.trim();
+    if (trimmedLabel && trimmedLabel !== getDisplayLabel()) {
+      onLabelUpdate(trimmedLabel);
+    }
+    setIsEditingLabel(false);
+    setEditedLabel(''); // Clear the edit state
+  };
+
+  // Handle canceling the edit
+  const handleCancelEdit = () => {
+    setIsEditingLabel(false);
+    setEditedLabel(''); // Clear the edit state
+  };
+
   // Helper function to get the first sentence or a substring (same as in App.jsx)
   const getFirstSentenceOrSubstring = (text, maxLength = 89) => {
     if (!text) return 'Empty';
@@ -167,47 +183,56 @@ const ContentPopup = ({
     >
       <div className="content-popup-inner" onClick={(e) => e.stopPropagation()}>
         <div className="popup-header">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {isEditingLabel ? (
-                <input
-                  type="text"
-                  value={editedLabel}
-                  onChange={(e) => setEditedLabel(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      onLabelUpdate(editedLabel);
-                      setIsEditingLabel(false);
-                    } else if (e.key === 'Escape') {
-                      setIsEditingLabel(false);
-                    }
-                  }}
-                  onBlur={() => {
-                    onLabelUpdate(editedLabel);
-                    setIsEditingLabel(false);
-                  }}
-                  onFocus={(e) => e.target.select()}
-                  autoFocus
-                  className="label-edit-input"
-                />
-              ) : (
-                <div className="popup-header-content">
-                  <button
-                    className="popup-edit-button"
-                    onClick={() => {
-                      setEditedLabel(getDisplayLabel());
-                      setIsEditingLabel(true);
+          <div className="popup-header-left">
+            <div className="popup-header-content">
+              <button
+                className={`popup-edit-button ${isEditingLabel ? 'editing' : ''}`}
+                onMouseDown={(e) => {
+                  // Prevent blur from firing when clicking this button
+                  if (isEditingLabel) {
+                    e.preventDefault();
+                  }
+                }}
+                onClick={() => {
+                  if (isEditingLabel) {
+                    handleSaveLabel();
+                  } else {
+                    setEditedLabel(getDisplayLabel());
+                    setIsEditingLabel(true);
+                  }
+                }}
+                aria-label={isEditingLabel ? "Save label" : "Edit label"}
+                title={isEditingLabel ? "Save label (Enter)" : "Edit label"}
+              >
+                <span className="edit-button-text">
+                  {isEditingLabel ? 'Save' : 'Rename'}
+                </span>
+              </button>
+              <div className="label-container">
+                {isEditingLabel ? (
+                  <input
+                    type="text"
+                    value={editedLabel}
+                    onChange={(e) => setEditedLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveLabel();
+                      } else if (e.key === 'Escape') {
+                        handleCancelEdit();
+                      }
                     }}
-                    aria-label="Edit label"
-                    title="Edit label"
-                  >
-                    <span className="material-symbols-rounded">edit</span>
-                  </button>
-                  <h2>
+                    onBlur={handleSaveLabel} // Always use the same save logic
+                    onFocus={(e) => e.target.select()}
+                    autoFocus
+                    className="label-edit-input"
+                    placeholder="Enter a label..."
+                  />
+                ) : (
+                  <h2 className="label-title">
                     {getDisplayLabel()}
                   </h2>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             {timestamp && (
               <p className="popup-date">{formatPopupDate(timestamp)}</p>

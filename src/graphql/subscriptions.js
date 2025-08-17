@@ -1,9 +1,6 @@
 /* eslint-disable */
 // this is an auto generated file. This will be overwritten
 
-// TODO: NOTELABEL FEATURE - Add noteLabel field back when backend is deployed  
-// After running `amplify push` and `amplify codegen`, the noteLabel field should appear here automatically
-
 export const onCreateNotesByOwner = /* GraphQL */ `
   subscription OnCreateNotesByOwner($owner: String!) {
     onCreateNotesByOwner(owner: $owner) {
@@ -12,6 +9,7 @@ export const onCreateNotesByOwner = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -24,6 +22,7 @@ export const onUpdateNotesByOwner = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -81,6 +80,7 @@ export const onCreateNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -96,6 +96,7 @@ export const onUpdateNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -111,6 +112,7 @@ export const onDeleteNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }

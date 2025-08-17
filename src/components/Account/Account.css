@@ -1,249 +1,223 @@
-/* Plan Comparison Table (Account Page only) */
-.plan-comparison-table {
-  width: 100%;
+/* Modern Plan Cards Container */
+.plan-cards-container {
+  display: flex;
+  gap: 20px;
   margin: 0 auto 2rem auto;
-  overflow-x: auto;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 900px;
 }
-.plan-comparison-table table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 320px;
+
+/* Individual Plan Card */
+.plan-card {
+  flex: 1;
+  min-width: 280px;
+  max-width: 320px;
   background: #fff;
+  border-radius: 16px;
+  border: 2px solid #e0f7e9;
+  padding: 24px;
+  text-align: center;
   font-family: 'Montserrat', Arial, sans-serif;
-  border: 1px solid #e0f7e9;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  overflow: hidden;
-}
-.plan-comparison-table th,
-.plan-comparison-table td {
-  padding: 12px 8px;
-  border-bottom: 1px solid #e0f7e9;
-  font-size: 0.95rem;
-  transition: background 0.2s, border 0.2s;
-  text-align: center;
-  width: calc((100% - 120px) / 3); /* Divide remaining space equally among 3 plan columns */
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Highlight the active plan column */
-.highlight-plan-table .plan-active {
-  background: rgba(224, 247, 233, 0.3); /* Very light green with transparency */
-  border-right: 1px solid var(--light-green, #b1e5c7);
-  border-left: 1px solid var(--light-green, #b1e5c7);
-  font-weight: 500;
-  color: #20613b;
+/* Active Plan Card - Accessibility-friendly highlighting */
+.plan-card.plan-active {
+  border: 3px solid var(--medium-green, #48c78e);
+  background: linear-gradient(135deg, #f8fff9 0%, #e8f7ed 100%);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(72, 199, 142, 0.25);
   position: relative;
 }
-.highlight-plan-table th.plan-active {
-  background: var(--medium-green, #48c78e);
-  color: #fff;
-  font-weight: 500;
+
+
+
+/* Inactive Plan Card - Full visibility with subtle differentiation */
+.plan-card.plan-inactive {
+  border: 2px solid #e0f7e9;
+  background: #fff;
 }
 
-/* Checkmark style */
+/* Hover effects for all cards */
+.plan-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  border-color: var(--light-green, #b1e5c7);
+}
+
+/* Plan Header */
+.plan-header {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+/* Checkmark for active plan */
 .plan-check {
-  margin-left: 7px;
-  color: #fff;
-  font-size: 0.9rem;
-  vertical-align: middle;
-  font-weight: normal;
-}
-
-.plan-check-above {
-  display: block;
-  margin: 0 auto 6px auto;
-  width: 28px;
-  height: 28px;
-  background: #20613b;
-  color: #fff;
-  border-radius: 50%;
-  line-height: 28px;
-  font-size: 1.15rem;
-  font-weight: bold;
-  box-shadow: 0 2px 6px rgba(32,97,59,0.10);
-}
-
-.plan-check-row {
-  display: inline-block;
-  margin: 0 auto;
-  width: 20px;
-  height: 20px;
-  background: #20613b;
-  color: #fff;
-  border-radius: 50%;
-  line-height: 20px;
-  font-size: 1rem;
-  font-weight: bold;
-  text-align: center;
-  vertical-align: middle;
-  box-shadow: 0 1px 4px rgba(32,97,59,0.08);
-}
-
-/* Remove border radius from plan-active headers */
-.highlight-plan-table th.plan-active {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
   background: var(--medium-green, #48c78e);
-  color: #fff;
-  font-weight: 500;
-  position: relative;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(72, 199, 142, 0.4);
 }
 
-/* Tick row minimal height */
-.tick-row th {
-  max-height: 20px;
-  padding: 5px 0 0 0 !important;
-  background: transparent;
-  border-bottom: none;
-}
-
-/* Highlight the tick cell above the active plan */
-.tick-row th.plan-active {
-  background: var(--medium-green, #48c78e);
-}
-
-
-.row-label {
-  font-weight: 500;
-  color: var(--dark-green, #20613b);
-  background: #f7faf7;
-  font-size: 0.9rem;
-  width: 120px;
-  max-width: 120px;
-  white-space: nowrap;
-  padding: 8px 12px;
-}
-
-/* Price row styling */
-tr:first-child .row-label {
-  font-weight: 600;
-}
-
-tr:first-child td {
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.plan-comparison-table th {
-  background: var(--light-green, #e0f7e9);
-  color: var(--dark-green, #20613b);
-  font-weight: 600;
-  padding: 12px 8px;
-}
-
+/* Plan Name and Description */
 .plan-name {
-  font-weight: 600;
-  font-size: 1rem;
-  margin-bottom: 4px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--dark-green, #20613b);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
 .plan-desc {
+  font-size: 0.9rem;
+  color: #666;
   font-weight: 400;
-  font-size: 0.85rem;
-  opacity: 0.85;
+  margin-bottom: 0;
 }
 
-.plan-comparison-table th:first-child {
-  width: 120px;
-  max-width: 120px;
-  background: #f7faf7;
-  border-right: 1px solid #e0f7e9;
+/* Plan Price */
+.plan-price {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--medium-green, #48c78e);
+  margin: 20px 0;
+  letter-spacing: -1px;
 }
-.plan-comparison-table tr:last-child td {
-  border-bottom: none;
-}
-.plan-comparison-table td:first-child {
-  font-weight: 600;
+
+.plan-card.plan-active .plan-price {
   color: var(--dark-green, #20613b);
-  background: #f7faf7;
 }
-/* Responsive layout */
+
+/* Plan Features */
+.plan-features {
+  margin-top: 24px;
+}
+
+.feature-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+}
+
+.feature-item:not(:first-child) {
+  border-top: 1px solid #f5f5f5;
+  padding-top: 14px;
+}
+
+.feature-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.feature-value {
+  font-size: 0.9rem;
+  color: var(--dark-green, #20613b);
+  font-weight: 600;
+}
+
+.plan-card.plan-active .feature-value {
+  color: var(--medium-green, #48c78e);
+}
+
+/* Responsive layout for cards */
 @media (max-width: 768px) {
-  /* Hide the categories column */
-  .plan-comparison-table .row-label {
-    display: none;
+  /* Stack cards vertically on mobile */
+  .plan-cards-container {
+    flex-direction: column;
+    gap: 16px;
+    margin: 0 auto 1.5rem auto;
   }
   
-  /* Make plan columns take full width */
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    width: 33.33%;
+  .plan-card {
+    min-width: auto;
+    max-width: 100%;
+    margin: 0;
   }
   
-  /* Add data labels before content on mobile */
-  .plan-comparison-table td:nth-child(2):before,
-  .plan-comparison-table td:nth-child(3):before,
-  .plan-comparison-table td:nth-child(4):before {
-    content: attr(data-category);
-    display: block;
-    font-weight: 500;
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 4px;
+  /* Adjust font sizes for mobile */
+  .plan-name {
+    font-size: 1.3rem;
   }
   
-  /* First column header also hidden */
-  .plan-comparison-table th:first-child {
-    display: none;
+  .plan-price {
+    font-size: 1.8rem;
   }
   
-  /* Adjust font size and padding */
-  .plan-comparison-table table, .plan-comparison-table th, .plan-comparison-table td {
-    font-size: 0.9rem;
-    padding: 10px 4px;
+  .feature-item {
+    padding: 10px 0;
   }
   
-  /* Make plan descriptions more visible */
-  .plan-desc {
-    font-size: 0.8rem;
-    opacity: 0.9;
-  }
-  
-  /* Increase vertical spacing between rows */
-  .plan-comparison-table tr {
-    margin-bottom: 8px;
+  .feature-label,
+  .feature-value {
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 480px) {
-  .plan-comparison-table {
-    margin: 0 -10px 1.5rem -10px; /* Negative margin to extend beyond container */
-    width: calc(100% + 20px);
+  .plan-card {
+    padding: 20px;
+    border-radius: 12px;
   }
   
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    padding: 8px 2px;
-    font-size: 0.85rem;
+  .plan-name {
+    font-size: 1.2rem;
   }
   
-  /* Reduce font size for plan names in header */
-  .plan-comparison-table th {
+  .plan-price {
+    font-size: 1.6rem;
+    margin: 16px 0;
+  }
+  
+  .plan-desc {
     font-size: 0.8rem;
   }
   
-  /* Smaller checkmark */
   .plan-check {
-    margin-left: 3px;
-    font-size: 0.8rem;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
   }
 }
 
 /* Extra small screens */
 @media (max-width: 360px) {
-  .plan-comparison-table {
-    margin: 0 -15px 1.5rem -15px; /* Even more negative margin */
-    width: calc(100% + 30px);
+  .plan-name {
+    font-size: 1.1rem;
   }
   
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    padding: 6px 1px;
+  .plan-price {
+    font-size: 1.4rem;
+  }
+  
+  .feature-label,
+  .feature-value {
     font-size: 0.8rem;
   }
+}
+
+/* Responsive adjustments */
+@media (min-width: 900px) {
+  .plan-cards-container {
+    gap: 24px;
+  }
   
-  /* Smaller category labels */
-  .plan-comparison-table td:before {
-    font-size: 0.7rem !important;
-    margin-bottom: 2px !important;
+  .plan-card {
+    padding: 28px;
   }
 }
 
@@ -486,7 +460,7 @@ tr:first-child td {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(45deg, var(--light-green), var(--medium-green));
+  background: linear-gradient(45deg, var(--dark-green), var(--dark-green));
   border-radius: 8px;
   opacity: 0;
   z-index: -1;
@@ -505,6 +479,15 @@ tr:first-child td {
   border-top: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* Container for both counters */
+.subscription-info .counters-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin: 15px auto 1.5vh;
+}
+
 .subscription-info .hours-box {
   color: var(--pure-white);
   border-radius: 8px;
@@ -514,13 +497,34 @@ tr:first-child td {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 15px auto 1.5vh;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   background: linear-gradient(145deg, var(--light-green), var(--medium-green));
   transition: all 0.3s ease;
 }
 
+/* Smart Edits left box - 30% smaller than hours box */
+.subscription-info .notes-box {
+  color: var(--pure-white);
+  border-radius: 6px;
+  width: 70px;
+  height: 70px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(145deg, var(--light-green), var(--medium-green));
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeIn 0.5s ease-out 0.3s forwards;
+}
+
 .subscription-info .hours-box:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+.subscription-info .notes-box:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
 }
@@ -531,12 +535,28 @@ tr:first-child td {
   font-family: 'Montserrat', Arial, sans-serif;
 }
 
+.subscription-info #notes {
+  font-size: 1.4rem;
+  font-weight: bold;
+  font-family: 'Montserrat', Arial, sans-serif;
+}
+
 .subscription-info .hours-label {
   margin-top: 4px;
   text-transform: uppercase;
   font-family: 'Roboto', Arial, sans-serif;
   font-weight: 500;
   font-size: 0.8rem;
+}
+
+.subscription-info .notes-label {
+  margin-top: 2px;
+  text-transform: uppercase;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  font-size: 0.56rem;
+  line-height: 1;
+  text-align: center;
 }
 
 /* Responsive adjustments */
@@ -556,13 +576,31 @@ tr:first-child td {
     text-align: center;
   }
 
+  .subscription-info .counters-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+
   .subscription-info .hours-box {
     width: 90px;
     height: 90px;
   }
+
+  .subscription-info .notes-box {
+    width: 65px;
+    height: 65px;
+  }
   
   .subscription-info #hours {
     font-size: 1.8rem;
+  }
+
+  .subscription-info #notes {
+    font-size: 1.2rem;
+  }
+
+  .subscription-info .notes-label {
+    font-size: 0.5rem;
   }
 }
 

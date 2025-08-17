@@ -39,8 +39,6 @@ export const listUserSubscriptions = /* GraphQL */ `
     }
   }
 `;
-// TODO: NOTELABEL FEATURE - Add noteLabel field back when backend is deployed
-// After running `amplify push` and `amplify codegen`, the noteLabel field should appear here automatically
 export const getNotes = /* GraphQL */ `
   query GetNotes($owner: String!, $timestamp: String!) {
     getNotes(owner: $owner, timestamp: $timestamp) {
@@ -49,6 +47,7 @@ export const getNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -76,6 +75,7 @@ export const listNotes = /* GraphQL */ `
         transcript
         note
         isCompleted
+        noteLabel
         __typename
       }
       nextToken

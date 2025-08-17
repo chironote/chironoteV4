@@ -18,6 +18,7 @@ import LandingPage from './components/LandingPage/LandingPage';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
+import ErrorBanner from './components/ErrorBanner';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from './graphql/subscriptions';
@@ -266,6 +267,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
   const [isWebSocketConnecting, setIsWebSocketConnecting] = useState(false);
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
+  const [showErrorBanner, setShowErrorBanner] = useState(true); // Control ErrorBanner visibility
   
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
@@ -313,6 +315,8 @@ function AuthenticatedApp({ signOut, user }) {
     const fetchNotes = async () => {
       setIsLoading(true);
       try {
+      // TODO: NOTELABEL FEATURE - This query will automatically include noteLabel 
+      // after running `amplify push` and `amplify codegen`
       const notesData = await client.graphql({
         query: queries.listNotes,
         variables: { 
@@ -371,6 +375,8 @@ function AuthenticatedApp({ signOut, user }) {
       }
     });
 
+    // TODO: NOTELABEL FEATURE - This subscription will automatically include noteLabel 
+    // after running `amplify push` and `amplify codegen`
     const subscription = client.graphql({ 
       query: subscriptions.onUpdateNotesByOwner,
       variables: { owner: user.username }
@@ -491,10 +497,9 @@ function AuthenticatedApp({ signOut, user }) {
     if (!selectedItem) return;
     
     try {
-      // TODO: Uncomment when noteLabel field is deployed to backend
-      // Update the item in the backend
+      // This uses the new updateNoteLabel mutation specifically designed for updating labels
       // await client.graphql({
-      //   query: mutations.updateNotes,
+      //   query: mutations.updateNoteLabel,
       //   variables: {
       //     input: {
       //       owner: selectedItem.owner,
@@ -504,7 +509,7 @@ function AuthenticatedApp({ signOut, user }) {
       //   }
       // });
       
-      // Update local state
+      // Update local state immediately for responsive UI
       const uniqueId = selectedItem.owner + selectedItem.timestamp;
       
       // Update notes array if the item has note content
@@ -534,6 +539,8 @@ function AuthenticatedApp({ signOut, user }) {
       
     } catch (error) {
       console.error("Error updating note label:", error);
+      // TODO: Add user-friendly error handling when backend is connected
+      // For now, the local state update will still work for immediate UI feedback
     }
   };
 
@@ -695,6 +702,7 @@ function AuthenticatedApp({ signOut, user }) {
         username={user.username}
         onSignOut={signOut}
       />
+      <ErrorBanner isVisible={showErrorBanner} />
 
       <Routes>
         <Route path="/" element={

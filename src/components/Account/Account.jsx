@@ -18,6 +18,7 @@ function Account({ setCurrentPage }) {
   const [name, setName] = useState('');
   const [currentPlan, setCurrentPlan] = useState('');
   const [remainingHours, setRemainingHours] = useState(0);
+  const [notesLeft, setNotesLeft] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isQueryLoading, setIsQueryLoading] = useState(true);
   const navigate = useNavigate();
@@ -47,9 +48,11 @@ function Account({ setCurrentPage }) {
       });
       const currentTier = data.data.getUserSubscription.tier.toLowerCase();
       const hoursLeft = data.data.getUserSubscription.hoursleft;
+      const notesLeftValue = data.data.getUserSubscription.notesleft;
       
       setCurrentPlan(currentTier);
       setRemainingHours(hoursLeft || 0);
+      setNotesLeft(notesLeftValue || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     } finally {
@@ -116,61 +119,67 @@ function Account({ setCurrentPage }) {
       <div className="subscription-info">
         <h2>Subscription Plans</h2>
 
-        {/* Plan comparison table */}
-        <div className="plan-comparison-table">
-          <table className="highlight-plan-table">
-            <thead>
-              {/* Tick Row */}
-              <tr className="tick-row">
-                <th></th>
-                <th className={currentPlan === 'free' ? 'plan-active' : ''}>
-                  {currentPlan === 'free' && <span className="plan-check plan-check-row">✔</span>}
-                </th>
-                <th className={currentPlan === 'standard' ? 'plan-active' : ''}>
-                  {currentPlan === 'standard' && <span className="plan-check plan-check-row">✔</span>}
-                </th>
-                <th className={currentPlan === 'pro' ? 'plan-active' : ''}>
-                  {currentPlan === 'pro' && <span className="plan-check plan-check-row">✔</span>}
-                </th>
-              </tr>
-              {/* Plan Names Row */}
-              <tr>
-                <th></th>
-                <th className={currentPlan === 'free' ? 'plan-active' : ''}>
-                  <div className="plan-name">Free</div>
-                  <div className="plan-desc">Essential Care</div>
-                </th>
-                <th className={currentPlan === 'standard' ? 'plan-active' : ''}>
-                  <div className="plan-name">Standard</div>
-                  <div className="plan-desc">Enhanced Practice</div>
-                </th>
-                <th className={currentPlan === 'pro' ? 'plan-active' : ''}>
-                  <div className="plan-name">Professional</div>
-                  <div className="plan-desc">Total Automation</div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="row-label">Price</td>
-                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Price">No Charge</td>
-                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Price">$19/mo</td>
-                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Price">$75/mo</td>
-              </tr>
-              <tr>
-                <td className="row-label">Dictation Hours</td>
-                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Dictation Hours">1 hour/month</td>
-                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Dictation Hours">15 hours/month</td>
-                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Dictation Hours">Unlimited</td>
-              </tr>
-              <tr>
-                <td className="row-label">Note Edits</td>
-                <td className={currentPlan === 'free' ? 'plan-active' : ''} data-category="Note Edits">Up to 15</td>
-                <td className={currentPlan === 'standard' ? 'plan-active' : ''} data-category="Note Edits">Unlimited</td>
-                <td className={currentPlan === 'pro' ? 'plan-active' : ''} data-category="Note Edits">Unlimited</td>
-              </tr>
-            </tbody>
-          </table>
+        {/* Plan cards */}
+        <div className="plan-cards-container">
+          {/* Free Plan */}
+          <div className={`plan-card ${currentPlan === 'free' ? 'plan-active' : 'plan-inactive'}`}>
+            <div className="plan-header">
+              {currentPlan === 'free' && <span className="plan-check">✓</span>}
+              <div className="plan-name">Free</div>
+              <div className="plan-desc">Essential Care</div>
+            </div>
+            <div className="plan-price">No Charge</div>
+            <div className="plan-features">
+              <div className="feature-item">
+                <span className="feature-label">Dictation Hours</span>
+                <span className="feature-value">1 hour/month</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-label">Note Edits</span>
+                <span className="feature-value">Up to 15</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Standard Plan */}
+          <div className={`plan-card ${currentPlan === 'standard' ? 'plan-active' : 'plan-inactive'}`}>
+            <div className="plan-header">
+              {currentPlan === 'standard' && <span className="plan-check">✓</span>}
+              <div className="plan-name">Standard</div>
+              <div className="plan-desc">Enhanced Practice</div>
+            </div>
+            <div className="plan-price">$19/mo</div>
+            <div className="plan-features">
+              <div className="feature-item">
+                <span className="feature-label">Dictation Hours</span>
+                <span className="feature-value">15 hours/month</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-label">Note Edits</span>
+                <span className="feature-value">Unlimited</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Professional Plan */}
+          <div className={`plan-card ${currentPlan === 'pro' ? 'plan-active' : 'plan-inactive'}`}>
+            <div className="plan-header">
+              {currentPlan === 'pro' && <span className="plan-check">✓</span>}
+              <div className="plan-name">Professional</div>
+              <div className="plan-desc">Total Automation</div>
+            </div>
+            <div className="plan-price">$75/mo</div>
+            <div className="plan-features">
+              <div className="feature-item">
+                <span className="feature-label">Dictation Hours</span>
+                <span className="feature-value">Unlimited</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-label">Note Edits</span>
+                <span className="feature-value">Unlimited</span>
+              </div>
+            </div>
+          </div>
         </div>
         <button 
           className="manage-plan-btn" 
@@ -183,17 +192,27 @@ function Account({ setCurrentPage }) {
         {/* Hours remaining this month */}
         <div className="hours-remaining">
           <h3>Hours Remaining this month</h3>
-          <div className="hours-box">
-            {currentPlan === 'pro' ? (
-              <>
-                <span id="hours">∞</span>
-                <span className="hours-label">Unlimited</span>
-              </>
-            ) : (
-              <>
-                <span id="hours">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
-                <span className="hours-label">Hrs</span>
-              </>
+          <div className="counters-container">
+            <div className="hours-box">
+              {currentPlan === 'pro' ? (
+                <>
+                  <span id="hours">∞</span>
+                  <span className="hours-label">Unlimited</span>
+                </>
+              ) : (
+                <>
+                  <span id="hours">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
+                  <span className="hours-label">Hrs</span>
+                </>
+              )}
+            </div>
+            
+            {/* Smart Edits left counter - only visible for free tier users */}
+            {currentPlan === 'free' && (
+              <div className="notes-box">
+                <span id="notes">{notesLeft < 0 ? '0' : notesLeft}</span>
+                <span className="notes-label">Smart Edits left</span>
+              </div>
             )}
           </div>
         </div>

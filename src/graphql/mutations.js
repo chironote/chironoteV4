@@ -54,6 +54,7 @@ export const createNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -69,6 +70,7 @@ export const updateNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
@@ -84,6 +86,7 @@ export const deleteNotes = /* GraphQL */ `
       transcript
       note
       isCompleted
+      noteLabel
       __typename
     }
   }
