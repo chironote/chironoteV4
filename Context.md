@@ -33,7 +33,7 @@ ChiroNote is a sophisticated clinical documentation tool designed for practition
 The backend is built on a serverless architecture using AWS Amplify, which provisions and manages the underlying AWS services:
 
 - **Authentication**: `Amazon Cognito` handles user sign-up, sign-in, and session management. The frontend integrates with this using the `withAuthenticator` HOC and other Amplify Auth utilities.
-- **API & Database**: An `AWS AppSync` GraphQL API serves as the interface between the frontend and the database. The database itself is `Amazon DynamoDB`, where all notes and transcripts are stored. The schema is defined in `amplify/backend/api/chironotev4/schema.graphql`.
+- **API & Database**: An `AWS AppSync` GraphQL API serves as the interface between the frontend and the database. The database itself is `Amazon DynamoDB`, where all notes and transcripts are stored. The schema is defined in `amplify/backend/api/chironotev4/schema.graphql`. The schema includes a `noteLabel` field for custom note titles.
 - **Real-time Functionality**: `AppSync Subscriptions` are used to push real-time updates to the client. For example, when a new note is created or a transcription is finished, the `onUpdateNotesByOwner` subscription pushes the new data to the app, which then updates the UI without needing a manual refresh.
 - **Audio Transcription**: While not explicitly defined in `App.jsx`, the flow suggests that audio is sent to a service like `AWS Transcribe`. This is likely handled by a combination of frontend logic in `RecordingManager.jsx` and potentially an AWS Lambda function to process the audio file and update the DynamoDB table with the resulting transcript via a GraphQL mutation.
 

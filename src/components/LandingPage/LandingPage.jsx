@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
 import logo from '../../assets/logo.svg';
 import textLogo from '../../assets/textlogo.svg';
@@ -17,15 +17,100 @@ import ehrImg from '../../assets/landingpage-ehr.png';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import mockupMobile from '../../assets/mockup-mobile-final.png';
 import heroSvg from '../../assets/Hero.svg';
+import landingVideo from '../../assets/LandingVideo.mp4';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
+// Data constants
+const TESTIMONIALS = [
+  {
+    name: 'Dr. Matt Fryauf',
+    avatar: mattImg,
+    text: 'I highly recommend this app for high volume practices'
+  },
+  {
+    name: 'Dr. Jessica Yeung',
+    avatar: jessImg,
+    text: 'Enables me to concentrate my time on patient care instead of paperwork'
+  },
+  {
+    name: 'Sam Battochio',
+    avatar: samImg,
+    text: 'Its speed and accuracy make it an invaluable tool'
+  }
+];
 
+const FAQ_ITEMS = [
+  {
+    question: 'How does ChiroNote work?',
+    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to generate structured clinical notes that you can review, edit, and copy into your EHR system.'
+  },
+  {
+    question: 'Is ChiroNote HIPAA compliant?',
+    answer: 'Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.'
+  },
+  {
+    question: 'Can I edit the notes after they\'re created?',
+    answer: 'Absolutely! While ChiroNote generates highly accurate notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient\'s shoulder pain" - and the system intelligently updates your note. The Free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.'
+  },
+  {
+    question: 'How do I integrate ChiroNote with my current EHR system?',
+    answer: 'ChiroNote works with any EHR system through a simple copy-paste process. Once your note is finalized, it appears on the ChiroNote website across all your devices, so open up a browser on the computer that contains your EHR and just copy the note into your existing EHR\'s note section. No complex integration, installation or technical setup is required.'
+  },
+  {
+    question: 'What if my dictation hours run out?',
+    answer: 'If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.'
+  },
+  {
+    question: 'Can I try ChiroNote before purchasing?',
+    answer: 'Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.'
+  },
+  {
+    question: 'Is using AI for medical note generation legally acceptable?',
+    answer: 'Yes. AI-assisted medical documentation is becoming standard practice in the healthcare field. Insurance companies typically welcome more accurate and detailed clinical notes, even when they contain more technical language. As with any documentation tool, the provider remains responsible for reviewing and approving all notes for accuracy before finalizing them.'
+  }
+];
+
+const PLANS_DATA = [
+  {
+    name: 'Free',
+    description: 'Essential Care',
+    price: 'No Charge',
+    features: [
+      '1 hour/month dictation',
+      'Up to 15 note edits',
+      'Unlimited devices',
+    ],
+    highlight: false,
+  },
+  {
+    name: 'Standard',
+    description: 'Enhanced Practice',
+    price: '$19/mo',
+    features: [
+      '15 hours/month dictation',
+      'Unlimited note edits',
+      'Unlimited devices'
+    ],
+    highlight: true,
+  },
+  {
+    name: 'Professional',
+    description: 'Complete Automation',
+    price: '$75/mo',
+    features: [
+      'Unlimited dictation',
+      'Unlimited note edits',
+      'Unlimited devices'
+    ],
+    highlight: false,
+  },
+];
 
 export default function LandingPage(props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaqItem, setActiveFaqItem] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const testimonialCount = 3; // Total number of testimonials
+  const videoRef = useRef(null);
   
   const handleButtonClick = (actionName) => {
     trackLandingPageButtonClick(actionName); // Google Analytics tracking
@@ -54,7 +139,8 @@ export default function LandingPage(props) {
   const handleNavClick = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + 80;
+      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
       setMobileMenuOpen(false);
     }
   };
@@ -68,51 +154,17 @@ export default function LandingPage(props) {
   };
   
   const handleNextTestimonial = () => {
-    setActiveTestimonial((prev) => (prev + 1) % testimonialCount);
+    setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length);
   };
   
   const handlePrevTestimonial = () => {
-    setActiveTestimonial((prev) => (prev - 1 + testimonialCount) % testimonialCount);
+    setActiveTestimonial((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
   };
 
-  const plansData = [
-    {
-      name: 'Free',
-      description: 'Essential Care',
-      price: 'No Charge',
-      features: [
-        '1 hour/month dictation',
-        'Up to 15 note edits',
-        'Unlimited devices',
-      ],
-      highlight: false,
-    },
-    {
-      name: 'Standard',
-      description: 'Enhanced Practice',
-      price: '$19/mo',
-      features: [
-        '15 hours/month dictation',
-        'Unlimited note edits',
-        'Unlimited devices'
-      ],
-      highlight: true,
-    },
-    {
-      name: 'Professional',
-      description: 'Complete Automation',
-      price: '$75/mo',
-      features: [
-        'Unlimited dictation',
-        'Unlimited note edits',
-        'Unlimited devices'
-      ],
-      highlight: false,
-    },
-  ];
+
 
   // Add event listener for outside clicks when component mounts
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof window !== 'undefined') {
       document.addEventListener('click', handleOutsideClick);
       return () => {
@@ -121,28 +173,54 @@ export default function LandingPage(props) {
     }
   }, [mobileMenuOpen]);
 
+  // Video auto-play functionality with intersection observer
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            // Video is in view - auto play
+            video.play().catch((error) => {
+              // Auto-play was prevented (browser policy)
+              console.log('Auto-play prevented:', error);
+            });
+          } else {
+            // Video is out of view - pause
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of video is visible
+        rootMargin: '0px 0px -100px 0px' // Start playing a bit before fully in view
+      }
+    );
+
+    observer.observe(video);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   return (
     <div className="landing-page">
       {/* Header Section */}
       <div className="landing-page__header">
         <div className="landing-page__header-content">
-          {/* Logo - show text logo on mobile, regular logo otherwise */}
+          {/* Text logo on the left - colored for desktop, white for mobile */}
           <img
-            src={logo}
-            alt="ChiroNote Logo"
-            className="landing-page__logo landing-page__desktop-logo"
+            src={textLogoClr}
+            alt="ChiroNote"
+            className="landing-page__textlogo-left landing-page__textlogo-desktop"
           />
           <img
             src={textLogo}
             alt="ChiroNote"
-            className="landing-page__logo landing-page__mobile-logo"
-          />
-          
-          {/* Colored text logo centered for desktop only */}
-          <img
-            src={textLogoClr}
-            alt="ChiroNote"
-            className="landing-page__textlogo-clr"
+            className="landing-page__textlogo-left landing-page__textlogo-mobile"
           />
           
           {/* Hamburger menu for mobile */}
@@ -152,18 +230,33 @@ export default function LandingPage(props) {
             <span></span>
           </div>
           
-          {/* Desktop navigation */}
-          <div className="landing-page__nav">
+          {/* Desktop navigation and Sign In button container */}
+          <div className="landing-page__nav-container">
+            {/* Desktop navigation */}
+            <div className="landing-page__nav">
+              <button 
+                className="landing-page__nav-item"
+                onClick={() => handleNavClick('faq')}
+              >
+                FAQ
+              </button>
+              <button 
+                className="landing-page__nav-item"
+                onClick={() => handleNavClick('prices')}
+              >
+                Pricing
+              </button>
+            </div>
+            
+            {/* Launch app button */}
+            <a 
+              href="/app" 
+              className="landing-page__get-started-button"
+              onClick={() => handleButtonClick('Click_Landing_Header_SignIn')}
+            >
+              Sign In
+            </a>
           </div>
-          
-          {/* Launch app button */}
-          <a 
-            href="/app" 
-            className="landing-page__get-started-button"
-            onClick={() => handleButtonClick('Click_Landing_Header_SignIn')}
-          >
-            Sign In
-          </a>
           
           {/* Mobile navigation dropdown */}
           <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
@@ -185,119 +278,70 @@ export default function LandingPage(props) {
         </div>
       </div>
 
-      {/* Main Section */}
-      <div className="landing-page__hero-container">
-        <div className="landing-page__main">
-          <div className="landing-page__main-content">
-            <div className="landing-page__title">
-              Reduce charting time to mere seconds
+      {/* Main Section with Hero Background */}
+      <div className="landing-page__hero-section">
+        <div className="landing-page__hero-background"></div>
+        <div className="landing-page__hero-container">
+          <div className="landing-page__main">
+            <div className="landing-page__main-content">
+              <div className="landing-page__title">
+                Reduce charting time to mere seconds
+              </div>
+              <div className="landing-page__subtitle">
+                With our Web-based Tool for automating SOAP notes
+              </div>
             </div>
-            <div className="landing-page__subtitle">
-              Turn your patient conversations into insurance-grade notes with a single click
-            </div>
-          </div>
-          <div className="landing-page__action">
-            <div className="landing-page__action-buttons">
-              <a 
-                href="/app?initialState=signUp" 
-                className="landing-page__action-button landing-page__signup-button"
-                onClick={() => handleButtonClick('Click_Landing_Hero_SignUp')}
+            <div className="landing-page__action">
+              <button 
+                className="landing-page__demo-button"
+                onClick={() => {
+                  handleButtonClick('Click_Landing_Hero_BookDemo');
+                  handleNavClick('scheduler');
+                }}
               >
-                Sign Up
-              </a>
-              <a 
-                href="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo" 
-                className="landing-page__action-button landing-page__signup-button"
-                onClick={() => handleButtonClick('Click_Landing_Hero_BookDemo')}
-              >
-                Book Demo
-              </a>
+                <span className="landing-page__demo-button-main">See ChiroNote in Action</span>
+                <span className="landing-page__demo-button-sub">Book Your Consult Today</span>
+              </button>
+              <div className="landing-page__demo-info">
+                <span className="landing-page__demo-duration">Zero-Pressure Q&A</span>
+                <span className="landing-page__demo-separator">•</span>
+                <span className="landing-page__demo-instant">Clinic Friendly Hours</span>
+              </div>
             </div>
-            <div className="landing-page__no-payment-text">No payment required</div>
           </div>
         </div>
-        <img src={heroSvg} alt="" className="landing-page__hero-svg" />
       </div>
 
       {/* Testimonials Section */}
       <div id="testimonials" className="landing-page__testimonials">
         {/* Regular testimonial cards for desktop/tablet */}
         <div className="landing-page__testimonial-cards">
-          {/* Testimonial Card 1 */}
-          <div className="landing-page__testimonial-card">
-            <div className="landing-page__testimonial-header">
-              <div className="landing-page__testimonial-avatar-container">
-                <img
-                  src={mattImg}
-                  alt="Dr. Matt Fryauf"
-                  className="landing-page__testimonial-avatar"
-                />
-              </div>
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Dr. Matt Fryauf</div>
-                <div className="landing-page__testimonial-stars">
+          {TESTIMONIALS.map((testimonial, index) => (
+            <div key={index} className="landing-page__testimonial-card">
+              <div className="landing-page__testimonial-header">
+                <div className="landing-page__testimonial-avatar-container">
                   <img
-                    src={stars}
-                    alt="5 Stars"
-                    className="landing-page__stars-icon"
+                    src={testimonial.avatar}
+                    alt={testimonial.name}
+                    className="landing-page__testimonial-avatar"
                   />
                 </div>
-              </div>
-            </div>
-            <div className="landing-page__testimonial-text">
-              I highly recommend this app for high volume practices
-            </div>
-          </div>
-          {/* Testimonial Card 2 */}
-          <div className="landing-page__testimonial-card">
-            <div className="landing-page__testimonial-header">
-              <div className="landing-page__testimonial-avatar-container">
-                <img
-                  src={jessImg}
-                  alt="Dr. Jessica Yeung"
-                  className="landing-page__testimonial-avatar"
-                />
-              </div>
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Dr. Jessica Yeung</div>
-                <div className="landing-page__testimonial-stars">
-                  <img
-                    src={stars}
-                    alt="5 Stars"
-                    className="landing-page__stars-icon"
-                  />
+                <div className="landing-page__testimonial-user">
+                  <div className="landing-page__testimonial-name">{testimonial.name}</div>
+                  <div className="landing-page__testimonial-stars">
+                    <img
+                      src={stars}
+                      alt="5 Stars"
+                      className="landing-page__stars-icon"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="landing-page__testimonial-text">
-              Enables me to concentrate my time on patient care instead of paperwork
-            </div>
-          </div>
-          {/* Testimonial Card 3 */}
-          <div className="landing-page__testimonial-card">
-            <div className="landing-page__testimonial-header">
-              <div className="landing-page__testimonial-avatar-container">
-                <img
-                  src={samImg}
-                  alt="Sam Battochio"
-                  className="landing-page__testimonial-avatar"
-                />
-              </div>
-              <div className="landing-page__testimonial-user">
-                <div className="landing-page__testimonial-name">Sam Battochio</div>
-                <div className="landing-page__testimonial-stars">
-                  <img
-                    src={stars}
-                    alt="5 Stars"
-                    className="landing-page__stars-icon"
-                  />
-                </div>
+              <div className="landing-page__testimonial-text">
+                {testimonial.text}
               </div>
             </div>
-            <div className="landing-page__testimonial-text">
-              Its speed and accuracy make it an invaluable tool
-            </div>
-          </div>
+          ))}
         </div>
         
         {/* Mobile carousel version */}
@@ -306,81 +350,36 @@ export default function LandingPage(props) {
             className="landing-page__testimonial-cards"
             style={{ transform: `translateX(-${activeTestimonial * 33.333}%)` }}
           >
-            {/* Testimonial Card 1 */}
-            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 0 ? 1 : 0 }}>
-              <div className="landing-page__testimonial-header">
-                <div className="landing-page__testimonial-avatar-container">
-                  <img
-                    src={mattImg}
-                    alt="Dr. Matt Fryauf"
-                    className="landing-page__testimonial-avatar"
-                  />
-                </div>
-                <div className="landing-page__testimonial-user">
-                  <div className="landing-page__testimonial-name">Dr. Matt Fryauf</div>
-                  <div className="landing-page__testimonial-stars">
+            {TESTIMONIALS.map((testimonial, index) => (
+              <div 
+                key={index} 
+                className="landing-page__testimonial-card" 
+                style={{ opacity: activeTestimonial === index ? 1 : 0 }}
+              >
+                <div className="landing-page__testimonial-header">
+                  <div className="landing-page__testimonial-avatar-container">
                     <img
-                      src={stars}
-                      alt="5 Stars"
-                      className="landing-page__stars-icon"
+                      src={testimonial.avatar}
+                      alt={testimonial.name}
+                      className="landing-page__testimonial-avatar"
                     />
                   </div>
-                </div>
-              </div>
-              <div className="landing-page__testimonial-text">
-                I highly recommend this app for high volume practices
-              </div>
-            </div>
-            {/* Testimonial Card 2 */}
-            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 1 ? 1 : 0 }}>
-              <div className="landing-page__testimonial-header">
-                <div className="landing-page__testimonial-avatar-container">
-                  <img
-                    src={jessImg}
-                    alt="Dr. Jessica Yeung"
-                    className="landing-page__testimonial-avatar"
-                  />
-                </div>
-                <div className="landing-page__testimonial-user">
-                  <div className="landing-page__testimonial-name">Dr. Jessica Yeung</div>
-                  <div className="landing-page__testimonial-stars">
-                    <img
-                      src={stars}
-                      alt="5 Stars"
-                      className="landing-page__stars-icon"
-                    />
+                  <div className="landing-page__testimonial-user">
+                    <div className="landing-page__testimonial-name">{testimonial.name}</div>
+                    <div className="landing-page__testimonial-stars">
+                      <img
+                        src={stars}
+                        alt="5 Stars"
+                        className="landing-page__stars-icon"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="landing-page__testimonial-text">
-                Enables me to concentrate my time on patient care instead of paperwork
-              </div>
-            </div>
-            {/* Testimonial Card 3 */}
-            <div className="landing-page__testimonial-card" style={{ opacity: activeTestimonial === 2 ? 1 : 0 }}>
-              <div className="landing-page__testimonial-header">
-                <div className="landing-page__testimonial-avatar-container">
-                  <img
-                    src={samImg}
-                    alt="Sam Battochio"
-                    className="landing-page__testimonial-avatar"
-                  />
-                </div>
-                <div className="landing-page__testimonial-user">
-                  <div className="landing-page__testimonial-name">Sam Battochio</div>
-                  <div className="landing-page__testimonial-stars">
-                    <img
-                      src={stars}
-                      alt="5 Stars"
-                      className="landing-page__stars-icon"
-                    />
-                  </div>
+                <div className="landing-page__testimonial-text">
+                  {testimonial.text}
                 </div>
               </div>
-              <div className="landing-page__testimonial-text">
-                Its speed and accuracy make it an invaluable tool
-              </div>
-            </div>
+            ))}
           </div>
           
           {/* Carousel Navigation Arrows - Only visible on mobile */}
@@ -394,7 +393,7 @@ export default function LandingPage(props) {
         
         {/* Carousel Dots Navigation - Only visible on mobile */}
         <div className="testimonial-carousel-nav">
-          {Array.from({ length: testimonialCount }).map((_, index) => (
+          {Array.from({ length: TESTIMONIALS.length }).map((_, index) => (
             <div 
               key={index}
               className={`testimonial-carousel-dot ${activeTestimonial === index ? 'active' : ''}`}
@@ -404,9 +403,87 @@ export default function LandingPage(props) {
         </div>
       </div>
 
+
+
+      {/* Video Demo Section */}
+      <div className="landing-page__video-section">
+        <div className="landing-page__video-container">
+          <div className="landing-page__video-content">
+          </div>
+          
+          <div className="landing-page__video-wrapper">
+            <video 
+              ref={videoRef}
+              className="landing-page__video-player"
+              controls
+              preload="metadata"
+              muted
+              playsInline
+              poster=""
+              onClick={(e) => {
+                if (e.target.paused) {
+                  e.target.play();
+                } else {
+                  e.target.pause();
+                }
+              }}
+            >
+              <source src={landingVideo} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            
+            {/* Video overlay for enhanced UX */}
+            <div className="landing-page__video-overlay">
+              <div className="landing-page__video-play-button">
+                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                  <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
+                  <path d="M32 25L55 40L32 55V25Z" fill="white" />
+                </svg>
+              </div>
+            </div>
+          </div>
+          
+          <div className="landing-page__video-cta">
+            <a 
+              href="/app?initialState=signUp" 
+              className="landing-page__video-cta-button"
+              onClick={() => handleButtonClick('Click_Landing_Video_SignUp')}
+            >
+              Try Now for Free
+            </a>
+            <p className="landing-page__video-cta-text">
+              Ready to just try it for yourself - go ahead. Just create a password to keep everything secure.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature Sections */}
+      <div id="features" className="landing-page__features">
+        {/* Feature 1 - Faster Charting */}
+        <div id="note-creation" className="landing-page__feature">
+          <img
+            src={mockupLaptop}
+            alt="ChiroNote on laptop"
+            className="landing-page__feature-image"
+          />
+          <div className="landing-page__feature-content">
+            <div className="landing-page__feature-tag">Secure Charting</div>
+            <div className="landing-page__feature-title">
+              On our HIPAA compliant, medical grade platform
+            </div>
+            <div className="landing-page__feature-description">
+              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
+            </div>
+          </div>
+        </div>
+
+
+      </div>
+
       {/* What You Need Section */}
       <div id="what-you-need" className="landing-page__what-you-need">
-        <div className="landing-page__feature-tag">What You Need</div>
+        <div className="landing-page__feature-tag">You Have What You Need</div>
         
         <div className="landing-page__requirements">
           {/* Requirement 1 - Recording Device */}
@@ -426,7 +503,7 @@ export default function LandingPage(props) {
               <img src={safariLogoImg} alt="Safari" className="browser-icon safari" />
             </div>
             <h3>Modern Browser</h3>
-            <p>Works with all major browsers including Chrome, Firefox, Safari and even Edge</p>
+            <p>Works with all major browsers including Chrome, Firefox, Safari and Microsoft Edge</p>
           </div>
           
           {/* Requirement 3 - Your Own EHR */}
@@ -440,60 +517,15 @@ export default function LandingPage(props) {
         </div>
       </div>
 
-      {/* Feature Sections */}
-      <div id="features" className="landing-page__features">
-        {/* Feature 1 - Faster Charting */}
-        <div id="note-creation" className="landing-page__feature">
-          <img
-            src={feature1}
-            alt="Feature Image 1"
-            className="landing-page__feature-image"
-          />
-          <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">Faster Charting</div>
-            <div className="landing-page__feature-title">
-              Chart Patient Visits in Seconds, Not Hours
-            </div>
-            <div className="landing-page__feature-description">
-              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
-            </div>
-          </div>
-        </div>
-
-        {/* Feature 2 (Security) */}
-        <div id="security" className="landing-page__feature">
-          <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">Security</div>
-            <div className="landing-page__feature-title">
-              Enterprise-Grade Security for Patient Data
-            </div>
-            <div className="landing-page__feature-description">
-            We protect your patients' data with HIPAA-compliant encryption and regular security audits to maintain the highest standards of medical privacy.
-            </div>
-          </div>
-          <img
-            src={feature2}
-            alt="Feature Image 2"
-            className="landing-page__feature-image"
-          />
-        </div>
-      </div>
-
-      {/* Device Mockups Showcase */}
-      <div className="landing-page__mockup-showcase">
-        <div className="landing-page__mockup-container">
-          <div className="landing-page__mockup-laptop">
-            <img
-              src={mockupLaptop}
-              alt="ChiroNote on laptop"
-              className="landing-page__mockup-laptop-img"
-            />
-          </div>
-          <div className="landing-page__mockup-mobile">
-            <img
-              src={mockupMobile}
-              alt="ChiroNote on mobile"
-              className="landing-page__mockup-mobile-img"
+      {/* Scheduler Section */}
+      <div id="scheduler" className="landing-page__scheduler-section">
+        <div className="landing-page__feature-tag">Book a Consult</div>
+        
+        <div className="landing-page__scheduler-container">
+          <div className="landing-page__scheduler-widget">
+            <iframe
+              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
+              title="Schedule a Demo with ChiroNote"
             />
           </div>
         </div>
@@ -511,7 +543,7 @@ export default function LandingPage(props) {
           
           {/* Pricing Cards */}
           <div className="landing-page__pricing-cards-container">
-            {plansData.map((plan, index) => (
+            {PLANS_DATA.map((plan, index) => (
               <div key={index} className={`landing-page__pricing-card ${plan.highlight ? 'highlight' : ''}`}>
                 <div className="landing-page__pricing-card-header">
                   <h3 className="landing-page__pricing-card-name">{plan.name}</h3>
@@ -531,7 +563,7 @@ export default function LandingPage(props) {
             className="landing-page__pricing-button"
             onClick={() => handleButtonClick('Click_Landing_Pricing_SignUp')}
           >
-            Sign Up & Get Started
+            Try Now for Free
           </a>
         </div>
       </div>
@@ -545,89 +577,34 @@ export default function LandingPage(props) {
           </div>
           
           <div className="landing-page__faq-list" itemScope itemType="https://schema.org/FAQPage">
-            {/* FAQ Item 1 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 0 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(0)}>
-                How does ChiroNote work?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 0 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  ChiroNote captures your patient conversations through your device's microphone and uses advanced AI to generate comprehensive clinical notes. After recording, our system processes the conversation and creates a structured note that you can edit if needed before exporting to your EHR system.
+            {FAQ_ITEMS.map((faq, index) => (
+              <div 
+                key={index}
+                className={`landing-page__faq-item ${activeFaqItem === index ? 'active' : ''}`} 
+                itemScope 
+                itemProp="mainEntity" 
+                itemType="https://schema.org/Question"
+              >
+                <div 
+                  className="landing-page__faq-question" 
+                  itemProp="name" 
+                  onClick={() => toggleFaqItem(index)}
+                >
+                  {faq.question}
+                </div>
+                <div 
+                  className="landing-page__faq-answer" 
+                  itemScope 
+                  itemProp="acceptedAnswer" 
+                  itemType="https://schema.org/Answer" 
+                  style={{display: activeFaqItem === index ? 'block' : 'none'}}
+                >
+                  <div itemProp="text">
+                    {faq.answer}
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            {/* FAQ Item 2 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 1 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(1)}>
-                Is ChiroNote HIPAA compliant?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 1 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.
-                </div>
-              </div>
-            </div>
-            
-            {/* FAQ Item 3 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 2 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(2)}>
-                Can I edit the notes after they're created?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 2 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  Absolutely! While ChiroNote generates highly accurate notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient's shoulder pain" - and the system intelligently updates your note. The Free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.
-                </div>
-              </div>
-            </div>
-            
-            {/* FAQ Item 4 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 3 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(3)}>
-                How do I integrate ChiroNote with my current EHR system?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 3 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  ChiroNote works with any EHR system through a simple copy-paste process. Once your note is finalized, you can copy the content and paste it directly into your existing EHR's note section. No complex integration or technical setup is required.
-                </div>
-              </div>
-            </div>
-            
-            {/* FAQ Item 5 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 4 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(4)}>
-                What if my dictation hours run out?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 4 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.
-                </div>
-              </div>
-            </div>
-            
-            {/* FAQ Item 6 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 5 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(5)}>
-                Can I try ChiroNote before purchasing?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 5 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.
-                </div>
-              </div>
-            </div>
-            
-            {/* FAQ Item 7 */}
-            <div className={`landing-page__faq-item ${activeFaqItem === 6 ? 'active' : ''}`} itemScope itemProp="mainEntity" itemType="https://schema.org/Question">
-              <div className="landing-page__faq-question" itemProp="name" onClick={() => toggleFaqItem(6)}>
-                Is using AI for medical note generation legally acceptable?
-              </div>
-              <div className="landing-page__faq-answer" itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer" style={{display: activeFaqItem === 6 ? 'block' : 'none'}}>
-                <div itemProp="text">
-                  Yes. AI-assisted medical documentation is becoming standard practice in the healthcare field. Insurance companies typically welcome more accurate and detailed clinical notes, even when they contain more technical language. As with any documentation tool, the provider remains responsible for reviewing and approving all notes for accuracy before finalizing them.
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

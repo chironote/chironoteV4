@@ -267,7 +267,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
   const [isWebSocketConnecting, setIsWebSocketConnecting] = useState(false);
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
-  const [showErrorBanner, setShowErrorBanner] = useState(true); // Control ErrorBanner visibility
+  const [showErrorBanner, setShowErrorBanner] = useState(false); // Control ErrorBanner visibility
   
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
@@ -494,23 +494,78 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const handleLabelUpdate = async (newLabel) => {
-    if (!selectedItem) return;
+    console.log('🏷️ handleLabelUpdate called with:', { newLabel, selectedItem: selectedItem ? { owner: selectedItem.owner, timestamp: selectedItem.timestamp, hasNote: !!selectedItem.note, hasTranscript: !!selectedItem.transcript } : null });
+    
+    if (!selectedItem) {
+      console.warn('❌ handleLabelUpdate: No selectedItem found');
+      return;
+    }
+    
+    const uniqueId = selectedItem.owner + selectedItem.timestamp;
+    console.log('🔍 Using unique ID for updates:', uniqueId);
     
     try {
-      // This uses the new updateNoteLabel mutation specifically designed for updating labels
-      // await client.graphql({
-      //   query: mutations.updateNoteLabel,
-      //   variables: {
-      //     input: {
-      //       owner: selectedItem.owner,
-      //       timestamp: selectedItem.timestamp,
-      //       noteLabel: newLabel
-      //     }
-      //   }
-      // });
+      // Update backend database using updateNotes mutation (noteLabel field is included in schema)
+      console.log('🚀 Attempting backend update...');
+      await client.graphql({
+        query: mutations.updateNotes,
+        variables: {
+          input: {
+            owner: selectedItem.owner,
+            timestamp: selectedItem.timestamp,
+            noteLabel: newLabel
+          }
+        }
+      });
+      console.log('✅ Backend update successful');
       
       // Update local state immediately for responsive UI
-      const uniqueId = selectedItem.owner + selectedItem.timestamp;
+      console.log('🔄 Updating local state...');
+      
+      // Update notes array if the item has note content
+      if (selectedItem.note && selectedItem.note.trim() !== "") {
+        console.log('📝 Updating notes array');
+        setNotes(prevNotes => {
+          const updatedNotes = prevNotes.map(note => 
+            (note.owner + note.timestamp) === uniqueId 
+              ? { ...note, noteLabel: newLabel }
+              : note
+          );
+          console.log('📝 Notes array updated, found match:', updatedNotes.some(note => (note.owner + note.timestamp) === uniqueId && note.noteLabel === newLabel));
+          return updatedNotes;
+        });
+      }
+      
+      // Update transcripts array if the item has transcript content
+      if (selectedItem.transcript && selectedItem.transcript.trim() !== "") {
+        console.log('📄 Updating transcripts array');
+        setTranscripts(prevTranscripts => {
+          const updatedTranscripts = prevTranscripts.map(transcript => 
+            (transcript.owner + transcript.timestamp) === uniqueId 
+              ? { ...transcript, noteLabel: newLabel }
+              : transcript
+          );
+          console.log('📄 Transcripts array updated, found match:', updatedTranscripts.some(transcript => (transcript.owner + transcript.timestamp) === uniqueId && transcript.noteLabel === newLabel));
+          return updatedTranscripts;
+        });
+      }
+      
+      // Update the selected item
+      console.log('🎯 Updating selectedItem');
+      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
+      
+      console.log('✅ handleLabelUpdate completed successfully');
+      
+    } catch (error) {
+      console.error('❌ Error updating note label:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        graphQLErrors: error.errors,
+        networkError: error.networkError
+      });
+      
+      // Still update local state for immediate UI feedback even if backend fails
+      console.log('🔄 Backend failed, updating local state only...');
       
       // Update notes array if the item has note content
       if (selectedItem.note && selectedItem.note.trim() !== "") {
@@ -537,10 +592,8 @@ function AuthenticatedApp({ signOut, user }) {
       // Update the selected item
       setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
       
-    } catch (error) {
-      console.error("Error updating note label:", error);
-      // TODO: Add user-friendly error handling when backend is connected
-      // For now, the local state update will still work for immediate UI feedback
+      // TODO: Add user-friendly error notification to the UI
+      alert('Failed to save label to database. Changes are visible locally but may not persist.');
     }
   };
 
