@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { RealtimeTranscriber } from 'assemblyai';
 import RecordRTC from 'recordrtc';
 import NoSleep from 'nosleep.js';
 import './Recording.css';
@@ -16,6 +15,7 @@ const TOKEN_REFRESH_BUFFER_MINUTES = 10;
 const TOKEN_EXPIRY_HOURS = 2.9; // Just under 3 hours to be safe
 const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
 const RECORDER_TIME_SLICE_MS = 250;
+const WEBSOCKET_URL = 'wss://streaming.assemblyai.com/v3';
 
 const Dictation = ({ 
   onTextStreamUpdate,
@@ -46,7 +46,7 @@ const Dictation = ({
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   
   // Refs
-  const rtRef = useRef(null);
+  const wsRef = useRef(null);
   const recorder = useRef(null);
   const streamRef = useRef(null);
   const noSleepRef = useRef(null);
@@ -54,6 +54,7 @@ const Dictation = ({
   const tokenRefreshTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
   const textsRef = useRef({});
+  const sessionIdRef = useRef(null);
   
   // Initialize NoSleep to prevent device from sleeping during dictation
   useEffect(() => {
@@ -161,9 +162,9 @@ const Dictation = ({
       recorder.current.stopRecording();
     }
     
-    if (rtRef.current) {
-      rtRef.current.close();
-      rtRef.current = null;
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
     }
     
     if (streamRef.current) {
@@ -270,42 +271,26 @@ const Dictation = ({
         data: updatedSubscription.data.updateUserSubscription,
         hasHours: updatedSubscription.data.updateUserSubscription.hoursleft > 0
       });
+      
+      console.log('[Dictation] Subscription hours updated successfully');
     } catch (error) {
-      console.error("[Dictation] Error updating user subscription:", error);
+      console.error('[Dictation] Error updating user subscription:', error);
     }
   };
   
   // Setup heartbeat to keep connection alive
-  const setupHeartbeat = useCallback((warmup = false) => {
+  const setupHeartbeat = useCallback(() => {
     clearInterval(heartbeatIntervalRef.current);
     
-    console.log(`[Dictation] Setting up heartbeat${warmup ? ' (warmup mode)' : ''}`);
-    
-    if (warmup && rtRef.current) {
-      // Send a rapid sequence of heartbeats to warm up the connection
-      console.log('[Dictation] Sending rapid warmup heartbeats');
-      for (let i = 0; i < 3; i++) {
-        setTimeout(() => {
-          if (rtRef.current) {
-            try {
-              const emptyBuffer = new ArrayBuffer(2);
-              rtRef.current.sendAudio(emptyBuffer);
-            } catch (error) {
-              console.error('[Dictation] Error sending warmup heartbeat:', error);
-            }
-          }
-        }, i * 100); // Send 3 heartbeats 100ms apart
-      }
-    }
+    console.log('[Dictation] Setting up heartbeat for V3 WebSocket');
     
     heartbeatIntervalRef.current = setInterval(() => {
-      if (rtRef.current) {
-        console.log('[Dictation] Sending heartbeat');
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        console.log('[Dictation] Sending heartbeat ping');
         
         try {
-          // Send a tiny empty buffer as a ping
-          const emptyBuffer = new ArrayBuffer(2);
-          rtRef.current.sendAudio(emptyBuffer);
+          // Send a ping message to keep connection alive
+          wsRef.current.send(JSON.stringify({ type: 'ping' }));
         } catch (error) {
           console.error('[Dictation] Error sending heartbeat:', error);
         }
@@ -313,98 +298,73 @@ const Dictation = ({
         console.log('[Dictation] Skipping heartbeat - connection not available');
       }
     }, HEARTBEAT_INTERVAL_MS);
-    
-    // Send an immediate heartbeat after a small delay
-    setTimeout(() => {
-      if (rtRef.current) {
-        try {
-          const emptyBuffer = new ArrayBuffer(2);
-          rtRef.current.sendAudio(emptyBuffer);
-          console.log('[Dictation] Initial interval heartbeat sent successfully');
-        } catch (error) {
-          console.error('[Dictation] Error sending initial interval heartbeat:', error);
-        }
-      }
-    }, 300); // 300ms delay
   }, []);
   
-  // Setup transcription connection
+  // Setup transcription connection with V3 WebSocket
   const setupTranscriptionConnection = async (newToken) => {
-    if (rtRef.current) {
-      console.log('[Dictation] Closing existing connection before setup');
+    if (wsRef.current) {
+      console.log('[Dictation] Closing existing WebSocket connection before setup');
       try {
-        rtRef.current.close();
+        wsRef.current.close();
       } catch (error) {
         console.error('[Dictation] Error closing existing connection:', error);
       }
-      rtRef.current = null;
+      wsRef.current = null;
     }
     
-    console.log('[Dictation] Setting up transcription connection');
+    console.log('[Dictation] Setting up V3 WebSocket transcription connection');
     
     return new Promise((resolve, reject) => {
       try {
-        rtRef.current = new RealtimeTranscriber({
-          token: newToken,
-          sampleRate: 16000,
-          endUtteranceSilenceThreshold: 1500,
-        });
+        // Create WebSocket connection with token as query parameter
+        const wsUrl = `${WEBSOCKET_URL}?token=${newToken}`;
+        wsRef.current = new WebSocket(wsUrl);
         
-        // Setup event handlers
-        rtRef.current.on('open', () => {
-          if (!rtRef.current) {
-            console.error('[Dictation] Connection reference is null in open event handler');
-            return;
-          }
+        // Generate unique session ID
+        sessionIdRef.current = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        wsRef.current.onopen = () => {
+          console.log('[Dictation] V3 WebSocket connection established');
           
-          console.log('[Dictation] Connection established');
+          // Send session configuration
+          const configMessage = {
+            type: 'session_begins',
+            session_id: sessionIdRef.current,
+            audio_format: {
+              encoding: 'pcm_s16le',
+              sample_rate: 16000,
+              channels: 1
+            },
+            end_utterance_silence_threshold: 1500
+          };
           
-          // Setup regular heartbeat
+          wsRef.current.send(JSON.stringify(configMessage));
+          
+          // Setup heartbeat
           setupHeartbeat();
           
           setStatus(prev => ({ ...prev, isTranscriberReady: true }));
           resolve();
-          
-          // Send initial ping with a small delay to ensure connection is fully ready
-          setTimeout(() => {
-            try {
-              if (rtRef.current) {
-                const emptyBuffer = new ArrayBuffer(2);
-                rtRef.current.sendAudio(emptyBuffer);
-                console.log('[Dictation] Initial heartbeat sent successfully');
-                
-                // After initial heartbeat succeeds, run a warmup sequence
-                setTimeout(() => {
-                  if (rtRef.current) {
-                    setupHeartbeat(true); // Run in warmup mode
-                  }
-                }, 200);
-              }
-            } catch (error) {
-              console.error('[Dictation] Error sending initial audio buffer:', error);
-            }
-          }, 500); // 500ms delay
-        });
+        };
         
-        rtRef.current.on('error', (err) => {
-          console.error('[Dictation] Connection error:', err);
+        wsRef.current.onerror = (error) => {
+          console.error('[Dictation] V3 WebSocket error:', error);
           setStatus(prev => ({ ...prev, isTranscriberReady: false }));
-          reject(err);
-        });
+          reject(error);
+        };
         
-        rtRef.current.on('close', () => {
-          console.log('[Dictation] Connection closed');
+        wsRef.current.onclose = (event) => {
+          console.log('[Dictation] V3 WebSocket connection closed:', event.code, event.reason);
           setStatus(prev => ({ ...prev, isTranscriberReady: false }));
           
           clearInterval(heartbeatIntervalRef.current);
           heartbeatIntervalRef.current = null;
           
-          // Attempt to reconnect after connection close if not actively stopping
-          if (!status.isStopping && !status.isLoading) {
+          // Attempt to reconnect if not actively stopping
+          if (!status.isStopping && !status.isLoading && event.code !== 1000) {
             console.log('[Dictation] Connection closed unexpectedly, will attempt reconnection');
             setTimeout(async () => {
               try {
-                // Use the same reconnection pattern as in startDictation
                 let currentToken = token.value;
                 if (!isTokenValid()) {
                   console.log('[Dictation] Token invalid, fetching new token for reconnection');
@@ -419,31 +379,61 @@ const Dictation = ({
               } catch (error) {
                 console.error('[Dictation] Failed to reconnect after unexpected close:', error);
               }
-            }, 2000); // Wait 2 seconds before attempting reconnection
+            }, 2000);
           }
-        });
+        };
         
-        // Setup transcript handler
-        textsRef.current = {};
-        rtRef.current.on("transcript", (message) => {
+        wsRef.current.onmessage = (event) => {
           try {
-            textsRef.current[message.audio_start] = message.text;
-            const sortedTexts = Object.entries(textsRef.current)
-              .sort(([a], [b]) => a - b)
-              .map(([, text]) => text)
-              .join(' ');
+            const message = JSON.parse(event.data);
             
-            setTranscription(sortedTexts);
-            setClipboardContent(sortedTexts);
+            switch (message.type) {
+              case 'partial_transcript':
+                // Handle partial transcripts (real-time updates)
+                if (message.text) {
+                  textsRef.current[message.audio_start || Date.now()] = message.text;
+                  const sortedTexts = Object.entries(textsRef.current)
+                    .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
+                    .map(([, text]) => text)
+                    .join(' ');
+                  
+                  setTranscription(sortedTexts);
+                  setClipboardContent(sortedTexts);
+                }
+                break;
+                
+              case 'final_transcript':
+                // Handle final transcripts
+                if (message.text) {
+                  textsRef.current[message.audio_start || Date.now()] = message.text;
+                  const sortedTexts = Object.entries(textsRef.current)
+                    .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
+                    .map(([, text]) => text)
+                    .join(' ');
+                  
+                  setTranscription(sortedTexts);
+                  setClipboardContent(sortedTexts);
+                }
+                break;
+                
+              case 'session_information':
+                console.log('[Dictation] Session information:', message);
+                break;
+                
+              case 'error':
+                console.error('[Dictation] V3 API error:', message.error);
+                break;
+                
+              default:
+                console.log('[Dictation] Unknown message type:', message.type);
+            }
           } catch (error) {
-            console.error('[Dictation] Error processing transcript:', error);
+            console.error('[Dictation] Error processing V3 message:', error);
           }
-        });
+        };
         
-        // Connect to the service
-        rtRef.current.connect();
       } catch (error) {
-        console.error('[Dictation] Error setting up connection:', error);
+        console.error('[Dictation] Error setting up V3 WebSocket connection:', error);
         setStatus(prev => ({ ...prev, isTranscriberReady: false }));
         reject(error);
       }
@@ -552,168 +542,120 @@ const Dictation = ({
       
       recorder.current = new RecordRTC(stream, {
         type: 'audio',
-        mimeType: mimeType,
-        recorderType: recorderType,
-        timeSlice: RECORDER_TIME_SLICE_MS,
-        desiredSampRate: 16000,
+        mimeType: 'audio/wav',
+        recorderType: RecordRTC.StereoAudioRecorder,
         numberOfAudioChannels: 1,
-        bufferSize: 4096,
-        audioBitsPerSecond: 128000,
-        ondataavailable: async (blob) => {
-          if (!rtRef.current) return;
-          try {
-            const buffer = await blob.arrayBuffer();
-            rtRef.current.sendAudio(buffer);
-          } catch (error) {
-            console.error('[Dictation] Error sending audio data:', error);
+        desiredSampRate: 16000,
+        timeSlice: RECORDER_TIME_SLICE_MS,
+        ondataavailable: (blob) => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && status.isTranscribing) {
+            blob.arrayBuffer().then(buffer => {
+              // Convert ArrayBuffer to base64 for V3 JSON format
+              const uint8Array = new Uint8Array(buffer);
+              const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
+              
+              const audioMessage = {
+                type: 'audio_data',
+                audio_data: base64Audio
+              };
+              
+              wsRef.current.send(JSON.stringify(audioMessage));
+            }).catch(error => {
+              console.error('[Dictation] Error converting blob to buffer:', error);
+            });
           }
-        },
+        }
       });
-      
-      // Start recording
-      console.log('[Dictation] Starting recording');
+      // Start recording and sending audio
+      console.log('[Dictation] Starting audio recording');
       recorder.current.startRecording();
       
-      setStatus(prev => ({ 
-        ...prev, 
-        isTranscribing: true,
-        isLoading: false,
-        isQueued: false
-      }));
-      
+      // Enable NoSleep to prevent device from sleeping
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
       
-      // Add a space to the clipboard to remove placeholder
-      setClipboardContent(" ");
-      
+      // Start timer
       startTimer();
-      console.log('[Dictation] Dictation started successfully');
-    } catch (error) {
-      console.error('[Dictation] Error starting dictation:', error);
+      
       setStatus(prev => ({ 
         ...prev, 
-        isLoading: false,
-        isQueued: false
+        isTranscribing: true, 
+        isLoading: false, 
+        isQueued: false 
       }));
+      
+      console.log('[Dictation] V3 dictation started successfully');
+    } catch (error) {
+      console.error('[Dictation] Error starting dictation:', error);
+      setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
       alert('Failed to start dictation. Please try again.');
     }
   };
   
   // Stop dictation
-  const stopDictation = () => {
-    if (recorder.current && recorder.current.state !== 'stopped') {
-      console.log('[Dictation] Stopping dictation');
-      setStatus(prev => ({ ...prev, isStopping: true }));
-      
-      // Pause heartbeats while stopping
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
+  const stopDictation = async () => {
+    if (status.isStopping) {
+      console.log('[Dictation] Already stopping');
+      return;
+    }
+    
+    console.log('[Dictation] Stopping V3 dictation');
+    setStatus(prev => ({ ...prev, isStopping: true }));
+    
+    try {
+      // Stop recording
+      if (recorder.current && recorder.current.state !== 'stopped') {
+        console.log('[Dictation] Stopping recorder');
+        recorder.current.stopRecording();
       }
       
-      // Capture the current transcription
-      const finalTranscription = transcription;
+      // Send session termination message to V3 API
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+        const terminateMessage = {
+          type: 'session_terminate'
+        };
+        wsRef.current.send(JSON.stringify(terminateMessage));
+      }
       
-      // Update states immediately to prevent race conditions
+      // Stop media stream
+      if (streamRef.current) {
+        console.log('[Dictation] Stopping media stream');
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      
+      // Disable NoSleep
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+      
+      // Stop timer and calculate hours used
+      stopTimer();
+      const hoursUsed = timer / 3600; // Convert seconds to hours
+      
+      // Update subscription hours
+      if (hoursUsed > 0) {
+        await updateUserSubscriptionHours(hoursUsed);
+      }
+      
+      // Send final transcription to parent component
+      if (transcription) {
+        console.log('[Dictation] Sending final transcription to parent');
+        onTextStreamUpdate(transcription);
+      }
+      
       setStatus(prev => ({ 
         ...prev, 
-        isTranscribing: false,
-        isTranscriberReady: false
+        isTranscribing: false, 
+        isStopping: false,
+        isQueued: false
       }));
       
-      try {
-        recorder.current.stopRecording(() => {
-          try {
-            if (noSleepRef.current) {
-              noSleepRef.current.disable();
-            }
-            
-            stopTimer();
-            
-            const hoursUsed = timer / 3600; // Convert seconds to hours
-            updateUserSubscriptionHours(hoursUsed);
-            
-            if (streamRef.current) {
-              streamRef.current.getTracks().forEach(track => track.stop());
-              streamRef.current = null;
-            }
-            
-            // Close the WebSocket connection
-            if (rtRef.current) {
-              console.log('[Dictation] Closing WebSocket connection');
-              rtRef.current.close();
-              rtRef.current = null;
-            }
-            
-            // Send final transcription to parent component
-            if (finalTranscription) {
-              console.log('[Dictation] Sending final transcription to parent');
-              onTextStreamUpdate(finalTranscription);
-            }
-            
-            // Re-initialize after a brief delay
-            setTimeout(async () => {
-              console.log('[Dictation] Re-initializing connection after stop');
-              
-              // Force loading state to false
-              setStatus(prev => ({ ...prev, isLoading: false }));
-              
-              // Handle queued dictation request if any
-              if (status.isQueued) {
-                console.log('[Dictation] Processing queued dictation request');
-                setStatus(prev => ({ ...prev, isStopping: false }));
-                setTimeout(() => {
-                  startDictation();
-                }, 500);
-                return;
-              }
-              
-              // Otherwise, proceed with normal re-initialization
-              try {
-                setStatus(prev => ({ ...prev, isLoading: true }));
-                
-                // Get a fresh token if needed
-                let currentToken = token.value;
-                if (!isTokenValid()) {
-                  currentToken = await fetchAssemblyAIToken();
-                }
-                
-                // Setup new connection
-                if (currentToken) {
-                  await setupTranscriptionConnection(currentToken);
-                  console.log('[Dictation] New connection established');
-                } else {
-                  console.error('[Dictation] No valid token for re-initialization');
-                }
-              } catch (error) {
-                console.error('[Dictation] Error during re-initialization:', error);
-              } finally {
-                setStatus(prev => ({ 
-                  ...prev, 
-                  isLoading: false,
-                  isStopping: false
-                }));
-              }
-            }, 1000);
-          } catch (error) {
-            console.error('[Dictation] Error in stopRecording callback:', error);
-            setStatus(prev => ({ 
-              ...prev, 
-              isLoading: false,
-              isStopping: false
-            }));
-          }
-        });
-      } catch (error) {
-        console.error('[Dictation] Error stopping recording:', error);
-        setStatus(prev => ({ 
-          ...prev, 
-          isLoading: false,
-          isStopping: false
-        }));
-      }
+      console.log('[Dictation] V3 dictation stopped successfully');
+    } catch (error) {
+      console.error('[Dictation] Error stopping dictation:', error);
+      setStatus(prev => ({ ...prev, isStopping: false }));
     }
   };
   
