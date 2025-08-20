@@ -184,7 +184,7 @@ const ContentPopup = ({
       <div className="content-popup-inner" onClick={(e) => e.stopPropagation()}>
         <div className="popup-header">
           <div className="popup-header-left">
-            <div className="popup-header-content">
+            <div className="popup-header-top">
               <button
                 className={`popup-edit-button ${isEditingLabel ? 'editing' : ''}`}
                 onMouseDown={(e) => {
@@ -208,31 +208,31 @@ const ContentPopup = ({
                   {isEditingLabel ? 'Save' : 'Rename'}
                 </span>
               </button>
-              <div className="label-container">
-                {isEditingLabel ? (
-                  <input
-                    type="text"
-                    value={editedLabel}
-                    onChange={(e) => setEditedLabel(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveLabel();
-                      } else if (e.key === 'Escape') {
-                        handleCancelEdit();
-                      }
-                    }}
-                    onBlur={handleSaveLabel} // Always use the same save logic
-                    onFocus={(e) => e.target.select()}
-                    autoFocus
-                    className="label-edit-input"
-                    placeholder="Enter a label..."
-                  />
-                ) : (
-                  <h2 className="label-title">
-                    {getDisplayLabel()}
-                  </h2>
-                )}
-              </div>
+            </div>
+            <div className="label-container">
+              {isEditingLabel ? (
+                <input
+                  type="text"
+                  value={editedLabel}
+                  onChange={(e) => setEditedLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSaveLabel();
+                    } else if (e.key === 'Escape') {
+                      handleCancelEdit();
+                    }
+                  }}
+                  onBlur={handleSaveLabel} // Always use the same save logic
+                  onFocus={(e) => e.target.select()}
+                  autoFocus
+                  className="label-edit-input"
+                  placeholder="Enter a label..."
+                />
+              ) : (
+                <h2 className="label-title">
+                  {getDisplayLabel()}
+                </h2>
+              )}
             </div>
             {timestamp && (
               <p className="popup-date">{formatPopupDate(timestamp)}</p>

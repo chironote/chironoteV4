@@ -1,25 +1,58 @@
 .pricing-table-container {
-    display: flex;
-    position: absolute;
-    left: 0%;
-    top: 50px;
-    justify-content: center;
-    align-items: center;
-    height: calc(100vh - 50px);
-    width: 100%;
-    background-color: var(--pale-green);
-    border: 2px solid var(--light-green);
-    overflow: hidden;
-  
+  display: flex;
+  position: absolute;
+  left: 0%;
+  top: 50px;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 50px);
+  width: 100%;
+  background-color: var(--pale-green);
+  border: 2px solid var(--light-green);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px 10px;
+  box-sizing: border-box;
+}
+
+stripe-pricing-table {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  min-width: 320px;
+}
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .pricing-table-container {
+    padding: 15px 5px;
+    /* Account for phone UI overlays */
+    padding-top: max(15px, env(safe-area-inset-top));
+    padding-bottom: max(15px, env(safe-area-inset-bottom));
+    padding-left: max(5px, env(safe-area-inset-left));
+    padding-right: max(5px, env(safe-area-inset-right));
   }
   
   stripe-pricing-table {
-    position: absolute;
-    width: 100%;
+    min-width: 280px;
+    /* Ensure it's wider than needed as requested */
+    width: calc(100vw - 20px);
+    max-width: none;
   }
+}
 
-  .app-main .back-button {
-    align-self: flex-start;
+/* Extra small phones */
+@media (max-width: 480px) {
+  .pricing-table-container {
+    padding: 10px 2px;
   }
- 
   
+  stripe-pricing-table {
+    min-width: 260px;
+    width: calc(100vw - 10px);
+  }
+}
+
+.app-main .back-button {
+  align-self: flex-start;
+}

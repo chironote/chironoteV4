@@ -45,6 +45,14 @@ const FAQ_ITEMS = [
     answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to generate structured clinical notes that you can review, edit, and copy into your EHR system.'
   },
   {
+    question: 'What if I don\'t want to use my phone for recording?',
+    answer: 'You can use any recording device with a microphone! Many practitioners prefer using a dedicated recording device or their computer\'s built-in microphone, especially when seeing patients in the same room where they do their charting. This setup allows for seamless recording and immediate note generation without switching between devices.'
+  },
+  {
+    question: 'Can I use ChiroNote on my work computer?',
+    answer: 'Absolutely! ChiroNote is designed to work perfectly on your work computer and integrates seamlessly with your existing workflow. Patient notes are handled according to strict HIPAA compliance standards with enterprise-grade encryption, while your personal data remains completely separate and secure. This makes it ideal for use in professional healthcare environments.'
+  },
+  {
     question: 'Is ChiroNote HIPAA compliant?',
     answer: 'Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.'
   },

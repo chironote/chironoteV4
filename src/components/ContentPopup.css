@@ -16,9 +16,12 @@
 
 .content-popup .popup-header h2,
 .content-popup .label-title {
-  margin-top: 0; /* Remove default h2 margin if it interferes */
-  font-size: 1.4em; /* Example size, adjust as needed */
+  margin-top: 8px; /* Add space above title to separate from buttons */
+  margin-bottom: 4px; /* Reduce bottom margin */
+  font-size: 1.1em; /* Reduced font size for friendlier appearance */
   line-height: 1.3;
+  font-weight: 500; /* Slightly lighter weight */
+  color: var(--dark-green, #2d5a27); /* Ensure consistent color */
 }
 
 .content-popup .popup-date {
@@ -30,31 +33,24 @@
 
 .content-popup .popup-actions {
   display: flex; /* Align buttons in a row */
-  align-items: center; /* Vertically center align buttons */
+  align-items: flex-start; /* Align to top to match rename button level */
+  gap: 4px; /* Small gap between copy and close buttons */
 }
 
-/* Styling for the new copy button, similar to close button */
+/* Styling for the copy and close buttons in far right corner */
 .content-popup .popup-copy-button,
 .content-popup .popup-close-button {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 5px; /* Reduced padding to bring icons closer */
-  /* margin-left is now handled specifically for .popup-close-button or defaults to 0 */
+  padding: 4px; /* Slightly smaller padding */
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%; /* Circular shape for icon buttons */
   transition: background-color 0.2s ease-in-out;
-}
-
-/* Add specific margin only to the close button to control spacing from the copy button */
-.content-popup .popup-close-button {
-  margin-left: 1px; /* Minimal space between copy and close buttons */
-}
-
-.content-popup .popup-copy-button {
-  margin-right: -10px; /* Minimal space between copy and close buttons */
+  min-height: 28px; /* Match rename button height */
+  min-width: 28px;
 }
 
 .content-popup .popup-copy-button:hover,
@@ -68,19 +64,19 @@
   color: var(--dark-green); /* Use app's dark green for icons */
 }
 
-/* New layout for header content with edit button and title */
-.content-popup .popup-header-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-/* Container for label/input to maintain consistent height */
-.content-popup .label-container {
-  flex: 1;
-  min-height: 42px; /* Match the approximate height of h2 */
+/* New layout for header top section (rename button only) */
+.content-popup .popup-header-top {
   display: flex;
   align-items: center;
+  margin-bottom: 8px; /* Space between rename button and title */
+}
+
+/* Container for label/input positioned below buttons */
+.content-popup .label-container {
+  flex: 1;
+  min-height: 32px; /* Reduced height for smaller text */
+  display: flex;
+  align-items: flex-start; /* Align to top for better text positioning */
 }
 
 /* Edit button styling - text-based design */
@@ -88,18 +84,17 @@
   background: white;
   border: 1px solid var(--dark-green, #2d5a27);
   cursor: pointer;
-  padding: 8px 12px; /* Horizontal padding for text button */
+  padding: 6px 10px; /* Slightly smaller padding */
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease-in-out;
   color: var(--dark-green, #2d5a27);
-  min-height: 32px;
+  min-height: 28px; /* Smaller height */
   flex-shrink: 0;
-  margin-top: 5px; /* Align with label baseline */
   font-family: inherit; /* Use app's font family */
-  font-size: 14px;
+  font-size: 13px; /* Slightly smaller font */
   font-weight: 500; /* Medium weight for clarity */
   letter-spacing: 0.3px;
   white-space: nowrap; /* Prevent text wrapping */
@@ -151,19 +146,20 @@
 
 /* Input field for editing labels */
 .content-popup .label-edit-input {
-  font-size: 1.4em;
-  font-weight: bold;
+  font-size: 1.1em; /* Match the reduced title font size */
+  font-weight: 500; /* Match title weight */
   font-family: inherit;
   border: 2px solid var(--light-green, #4caf50);
-  border-radius: 8px;
-  padding: 6px 12px;
+  border-radius: 6px;
+  padding: 4px 8px; /* Smaller padding */
   background: white;
   width: 100%;
-  max-width: 100%; /* Wider default width for better editing experience */
+  max-width: 100%;
   outline: none;
   transition: all 0.2s ease-in-out;
   line-height: 1.3;
   margin: 0;
+  margin-top: 8px; /* Match title margin-top */
 }
 
 .content-popup .label-edit-input:focus {
