@@ -370,7 +370,7 @@ function AuthenticatedApp({ signOut, user }) {
       const { payload } = data;
       if (payload.event === CONNECTION_STATE_CHANGE) {
         const connectionState = payload.data.connectionState;
-        console.log('Connection state:', connectionState);
+        console.log('[App] Connection state:', connectionState);
         setIsWebSocketConnecting(connectionState === 'connecting');
       }
     });

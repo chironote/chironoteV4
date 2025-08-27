@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import RecordRTC from 'recordrtc';
+import { StreamingTranscriber } from 'assemblyai';
 import NoSleep from 'nosleep.js';
 import './Recording.css';
 import { generateClient } from 'aws-amplify/api';
@@ -10,19 +10,75 @@ import CreditPopup from './CreditLimit';
 
 const client = generateClient();
 
-// Constants
+// Token and connection constants
 const TOKEN_REFRESH_BUFFER_MINUTES = 10;
-const TOKEN_EXPIRY_HOURS = 2.9; // Just under 3 hours to be safe
-const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
-const RECORDER_TIME_SLICE_MS = 250;
-const WEBSOCKET_URL = 'wss://streaming.assemblyai.com/v3';
+const TOKEN_EXPIRY_HOURS = 2.9;
 
-const Dictation = ({ 
-  onTextStreamUpdate,
-  setClipboardContent,
-  username
-}) => {
-  // State for dictation status
+// Audio processing constants - AssemblyAI streaming requirements
+const SAMPLE_RATE = 16000;    // AssemblyAI requires EXACTLY 16kHz - no flexibility
+const CHANNELS = 1;           // AssemblyAI requires mono audio only
+const BUFFER_SIZE = 4096;     // Web Audio API buffer size
+
+// AudioWorklet processor code (embedded in component)
+const audioProcessorCode = `
+const MAX_16BIT_INT = 32767;
+
+class AudioProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.audioBufferQueue = new Int16Array(0);
+  }
+
+  process(inputs) {
+    try {
+      const input = inputs[0];
+      if (!input || !input[0]) return true;
+
+      const channelData = input[0];
+      const float32Array = Float32Array.from(channelData);
+      
+      // Convert Float32 to Int16 with proper clamping
+      const int16Array = Int16Array.from(
+        float32Array.map((sample) => {
+          const clamped = Math.max(-1, Math.min(1, sample));
+          return clamped < 0 ? clamped * 32768 : clamped * MAX_16BIT_INT;
+        })
+      );
+      
+      // Merge with existing buffer queue
+      this.audioBufferQueue = this.mergeBuffers(this.audioBufferQueue, int16Array);
+      
+      // Send chunks of 100ms duration (1600 samples at 16kHz)
+      const samplesFor100ms = 1600;
+      while (this.audioBufferQueue.length >= samplesFor100ms) {
+        const chunk = this.audioBufferQueue.subarray(0, samplesFor100ms);
+        this.audioBufferQueue = this.audioBufferQueue.subarray(samplesFor100ms);
+        
+        // Send as Uint8Array buffer to match AssemblyAI expectations
+        const buffer = new Uint8Array(chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength));
+        this.port.postMessage({ audio_data: buffer });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[AudioProcessor] Error:', error);
+      return false;
+    }
+  }
+  
+  mergeBuffers(lhs, rhs) {
+    const merged = new Int16Array(lhs.length + rhs.length);
+    merged.set(lhs, 0);
+    merged.set(rhs, lhs.length);
+    return merged;
+  }
+}
+
+registerProcessor('audio-processor', AudioProcessor);
+`;
+
+const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
+  // Status state object
   const [status, setStatus] = useState({
     isLoading: false,
     isTranscribing: false,
@@ -31,8 +87,8 @@ const Dictation = ({
     isQueued: false,
     isStopping: false
   });
-  
-  // State for data
+
+  // Data state variables
   const [transcription, setTranscription] = useState('');
   const [token, setToken] = useState({
     value: null,
@@ -44,194 +100,122 @@ const Dictation = ({
   });
   const [timer, setTimer] = useState(0);
   const [showCreditPopup, setShowCreditPopup] = useState(false);
-  
-  // Refs
-  const wsRef = useRef(null);
-  const recorder = useRef(null);
+
+  // Core refs
+  const transcriberRef = useRef(null);
+
+  // Web Audio API refs (AudioWorklet implementation)
+  const audioContextRef = useRef(null);
+  const audioWorkletNodeRef = useRef(null);
   const streamRef = useRef(null);
+  const readableStreamRef = useRef(null);
+
+  // Utility refs
   const noSleepRef = useRef(null);
   const timerIntervalRef = useRef(null);
   const tokenRefreshTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
-  const textsRef = useRef({});
-  const sessionIdRef = useRef(null);
-  
-  // Initialize NoSleep to prevent device from sleeping during dictation
-  useEffect(() => {
-    noSleepRef.current = new NoSleep();
-    return () => {
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
-    };
-  }, []);
-  
-  // Cleanup all resources on component unmount
-  useEffect(() => {
-    return () => cleanupResources();
-  }, []);
-  
-  // Initialize dictation on component mount
-  useEffect(() => {
-    const initializeDictation = async () => {
-      console.log('[Dictation] Starting initialization');
-      
-      try {
-        // Get token and user subscription in parallel
-        const [newToken] = await Promise.all([
-          fetchAssemblyAIToken(),
-          fetchUserSubscription()
-        ]);
-        
-        // Setup transcription connection in advance
-        if (newToken) {
-          await setupTranscriptionConnection(newToken);
-        }
-        
-        setStatus(prev => ({ ...prev, isInitialized: true }));
-        console.log('[Dictation] Initialization complete');
-      } catch (error) {
-        console.error('[Dictation] Initialization error:', error);
-      }
-    };
-    
-    initializeDictation();
-    
-    return () => {
-      clearTimeout(tokenRefreshTimeoutRef.current);
-      clearInterval(heartbeatIntervalRef.current);
-    };
-  }, []);
-  
-  // Check token expiry and refresh if needed
-  useEffect(() => {
-    const checkTokenInterval = setInterval(() => {
-      if (isTokenExpiring()) {
-        fetchAssemblyAIToken().then(newToken => {
-          if (newToken && status.isTranscriberReady && !status.isTranscribing) {
-            refreshTranscriptionConnection(newToken);
-          }
-        });
-      }
-    }, 60000); // Check every minute
-    
-    return () => clearInterval(checkTokenInterval);
-  }, [token.expiry, status.isTranscriberReady, status.isTranscribing]);
-  
-  // Update subscription status when subscription data changes
-  useEffect(() => {
-    if (subscription.data) {
-      setSubscription(prev => ({
-        ...prev,
-        hasHours: subscription.data.hoursleft > 0
-      }));
+
+  // Data refs
+  const turnsRef = useRef({});
+  const currentTurnOrderRef = useRef(-1);
+
+  // Control flow refs
+  const isInitializingRef = useRef(false);
+  const isConnectingRef = useRef(false);
+  const isReconnectingRef = useRef(false);
+
+  // Timer functions
+  const startTimer = () => {
+    setTimer(0);
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(prev => prev + 1);
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
     }
-  }, [subscription.data]);
-  
-  // Process queued dictation requests when ready
-  useEffect(() => {
-    const { isLoading, isStopping, isQueued, isTranscribing } = status;
-    
-    if (!isLoading && !isStopping && isQueued && !isTranscribing) {
-      console.log('[Dictation] Executing queued dictation request');
-      setTimeout(() => {
-        startDictation();
-      }, 500);
-    }
-  }, [status.isLoading, status.isStopping, status.isQueued, status.isTranscribing]);
-  
-  // Helper function to check if token is expiring soon
-  const isTokenExpiring = useCallback(() => {
-    if (!token.value || !token.expiry) return true;
-    
-    const now = new Date();
-    return (token.expiry.getTime() - now.getTime() < TOKEN_REFRESH_BUFFER_MINUTES * 60 * 1000);
-  }, [token]);
-  
-  // Helper function to check if token is valid
-  const isTokenValid = useCallback(() => {
+  };
+
+  // Token management functions
+  const isTokenValid = () => {
     if (!token.value || !token.expiry) return false;
-    
     const now = new Date();
     return now < token.expiry;
-  }, [token]);
-  
-  // Cleanup all resources
-  const cleanupResources = useCallback(() => {
-    if (recorder.current && recorder.current.state !== 'stopped') {
-      recorder.current.stopRecording();
-    }
-    
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    
-    if (noSleepRef.current) {
-      noSleepRef.current.disable();
-    }
-    
-    stopTimer();
-    
-    clearTimeout(tokenRefreshTimeoutRef.current);
-    clearInterval(heartbeatIntervalRef.current);
-    heartbeatIntervalRef.current = null;
-  }, []);
-  
-  // Fetch AssemblyAI token
+  };
+
   const fetchAssemblyAIToken = async () => {
     try {
-      console.log('[Dictation] Fetching AssemblyAI token');
+      console.log('[Dictation] Fetching AssemblyAI token from lambda');
       
-      const response = await fetch('https://llck5m4mzd6sa6do3joadjzzs40jtoef.lambda-url.us-east-2.on.aws');
+      const response = await fetch(
+        'https://tks3r2tlj2kq4rejfvusvqucye0btywr.lambda-url.us-east-2.on.aws',
+        {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const { token: newToken } = await response.json();
+      const tokenData = await response.json();
+      
+      // Extract the token field from the JSON response
+      const actualToken = tokenData.token;
+      console.log('[Dictation] Extracted token:', typeof actualToken, actualToken ? 'present' : 'missing');
+      
+      // Calculate expiry time
       const now = new Date();
       const expiry = new Date(now.getTime() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
       
-      setToken({ value: newToken, expiry });
+      // Update token state
+      setToken({
+        value: actualToken,
+        expiry: expiry
+      });
+      
+      // Schedule next refresh
       scheduleTokenRefresh(expiry);
       
-      console.log('[Dictation] Token fetched successfully');
-      return newToken;
+      console.log('[Dictation] Token fetched successfully, expires at:', expiry);
+      return actualToken;
     } catch (error) {
       console.error('[Dictation] Error fetching AssemblyAI token:', error);
       return null;
     }
   };
-  
-  // Schedule token refresh
+
   const scheduleTokenRefresh = (expiry) => {
     clearTimeout(tokenRefreshTimeoutRef.current);
     
     const now = new Date();
-    const timeUntilRefresh = expiry.getTime() - now.getTime();
+    const timeUntilRefresh = expiry.getTime() - now.getTime() - (TOKEN_REFRESH_BUFFER_MINUTES * 60 * 1000);
     
     if (timeUntilRefresh > 0) {
       tokenRefreshTimeoutRef.current = setTimeout(() => {
         fetchAssemblyAIToken();
       }, timeUntilRefresh);
     } else {
+      // Token already expired or expiring soon, refresh immediately
       fetchAssemblyAIToken();
     }
   };
-  
-  // Fetch user subscription data
+
+  // Subscription management functions
   const fetchUserSubscription = async () => {
     try {
       console.log('[Dictation] Fetching user subscription');
       
       const user = await getCurrentUser();
-      const owner = username || user.username;
+      const owner = user.username;
       const subscriptionData = await client.graphql({
         query: queries.getUserSubscription,
         variables: { owner }
@@ -250,433 +234,479 @@ const Dictation = ({
       return null;
     }
   };
-  
-  // Update user subscription hours
+
   const updateUserSubscriptionHours = async (hoursUsed) => {
+    if (!subscription.data) return;
+    
     try {
-      const user = await getCurrentUser();
-      const owner = username || user.username;
+      const newHoursLeft = Math.max(0, subscription.data.hoursleft - hoursUsed);
       
-      const updatedSubscription = await client.graphql({
+      await client.graphql({
         query: mutations.updateUserSubscription,
         variables: {
           input: {
-            owner,
-            hoursleft: subscription.data.hoursleft - hoursUsed
+            owner: subscription.data.owner, // Use 'owner' as the primary key
+            hoursleft: newHoursLeft
           }
         }
       });
       
-      setSubscription({
-        data: updatedSubscription.data.updateUserSubscription,
-        hasHours: updatedSubscription.data.updateUserSubscription.hoursleft > 0
-      });
+      setSubscription(prev => ({
+        ...prev,
+        data: { ...prev.data, hoursleft: newHoursLeft },
+        hasHours: newHoursLeft > 0
+      }));
       
-      console.log('[Dictation] Subscription hours updated successfully');
+      console.log(`[Dictation] Updated hours left: ${newHoursLeft}`);
     } catch (error) {
-      console.error('[Dictation] Error updating user subscription:', error);
+      console.error('[Dictation] Error updating subscription hours:', error);
     }
   };
-  
-  // Setup heartbeat to keep connection alive
-  const setupHeartbeat = useCallback(() => {
-    clearInterval(heartbeatIntervalRef.current);
+
+  // Audio setup functions
+  const setupAudioContext = async () => {
+    // Create AudioContext at exactly 16kHz for AssemblyAI compatibility
+    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
+      sampleRate: SAMPLE_RATE,  // Must be exactly 16000
+      latencyHint: 'balanced'   // Optimize for real-time processing
+    });
     
-    console.log('[Dictation] Setting up heartbeat for V3 WebSocket');
-    
-    heartbeatIntervalRef.current = setInterval(() => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        console.log('[Dictation] Sending heartbeat ping');
-        
-        try {
-          // Send a ping message to keep connection alive
-          wsRef.current.send(JSON.stringify({ type: 'ping' }));
-        } catch (error) {
-          console.error('[Dictation] Error sending heartbeat:', error);
-        }
-      } else {
-        console.log('[Dictation] Skipping heartbeat - connection not available');
-      }
-    }, HEARTBEAT_INTERVAL_MS);
-  }, []);
-  
-  // Setup transcription connection with V3 WebSocket
-  const setupTranscriptionConnection = async (newToken) => {
-    if (wsRef.current) {
-      console.log('[Dictation] Closing existing WebSocket connection before setup');
-      try {
-        wsRef.current.close();
-      } catch (error) {
-        console.error('[Dictation] Error closing existing connection:', error);
-      }
-      wsRef.current = null;
+    // Resume context if suspended (browser autoplay policy)
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
     }
     
-    console.log('[Dictation] Setting up V3 WebSocket transcription connection');
+    // Create blob URL for AudioWorklet processor
+    const blob = new Blob([audioProcessorCode], { type: 'application/javascript' });
+    const processorUrl = URL.createObjectURL(blob);
     
-    return new Promise((resolve, reject) => {
+    // Add AudioWorklet module
+    await audioContextRef.current.audioWorklet.addModule(processorUrl);
+    
+    // Clean up blob URL
+    URL.revokeObjectURL(processorUrl);
+  };
+
+  const getMediaStream = async () => {
+    // Request microphone with optimal settings for AssemblyAI
+    return await navigator.mediaDevices.getUserMedia({
+      audio: {
+        sampleRate: { ideal: 16000 },     // Prefer 16kHz but allow browser flexibility
+        channelCount: { ideal: 1 },       // Prefer mono but allow browser flexibility  
+        echoCancellation: true,           // Enable for better quality
+        noiseSuppression: true,           // Enable for better quality
+        autoGainControl: true            // Enable for consistent levels
+      }
+    });
+  };
+
+  const setupAudioWorklet = (mediaStream) => {
+    // Create media stream source
+    const source = audioContextRef.current.createMediaStreamSource(mediaStream);
+    
+    // Create AudioWorklet node
+    audioWorkletNodeRef.current = new AudioWorkletNode(
+      audioContextRef.current, 
+      'audio-processor'
+    );
+    
+    // Connect audio pipeline
+    source.connect(audioWorkletNodeRef.current);
+    audioWorkletNodeRef.current.connect(audioContextRef.current.destination);
+    
+    // Handle processed audio data
+    audioWorkletNodeRef.current.port.onmessage = (event) => {
+      if (!readableStreamRef.current?.controller) return;
+      
       try {
-        // Create WebSocket connection with token as query parameter
-        const wsUrl = `${WEBSOCKET_URL}?token=${newToken}`;
-        wsRef.current = new WebSocket(wsUrl);
+        const audioData = event.data.audio_data;
+        if (audioData && audioData.length > 0) {
+          readableStreamRef.current.controller.enqueue(audioData);
+        }
+      } catch (error) {
+        console.error('[Dictation] Error enqueuing audio data:', error);
+      }
+    };
+  };
+
+  const createAudioStream = () => {
+    let controller;
+    
+    const stream = new ReadableStream({
+      start(ctrl) {
+        controller = ctrl;
+        console.log('[Dictation] ReadableStream started');
+      },
+      cancel(reason) {
+        console.log('[Dictation] ReadableStream cancelled:', reason);
+      }
+    });
+    
+    // Store controller reference for AudioWorklet message handler
+    readableStreamRef.current = {
+      stream,
+      controller
+    };
+    
+    return stream;
+  };
+
+  const setupAudioPipeline = async () => {
+    // 1. Setup AudioContext and load AudioWorklet
+    await setupAudioContext();
+    
+    // 2. Get microphone stream
+    const mediaStream = await getMediaStream();
+    streamRef.current = mediaStream;
+    
+    // 3. Setup AudioWorklet processing
+    setupAudioWorklet(mediaStream);
+    
+    // 4. Create ReadableStream for AssemblyAI
+    const audioStream = createAudioStream();
+    
+    // 5. Connect to AssemblyAI transcriber (don't await - let it stream continuously)
+    audioStream.pipeTo(transcriberRef.current.stream()).catch(error => {
+      console.error('[Dictation] Audio stream error:', error);
+    });
+    
+    console.log('[Dictation] Audio pipeline setup complete');
+  };
+
+  // AssemblyAI connection setup
+  const setupTranscriptionConnection = async (tokenValue) => {
+    console.log('[Dictation] Setting up transcription connection with token:', tokenValue ? 'present' : 'missing');
+    return new Promise((resolve, reject) => {
+      // Add timeout to prevent hanging
+      const connectionTimeout = setTimeout(() => {
+        console.error('[Dictation] StreamingTranscriber connection timeout after 10 seconds');
+        reject(new Error('Connection timeout - StreamingTranscriber failed to connect'));
+      }, 10000);
+
+      try {
+        console.log('[Dictation] Creating StreamingTranscriber instance');
+        transcriberRef.current = new StreamingTranscriber({
+          token: tokenValue,
+          sampleRate: SAMPLE_RATE,
+          formatTurns: true
+        });
         
-        // Generate unique session ID
-        sessionIdRef.current = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        wsRef.current.onopen = () => {
-          console.log('[Dictation] V3 WebSocket connection established');
-          
-          // Send session configuration
-          const configMessage = {
-            type: 'session_begins',
-            session_id: sessionIdRef.current,
-            audio_format: {
-              encoding: 'pcm_s16le',
-              sample_rate: 16000,
-              channels: 1
-            },
-            end_utterance_silence_threshold: 1500
-          };
-          
-          wsRef.current.send(JSON.stringify(configMessage));
-          
-          // Setup heartbeat
-          setupHeartbeat();
-          
+        transcriberRef.current.on('open', () => {
+          console.log('[Dictation] StreamingTranscriber connected successfully');
+          clearTimeout(connectionTimeout);
           setStatus(prev => ({ ...prev, isTranscriberReady: true }));
           resolve();
-        };
+        });
         
-        wsRef.current.onerror = (error) => {
-          console.error('[Dictation] V3 WebSocket error:', error);
+        transcriberRef.current.on('error', (error) => {
+          console.error('[Dictation] StreamingTranscriber error:', error);
+          clearTimeout(connectionTimeout);
           setStatus(prev => ({ ...prev, isTranscriberReady: false }));
           reject(error);
-        };
+        });
         
-        wsRef.current.onclose = (event) => {
-          console.log('[Dictation] V3 WebSocket connection closed:', event.code, event.reason);
-          setStatus(prev => ({ ...prev, isTranscriberReady: false }));
-          
-          clearInterval(heartbeatIntervalRef.current);
-          heartbeatIntervalRef.current = null;
-          
-          // Attempt to reconnect if not actively stopping
-          if (!status.isStopping && !status.isLoading && event.code !== 1000) {
-            console.log('[Dictation] Connection closed unexpectedly, will attempt reconnection');
-            setTimeout(async () => {
-              try {
-                let currentToken = token.value;
-                if (!isTokenValid()) {
-                  console.log('[Dictation] Token invalid, fetching new token for reconnection');
-                  currentToken = await fetchAssemblyAIToken();
-                }
-                
-                if (currentToken) {
-                  console.log('[Dictation] Attempting to reconnect after unexpected close');
-                  await setupTranscriptionConnection(currentToken);
-                  console.log('[Dictation] Successfully reconnected after unexpected close');
-                }
-              } catch (error) {
-                console.error('[Dictation] Failed to reconnect after unexpected close:', error);
-              }
-            }, 2000);
+        transcriberRef.current.on('turn', (turn) => {
+          if (!turn.transcript) {
+            return;
           }
-        };
+          
+          console.log('[Dictation] Turn received:', turn);
+          
+          const { transcript, turn_order, turn_is_formatted, end_of_turn } = turn;
+          
+          // Store turn by order
+          turnsRef.current[turn_order] = {
+            transcript,
+            is_formatted: turn_is_formatted,
+            end_of_turn
+          };
+          
+          // Build text from all turns in order
+          const sortedTurns = Object.entries(turnsRef.current)
+            .sort(([a], [b]) => parseInt(a) - parseInt(b))
+            .map(([, turnData]) => turnData.transcript);
+          
+          const newText = sortedTurns.join(' ');
+          
+          setTranscription(newText);
+          setClipboardContent(newText);
+        });
         
-        wsRef.current.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            
-            switch (message.type) {
-              case 'partial_transcript':
-                // Handle partial transcripts (real-time updates)
-                if (message.text) {
-                  textsRef.current[message.audio_start || Date.now()] = message.text;
-                  const sortedTexts = Object.entries(textsRef.current)
-                    .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
-                    .map(([, text]) => text)
-                    .join(' ');
-                  
-                  setTranscription(sortedTexts);
-                  setClipboardContent(sortedTexts);
-                }
-                break;
-                
-              case 'final_transcript':
-                // Handle final transcripts
-                if (message.text) {
-                  textsRef.current[message.audio_start || Date.now()] = message.text;
-                  const sortedTexts = Object.entries(textsRef.current)
-                    .sort(([a], [b]) => parseFloat(a) - parseFloat(b))
-                    .map(([, text]) => text)
-                    .join(' ');
-                  
-                  setTranscription(sortedTexts);
-                  setClipboardContent(sortedTexts);
-                }
-                break;
-                
-              case 'session_information':
-                console.log('[Dictation] Session information:', message);
-                break;
-                
-              case 'error':
-                console.error('[Dictation] V3 API error:', message.error);
-                break;
-                
-              default:
-                console.log('[Dictation] Unknown message type:', message.type);
-            }
-          } catch (error) {
-            console.error('[Dictation] Error processing V3 message:', error);
-          }
-        };
+        console.log('[Dictation] Attempting to connect StreamingTranscriber');
+        transcriberRef.current.connect();
         
       } catch (error) {
-        console.error('[Dictation] Error setting up V3 WebSocket connection:', error);
-        setStatus(prev => ({ ...prev, isTranscriberReady: false }));
+        console.error('[Dictation] Error in setupTranscriptionConnection:', error);
+        clearTimeout(connectionTimeout);
         reject(error);
       }
     });
   };
-  
-  // Refresh transcription connection with new token
-  const refreshTranscriptionConnection = async (newToken) => {
-    console.log('[Dictation] Refreshing connection with new token');
-    try {
-      await setupTranscriptionConnection(newToken);
-    } catch (error) {
-      console.error('[Dictation] Error refreshing connection:', error);
+
+  // Resource cleanup
+  const cleanupResources = useCallback(() => {
+    console.log('[Dictation] Starting resource cleanup');
+    
+    // Stop ReadableStream
+    if (readableStreamRef.current?.controller) {
+      try {
+        readableStreamRef.current.controller.close();
+      } catch (error) {
+        console.error('[Dictation] Error closing stream controller:', error);
+      }
     }
-  };
-  
-  // Timer functions
-  const startTimer = useCallback(() => {
-    setTimer(0);
-    timerIntervalRef.current = setInterval(() => {
-      setTimer(prevTimer => prevTimer + 1);
-    }, 1000);
-  }, []);
-  
-  const stopTimer = useCallback(() => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
+    
+    // Cleanup AudioWorklet Node
+    if (audioWorkletNodeRef.current) {
+      try {
+        audioWorkletNodeRef.current.disconnect();
+        audioWorkletNodeRef.current.port.close();
+      } catch (error) {
+        console.error('[Dictation] Error disconnecting AudioWorklet:', error);
+      }
+      audioWorkletNodeRef.current = null;
     }
+    
+    // Cleanup AudioContext
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(error => {
+        console.error('[Dictation] Error closing AudioContext:', error);
+      });
+      audioContextRef.current = null;
+    }
+    
+    // Stop media stream tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => {
+        track.stop();
+        console.log('[Dictation] Stopped media track:', track.kind);
+      });
+      streamRef.current = null;
+    }
+    
+    // Close AssemblyAI connection
+    if (transcriberRef.current) {
+      try {
+        transcriberRef.current.close();
+      } catch (error) {
+        console.error('[Dictation] Error closing transcriber:', error);
+      }
+      transcriberRef.current = null;
+    }
+    
+    // Disable NoSleep
+    if (noSleepRef.current) {
+      noSleepRef.current.disable();
+    }
+    
+    // Clear timers
+    stopTimer();
+    clearTimeout(tokenRefreshTimeoutRef.current);
+    clearInterval(heartbeatIntervalRef.current);
+    
+    // Reset refs
+    readableStreamRef.current = null;
+    heartbeatIntervalRef.current = null;
+    
+    console.log('[Dictation] Resource cleanup complete');
   }, []);
-  
-  // Handle closing the credit popup
-  const handleCloseCreditPopup = () => {
-    setShowCreditPopup(false);
-  };
-  
-  // Start dictation
+
+  // Main dictation functions
   const startDictation = async () => {
-    // If already loading or stopping, queue the action
     if (status.isLoading || status.isStopping) {
-      console.log(`[Dictation] Already ${status.isStopping ? 'stopping' : 'loading'}, queuing action`);
       setStatus(prev => ({ ...prev, isQueued: true }));
       return;
     }
     
     try {
-      console.log('[Dictation] Starting dictation');
       setStatus(prev => ({ ...prev, isLoading: true }));
-      setClipboardContent("");
-      textsRef.current = {};
+      setTranscription('');
+      setClipboardContent('');
+      turnsRef.current = {};
+      currentTurnOrderRef.current = -1;
       
-      // Check subscription
+      // Validate subscription hours
       if (!subscription.hasHours) {
-        console.log('[Dictation] No subscription detected, checking again');
-        
-        const updatedSubscription = await fetchUserSubscription();
-        if (!updatedSubscription || updatedSubscription.hoursleft <= 0) {
-          console.error('[Dictation] User has no remaining hours');
+        const updatedSub = await fetchUserSubscription();
+        if (!updatedSub || updatedSub.hoursleft <= 0) {
           setShowCreditPopup(true);
           setStatus(prev => ({ ...prev, isLoading: false }));
           return;
         }
       }
       
-      // Check if token is valid and transcriber is ready
+      // Ensure connection ready
+      console.log('[Dictation] Checking connection readiness - tokenValid:', isTokenValid(), 'transcriberReady:', status.isTranscriberReady);
       if (!isTokenValid() || !status.isTranscriberReady) {
-        console.log('[Dictation] Token invalid or transcriber not ready, setting up connection');
-        
-        // Get a fresh token if needed
+        console.log('[Dictation] Connection not ready, attempting to establish');
         let currentToken = token.value;
         if (!isTokenValid()) {
+          console.log('[Dictation] Token invalid, fetching new token');
           currentToken = await fetchAssemblyAIToken();
-        }
-        
-        // Setup transcription connection if not ready
-        if (!status.isTranscriberReady) {
-          await setupTranscriptionConnection(currentToken);
-        }
-      } else {
-        console.log('[Dictation] Using existing connection');
-        
-        // Ensure heartbeat is running
-        if (!heartbeatIntervalRef.current) {
-          console.log('[Dictation] Restarting heartbeat for existing connection');
-          setupHeartbeat();
-        }
-      }
-      
-      // Request mic access
-      console.log('[Dictation] Requesting microphone access');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
-      });
-      streamRef.current = stream;
-      
-      // Configure recorder
-      console.log('[Dictation] Configuring recorder');
-      
-      const isIOS = /iphone|ipad/i.test(navigator.userAgent.toLowerCase());
-      const mimeType = isIOS ? 'audio/wav;codecs=pcm' : 'audio/webm;codecs=pcm';
-      const recorderType = RecordRTC.StereoAudioRecorder;
-      
-      recorder.current = new RecordRTC(stream, {
-        type: 'audio',
-        mimeType: 'audio/wav',
-        recorderType: RecordRTC.StereoAudioRecorder,
-        numberOfAudioChannels: 1,
-        desiredSampRate: 16000,
-        timeSlice: RECORDER_TIME_SLICE_MS,
-        ondataavailable: (blob) => {
-          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && status.isTranscribing) {
-            blob.arrayBuffer().then(buffer => {
-              // Convert ArrayBuffer to base64 for V3 JSON format
-              const uint8Array = new Uint8Array(buffer);
-              const base64Audio = btoa(String.fromCharCode.apply(null, uint8Array));
-              
-              const audioMessage = {
-                type: 'audio_data',
-                audio_data: base64Audio
-              };
-              
-              wsRef.current.send(JSON.stringify(audioMessage));
-            }).catch(error => {
-              console.error('[Dictation] Error converting blob to buffer:', error);
-            });
+          if (!currentToken) {
+            throw new Error('Failed to fetch AssemblyAI token');
           }
         }
-      });
-      // Start recording and sending audio
-      console.log('[Dictation] Starting audio recording');
-      recorder.current.startRecording();
+        if (!status.isTranscriberReady && currentToken) {
+          console.log('[Dictation] Transcriber not ready, setting up connection');
+          await setupTranscriptionConnection(currentToken);
+        }
+        console.log('[Dictation] Connection setup completed');
+      } else {
+        console.log('[Dictation] Connection already ready');
+      }
       
-      // Enable NoSleep to prevent device from sleeping
+      // Setup complete audio pipeline with AudioWorklet
+      await setupAudioPipeline();
+      
+      // Enable NoSleep and start timer
       if (noSleepRef.current) {
         noSleepRef.current.enable();
       }
-      
-      // Start timer
       startTimer();
       
       setStatus(prev => ({ 
         ...prev, 
-        isTranscribing: true, 
-        isLoading: false, 
-        isQueued: false 
-      }));
-      
-      console.log('[Dictation] V3 dictation started successfully');
-    } catch (error) {
-      console.error('[Dictation] Error starting dictation:', error);
-      setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
-      alert('Failed to start dictation. Please try again.');
-    }
-  };
-  
-  // Stop dictation
-  const stopDictation = async () => {
-    if (status.isStopping) {
-      console.log('[Dictation] Already stopping');
-      return;
-    }
-    
-    console.log('[Dictation] Stopping V3 dictation');
-    setStatus(prev => ({ ...prev, isStopping: true }));
-    
-    try {
-      // Stop recording
-      if (recorder.current && recorder.current.state !== 'stopped') {
-        console.log('[Dictation] Stopping recorder');
-        recorder.current.stopRecording();
-      }
-      
-      // Send session termination message to V3 API
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        const terminateMessage = {
-          type: 'session_terminate'
-        };
-        wsRef.current.send(JSON.stringify(terminateMessage));
-      }
-      
-      // Stop media stream
-      if (streamRef.current) {
-        console.log('[Dictation] Stopping media stream');
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-      
-      // Disable NoSleep
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
-      
-      // Stop timer and calculate hours used
-      stopTimer();
-      const hoursUsed = timer / 3600; // Convert seconds to hours
-      
-      // Update subscription hours
-      if (hoursUsed > 0) {
-        await updateUserSubscriptionHours(hoursUsed);
-      }
-      
-      // Send final transcription to parent component
-      if (transcription) {
-        console.log('[Dictation] Sending final transcription to parent');
-        onTextStreamUpdate(transcription);
-      }
-      
-      setStatus(prev => ({ 
-        ...prev, 
-        isTranscribing: false, 
-        isStopping: false,
+        isTranscribing: true,
+        isLoading: false,
         isQueued: false
       }));
       
-      console.log('[Dictation] V3 dictation stopped successfully');
+      setClipboardContent(' ');
     } catch (error) {
-      console.error('[Dictation] Error stopping dictation:', error);
-      setStatus(prev => ({ ...prev, isStopping: false }));
+      console.error('[Dictation] Start error:', error);
+      setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
+      cleanupResources();
+      alert('Failed to start dictation. Check microphone permissions.');
     }
   };
-  
-  // Toggle dictation state
+
+  const stopDictation = () => {
+    if (!status.isTranscribing && !status.isStopping) return;
+    
+    console.log('[Dictation] Stopping dictation');
+    setStatus(prev => ({ ...prev, isStopping: true }));
+    
+    const finalTranscription = transcription;
+    
+    // Capture current timer value before stopping it
+    const currentTimerValue = timer;
+    
+    // Stop streaming and cleanup
+    cleanupResources();
+    
+    // Disable NoSleep and stop timer
+    if (noSleepRef.current) {
+      noSleepRef.current.disable();
+    }
+    stopTimer();
+    
+    // Update subscription hours using captured timer value
+    const hoursUsed = currentTimerValue / 3600;
+    console.log(`[Dictation] Recording duration: ${currentTimerValue} seconds (${hoursUsed.toFixed(4)} hours)`);
+    updateUserSubscriptionHours(hoursUsed);
+    
+    // Send final transcription to parent
+    if (finalTranscription) {
+      onTextStreamUpdate(finalTranscription);
+    }
+    
+    setStatus(prev => ({ 
+      ...prev, 
+      isTranscribing: false,
+      isStopping: false
+    }));
+    
+    // Re-initialize after delay
+    setTimeout(async () => {
+      if (!isTokenValid()) {
+        await fetchAssemblyAIToken();
+      }
+      if (token.value) {
+        await setupTranscriptionConnection(token.value);
+      }
+    }, 1000);
+  };
+
   const toggleDictation = () => {
+    console.log('[Dictation] toggleDictation called - current status:', {
+      isTranscribing: status.isTranscribing,
+      isStopping: status.isStopping,
+      isLoading: status.isLoading,
+      isTranscriberReady: status.isTranscriberReady,
+      isInitialized: status.isInitialized
+    });
+    
     if (status.isTranscribing || status.isStopping) {
+      console.log('[Dictation] Calling stopDictation');
       stopDictation();
     } else {
+      console.log('[Dictation] Calling startDictation');
       startDictation();
     }
   };
-  
-  // Render the CreditPopup component if showCreditPopup is true
-  const creditPopupElement = showCreditPopup ? (
-    <div className="create-note-popup">
-      <div className="credit-limit-container popup-content" onClick={(e) => e.stopPropagation()}>
-        <CreditPopup onClose={handleCloseCreditPopup} />
-      </div>
-    </div>
-  ) : null;
-  
+
+  // Initialize on mount
+  useEffect(() => {
+    const initialize = async () => {
+      if (isInitializingRef.current) return;
+      isInitializingRef.current = true;
+      
+      console.log('[Dictation] Initializing component');
+      
+      // Initialize NoSleep
+      noSleepRef.current = new NoSleep();
+      
+      // Fetch initial token
+      const initialToken = await fetchAssemblyAIToken();
+      
+      // Fetch user subscription
+      await fetchUserSubscription();
+      
+      // Setup initial connection if token is available
+      if (initialToken) {
+        console.log('[Dictation] Initial token available, setting up transcription connection');
+        try {
+          await setupTranscriptionConnection(initialToken);
+          console.log('[Dictation] Initial transcription connection setup completed');
+        } catch (error) {
+          console.error('[Dictation] Error setting up initial connection:', error);
+          alert('Failed to initialize dictation service. Please refresh the page and try again.');
+        }
+      } else {
+        console.warn('[Dictation] No initial token available, skipping transcription connection setup');
+      }
+      
+      setStatus(prev => ({ ...prev, isInitialized: true }));
+      isInitializingRef.current = false;
+    };
+    
+    initialize();
+    
+    // Cleanup on unmount
+    return () => {
+      cleanupResources();
+      clearTimeout(tokenRefreshTimeoutRef.current);
+      clearInterval(heartbeatIntervalRef.current);
+    };
+  }, []);
+
+  // Handle queued actions
+  useEffect(() => {
+    if (status.isQueued && !status.isLoading && !status.isStopping) {
+      startDictation();
+    }
+  }, [status.isQueued, status.isLoading, status.isStopping]);
+
+  // Credit popup element
+  const creditPopupElement = showCreditPopup && (
+    <CreditPopup
+      onClose={() => setShowCreditPopup(false)}
+      username={username}
+    />
+  );
+
+  // Return object for parent component
   return {
     isDictationLoading: status.isLoading,
     isTranscribing: status.isTranscribing,
@@ -684,6 +714,7 @@ const Dictation = ({
     isTranscriberReady: status.isTranscriberReady,
     dictationQueued: status.isQueued,
     isStoppingDictation: status.isStopping,
+    isWebSocketConnecting: status.isLoading && !status.isTranscribing,
     creditPopupElement,
     startDictation,
     stopDictation,
