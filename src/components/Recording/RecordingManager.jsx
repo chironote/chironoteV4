@@ -117,8 +117,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         return null; // Or throw an error
       }
 
-      // Generate access token
+      // Generate access token and refresh token
       const accessToken = await generateToken();
+      const refreshToken = await generateRefreshToken();
 
       // Initialize SQS Client here with fetched credentials
       const sqsClient = new SQSClient({ 
@@ -151,6 +152,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         language: selectedLanguage === 'null' ? null : selectedLanguage,
         isFinalAudio: filePath.includes('_final_'),
         accessToken: accessToken,
+        refreshToken: refreshToken,
         noteSettings: localStorage.getItem('noteSettings')
       });
       // Create a shorter, valid deduplication ID (max 128 chars, alphanumeric, hyphens, underscores only)
@@ -542,6 +544,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     const accessToken = session.tokens.accessToken.toString();
     console.log(accessToken);
     return accessToken;
+  }
+
+  async function generateRefreshToken() {
+    const session = await fetchAuthSession();
+    const refreshToken = session.tokens.refreshToken?.toString();
+    return refreshToken;
   }
 
   useEffect(() => {
