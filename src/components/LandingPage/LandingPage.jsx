@@ -125,10 +125,10 @@ export default function LandingPage(props) {
 
     // Meta Pixel Tracking
     if (typeof window.fbq === 'function') {
-      if (actionName === 'Click_Landing_Hero_SignUp' || actionName === 'Click_Landing_Pricing_SignUp') {
+      if (actionName === 'Click_Landing_Hero_SignUp' || actionName === 'Click_Landing_Pricing_SignUp' || actionName === 'Click_Landing_Video_SignUp') {
         window.fbq('track', 'StartTrial');
       } else if (actionName === 'Click_Landing_Hero_BookDemo') {
-        window.fbq('track', 'StartTrial');
+        window.fbq('track', 'Contact');
       }
     }
   };
