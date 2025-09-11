@@ -11,7 +11,6 @@ import ClipboardButtons from './components/ClipboardButtons';
 import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
-import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
 import CookieConsent from './components/CookieConsent/CookieConsent';
@@ -30,8 +29,7 @@ import ReactGA from 'react-ga4';
 import { trackPageView } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
 
-import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
+import AuthContainer from './components/AuthUI/AuthContainer';
 
 import config from './amplifyconfiguration.json';
 Amplify.configure(config);
@@ -74,36 +72,6 @@ function RouteTracker() {
 }
 
 
-const components = {
-  Header: () => <Header />,
-  SignUp: {
-    FormFields() {
-      return (
-        <>
-          <Authenticator.SignUp.FormFields />
-          <CheckboxField
-            name="acknowledgement"
-            value="yes"
-            label={
-              <>
-                I agree with the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/PrivacyTermsConditions.pdf" target="_blank" rel="noopener noreferrer">Terms, Conditions and Privacy Policy</a>
-              </>
-            }
-            required={true}
-          />
-        </>
-      );
-    },
-  },
-};
-
-const services = {
-  async validateCustomSignUp(formData) {
-    if (!formData.acknowledgement) {
-      throw new Error('You must agree to the Terms and Conditions');
-    }
-  },
-};
 
 // Helper function to extract plain text from HTML
 const extractPlainText = (html) => {
@@ -848,32 +816,11 @@ function AuthenticatedApp({ signOut, user }) {
   );
 }
 
-// Custom wrapper to handle initialState parameter
-function AuthWrapper() {
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const initialAuthState = searchParams.get('initialState');
-  
-  // Configure authenticator props based on URL parameters
-  const authenticatorProps = {
-    components,
-    services,
-    initialState: initialAuthState === 'signUp' ? 'signUp' : 'signIn'
-  };
-  
-  // Clear URL parameters after reading them
-  useEffect(() => {
-    if (initialAuthState) {
-      // Remove the query parameter without causing a navigation
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, document.title, newUrl);
-    }
-  }, [initialAuthState]);
-  
-  return withAuthenticator(AuthenticatedApp, authenticatorProps)();
-}
-
-const ProtectedApp = () => <AuthWrapper />;
+const ProtectedApp = () => (
+  <AuthContainer>
+    <AuthenticatedApp />
+  </AuthContainer>
+);
 
 function App() {
   return (

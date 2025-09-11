@@ -51,7 +51,8 @@
     "cap:open:android": "cap open android",
     "cap:run:ios": "cap run ios",
     "cap:run:android": "cap run android",
-    "build:mobile": "npm run build && cap sync"
+    "build:mobile": "npm run build && cap sync",
+    "clean-build": "powershell -ExecutionPolicy Bypass -File ./clean-build.ps1"
   },
   "eslintConfig": {
     "extends": [
