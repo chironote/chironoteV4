@@ -70,15 +70,15 @@ This architecture creates a reactive and seamless user experience, where backend
 
 ## 6. Routing & Authentication Boundary
 
-The application employs a two-tiered routing structure using `react-router-dom` to create a clear separation between public-facing content and the secure, authenticated core application.
+The application employs a streamlined routing structure using `react-router-dom` that immediately redirects users to the authenticated application.
 
-### Tier 1: Public-Facing Router (`App` component)
+### Simplified Router (`App` component)
 
-The main `App` component, rendered directly by `index.js`, sets up the top-level router. Its primary responsibility is to define the authentication boundary:
+The main `App` component, rendered directly by `index.js`, sets up the top-level router with direct authentication flow:
 
-- **`'/'` (Root Path)**: This route renders the `<LandingPage />` component. It is completely public and does not require any authentication. This is the main entry point for new and logged-out users.
+- **`'/'` (Root Path)**: This route immediately redirects to `/app` using `<Navigate to="/app" replace />`. There is no landing page - users go directly to the authentication flow.
 - **`'/app/*'` (Protected Path)**: This route is a wildcard that matches any URL starting with `/app`. It renders the `<ProtectedApp />` component, which acts as the gateway to the entire authenticated application.
-- **`'*'` (Catch-all Path)**: A fallback route that redirects any unrecognized URL back to the landing page, preventing users from landing on a broken page.
+- **`'*'` (Catch-all Path)**: A fallback route that redirects any unrecognized URL back to the root path, which then redirects to `/app`.
 
 ### Tier 2: Authenticated Application (`ProtectedApp` and `AuthenticatedApp`)
 
@@ -119,4 +119,80 @@ The application's visual design and styling are guided by a few key principles:
 
 - **Iconography**: The application uses [Google's Material Symbols (Rounded)](https://fonts.google.com/icons?selected=Material+Symbols+Rounded) for all icons. This provides a consistent, modern, and easily recognizable visual language throughout the UI.
 
-- **Responsive Layout**: The app is designed to be responsive.   Account for silly mistakes llms do such as occasionally missing a comma or a period. Its most notable responsive feature is the automatic collapsing and toggling of the side panels (`TogglePanel`, `EditPanel`) on medium and small screens to maximize the usable space for the main clipboard area, ensuring a good user experience on tablets and mobile devices.
+- **Responsive Layout**: The app is designed to be responsive. Its most notable responsive feature is the automatic collapsing and toggling of the side panels (`TogglePanel`, `EditPanel`) on medium and small screens to maximize the usable space for the main clipboard area, ensuring a good user experience on tablets and mobile devices.
+
+## 9. Capacitor Mobile App Build Process
+
+ChiroNote is also deployed as a native mobile app using Capacitor. The correct build process is:
+
+1. **Sync web assets to native platforms:**
+   ```bash
+   npx cap sync android
+   ```
+
+2. **Build the native app:**
+   ```bash
+   npx cap build android
+   ```
+
+3. **Open in Android Studio for final APK generation:**
+   ```bash
+   npx cap open android
+   ```
+
+The APK will be generated in `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+## 10. Capacitor-Specific Code Implementations
+
+### Microphone Permission Handling
+
+Both `Dictation.jsx` and `RecordingManager.jsx` have been updated to handle Capacitor's native platform requirements for microphone access:
+
+**Dictation.jsx:**
+- Added `Capacitor` import from `@capacitor/core`
+- Implemented `requestMicrophonePermission()` function that detects native platform
+- Enhanced `getMediaStream()` with platform-aware logging and error handling
+- Provides specific error messages for mobile permission issues
+
+**RecordingManager.jsx:**
+- Added `Capacitor` import from `@capacitor/core`
+- Enhanced `setupRecorder()` function with native platform detection
+- Added logging for microphone access debugging on mobile devices
+
+**Key Implementation Pattern:**
+```javascript
+import { Capacitor } from '@capacitor/core';
+
+// Check if running on native platform
+if (Capacitor.isNativePlatform()) {
+  console.log('Running on native platform, requesting microphone access...');
+}
+
+// Enhanced getUserMedia with better error handling
+const stream = await navigator.mediaDevices.getUserMedia({
+  audio: { /* audio constraints */ }
+});
+```
+
+This ensures proper microphone permission handling across web and native mobile platforms, resolving DOMException errors that occur when `getUserMedia` fails on mobile devices.
+
+### Android Permissions Fix
+
+**Critical Issue:** When converting a web app to Capacitor, `getUserMedia` fails with DOMException because Android WebView requires additional permissions beyond what browsers handle automatically.
+
+**Solution:** Add these permissions to `android/app/src/main/AndroidManifest.xml`:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_VIDEO" />
+```
+
+**Why these are needed:**
+- `MODIFY_AUDIO_SETTINGS` - Required for audio stream control in WebView
+- `CAMERA` - Required by WebView even for audio-only `getUserMedia` calls
+- `RECORD_VIDEO` - Required for MediaRecorder API functionality
+
+This resolves the "Error accessing microphone [object DOMException]" that appears in logcat when the web app is packaged as a Capacitor app.

@@ -15,10 +15,10 @@ export const trackEvent = (category, action, label = null, value = null) => {
   }
 };
 
-// Landing page button clicks
-export const trackLandingPageButtonClick = (actionName) => {
+// App button clicks (formerly landing page)
+export const trackAppButtonClick = (actionName) => {
   // actionName will be a descriptive string like 'Click_Header_SignIn'
-  trackEvent('LandingPage', actionName);
+  trackEvent('App', actionName);
 };
 
 // Recording actions
@@ -41,8 +41,8 @@ export const trackDictationStart = () => {
   trackEvent('Dictation', 'Start_Dictation');
 };
 
-// Account page button clicks
-export const trackAccountPageButtonClick = (actionName) => {
-  // actionName will be a descriptive string like 'Click_BrowsePlans'
+// Account page interactions
+export const trackAccountPageInteraction = (actionName) => {
+  // actionName will be a descriptive string like 'View_Usage_Summary'
   trackEvent('AccountPage', actionName);
 };

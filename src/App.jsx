@@ -14,7 +14,6 @@ import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
-import LandingPage from './components/LandingPage/LandingPage';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
@@ -27,7 +26,6 @@ import * as mutations from './graphql/mutations';
 import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser } from 'aws-amplify/auth';
-import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
 import { trackPageView } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
@@ -52,9 +50,7 @@ function RouteTracker() {
     let descriptivePageName = '';
     const path = location.pathname;
 
-    if (path === '/') {
-      descriptivePageName = 'LandingPage_View';
-    } else if (path.startsWith('/app')) {
+    if (path.startsWith('/app') || path === '/') {
       // For /app, you might want to distinguish further if there are key sub-sections
       // For now, a general 'App' view. If /app is the main recording/dictation area:
       descriptivePageName = 'App_Main_View'; 
@@ -77,25 +73,6 @@ function RouteTracker() {
   return null;
 }
 
-// PWA detection component
-function PWARedirect() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  useEffect(() => {
-    // Check if app is running in standalone mode (as a PWA)
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
-                 window.navigator.standalone || 
-                 document.referrer.includes('android-app://');
-    
-    // If it's a PWA and we're on the landing page, redirect to /app
-    if (isPWA && location.pathname === '/') {
-      navigate('/app');
-    }
-  }, [navigate, location]);
-  
-  return null;
-}
 
 const components = {
   Header: () => <Header />,
@@ -866,7 +843,6 @@ function AuthenticatedApp({ signOut, user }) {
         } />
         <Route path="/account" element={<Account />} />
         <Route path="/feedback" element={<Feedback />} />
-        <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>
     </div>
   );
@@ -903,10 +879,9 @@ function App() {
   return (
     <Router>
       <RouteTracker />
-      <PWARedirect />
       <CookieConsent />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Navigate to="/app" replace />} />
         <Route path="/app/*" element={<ProtectedApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

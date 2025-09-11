@@ -5,6 +5,7 @@ import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import NoSleep from 'nosleep.js';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from '../../graphql/subscriptions';
+import { Capacitor } from '@capacitor/core';
 
 const client = generateClient();
 
@@ -411,6 +412,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const setupRecorder = async () => {
     try {
       setTextStream('');
+      
+      // Add Capacitor permission handling
+      if (Capacitor.isNativePlatform()) {
+        console.log('[RecordingManager] Running on native platform, requesting microphone access...');
+      }
+      
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1, // Mono
@@ -419,6 +426,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           autoGainControl: false,
         }
       });
+      
+      console.log('[RecordingManager] Microphone access granted successfully');
   
       const uaString = navigator.userAgent.toLowerCase();
       let options = {};

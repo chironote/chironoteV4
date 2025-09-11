@@ -7,6 +7,8 @@ import * as queries from '../../graphql/queries';
 import * as mutations from '../../graphql/mutations';
 import { getCurrentUser } from 'aws-amplify/auth';
 import CreditPopup from './CreditLimit';
+import { CapacitorHttp } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
 
 const client = generateClient();
 
@@ -287,17 +289,65 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     URL.revokeObjectURL(processorUrl);
   };
 
-  const getMediaStream = async () => {
-    // Request microphone with optimal settings for AssemblyAI
-    return await navigator.mediaDevices.getUserMedia({
-      audio: {
-        sampleRate: { ideal: 16000 },     // Prefer 16kHz but allow browser flexibility
-        channelCount: { ideal: 1 },       // Prefer mono but allow browser flexibility  
-        echoCancellation: true,           // Enable for better quality
-        noiseSuppression: true,           // Enable for better quality
-        autoGainControl: true            // Enable for consistent levels
+  const requestMicrophonePermission = async () => {
+    // Check if user has already seen the permission rationale
+    const hasSeenPermissionRationale = localStorage.getItem('chironote_mic_permission_rationale_shown');
+    
+    if (!hasSeenPermissionRationale) {
+      // Show permission rationale dialog only on first time
+      const userConsent = window.confirm(
+        "ChiroNote needs microphone access to transcribe your clinical notes. Your audio is processed securely and not stored permanently. Do you want to continue?"
+      );
+      
+      if (!userConsent) {
+        console.log('[Dictation] User denied microphone permission rationale');
+        return false;
       }
-    });
+      
+      // Mark that user has seen the rationale
+      localStorage.setItem('chironote_mic_permission_rationale_shown', 'true');
+    }
+    
+    if (Capacitor.isNativePlatform()) {
+      try {
+        // For Capacitor apps, we need to request permissions through the native layer
+        const { Device } = await import('@capacitor/device');
+        const info = await Device.getInfo();
+        console.log('[Dictation] Running on native platform:', info.platform);
+        
+        // Request microphone permission through getUserMedia which will trigger native permission
+        // This is the standard way for Capacitor apps
+        return true;
+      } catch (error) {
+        console.error('[Dictation] Error checking device info:', error);
+        return true; // Continue anyway
+      }
+    }
+    return true;
+  };
+
+  const getMediaStream = async () => {
+    // First request permission if on native platform
+    await requestMicrophonePermission();
+    
+    // Request microphone with optimal settings for AssemblyAI
+    try {
+      console.log('[Dictation] Requesting microphone access...');
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          sampleRate: { ideal: 16000 },     // Prefer 16kHz but allow browser flexibility
+          channelCount: { ideal: 1 },       // Prefer mono but allow browser flexibility  
+          echoCancellation: true,           // Enable for better quality
+          noiseSuppression: true,           // Enable for better quality
+          autoGainControl: true            // Enable for consistent levels
+        }
+      });
+      console.log('[Dictation] Microphone access granted successfully');
+      return stream;
+    } catch (error) {
+      console.error('[Dictation] Error accessing microphone:', error);
+      throw error;
+    }
   };
 
   const setupAudioWorklet = (mediaStream) => {
@@ -577,7 +627,22 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       console.error('[Dictation] Start error:', error);
       setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
       cleanupResources();
-      alert('Failed to start dictation. Check microphone permissions.');
+      
+      // Provide more specific error messages for mobile
+      let errorMessage = 'Failed to start dictation.';
+      if (error.name === 'NotAllowedError') {
+        errorMessage = 'Microphone permission denied. Please enable microphone access in your device settings and try again.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = 'No microphone found. Please ensure your device has a microphone and try again.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage = 'Microphone not supported on this device.';
+      } else if (Capacitor.isNativePlatform()) {
+        errorMessage = 'Failed to access microphone. Please check app permissions in device settings.';
+      } else {
+        errorMessage = 'Failed to start dictation. Check microphone permissions.';
+      }
+      
+      alert(errorMessage);
     }
   };
 
