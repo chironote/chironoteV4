@@ -6,11 +6,11 @@ ChiroNote is a sophisticated clinical documentation tool designed for practition
 
 ## 2. Core Technologies
 
-- **Frontend**: React.js, React Router, `@aws-amplify/ui-react`
+- **Frontend**: React.js, React Router, Custom Authentication UI
 - **Backend**: AWS Amplify
 - **API**: GraphQL (managed by AWS AppSync)
 - **Database**: Amazon DynamoDB (managed by Amplify)
-- **Authentication**: Amazon Cognito
+- **Authentication**: Amazon Cognito with Custom Sign-In UI (Gen 1 Amplify Auth)
 - **Real-time Communication**: AWS AppSync Subscriptions (via WebSockets)
 - **Audio Processing**: Likely involves AWS Transcribe for transcription, potentially orchestrated by AWS Lambda functions triggered from the frontend.
 
@@ -22,7 +22,7 @@ ChiroNote is a sophisticated clinical documentation tool designed for practition
   - `components/`: Contains all the modular React components that make up the UI.
     - `Recording/`: Components related to audio recording, dictation, and transcription streaming.
     - `Account/`: User account and subscription management.
-    - `AuthUI/`: Custom authentication components.
+    - `AuthUI/`: Custom authentication components replacing AWS Hosted UI.
     - `Navbar/`, `TogglePanel/`, `EditPanel/`: Core UI layout components.
   - `graphql/`: Auto-generated and custom GraphQL queries, mutations, and subscriptions.
   - `utils/`: Utility functions, such as analytics trackers.
@@ -32,7 +32,7 @@ ChiroNote is a sophisticated clinical documentation tool designed for practition
 
 The backend is built on a serverless architecture using AWS Amplify, which provisions and manages the underlying AWS services:
 
-- **Authentication**: `Amazon Cognito` handles user sign-up, sign-in, and session management. The frontend integrates with this using the `withAuthenticator` HOC and other Amplify Auth utilities.
+- **Authentication**: `Amazon Cognito` handles user sign-up, sign-in, and session management. The frontend integrates with this using custom authentication components built with Gen 1 Amplify Auth functions (`signIn`, `getCurrentUser`, `signOut`) from `aws-amplify/auth`, replacing the AWS Hosted UI for better mobile compatibility.
 - **API & Database**: An `AWS AppSync` GraphQL API serves as the interface between the frontend and the database. The database itself is `Amazon DynamoDB`, where all notes and transcripts are stored. The schema is defined in `amplify/backend/api/chironotev4/schema.graphql`. The schema includes a `noteLabel` field for custom note titles.
 - **Real-time Functionality**: `AppSync Subscriptions` are used to push real-time updates to the client. For example, when a new note is created or a transcription is finished, the `onUpdateNotesByOwner` subscription pushes the new data to the app, which then updates the UI without needing a manual refresh.
 - **Audio Transcription**: While not explicitly defined in `App.jsx`, the flow suggests that audio is sent to a service like `AWS Transcribe`. This is likely handled by a combination of frontend logic in `RecordingManager.jsx` and potentially an AWS Lambda function to process the audio file and update the DynamoDB table with the resulting transcript via a GraphQL mutation.
@@ -80,18 +80,23 @@ The main `App` component, rendered directly by `index.js`, sets up the top-level
 - **`'/app/*'` (Protected Path)**: This route is a wildcard that matches any URL starting with `/app`. It renders the `<ProtectedApp />` component, which acts as the gateway to the entire authenticated application.
 - **`'*'` (Catch-all Path)**: A fallback route that redirects any unrecognized URL back to the root path, which then redirects to `/app`.
 
-### Tier 2: Authenticated Application (`ProtectedApp` and `AuthenticatedApp`)
+### Tier 2: Custom Authentication & Authenticated Application
 
-This tier handles all functionality once a user is logged in.
+This tier handles authentication flow and all functionality once a user is logged in.
 
-- **Authentication Gate (`ProtectedApp` & `AuthWrapper`)**: The `<ProtectedApp />` component's sole purpose is to render `AuthWrapper`. This wrapper component uses the `withAuthenticator` Higher-Order Component (HOC) from AWS Amplify. `withAuthenticator` wraps the entire `AuthenticatedApp` and automatically handles the authentication flow. If a user is not logged in, it displays the Cognito-powered sign-in/sign-up UI. Only after a successful login does it render the `AuthenticatedApp` component, passing in user details and a `signOut` function as props.
+- **Custom Authentication System**: The `<ProtectedApp />` component renders the `<AuthContainer />` component, which implements a custom authentication flow instead of AWS Hosted UI. Key components include:
+  - **`AuthContainer.jsx`**: Main authentication wrapper that manages auth state using `getCurrentUser` and `signOut` from `aws-amplify/auth`. Listens to auth events via AWS Amplify Hub and conditionally renders either the sign-in form or the authenticated app.
+  - **`SignInForm.jsx`**: Custom sign-in interface that uses `signIn` from `aws-amplify/auth` (Gen 1 Amplify) for authentication. Features a modern UI matching ChiroNote's design with the logo positioned above a glass-like form container.
+  - **`AuthUI.css`**: Styling for the custom authentication interface with enhanced visual design, including semi-transparent backgrounds, backdrop blur effects, and improved shadows for a premium appearance.
+
+- **Authentication Flow**: When users are not authenticated, they see the custom `SignInForm` with email/password fields. The form uses Gen 1 Amplify auth functions (`signIn`, `getCurrentUser`) instead of the hosted UI. After successful authentication, `AuthContainer` passes user details and `signOut` function to `AuthenticatedApp`.
 
 - **Internal Routing (`AuthenticatedApp`)**: Once inside `AuthenticatedApp`, a second, nested `<Routes>` block manages navigation within the secure part of the application. Routes here are relative to `/app`. For example:
   - `path="/"`: Renders the main dashboard (Clipboard, Panels, etc.).
   - `path="/account"`: Renders the `<Account />` component.
   - `path="/feedback"`: Renders the `<Feedback />` component.
 
-This layered approach ensures that the business logic and state of the core application (`AuthenticatedApp`) are never loaded or accessible until a user has been verified by the Amplify authentication layer, providing a robust security model.
+This custom authentication approach provides better mobile compatibility (especially for Android Credential Manager integration) while maintaining the security model where business logic is only accessible after authentication verification.
 
 ## 7. Key Component Responsibilities
 
