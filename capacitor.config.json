@@ -3,7 +3,7 @@
   "appName": "ChiroNote",
   "webDir": "build",
   "server": {
-    "hostname": "chironote.com",
+    "hostname": "chironote.ai",
     "androidScheme": "https"
   },
   "plugins": {

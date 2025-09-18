@@ -24,6 +24,11 @@ if (Capacitor.isNativePlatform()) {
   // Configure status bar
   StatusBar.setStyle({ style: Style.Light });
   StatusBar.setBackgroundColor({ color: '#ffffff' });
+  
+  // Add a class to the document body to enable native-only CSS overrides
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.add('native-mobile');
+  }
 }
 
 // Initialize GA4 with default privacy settings

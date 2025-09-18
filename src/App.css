@@ -943,8 +943,8 @@
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
     transition: transform 0.3s ease;
-    transform: translateX(86.5vw);
-    background-color: white;
+    transform: translateX(90.5vw);
+    background-color: white !important;
     border-radius: 4px;
     padding: 3px;
   }
@@ -1400,7 +1400,7 @@
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
     transition: transform 0.3s ease;
-    transform: translateX(86.5vw);
+    transform: translateX(94.5vw);
     background-color: white !important;
     border-radius: 4px;
     padding: 3px;
@@ -1458,5 +1458,24 @@
   .clipboard-textarea {
     height: 100%;
     margin: 10px 10px 10px 0;
+  }
+}
+
+/* Native mobile-only adjustments (Capacitor) */
+@media (max-width: 768px) {
+  body.native-mobile .left-panel {
+    /* Narrow the history panel slightly to give the toggle button more breathing room */
+    width: 82% !important;
+    max-width: 82% !important;
+  }
+
+  /* Reposition the toggle icon to stay just outside the panel edge */
+  body.native-mobile .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
+    transform: translateX(88.7vw) !important; /* was 86.5vw for web */
+  }
+
+  /* Keep the shaded overlay matching the remaining width */
+  body.native-mobile .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
+    width: 18% !important; /* complements 82% panel width */
   }
 }

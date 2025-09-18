@@ -34,15 +34,6 @@ if ($LASTEXITCODE -eq 0) {
     exit 1
 }
 
-Write-Host "Building Android app..." -ForegroundColor Yellow
-npx cap build android
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "Android build completed" -ForegroundColor Green
-} else {
-    Write-Host "Android build failed" -ForegroundColor Red
-    exit 1
-}
-
 Write-Host "Opening Android Studio..." -ForegroundColor Yellow
 npx cap open android
 if ($LASTEXITCODE -eq 0) {
@@ -53,5 +44,5 @@ if ($LASTEXITCODE -eq 0) {
 
 Write-Host ""
 Write-Host "Clean build process completed successfully!" -ForegroundColor Green
-Write-Host "APK will be at: android\app\build\outputs\apk\debug\app-debug.apk" -ForegroundColor Cyan
+Write-Host "Project is ready to be built in Android Studio." -ForegroundColor Cyan
 Write-Host "Build is ready!" -ForegroundColor Magenta

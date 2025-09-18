@@ -165,21 +165,18 @@ const SignInForm = ({ onSignInSuccess }) => {
             </div>
           </div>
 
-          {Capacitor.isNativePlatform() && (
-            <div className="form-group">
-              <label className="remember-me-container">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  disabled={isLoading}
-                  className="remember-me-checkbox"
-                />
-                <span className="remember-me-checkmark"></span>
-                <span className="remember-me-text">Remember me on this device</span>
-              </label>
-            </div>
-          )}
+          <div className="form-group">
+            <label className="remember-me-container">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+                className="remember-me-checkbox"
+              />
+              <span className="remember-me-text">Remember me on this device</span>
+            </label>
+          </div>
 
           {error && (
             <div className="error-message">
