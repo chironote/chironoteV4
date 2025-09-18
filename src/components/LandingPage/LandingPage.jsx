@@ -18,6 +18,7 @@ import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import mockupMobile from '../../assets/mockup-mobile-final.png';
 import heroSvg from '../../assets/Hero.svg';
 import landingVideo from '../../assets/LandingVideo.mp4';
+import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 // Data constants
@@ -120,6 +121,18 @@ export default function LandingPage(props) {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const videoRef = useRef(null);
   
+  // Track Meta Pixel page view when component mounts
+  useEffect(() => {
+    if (typeof window.fbq === 'function') {
+      window.fbq('track', 'PageView');
+      // Also track a custom landing page view event
+      window.fbq('track', 'ViewContent', {
+        content_name: 'Landing Page',
+        content_category: 'Marketing Page'
+      });
+    }
+  }, []);
+  
   const handleButtonClick = (actionName) => {
     trackLandingPageButtonClick(actionName); // Google Analytics tracking
 
@@ -181,38 +194,6 @@ export default function LandingPage(props) {
     }
   }, [mobileMenuOpen]);
 
-  // Video auto-play functionality with intersection observer
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            // Video is in view - auto play
-            video.play().catch((error) => {
-              // Auto-play was prevented (browser policy)
-              console.log('Auto-play prevented:', error);
-            });
-          } else {
-            // Video is out of view - pause
-            video.pause();
-          }
-        });
-      },
-      {
-        threshold: 0.5, // Trigger when 50% of video is visible
-        rootMargin: '0px 0px -100px 0px' // Start playing a bit before fully in view
-      }
-    );
-
-    observer.observe(video);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
 
   return (
     <div className="landing-page">
@@ -425,16 +406,8 @@ export default function LandingPage(props) {
               className="landing-page__video-player"
               controls
               preload="metadata"
-              muted
               playsInline
-              poster=""
-              onClick={(e) => {
-                if (e.target.paused) {
-                  e.target.play();
-                } else {
-                  e.target.pause();
-                }
-              }}
+              poster={whiteboardThumbnail}
             >
               <source src={landingVideo} type="video/mp4" />
               Your browser does not support the video tag.

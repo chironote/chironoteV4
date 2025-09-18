@@ -511,9 +511,75 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     console.log('[Dictation] Resource cleanup complete');
   }, []);
 
+  // Simple reinitialization on page visibility change
+  const reinitializeDictation = useCallback(async () => {
+    if (isReconnectingRef.current) return;
+    
+    isReconnectingRef.current = true;
+    console.log('[Dictation] Reinitializing dictation after page visibility change');
+    
+    try {
+      // Clean up all existing resources
+      cleanupResources();
+      
+      // Reset all states to initial values
+      setStatus({
+        isLoading: false,
+        isTranscribing: false,
+        isInitialized: false,
+        isTranscriberReady: false,
+        isQueued: false,
+        isStopping: false
+      });
+      
+      // Clear transcription data
+      setTranscription('');
+      turnsRef.current = {};
+      currentTurnOrderRef.current = -1;
+      
+      // Fetch fresh token
+      const newToken = await fetchAssemblyAIToken();
+      if (!newToken) {
+        throw new Error('Failed to fetch token during reinitialization');
+      }
+      
+      // Fetch user subscription
+      await fetchUserSubscription();
+      
+      // Setup fresh transcription connection
+      await setupTranscriptionConnection(newToken);
+      
+      setStatus(prev => ({ ...prev, isInitialized: true }));
+      console.log('[Dictation] Reinitialization completed successfully');
+      
+    } catch (error) {
+      console.error('[Dictation] Reinitialization failed:', error);
+      setStatus({
+        isLoading: false,
+        isTranscribing: false,
+        isInitialized: false,
+        isTranscriberReady: false,
+        isQueued: false,
+        isStopping: false
+      });
+    } finally {
+      isReconnectingRef.current = false;
+    }
+  }, [cleanupResources, fetchAssemblyAIToken, fetchUserSubscription, setupTranscriptionConnection]);
+
+  const handleVisibilityChange = useCallback(() => {
+    if (!document.hidden) {
+      // Page became visible - reinitialize after short delay
+      console.log('[Dictation] Page became visible, scheduling reinitialization');
+      setTimeout(() => {
+        reinitializeDictation();
+      }, 1000);
+    }
+  }, [reinitializeDictation]);
+
   // Main dictation functions
   const startDictation = async () => {
-    if (status.isLoading || status.isStopping) {
+    if (status.isLoading || status.isStopping || !status.isInitialized) {
       setStatus(prev => ({ ...prev, isQueued: true }));
       return;
     }
@@ -697,6 +763,14 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       startDictation();
     }
   }, [status.isQueued, status.isLoading, status.isStopping]);
+
+  // Handle page visibility changes
+  useEffect(() => {
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [handleVisibilityChange]);
 
   // Credit popup element
   const creditPopupElement = showCreditPopup && (
