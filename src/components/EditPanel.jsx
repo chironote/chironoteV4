@@ -11,7 +11,21 @@ import { trackApplyChanges } from '../utils/analytics';
 const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws";
 const client = generateClient();
 
-const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardContent, setClipboardContent, userId, onTextStreamUpdate }) => {
+const EditPanel = ({ 
+  showEditPanel, 
+  editContent, 
+  setEditContent, 
+  clipboardContent, 
+  setClipboardContent, 
+  userId, 
+  onTextStreamUpdate,
+  // Dictation for Edit Panel
+  editDictationToggle,
+  isEditDictationLoading,
+  isEditTranscribing,
+  isEditWebSocketConnecting,
+  editCreditPopupElement
+}) => {
   const [textStream, setTextStream] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [userSubscription, setUserSubscription] = useState(null);
@@ -146,26 +160,107 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
   };
 
   return (
-    <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
-      <h2 className="panel-header" style={{width: '90%'}}>Smart Editor</h2>
-      <div className="edit-panel-content">
+    <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`} style={{ alignItems: 'stretch' }}>
+      <h2 className="panel-header" style={{ width: '100%', alignSelf: 'stretch' }}>Smart Editor</h2>
+      <div className="edit-panel-content" style={{ padding: 0 }}>
         <div className="editor-toolbar">
-          <button 
-            className="toolbar-button primary-button"
-            onClick={() => editStream(editContent)}
-          >
-            <span className="material-symbols-rounded">edit</span>
-            <span className="button-text">Apply Changes</span>
-          </button>
-          
-          <button 
-            className="toolbar-button delete-button"
-            onClick={() => setEditContent('')}
-            title="Clear text"
-          >
-            <span className="material-symbols-rounded">delete</span>
-          </button>
+          <div className="toolbar-group">
+            <button 
+              className="toolbar-button primary-button"
+              onClick={() => editStream(editContent)}
+            >
+              <span className="material-symbols-rounded toolbar-icon">edit</span>
+              <span className="button-text">Apply Changes</span>
+            </button>
+          </div>
+
+          <div className="toolbar-group" style={{ marginLeft: 'auto' }}>
+            {/* Dictation mic for Edit Panel - placed left of trash icon */}
+            <button
+              className={`toolbar-button ${
+                (isEditDictationLoading || isEditWebSocketConnecting) ? 'button-loading' : ''
+              } ${isEditTranscribing ? 'button-recording' : ''}`}
+              onClick={editDictationToggle}
+              title="Dictate into editor"
+            >
+              <span className="material-symbols-rounded toolbar-icon">mic</span>
+              {isEditTranscribing && <span className="recording-indicator"></span>}
+            </button>
+
+            <div className="toolbar-divider"></div>
+
+            <button 
+              className="toolbar-button delete-button"
+              onClick={() => setEditContent('')}
+              title="Clear text"
+            >
+              <span className="material-symbols-rounded toolbar-icon">delete</span>
+            </button>
+          </div>
         </div>
+        <style jsx>{`
+          /* Fix iOS/Safari blue tap highlight and force icon color */
+          .toolbar-button {
+            -webkit-tap-highlight-color: transparent;
+          }
+          .toolbar-icon, .material-symbols-rounded.toolbar-icon {
+            color: var(--dark-green) !important;
+          }
+          .toolbar-button.active {
+            background-color: var(--dark-green) !important;
+          }
+          .toolbar-button.active .toolbar-icon,
+          .toolbar-button.button-recording .toolbar-icon {
+            color: white !important;
+          }
+          /* Ensure the icon on the green primary button stays white */
+          .primary-button .toolbar-icon {
+            color: white !important;
+          }
+          @media only screen and (max-width: 768px) {
+            .hide-on-mobile {
+              display: none;
+            }
+          }
+
+          /* Pulsating animation for dictation button - darker */
+          .button-loading {
+            animation: pulse 1.5s infinite;
+            background-color: #dcdcdc !important;
+            pointer-events: none;
+          }
+
+          /* Recording state - green highlight */
+          .button-recording {
+            background-color: #2e6930 !important;
+            color: white !important;
+            position: relative;
+          }
+
+          /* Recording indicator - red dot */
+          .recording-indicator {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background-color: #ff3b30;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+          }
+
+          @keyframes blink {
+            0% { opacity: 1; }
+            50% { opacity: 0.4; }
+            100% { opacity: 1; }
+          }
+
+          @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+          }
+        `}</style>
         <textarea
           ref={textareaRef}
           className="edit-textarea"
@@ -183,6 +278,8 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
           subscription={userSubscription}
         />
       )}
+      {/* Dictation credit popup (Edit Panel dictation) */}
+      {editCreditPopupElement}
     </div>
   )
 }

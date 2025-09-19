@@ -300,6 +300,13 @@ function AuthenticatedApp({ signOut, user }) {
     username: user.username
   });
 
+  // Separate dictation instance for Edit Panel (streams into editContent)
+  const editDictation = Dictation({
+    onTextStreamUpdate: (newText) => setEditContent(newText),
+    setClipboardContent: setEditContent,
+    username: user.username
+  });
+
   // Update local states from dictation component
   useEffect(() => {
     setIsDictationLoading(dictation.isDictationLoading);
@@ -810,6 +817,11 @@ function AuthenticatedApp({ signOut, user }) {
               setClipboardContent={setClipboardContent}
               userId={user.username}
               onTextStreamUpdate={handleTextStreamUpdate}
+              editDictationToggle={editDictation.toggleDictation}
+              isEditDictationLoading={editDictation.isDictationLoading}
+              isEditTranscribing={editDictation.isTranscribing}
+              isEditWebSocketConnecting={editDictation.isWebSocketConnecting}
+              editCreditPopupElement={editDictation.creditPopupElement}
             />
 
             {(showRecordingPopup || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary) && (
