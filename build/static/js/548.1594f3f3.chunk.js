@@ -1,2 +1,0 @@
-"use strict";(self.webpackChunkchironote=self.webpackChunkchironote||[]).push([[548],{548:(e,c,n)=>{n.d(c,{Device:()=>h});const h=(0,n(403).F3)("Device",{web:()=>n.e(950).then(n.bind(n,569)).then((e=>new e.DeviceWeb))})}}]);
-//# sourceMappingURL=548.1594f3f3.chunk.js.map
