@@ -19,4 +19,7 @@ amplify-gradle-config.json
 amplifytools.xcconfig
 .secret-*
 **.sample
+build/*
+android/*
+!android\app\src\main\AndroidManifest.xml
 #amplify-do-not-edit-end
