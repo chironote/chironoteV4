@@ -21,6 +21,6 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 build/
-android/
+android/*
 !android/app/src/main/AndroidManifest.xml
 #amplify-do-not-edit-end
