@@ -8,6 +8,7 @@ amplify/mock-data
 amplify/mock-api-resources
 amplify/backend/amplify-meta.json
 amplify/backend/.temp
+amplify/
 dist/
 node_modules/
 aws-exports.js
@@ -20,6 +21,6 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 build/
-android/*
-!android\app\src\main\AndroidManifest.xml
+android/
+!android/app/src/main/AndroidManifest.xml
 #amplify-do-not-edit-end
