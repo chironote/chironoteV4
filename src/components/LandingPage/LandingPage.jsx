@@ -42,8 +42,8 @@ const TESTIMONIALS = [
 
 const FAQ_ITEMS = [
   {
-    question: 'How does ChiroNote work?',
-    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to generate structured clinical notes that you can review, edit, and copy into your EHR system.'
+    question: 'How does ChiroNote create chiropractic SOAP notes so quickly?',
+    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to transform each encounter into quick chiropractic SOAP notes that you can review, edit, and copy into your EHR system in seconds.'
   },
   {
     question: 'What if I don\'t want to use my phone for recording?',
@@ -70,8 +70,8 @@ const FAQ_ITEMS = [
     answer: 'If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.'
   },
   {
-    question: 'Can I try ChiroNote before purchasing?',
-    answer: 'Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.'
+    question: 'Is there a free way to create chiropractic SOAP notes with ChiroNote?',
+    answer: 'Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits, so you can create free chiropractic SOAP notes without a credit card. When you\'re ready for longer visits or a busier clinic, upgrading unlocks additional hours while keeping the same quick workflow.'
   },
   {
     question: 'Is using AI for medical note generation legally acceptable?',
@@ -273,12 +273,15 @@ export default function LandingPage(props) {
         <div className="landing-page__hero-container">
           <div className="landing-page__main">
             <div className="landing-page__main-content">
-              <div className="landing-page__title">
-                Reduce charting time to mere seconds
-              </div>
-              <div className="landing-page__subtitle">
-                With our Web-based Tool for automating SOAP notes
-              </div>
+              <h1 className="landing-page__title">
+                Quick Chiropractic SOAP Notes in Seconds
+              </h1>
+              <h2 className="landing-page__subtitle">
+                Automate documentation with a free plan that captures every visit without slowing you down.
+              </h2>
+              <p className="landing-page__hero-description">
+                From your first free hour to unlimited dictation, ChiroNote keeps chiropractic SOAP notes quick, compliant, and ready to paste into your EHR minutes after the patient leaves.
+              </p>
             </div>
             <div className="landing-page__action">
               <button 
@@ -296,6 +299,35 @@ export default function LandingPage(props) {
                 <span className="landing-page__demo-separator">•</span>
                 <span className="landing-page__demo-instant">Clinic Friendly Hours</span>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="landing-page__seo-section" id="chiropractic-soap-notes">
+        <div className="landing-page__seo-container">
+          <h2 className="landing-page__seo-title">Quick chiropractic SOAP notes for every visit</h2>
+          <p className="landing-page__seo-subtitle">
+            ChiroNote combines conversational AI with SOAP-specific structure to deliver quick chiropractic SOAP notes that sound like you wrote them. Start free, invite your team, and copy polished documentation into any EHR in just a few clicks.
+          </p>
+          <div className="landing-page__seo-grid">
+            <div className="landing-page__seo-card">
+              <h3>Instant SOAP summaries</h3>
+              <p>
+                Record directly from your adjusting room and let ChiroNote produce quick chiropractic SOAP notes keyed to subjective, objective, assessment, and plan sections automatically.
+              </p>
+            </div>
+            <div className="landing-page__seo-card">
+              <h3>Free plan to get started</h3>
+              <p>
+                Unlock one free hour of dictation and 15 monthly edits so you can prove out free chiropractic SOAP notes with real patients before upgrading.
+              </p>
+            </div>
+            <div className="landing-page__seo-card">
+              <h3>Built for chiropractic workflows</h3>
+              <p>
+                Templates stay focused on musculoskeletal complaints, progress exams, and rehab plans so you capture every adjustment and home exercise without slowing down.
+              </p>
             </div>
           </div>
         </div>
@@ -454,7 +486,7 @@ export default function LandingPage(props) {
               On our HIPAA compliant, medical grade platform
             </div>
             <div className="landing-page__feature-description">
-              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
+              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters, giving you quick chiropractic SOAP notes that are ready to copy into your EHR.
             </div>
           </div>
         </div>

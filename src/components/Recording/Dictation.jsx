@@ -77,7 +77,7 @@ class AudioProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-processor', AudioProcessor);
 `;
 
-const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
+const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instanceName = 'Main' }) => {
   // Status state object
   const [status, setStatus] = useState({
     isLoading: false,
@@ -373,7 +373,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     console.log('[Dictation] Audio pipeline setup complete');
   };
 
-  // AssemblyAI connection setup
+  // AssemblyAI connection setup - ONLY called when starting recording
   const setupTranscriptionConnection = async (tokenValue) => {
     console.log('[Dictation] Setting up transcription connection with token:', tokenValue ? 'present' : 'missing');
     return new Promise((resolve, reject) => {
@@ -392,7 +392,8 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
         });
         
         transcriberRef.current.on('open', () => {
-          console.log('[Dictation] StreamingTranscriber connected successfully');
+          console.log(`[Dictation-${instanceName}] 🟢 WEBSOCKET CONNECTION OPENED - Billing starts now`);
+          console.log(`[Dictation-${instanceName}] StreamingTranscriber connected successfully`);
           clearTimeout(connectionTimeout);
           setStatus(prev => ({ ...prev, isTranscriberReady: true }));
           resolve();
@@ -487,9 +488,11 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     // Close AssemblyAI connection
     if (transcriberRef.current) {
       try {
+        console.log(`[Dictation-${instanceName}] 🔴 CLOSING WEBSOCKET CONNECTION - Billing should stop now`);
         transcriberRef.current.close();
+        console.log(`[Dictation-${instanceName}] ✅ WEBSOCKET CONNECTION CLOSED - No more billing charges`);
       } catch (error) {
-        console.error('[Dictation] Error closing transcriber:', error);
+        console.error(`[Dictation-${instanceName}] Error closing transcriber:`, error);
       }
       transcriberRef.current = null;
     }
@@ -511,12 +514,12 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     console.log('[Dictation] Resource cleanup complete');
   }, []);
 
-  // Simple reinitialization on page visibility change
+  // Simple reinitialization on page visibility change - NO WebSocket connection
   const reinitializeDictation = useCallback(async () => {
     if (isReconnectingRef.current) return;
     
     isReconnectingRef.current = true;
-    console.log('[Dictation] Reinitializing dictation after page visibility change');
+    console.log('[Dictation] Reinitializing dictation after page visibility change - NO WebSocket connection');
     
     try {
       // Clean up all existing resources
@@ -537,7 +540,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       turnsRef.current = {};
       currentTurnOrderRef.current = -1;
       
-      // Fetch fresh token
+      // Fetch fresh token (but don't connect WebSocket yet)
       const newToken = await fetchAssemblyAIToken();
       if (!newToken) {
         throw new Error('Failed to fetch token during reinitialization');
@@ -546,11 +549,10 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       // Fetch user subscription
       await fetchUserSubscription();
       
-      // Setup fresh transcription connection
-      await setupTranscriptionConnection(newToken);
+      // DO NOT setup transcription connection here - wait for user to start recording
       
       setStatus(prev => ({ ...prev, isInitialized: true }));
-      console.log('[Dictation] Reinitialization completed successfully');
+      console.log('[Dictation] Reinitialization completed successfully - WebSocket will connect when recording starts');
       
     } catch (error) {
       console.error('[Dictation] Reinitialization failed:', error);
@@ -565,7 +567,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     } finally {
       isReconnectingRef.current = false;
     }
-  }, [cleanupResources, fetchAssemblyAIToken, fetchUserSubscription, setupTranscriptionConnection]);
+  }, [cleanupResources, fetchAssemblyAIToken, fetchUserSubscription]);
 
   const handleVisibilityChange = useCallback(() => {
     if (!document.hidden) {
@@ -601,26 +603,21 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
         }
       }
       
-      // Ensure connection ready
-      console.log('[Dictation] Checking connection readiness - tokenValid:', isTokenValid(), 'transcriberReady:', status.isTranscriberReady);
-      if (!isTokenValid() || !status.isTranscriberReady) {
-        console.log('[Dictation] Connection not ready, attempting to establish');
-        let currentToken = token.value;
-        if (!isTokenValid()) {
-          console.log('[Dictation] Token invalid, fetching new token');
-          currentToken = await fetchAssemblyAIToken();
-          if (!currentToken) {
-            throw new Error('Failed to fetch AssemblyAI token');
-          }
+      // ALWAYS establish fresh connection for each recording session
+      console.log(`[Dictation-${instanceName}] Establishing fresh WebSocket connection for recording session`);
+      let currentToken = token.value;
+      if (!isTokenValid()) {
+        console.log('[Dictation] Token invalid, fetching new token');
+        currentToken = await fetchAssemblyAIToken();
+        if (!currentToken) {
+          throw new Error('Failed to fetch AssemblyAI token');
         }
-        if (!status.isTranscriberReady && currentToken) {
-          console.log('[Dictation] Transcriber not ready, setting up connection');
-          await setupTranscriptionConnection(currentToken);
-        }
-        console.log('[Dictation] Connection setup completed');
-      } else {
-        console.log('[Dictation] Connection already ready');
       }
+      
+      // Always setup fresh transcription connection for each recording
+      console.log('[Dictation] Setting up fresh transcription connection');
+      await setupTranscriptionConnection(currentToken);
+      console.log('[Dictation] Fresh connection setup completed');
       
       // Setup complete audio pipeline with AudioWorklet
       await setupAudioPipeline();
@@ -680,18 +677,12 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     setStatus(prev => ({ 
       ...prev, 
       isTranscribing: false,
-      isStopping: false
+      isStopping: false,
+      isTranscriberReady: false  // Reset transcriber ready state
     }));
     
-    // Re-initialize after delay
-    setTimeout(async () => {
-      if (!isTokenValid()) {
-        await fetchAssemblyAIToken();
-      }
-      if (token.value) {
-        await setupTranscriptionConnection(token.value);
-      }
-    }, 1000);
+    // DO NOT re-establish connection - wait for next recording session
+    console.log(`[Dictation-${instanceName}] Recording stopped - WebSocket closed to prevent billing`);
   };
 
   const toggleDictation = () => {
@@ -712,36 +703,25 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     }
   };
 
-  // Initialize on mount
+  // Initialize on mount - NO WebSocket connection until recording starts
   useEffect(() => {
     const initialize = async () => {
       if (isInitializingRef.current) return;
       isInitializingRef.current = true;
       
-      console.log('[Dictation] Initializing component');
+      console.log(`[Dictation-${instanceName}] Initializing component - NO WebSocket connection until recording`);
       
       // Initialize NoSleep
       noSleepRef.current = new NoSleep();
       
-      // Fetch initial token
+      // Fetch initial token (but don't connect WebSocket)
       const initialToken = await fetchAssemblyAIToken();
       
       // Fetch user subscription
       await fetchUserSubscription();
       
-      // Setup initial connection if token is available
-      if (initialToken) {
-        console.log('[Dictation] Initial token available, setting up transcription connection');
-        try {
-          await setupTranscriptionConnection(initialToken);
-          console.log('[Dictation] Initial transcription connection setup completed');
-        } catch (error) {
-          console.error('[Dictation] Error setting up initial connection:', error);
-          alert('Failed to initialize dictation service. Please refresh the page and try again.');
-        }
-      } else {
-        console.warn('[Dictation] No initial token available, skipping transcription connection setup');
-      }
+      // DO NOT setup initial connection - this was causing continuous billing!
+      console.log(`[Dictation-${instanceName}] Initialization complete - WebSocket will connect when recording starts`);
       
       setStatus(prev => ({ ...prev, isInitialized: true }));
       isInitializingRef.current = false;

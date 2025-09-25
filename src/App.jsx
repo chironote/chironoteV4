@@ -297,14 +297,16 @@ function AuthenticatedApp({ signOut, user }) {
   const dictation = Dictation({
     onTextStreamUpdate: handleTextStreamUpdate,
     setClipboardContent,
-    username: user.username
+    username: user.username,
+    instanceName: 'Clipboard'
   });
 
   // Separate dictation instance for Edit Panel (streams into editContent)
   const editDictation = Dictation({
     onTextStreamUpdate: (newText) => setEditContent(newText),
     setClipboardContent: setEditContent,
-    username: user.username
+    username: user.username,
+    instanceName: 'EditPanel'
   });
 
   // Update local states from dictation component
