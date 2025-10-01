@@ -9,16 +9,12 @@ import feature2 from '../../assets/Feature2.svg';
 import mattImg from '../../assets/Matt.png';
 import samImg from '../../assets/Sam.png';
 import jessImg from '../../assets/Jess.png';
-import chromeLogoImg from '../../assets/chrome-logo.png';
-import firefoxLogoImg from '../../assets/firefox-logo.png';
-import safariLogoImg from '../../assets/safari-logo.png';
-import micImg from '../../assets/landingpage-mic.png';
-import ehrImg from '../../assets/landingpage-ehr.png';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import mockupMobile from '../../assets/mockup-mobile-final.png';
 import heroSvg from '../../assets/Hero.svg';
 import landingVideo from '../../assets/LandingVideo.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
+import hipaaLogo from '../../assets/hipaa.svg';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 // Data constants
@@ -42,12 +38,12 @@ const TESTIMONIALS = [
 
 const FAQ_ITEMS = [
   {
-    question: 'How does ChiroNote create chiropractic SOAP notes so quickly?',
-    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to transform each encounter into quick chiropractic SOAP notes that you can review, edit, and copy into your EHR system in seconds.'
+    question: 'How does ChiroNote work?',
+    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to quickly generate structured chiropractic SOAP notes that you can review, edit, and copy into your EHR system.'
   },
   {
     question: 'What if I don\'t want to use my phone for recording?',
-    answer: 'You can use any recording device with a microphone! Many practitioners prefer using a dedicated recording device or their computer\'s built-in microphone, especially when seeing patients in the same room where they do their charting. This setup allows for seamless recording and immediate note generation without switching between devices.'
+    answer: 'You can use any recording device with a microphone! Many practitioners prefer using a dedicated recording device or their computer\'s built-in microphone, especially when seeing patients in the same room where they do their charting. This setup allows for quick, seamless recording and immediate note generation without switching between devices.'
   },
   {
     question: 'Can I use ChiroNote on my work computer?',
@@ -58,20 +54,20 @@ const FAQ_ITEMS = [
     answer: 'Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.'
   },
   {
-    question: 'Can I edit the notes after they\'re created?',
-    answer: 'Absolutely! While ChiroNote generates highly accurate notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient\'s shoulder pain" - and the system intelligently updates your note. The Free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.'
+    question: 'Can I edit the chiropractic SOAP notes after they\'re created?',
+    answer: 'Absolutely! While ChiroNote generates highly accurate chiropractic SOAP notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient\'s shoulder pain" - and the system intelligently updates your note. The free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.'
   },
   {
     question: 'How do I integrate ChiroNote with my current EHR system?',
-    answer: 'ChiroNote works with any EHR system through a simple copy-paste process. Once your note is finalized, it appears on the ChiroNote website across all your devices, so open up a browser on the computer that contains your EHR and just copy the note into your existing EHR\'s note section. No complex integration, installation or technical setup is required.'
+    answer: 'ChiroNote works with any EHR system through a simple copy-paste process. Once your chiropractic SOAP note is finalized, it appears on the ChiroNote website across all your devices, so open up a browser on the computer that contains your EHR and just copy the note into your existing EHR\'s note section. No complex integration, installation or technical setup is required.'
   },
   {
     question: 'What if my dictation hours run out?',
     answer: 'If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.'
   },
   {
-    question: 'Is there a free way to create chiropractic SOAP notes with ChiroNote?',
-    answer: 'Yes! Our Free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits, so you can create free chiropractic SOAP notes without a credit card. When you\'re ready for longer visits or a busier clinic, upgrading unlocks additional hours while keeping the same quick workflow.'
+    question: 'Can I try ChiroNote before purchasing?',
+    answer: 'Yes! Our free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.'
   },
   {
     question: 'Is using AI for medical note generation legally acceptable?',
@@ -225,6 +221,12 @@ export default function LandingPage(props) {
             <div className="landing-page__nav">
               <button 
                 className="landing-page__nav-item"
+                onClick={() => handleNavClick('how-it-works')}
+              >
+                Video
+              </button>
+              <button 
+                className="landing-page__nav-item"
                 onClick={() => handleNavClick('faq')}
               >
                 FAQ
@@ -250,9 +252,8 @@ export default function LandingPage(props) {
           {/* Mobile navigation dropdown */}
           <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="landing-page__mobile-nav-items">
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('how-it-works')}>How we create chiropractic SOAP notes</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('what-you-need')}>How It Works</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('security')}>Security</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('prices')}>Pricing</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('faq')}>FAQ</div>
               <a 
@@ -273,61 +274,33 @@ export default function LandingPage(props) {
         <div className="landing-page__hero-container">
           <div className="landing-page__main">
             <div className="landing-page__main-content">
-              <h1 className="landing-page__title">
-                Quick Chiropractic SOAP Notes in Seconds
-              </h1>
-              <h2 className="landing-page__subtitle">
-                Automate documentation with a free plan that captures every visit without slowing you down.
-              </h2>
-              <p className="landing-page__hero-description">
-                From your first free hour to unlimited dictation, ChiroNote keeps chiropractic SOAP notes quick, compliant, and ready to paste into your EHR minutes after the patient leaves.
-              </p>
-            </div>
-            <div className="landing-page__action">
-              <button 
-                className="landing-page__demo-button"
-                onClick={() => {
-                  handleButtonClick('Click_Landing_Hero_BookDemo');
-                  handleNavClick('scheduler');
-                }}
-              >
-                <span className="landing-page__demo-button-main">See ChiroNote in Action</span>
-                <span className="landing-page__demo-button-sub">Book Your Consult Today</span>
-              </button>
-              <div className="landing-page__demo-info">
-                <span className="landing-page__demo-duration">Zero-Pressure Q&A</span>
-                <span className="landing-page__demo-separator">•</span>
-                <span className="landing-page__demo-instant">Clinic Friendly Hours</span>
+              <div className="landing-page__title">
+              Chiropractic SOAP notes in 60 seconds
+              </div>
+              <div className="landing-page__subtitle">
+              Watch our HIPAA-compliant, browser-based tool create chiropractic SOAP notes while you talk. Works with any EHR.
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="landing-page__seo-section" id="chiropractic-soap-notes">
-        <div className="landing-page__seo-container">
-          <h2 className="landing-page__seo-title">Quick chiropractic SOAP notes for every visit</h2>
-          <p className="landing-page__seo-subtitle">
-            ChiroNote combines conversational AI with SOAP-specific structure to deliver quick chiropractic SOAP notes that sound like you wrote them. Start free, invite your team, and copy polished documentation into any EHR in just a few clicks.
-          </p>
-          <div className="landing-page__seo-grid">
-            <div className="landing-page__seo-card">
-              <h3>Instant SOAP summaries</h3>
-              <p>
-                Record directly from your adjusting room and let ChiroNote produce quick chiropractic SOAP notes keyed to subjective, objective, assessment, and plan sections automatically.
-              </p>
-            </div>
-            <div className="landing-page__seo-card">
-              <h3>Free plan to get started</h3>
-              <p>
-                Unlock one free hour of dictation and 15 monthly edits so you can prove out free chiropractic SOAP notes with real patients before upgrading.
-              </p>
-            </div>
-            <div className="landing-page__seo-card">
-              <h3>Built for chiropractic workflows</h3>
-              <p>
-                Templates stay focused on musculoskeletal complaints, progress exams, and rehab plans so you capture every adjustment and home exercise without slowing down.
-              </p>
+            <div className="landing-page__action">
+              <div className="landing-page__action-buttons">
+                <button 
+                  className="landing-page__demo-button"
+                  onClick={() => {
+                    handleButtonClick('Click_Landing_Hero_BookDemo');
+                    handleNavClick('scheduler');
+                  }}
+                >
+                  <span className="landing-page__demo-button-main">See ChiroNote in Action</span>
+                  <span className="landing-page__demo-button-sub">Book Your Consult Today</span>
+                </button>
+                <a 
+                  href="/app?initialState=signUp" 
+                  className="landing-page__try-free-button"
+                  onClick={() => handleButtonClick('Click_Landing_Hero_TryFree')}
+                >
+                  Try Now for Free
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -335,6 +308,17 @@ export default function LandingPage(props) {
 
       {/* Testimonials Section */}
       <div id="testimonials" className="landing-page__testimonials">
+        {/* Trust tags above testimonials */}
+        <div className="landing-page__trust-tags">
+          <span className="landing-page__trust-tag">Trusted by busy chiropractic clinics</span>
+          <span className="landing-page__trust-separator">·</span>
+          <span className="landing-page__trust-tag">HIPAA-compliant</span>
+          <span className="landing-page__trust-separator">·</span>
+          <span className="landing-page__trust-tag">Quick setup</span>
+          <span className="landing-page__trust-separator">·</span>
+          <span className="landing-page__trust-tag">No install</span>
+        </div>
+        
         {/* Regular testimonial cards for desktop/tablet */}
         <div className="landing-page__testimonial-cards">
           {TESTIMONIALS.map((testimonial, index) => (
@@ -427,9 +411,10 @@ export default function LandingPage(props) {
 
 
       {/* Video Demo Section */}
-      <div className="landing-page__video-section">
+      <div id="how-it-works" className="landing-page__video-section">
         <div className="landing-page__video-container">
           <div className="landing-page__video-content">
+            <div className="landing-page__feature-tag">How we create chiropractic SOAP notes</div>
           </div>
           
           <div className="landing-page__video-wrapper">
@@ -465,7 +450,7 @@ export default function LandingPage(props) {
               Try Now for Free
             </a>
             <p className="landing-page__video-cta-text">
-              Ready to just try it for yourself - go ahead. Just create a password to keep everything secure.
+              Do you want to just try it for yourself - go ahead. Just create a password to keep everything secure. You get an hour on us so that you KNOW this works for your clinic.
             </p>
           </div>
         </div>
@@ -473,66 +458,44 @@ export default function LandingPage(props) {
 
       {/* Feature Sections */}
       <div id="features" className="landing-page__features">
-        {/* Feature 1 - Faster Charting */}
-        <div id="note-creation" className="landing-page__feature">
-          <img
-            src={mockupLaptop}
-            alt="ChiroNote on laptop"
-            className="landing-page__feature-image"
-          />
-          <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">Secure Charting</div>
-            <div className="landing-page__feature-title">
-              On our HIPAA compliant, medical grade platform
-            </div>
-            <div className="landing-page__feature-description">
-              ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters, giving you quick chiropractic SOAP notes that are ready to copy into your EHR.
+        {/* Secure Charting Section */}
+        <div id="note-creation" className="landing-page__secure-charting-section">
+          <div className="landing-page__feature-tag">Secure Charting</div>
+          
+          <div className="landing-page__secure-charting-content">
+            <img
+              src={mockupLaptop}
+              alt="Quick demo creating chiropractic SOAP notes"
+              className="landing-page__secure-charting-image"
+            />
+            <div className="landing-page__secure-charting-text">
+              <div className="landing-page__feature-title">
+                On our HIPAA compliant, medical grade platform
+              </div>
+              <div className="landing-page__feature-description">
+                ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
+              </div>
+              <img
+                src={hipaaLogo}
+                alt="HIPAA Compliant"
+                className="landing-page__hipaa-logo"
+              />
             </div>
           </div>
         </div>
-
-
       </div>
 
-      {/* What You Need Section */}
-      <div id="what-you-need" className="landing-page__what-you-need">
-        <div className="landing-page__feature-tag">You Have What You Need</div>
-        
-        <div className="landing-page__requirements">
-          {/* Requirement 1 - Recording Device */}
-          <div className="landing-page__requirement-item">
-            <div className="landing-page__requirement-icon">
-              <img src={micImg} alt="Recording Device" />
-            </div>
-            <h3>Recording Device</h3>
-            <p>Any smartphone or device with a microphone will work perfectly</p>
-          </div>
-          
-          {/* Requirement 2 - Modern Browser */}
-          <div className="landing-page__requirement-item">
-            <div className="landing-page__requirement-icon browser-icons-card">
-              <img src={chromeLogoImg} alt="Chrome" className="browser-icon chrome" />
-              <img src={firefoxLogoImg} alt="Firefox" className="browser-icon firefox" />
-              <img src={safariLogoImg} alt="Safari" className="browser-icon safari" />
-            </div>
-            <h3>Modern Browser</h3>
-            <p>Works with all major browsers including Chrome, Firefox, Safari and Microsoft Edge</p>
-          </div>
-          
-          {/* Requirement 3 - Your Own EHR */}
-          <div className="landing-page__requirement-item">
-            <div className="landing-page__requirement-icon">
-              <img src={ehrImg} alt="Your Own EHR" />
-            </div>
-            <h3>Your Own EHR</h3>
-            <p>Exports to any electronic health record system with a simple copy-paste</p>
-          </div>
-        </div>
-      </div>
 
       {/* Scheduler Section */}
       <div id="scheduler" className="landing-page__scheduler-section">
         <div className="landing-page__feature-tag">Book a Consult</div>
+        
+        {/* Scheduler info tags */}
+        <div className="landing-page__scheduler-info">
+          <span className="landing-page__scheduler-info-tag">15 minutes</span>
+          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
+          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
+        </div>
         
         <div className="landing-page__scheduler-container">
           <div className="landing-page__scheduler-widget">

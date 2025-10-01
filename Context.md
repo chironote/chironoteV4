@@ -76,9 +76,10 @@ The application employs a two-tiered routing structure using `react-router-dom` 
 
 The main `App` component, rendered directly by `index.js`, sets up the top-level router. Its primary responsibility is to define the authentication boundary:
 
-- **`'/'` (Root Path)**: This route renders the `<LandingPage />` component. It is completely public and does not require any authentication. This is the main entry point for new and logged-out users.
+- **`'/'` (Root Path)**: Redirects to `/chiropractic-soap-notes-demo` for SEO optimization.
+- **`'/chiropractic-soap-notes-demo'` (Landing Page)**: This route renders the `<LandingPage />` component. It is completely public and does not require any authentication. This is the main entry point for new and logged-out users.
 - **`'/app/*'` (Protected Path)**: This route is a wildcard that matches any URL starting with `/app`. It renders the `<ProtectedApp />` component, which acts as the gateway to the entire authenticated application.
-- **`'*'` (Catch-all Path)**: A fallback route that redirects any unrecognized URL back to the landing page, preventing users from landing on a broken page.
+- **`'*'` (Catch-all Path)**: A fallback route that redirects any unrecognized URL back to `/chiropractic-soap-notes-demo`, preventing users from landing on a broken page.
 
 ### Tier 2: Authenticated Application (`ProtectedApp` and `AuthenticatedApp`)
 

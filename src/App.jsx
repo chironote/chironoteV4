@@ -109,7 +109,7 @@ const components = {
             value="yes"
             label={
               <>
-                I agree with the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/PrivacyTermsConditions.pdf" target="_blank" rel="noopener noreferrer">Terms, Conditions and Privacy Policy</a>
+                I agree with the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html" target="_blank" rel="noopener noreferrer">Terms, Conditions and Privacy Policy</a>
               </>
             }
             required={true}
@@ -920,9 +920,10 @@ function App() {
       <PWARedirect />
       <CookieConsent />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
+        <Route path="/chiropractic-soap-notes-demo" element={<LandingPage />} />
         <Route path="/app/*" element={<ProtectedApp />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
       </Routes>
     </Router>
   );
