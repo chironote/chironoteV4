@@ -156,7 +156,9 @@ export default function LandingPage(props) {
   const handleNavClick = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + 80;
+      // Scroll offset adjusted for proper positioning
+      const scrollOffset = sectionId === 'scheduler' ? 50 : -20;
+      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + scrollOffset;
       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
       setMobileMenuOpen(false);
     }
@@ -252,8 +254,8 @@ export default function LandingPage(props) {
           {/* Mobile navigation dropdown */}
           <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="landing-page__mobile-nav-items">
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('how-it-works')}>How we create chiropractic SOAP notes</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
+              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('how-it-works')}>How we create chiropractic SOAP notes</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('prices')}>Pricing</div>
               <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('faq')}>FAQ</div>
               <a 
