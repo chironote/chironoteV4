@@ -36,6 +36,7 @@ export default function NotesUpdateForm(props) {
     transcript: "",
     note: "",
     isCompleted: false,
+    noteLabel: "",
   };
   const [owner, setOwner] = React.useState(initialValues.owner);
   const [timestamp, setTimestamp] = React.useState(initialValues.timestamp);
@@ -44,6 +45,7 @@ export default function NotesUpdateForm(props) {
   const [isCompleted, setIsCompleted] = React.useState(
     initialValues.isCompleted
   );
+  const [noteLabel, setNoteLabel] = React.useState(initialValues.noteLabel);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     const cleanValues = notesRecord
@@ -54,6 +56,7 @@ export default function NotesUpdateForm(props) {
     setTranscript(cleanValues.transcript);
     setNote(cleanValues.note);
     setIsCompleted(cleanValues.isCompleted);
+    setNoteLabel(cleanValues.noteLabel);
     setErrors({});
   };
   const [notesRecord, setNotesRecord] = React.useState(notesModelProp);
@@ -78,6 +81,7 @@ export default function NotesUpdateForm(props) {
     transcript: [],
     note: [],
     isCompleted: [],
+    noteLabel: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -110,6 +114,7 @@ export default function NotesUpdateForm(props) {
           transcript: transcript ?? null,
           note: note ?? null,
           isCompleted: isCompleted ?? null,
+          noteLabel: noteLabel ?? null,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -176,6 +181,7 @@ export default function NotesUpdateForm(props) {
               transcript,
               note,
               isCompleted,
+              noteLabel,
             };
             const result = onChange(modelFields);
             value = result?.owner ?? value;
@@ -204,6 +210,7 @@ export default function NotesUpdateForm(props) {
               transcript,
               note,
               isCompleted,
+              noteLabel,
             };
             const result = onChange(modelFields);
             value = result?.timestamp ?? value;
@@ -232,6 +239,7 @@ export default function NotesUpdateForm(props) {
               transcript: value,
               note,
               isCompleted,
+              noteLabel,
             };
             const result = onChange(modelFields);
             value = result?.transcript ?? value;
@@ -260,6 +268,7 @@ export default function NotesUpdateForm(props) {
               transcript,
               note: value,
               isCompleted,
+              noteLabel,
             };
             const result = onChange(modelFields);
             value = result?.note ?? value;
@@ -288,6 +297,7 @@ export default function NotesUpdateForm(props) {
               transcript,
               note,
               isCompleted: value,
+              noteLabel,
             };
             const result = onChange(modelFields);
             value = result?.isCompleted ?? value;
@@ -302,6 +312,35 @@ export default function NotesUpdateForm(props) {
         hasError={errors.isCompleted?.hasError}
         {...getOverrideProps(overrides, "isCompleted")}
       ></SwitchField>
+      <TextField
+        label="Note label"
+        isRequired={false}
+        isReadOnly={false}
+        value={noteLabel}
+        onChange={(e) => {
+          let { value } = e.target;
+          if (onChange) {
+            const modelFields = {
+              owner,
+              timestamp,
+              transcript,
+              note,
+              isCompleted,
+              noteLabel: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.noteLabel ?? value;
+          }
+          if (errors.noteLabel?.hasError) {
+            runValidationTasks("noteLabel", value);
+          }
+          setNoteLabel(value);
+        }}
+        onBlur={() => runValidationTasks("noteLabel", noteLabel)}
+        errorMessage={errors.noteLabel?.errorMessage}
+        hasError={errors.noteLabel?.hasError}
+        {...getOverrideProps(overrides, "noteLabel")}
+      ></TextField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

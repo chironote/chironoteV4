@@ -115,6 +115,7 @@ export default function LandingPage(props) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaqItem, setActiveFaqItem] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [email, setEmail] = useState('');
   const videoRef = useRef(null);
   
   // Track Meta Pixel page view when component mounts
@@ -178,6 +179,14 @@ export default function LandingPage(props) {
   
   const handlePrevTestimonial = () => {
     setActiveTestimonial((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
+  };
+
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (email) {
+      handleButtonClick('Click_Awareness_Hero_EmailSignUp');
+      window.location.href = `/app?initialState=signUp&prefillEmail=${encodeURIComponent(email)}`;
+    }
   };
 
 
@@ -284,25 +293,23 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__action">
-              <div className="landing-page__action-buttons">
+              <form className="landing-page__action-buttons" onSubmit={handleEmailSubmit}>
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="landing-page__email-input"
+                />
                 <button 
+                  type="submit"
                   className="landing-page__demo-button"
-                  onClick={() => {
-                    handleButtonClick('Click_Landing_Hero_BookDemo');
-                    handleNavClick('scheduler');
-                  }}
                 >
-                  <span className="landing-page__demo-button-main">Book my Tour</span>
-                  <span className="landing-page__demo-button-sub">15 Minutes - no sales pitch!</span>
+                  <span className="landing-page__demo-button-main">Try Now for Free</span>
+                  <span className="landing-page__demo-button-sub">No Credit Card Required</span>
                 </button>
-                <a 
-                  href="/app?initialState=signUp" 
-                  className="landing-page__try-free-button"
-                  onClick={() => handleButtonClick('Click_Landing_Hero_TryFree')}
-                >
-                  Try Now for Free
-                </a>
-              </div>
+              </form>
             </div>
           </div>
         </div>

@@ -152,7 +152,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
       console.log('[Dictation] Fetching AssemblyAI token from lambda');
       
       const response = await fetch(
-        'https://tks3r2tlj2kq4rejfvusvqucye0btywr.lambda-url.us-east-2.on.aws',
+        'https://llck5m4mzd6sa6do3joadjzzs40jtoef.lambda-url.us-east-2.on.aws',
         {
           method: 'GET',
           headers: {
@@ -211,28 +211,43 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
 
   // Subscription management functions
   const fetchUserSubscription = async () => {
-    try {
-      console.log('[Dictation] Fetching user subscription');
-      
-      const user = await getCurrentUser();
-      const owner = user.username;
-      const subscriptionData = await client.graphql({
-        query: queries.getUserSubscription,
-        variables: { owner }
-      });
-      
-      const userData = subscriptionData.data.getUserSubscription;
-      setSubscription({
-        data: userData,
-        hasHours: userData ? userData.hoursleft > 0 : false
-      });
-      
-      console.log('[Dictation] Subscription fetched successfully');
-      return userData;
-    } catch (error) {
-      console.error('[Dictation] Error fetching user subscription:', error);
-      return null;
+    // Try twice with a simple retry
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.log('[Dictation] Retrying subscription fetch (attempt', attempt + 1, ')');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        } else {
+          console.log('[Dictation] Fetching user subscription');
+        }
+        
+        const user = await getCurrentUser();
+        const owner = user.username;
+        const subscriptionData = await client.graphql({
+          query: queries.getUserSubscription,
+          variables: { owner }
+        });
+        
+        const userData = subscriptionData.data.getUserSubscription;
+        setSubscription({
+          data: userData,
+          hasHours: userData ? userData.hoursleft > 0 : false
+        });
+        
+        console.log('[Dictation] Subscription fetched successfully:', {
+          hoursleft: userData?.hoursleft,
+          hasHours: userData ? userData.hoursleft > 0 : false
+        });
+        return userData;
+      } catch (error) {
+        console.error(`[Dictation] Error fetching subscription (attempt ${attempt + 1}):`, error);
+        if (attempt === 1) {
+          // Last attempt failed
+          return null;
+        }
+      }
     }
+    return null;
   };
 
   const updateUserSubscriptionHours = async (hoursUsed) => {
@@ -546,8 +561,10 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
         throw new Error('Failed to fetch token during reinitialization');
       }
       
-      // Fetch user subscription
-      await fetchUserSubscription();
+      // Fetch user subscription (don't block reinitialization if it fails)
+      await fetchUserSubscription().catch(err => {
+        console.error('[Dictation] Subscription fetch failed during reinit, continuing anyway:', err);
+      });
       
       // DO NOT setup transcription connection here - wait for user to start recording
       
@@ -581,26 +598,45 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
 
   // Main dictation functions
   const startDictation = async () => {
-    if (status.isLoading || status.isStopping || !status.isInitialized) {
-      setStatus(prev => ({ ...prev, isQueued: true }));
+    // If already stopping, ignore
+    if (status.isStopping) {
+      return;
+    }
+    
+    // If already loading and NOT queued, ignore (prevents double-clicks)
+    if (status.isLoading && !status.isQueued) {
+      return;
+    }
+    
+    // If not initialized yet, show loading state and queue the action
+    if (!status.isInitialized) {
+      console.log('[Dictation] Not initialized yet, showing loading state and queuing');
+      setStatus(prev => ({ ...prev, isLoading: true, isQueued: true }));
       return;
     }
     
     try {
-      setStatus(prev => ({ ...prev, isLoading: true }));
+      setStatus(prev => ({ ...prev, isLoading: true, isQueued: false }));
       setTranscription('');
       setClipboardContent('');
       turnsRef.current = {};
       currentTurnOrderRef.current = -1;
       
-      // Validate subscription hours
-      if (!subscription.hasHours) {
-        const updatedSub = await fetchUserSubscription();
-        if (!updatedSub || updatedSub.hoursleft <= 0) {
-          setShowCreditPopup(true);
-          setStatus(prev => ({ ...prev, isLoading: false }));
-          return;
-        }
+      // Always fetch fresh subscription data before checking credits
+      console.log('[Dictation] Fetching fresh subscription data before starting...');
+      const freshSub = await fetchUserSubscription();
+      
+      // Only show credit popup if we successfully fetched data AND hours are depleted
+      if (freshSub && freshSub.hoursleft <= 0) {
+        console.log('[Dictation] No hours remaining, showing credit popup');
+        setShowCreditPopup(true);
+        setStatus(prev => ({ ...prev, isLoading: false }));
+        return;
+      }
+      
+      // If fetch failed, allow dictation to proceed (fail open to avoid false negatives)
+      if (!freshSub) {
+        console.warn('[Dictation] Could not verify subscription, proceeding with dictation');
       }
       
       // ALWAYS establish fresh connection for each recording session
@@ -717,8 +753,10 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
       // Fetch initial token (but don't connect WebSocket)
       const initialToken = await fetchAssemblyAIToken();
       
-      // Fetch user subscription
-      await fetchUserSubscription();
+      // Fetch user subscription (don't block initialization if it fails)
+      await fetchUserSubscription().catch(err => {
+        console.error('[Dictation] Subscription fetch failed during init, continuing anyway:', err);
+      });
       
       // DO NOT setup initial connection - this was causing continuous billing!
       console.log(`[Dictation-${instanceName}] Initialization complete - WebSocket will connect when recording starts`);
@@ -737,12 +775,13 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
     };
   }, []);
 
-  // Handle queued actions
+  // Handle queued actions - when initialization completes
   useEffect(() => {
-    if (status.isQueued && !status.isLoading && !status.isStopping) {
+    if (status.isQueued && status.isInitialized && !status.isStopping) {
+      console.log('[Dictation] Initialization complete, executing queued action');
       startDictation();
     }
-  }, [status.isQueued, status.isLoading, status.isStopping]);
+  }, [status.isQueued, status.isInitialized, status.isStopping]);
 
   // Handle page visibility changes
   useEffect(() => {

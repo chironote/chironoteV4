@@ -253,14 +253,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     setIsPreparingTranscript(false);
     // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
     generateTimeoutRef.current = setTimeout(() => {
-      console.warn('Generating Note timeout (4 minutes) - closing spinner and returning to main app');
+      console.warn('Generating Note timeout (2 minutes) - closing spinner and returning to main app');
       setIsGeneratingSummary(false);
       setIsPreparingTranscript(false);
       onTransitionToMainApp();
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }
-    }, 240000);
+    }, 120000);
     try {
       const userId = await getUserId();
       if (!userId) {

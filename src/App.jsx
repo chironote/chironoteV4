@@ -15,6 +15,7 @@ import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
 import LandingPage from './components/LandingPage/LandingPage';
+import AwarenessLandingPage from './components/LandingPage/AwarenessLandingPage';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
@@ -891,22 +892,40 @@ function AuthWrapper() {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const initialAuthState = searchParams.get('initialState');
+  const prefillEmail = searchParams.get('prefillEmail');
+  
+  // Configure form fields with prefilled email if provided
+  const formFields = prefillEmail ? {
+    signUp: {
+      email: {
+        defaultValue: prefillEmail,
+        isReadOnly: false
+      }
+    },
+    signIn: {
+      username: {
+        defaultValue: prefillEmail,
+        isReadOnly: false
+      }
+    }
+  } : undefined;
   
   // Configure authenticator props based on URL parameters
   const authenticatorProps = {
     components,
     services,
-    initialState: initialAuthState === 'signUp' ? 'signUp' : 'signIn'
+    initialState: initialAuthState === 'signUp' ? 'signUp' : 'signIn',
+    ...(formFields && { formFields })
   };
   
   // Clear URL parameters after reading them
   useEffect(() => {
-    if (initialAuthState) {
+    if (initialAuthState || prefillEmail) {
       // Remove the query parameter without causing a navigation
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
-  }, [initialAuthState]);
+  }, [initialAuthState, prefillEmail]);
   
   return withAuthenticator(AuthenticatedApp, authenticatorProps)();
 }
@@ -922,6 +941,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
         <Route path="/chiropractic-soap-notes-demo" element={<LandingPage />} />
+        <Route path="/awareness" element={<AwarenessLandingPage />} />
         <Route path="/app/*" element={<ProtectedApp />} />
         <Route path="*" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
       </Routes>
