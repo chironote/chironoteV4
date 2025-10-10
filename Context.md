@@ -181,23 +181,401 @@ const stream = await navigator.mediaDevices.getUserMedia({
 
 This ensures proper microphone permission handling across web and native mobile platforms, resolving DOMException errors that occur when `getUserMedia` fails on mobile devices.
 
-### Android Permissions Fix
+### Android Permissions Configuration
 
-**Critical Issue:** When converting a web app to Capacitor, `getUserMedia` fails with DOMException because Android WebView requires additional permissions beyond what browsers handle automatically.
-
-**Solution:** Add these permissions to `android/app/src/main/AndroidManifest.xml`:
+**Required Permissions in `android/app/src/main/AndroidManifest.xml`:**
 
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.RECORD_AUDIO" />
 <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-<uses-permission android:name="android.permission.CAMERA" />
-<uses-permission android:name="android.permission.RECORD_VIDEO" />
 ```
 
 **Why these are needed:**
+- `INTERNET` - Required for all network communication (API calls, WebSockets, etc.)
+- `RECORD_AUDIO` - Core microphone access (requested at runtime via MainActivity.java)
 - `MODIFY_AUDIO_SETTINGS` - Required for audio stream control in WebView
-- `CAMERA` - Required by WebView even for audio-only `getUserMedia` calls
-- `RECORD_VIDEO` - Required for MediaRecorder API functionality
 
-This resolves the "Error accessing microphone [object DOMException]" that appears in logcat when the web app is packaged as a Capacitor app.
+**Note:** Earlier versions included `CAMERA` permission as a workaround for WebView compatibility issues. This is **no longer needed** as of v1.2 due to proper runtime permission handling in `MainActivity.java`.
+
+### Android Runtime Permission Request (AAB Fix - v1.2)
+
+**Critical Issue Resolved:** AAB (Android App Bundle) builds were not requesting microphone permissions at runtime, while debug APK builds worked correctly. Users had to manually grant permissions in Settings for AAB builds to function.
+
+**Root Cause:** The `MainActivity.java` WebView permission handler (`onPermissionRequest`) was immediately granting WebView-level permissions without first checking or requesting Android runtime permissions. Debug APKs have lenient permission handling that sometimes auto-granted permissions, but release AABs enforce strict Android 6.0+ (API 23+) runtime permission requirements.
+
+**Solution Implemented:** Modified `android/app/src/main/java/com/chironote/app/MainActivity.java` to implement proper two-layer permission handling:
+
+**Layer 1 - Android Runtime Permissions:**
+- Check if app has `RECORD_AUDIO` permission using `ContextCompat.checkSelfPermission()`
+- If not granted, store the WebView permission request and call `ActivityCompat.requestPermissions()`
+- This triggers the Android system permission dialog
+- Handle user's decision in `onRequestPermissionsResult()` callback
+
+**Layer 2 - WebView Permissions:**
+- Only grant WebView permissions (`request.grant()`) after Android runtime permissions are confirmed
+- Enforce audio-only behavior by granting only `RESOURCE_AUDIO_CAPTURE` when video is not requested
+- Deny WebView permission if user denies Android runtime permission
+
+**Key Code Pattern:**
+```java
+@Override
+public void onPermissionRequest(final PermissionRequest request) {
+    // Check Android runtime permission first
+    if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) 
+            != PackageManager.PERMISSION_GRANTED) {
+        // Store request and show Android system dialog
+        mPendingPermissionRequest = request;
+        ActivityCompat.requestPermissions(this, 
+            new String[]{Manifest.permission.RECORD_AUDIO}, 
+            REQUEST_AUDIO_PERMISSION);
+        return;
+    }
+    // Permission already granted, proceed with WebView grant
+    request.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+}
+
+@Override
+public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    // Handle user's permission decision
+    if (allGranted) {
+        mPendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_AUDIO_CAPTURE});
+    } else {
+        mPendingPermissionRequest.deny();
+    }
+}
+```
+
+**Impact:**
+- ✅ AAB builds now properly show Android system permission dialog on first microphone access
+- ✅ Behavior matches APK builds exactly
+- ✅ No JavaScript code changes required - fix is entirely in native Android layer
+- ✅ Eliminated need for `CAMERA` permission in manifest
+- ✅ Users see only the permissions the app actually uses (microphone only)
+
+**Reference:** Solution based on [Google's official Android PermissionRequest sample](https://github.com/googlesamples/android-PermissionRequest) and Stack Overflow best practices for WebView runtime permissions.
+
+## 11. History Refresh on App Resume
+
+**Location:** `App.jsx` (lines 289-338)
+
+The app automatically refreshes notes/transcripts history when returning to the foreground using a queue-based system:
+
+- **Web/Browser:** Listens to `visibilitychange` events
+- **Native Mobile:** Uses Capacitor's `appStateChange` listener
+- **Refresh Queue:** Prevents overlapping operations via `refreshQueueRef` and `isProcessingRefreshRef`
+- **Execution:** Calls `fetchNotes({ showLoading: false })` for non-intrusive background refresh
+
+This ensures users always see current data when resuming the app across both web and native platforms.
+
+## 12. iOS Platform Configuration & Build Process
+
+### iOS Platform Structure
+
+The iOS platform is located in the `ios/` directory with the following structure:
+
+```
+ios/
+├── App/                              # Main Xcode project directory
+│   ├── App/                         # App source files
+│   │   ├── AppDelegate.swift       # iOS app lifecycle management
+│   │   ├── Info.plist              # iOS app configuration & permissions
+│   │   ├── Assets.xcassets/        # App icons and launch images
+│   │   ├── Base.lproj/             # Launch screen storyboard
+│   │   ├── public/                 # Web assets (synced from build/)
+│   │   └── capacitor.config.json   # Capacitor config (synced)
+│   ├── App.xcodeproj/              # Xcode project file
+│   ├── App.xcworkspace/            # Xcode workspace (use this!)
+│   └── Podfile                     # CocoaPods dependencies
+└── capacitor-cordova-ios-plugins/  # Capacitor plugin bridge
+```
+
+**IMPORTANT:** Always open `App.xcworkspace`, NOT `App.xcodeproj`, when working in Xcode.
+
+### Required iOS Permissions (Info.plist)
+
+The following permissions are configured in `ios/App/App/Info.plist`:
+
+#### 1. Microphone Permission (REQUIRED)
+```xml
+<key>NSMicrophoneUsageDescription</key>
+<string>ChiroNote needs microphone access to record clinical notes and provide real-time dictation for your documentation.</string>
+```
+
+**Why:** Required for `getUserMedia()` API calls in Recording and Dictation components.  
+**User Experience:** iOS shows system permission dialog on first microphone access attempt.
+
+#### 2. Speech Recognition Permission (RECOMMENDED)
+```xml
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>ChiroNote uses speech recognition to provide accurate transcription of your clinical notes.</string>
+```
+
+**Why:** Enhances iOS's native speech recognition capabilities for better dictation accuracy.  
+**User Experience:** Separate permission dialog, shown if speech recognition features are used.
+
+#### 3. Background Audio Mode
+```xml
+<key>UIBackgroundModes</key>
+<array>
+    <string>audio</string>
+</array>
+```
+
+**Why:** Allows audio recording to continue when app moves to background.  
+**Impact:** Essential for clinical workflows where recording may span multiple app states.
+
+#### 4. App Transport Security
+```xml
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoads</key>
+    <false/>
+</dict>
+```
+
+**Why:** Enforces HTTPS-only connections for security.  
+**Note:** Set to `false` since all API endpoints use HTTPS.
+
+#### 5. Encryption Declaration
+```xml
+<key>ITSAppUsesNonExemptEncryption</key>
+<false/>
+```
+
+**Why:** Required for App Store submission.  
+**Note:** Set to `false` because app uses standard HTTPS encryption (no custom crypto).
+
+### iOS Build Process
+
+#### Prerequisites (Must be done on Mac):
+1. **macOS**: Version 10.15 (Catalina) or later
+2. **Xcode**: Latest version from Mac App Store
+3. **CocoaPods**: Install with `sudo gem install cocoapods`
+4. **Apple Developer Account**: Free for testing, $99/year for App Store
+
+#### Initial Setup (One-time):
+```bash
+# 1. Clone/pull project on Mac
+git pull origin main
+
+# 2. Install npm dependencies
+npm install
+
+# 3. Install iOS native dependencies
+cd ios/App
+pod install
+cd ../..
+```
+
+#### Standard Build Process:
+
+**Option A: Command Line (Quick Testing)**
+```bash
+# 1. Build React app
+npm run build
+
+# 2. Sync to iOS
+npx cap sync ios
+
+# 3. Run on simulator
+npx cap run ios
+
+# 4. Or open in Xcode for more control
+npx cap open ios
+```
+
+**Option B: Xcode (Full Control)**
+```bash
+# 1. Build and sync
+npm run build
+npx cap sync ios
+
+# 2. Open Xcode
+npx cap open ios
+
+# 3. In Xcode:
+#    - Select target device (simulator or physical)
+#    - Click Run button (▶️)
+```
+
+#### Clean Build (After major changes):
+```bash
+# 1. Clean iOS build
+cd ios/App
+xcodebuild clean
+cd ../..
+
+# 2. Remove derived data
+rm -rf ~/Library/Developer/Xcode/DerivedData/App-*
+
+# 3. Rebuild
+npm run build
+npx cap sync ios
+```
+
+### Code Signing & Provisioning
+
+#### Development Testing:
+1. Open `ios/App/App.xcworkspace` in Xcode
+2. Select **App** target in project navigator
+3. Go to **Signing & Capabilities** tab
+4. Select your **Team** from dropdown (requires Apple Developer account)
+5. Xcode automatically creates development provisioning profile
+
+#### Distribution Configuration:
+- **App Store**: Requires App Store distribution certificate & provisioning profile
+- **Ad Hoc**: For testing on specific devices without App Store
+- **Enterprise**: For internal company distribution (requires Enterprise account)
+
+### Associated Domains (Credential Manager Integration)
+
+For iOS Keychain integration matching Android's Credential Manager:
+
+#### 1. Add Capability in Xcode:
+1. Select **App** target
+2. Click **+ Capability**
+3. Add **Associated Domains**
+4. Add domain: `applinks:chironote.ai`
+
+#### 2. Create Apple App Site Association File:
+**Location:** `https://chironote.ai/.well-known/apple-app-site-association`
+
+```json
+{
+  "webcredentials": {
+    "apps": ["TEAMID.com.chironote.app"]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID.com.chironote.app",
+        "paths": ["*"]
+      }
+    ]
+  }
+}
+```
+
+**Note:** Replace `TEAMID` with your actual Apple Developer Team ID.
+
+### iOS-Specific Code Implementations
+
+The app already includes iOS-compatible code via Capacitor platform detection:
+
+**Dictation.jsx:**
+- Uses `Capacitor.isNativePlatform()` for platform detection
+- Handles iOS-specific microphone permission flows
+- Provides iOS-specific error messages
+
+**RecordingManager.jsx:**
+- Enhanced `setupRecorder()` with iOS platform logging
+- iOS-compatible getUserMedia constraints
+- iOS-specific debugging for microphone access
+
+**App.jsx:**
+- Uses `@capacitor/app` for iOS lifecycle events
+- Handles iOS app state changes for history refresh
+- iOS-specific background/foreground detection
+
+### Troubleshooting iOS Issues
+
+#### Issue: "Microphone Permission Denied"
+**Cause:** User denied permission or permission not configured in Info.plist  
+**Solution:**
+1. Verify NSMicrophoneUsageDescription exists in Info.plist
+2. Delete app and reinstall to reset permissions
+3. Or: Settings > ChiroNote > Enable Microphone
+
+#### Issue: "CocoaPods Not Installed"
+**Cause:** CocoaPods not available on Mac  
+**Solution:**
+```bash
+sudo gem install cocoapods
+cd ios/App
+pod install
+```
+
+#### Issue: "No Provisioning Profile"
+**Cause:** Not signed into Apple Developer account in Xcode  
+**Solution:**
+1. Xcode > Settings > Accounts
+2. Add Apple ID
+3. Select team in project Signing & Capabilities
+
+#### Issue: "Build Failed - Module Not Found"
+**Cause:** Outdated pods or derived data  
+**Solution:**
+```bash
+cd ios/App
+pod deintegrate
+pod install
+cd ../..
+npm run build
+npx cap sync ios
+```
+
+#### Issue: "App Won't Install on Device"
+**Cause:** Certificate trust issue  
+**Solution:**
+1. On iOS device: Settings > General > VPN & Device Management
+2. Trust developer certificate
+3. Reinstall app
+
+### iOS vs Android Key Differences
+
+| Feature | iOS | Android |
+|---------|-----|---------|
+| **IDE** | Xcode (Mac only) | Android Studio (any OS) |
+| **Language** | Swift/Objective-C | Java/Kotlin |
+| **Signing** | Certificates & Profiles | Keystore file |
+| **Permissions** | Auto-prompt on first use | Explicit runtime request |
+| **Background** | Requires capability | Requires permission |
+| **File System** | Sandboxed strictly | More flexible |
+| **WebView** | WKWebView | Android WebView |
+| **Distribution** | TestFlight or Ad Hoc | APK or AAB file |
+
+### App Store Submission Checklist
+
+When ready to submit to App Store:
+
+1. **App Store Connect Setup:**
+   - Create app listing at https://appstoreconnect.apple.com
+   - Configure metadata (description, keywords, screenshots)
+   - Upload app icons (1024x1024 PNG)
+
+2. **Archive in Xcode:**
+   - Select "Any iOS Device (arm64)"
+   - Product > Archive
+   - Wait for archive to complete
+
+3. **Distribute:**
+   - Open Organizer (Window > Organizer)
+   - Select archive
+   - Click "Distribute App"
+   - Choose "App Store Connect"
+   - Upload for TestFlight or review
+
+4. **Submit for Review:**
+   - Complete App Store Connect questionnaire
+   - Submit for review
+   - Wait 24-48 hours for initial review
+
+### iOS Build Outputs
+
+- **Development:** Installed directly on device/simulator (no file)
+- **Archive:** `.xcarchive` file in `~/Library/Developer/Xcode/Archives`
+- **IPA:** Generated during distribution (iOS App Store Package)
+- **dSYM:** Debug symbols for crash reporting
+
+### Minimum iOS Version
+
+Current minimum deployment target: **iOS 13.0**
+
+This can be changed in Xcode:
+1. Select App target
+2. General tab
+3. Deployment Info > iOS Deployment Target
+
+**Recommendation:** Keep at iOS 13.0+ for maximum device compatibility while maintaining modern API support.

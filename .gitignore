@@ -21,6 +21,18 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 build/
-android/*
-!android/app/src/main/AndroidManifest.xml
+#android/*
+!android/app/
+!android/app/src/
+!android/app/src/main/
+!android/app/src/main/java/
+!android/app/src/main/java/com/
+!android/app/src/main/java/com/chironote/
+!android/app/src/main/java/com/chironote/app/
+!android/app/src/main/java/com/chironote/app/MainActivity.java
 #amplify-do-not-edit-end
+
+# Sensitive files
+.env
+android/keystore.properties
+android/chironote-release-key.keystore

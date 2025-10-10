@@ -388,3 +388,45 @@
     opacity: 1;
   }
 }
+
+/* Privacy Policy Link */
+.privacy-link-container {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #e0f7e9;
+  text-align: center;
+}
+
+.privacy-link {
+  font-size: 0.85rem;
+  color: #666;
+  text-decoration: none;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 400;
+  transition: color 0.2s ease;
+  opacity: 0.8;
+}
+
+.privacy-link:hover {
+  color: var(--medium-green, #48c78e);
+  text-decoration: underline;
+  opacity: 1;
+}
+
+.privacy-link:focus {
+  outline: 2px solid var(--medium-green, #48c78e);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Responsive adjustments for privacy link */
+@media (max-width: 768px) {
+  .privacy-link-container {
+    margin-top: 30px;
+    padding-top: 15px;
+  }
+  
+  .privacy-link {
+    font-size: 0.8rem;
+  }
+}

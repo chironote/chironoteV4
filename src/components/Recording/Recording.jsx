@@ -56,10 +56,9 @@ function Recording({
   // Function for refreshing the auth session
   const currentSession = async () => {
     try {
-      const { tokens } = await fetchAuthSession({ forceRefresh: true });
-      console.log(tokens);
+      await fetchAuthSession({ forceRefresh: true });
     } catch (err) {
-      console.log(err);
+      console.error('Error refreshing auth session', err);
     }
   };
 

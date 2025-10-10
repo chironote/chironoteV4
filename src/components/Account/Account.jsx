@@ -5,7 +5,6 @@ import { fetchUserAttributes } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
 import { Amplify } from 'aws-amplify';
-import { trackPageView } from '../../utils/analytics';
 
 Amplify.configure(config);
 
@@ -17,9 +16,6 @@ function Account({ setCurrentPage }) {
   const [isQueryLoading, setIsQueryLoading] = useState(true);
 
   useEffect(() => {
-    // Track page view when the Account component mounts
-    trackPageView('Account_Page');
-    
     // Set the current page in the parent component
     if (setCurrentPage) {
       setCurrentPage('account');
@@ -88,6 +84,18 @@ function Account({ setCurrentPage }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Privacy Policy Link */}
+      <div className="privacy-link-container">
+        <a 
+          href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="privacy-link"
+        >
+          Privacy Policy & Terms of Service
+        </a>
       </div>
     </div>
   );

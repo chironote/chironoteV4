@@ -16,11 +16,11 @@
 .popup-content {
   position: relative;
   padding: 25px;
-  margin: 0 10px;
-  border-radius: 8px;
-  max-width: 400px;
-  width: 100%;
-  min-width: 350px;
+  margin: 0 16px;
+  border-radius: 12px;
+  width: min(90vw, 420px);
+  max-width: 420px;
+  box-sizing: border-box;
   height: 300px;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

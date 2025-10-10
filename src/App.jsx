@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'; 
-import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
 import Feedback from './components/Feedback/Feedback';
@@ -13,20 +13,19 @@ import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
-import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
 import ErrorBanner from './components/ErrorBanner';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
 import * as mutations from './graphql/mutations';
 import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser } from 'aws-amplify/auth';
-import ReactGA from 'react-ga4';
-import { trackPageView } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
 
 import AuthContainer from './components/AuthUI/AuthContainer';
@@ -36,40 +35,7 @@ Amplify.configure(config);
 
 const client = generateClient();
 
-// Analytics wrapper component to track page views
-function RouteTracker() {
-  const location = useLocation();
-
-  useEffect(() => {
-    // Standard GA pageview based on path
-    ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
-
-    // Custom, more descriptive page view event
-    let descriptivePageName = '';
-    const path = location.pathname;
-
-    if (path.startsWith('/app') || path === '/') {
-      // For /app, you might want to distinguish further if there are key sub-sections
-      // For now, a general 'App' view. If /app is the main recording/dictation area:
-      descriptivePageName = 'App_Main_View'; 
-    } else if (path.startsWith('/account')) {
-      descriptivePageName = 'AccountPage_View';
-    }
-    // Add more 'else if' blocks here for other distinct sections of your application
-    // e.g., if you had a dedicated /settings page, /help, etc.
-
-    if (descriptivePageName) {
-      trackPageView(descriptivePageName);
-    } else {
-      // Fallback for paths not explicitly named, using a cleaned-up version of the path
-      // This helps catch any new/unhandled routes
-      const fallbackPageName = path.substring(1).replace(/\//g, '_') || 'UnknownPage_View';
-      trackPageView(fallbackPageName.charAt(0).toUpperCase() + fallbackPageName.slice(1) + '_View');
-    }
-  }, [location]);
-
-  return null;
-}
+// Removed Google Analytics tracking and RouteTracker component for privacy compliance
 
 
 
@@ -217,9 +183,12 @@ function AuthenticatedApp({ signOut, user }) {
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const wasTranscribingRef = useRef(false);
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
+  const refreshQueueRef = useRef([]);
+  const isProcessingRefreshRef = useRef(false);
 
   const handleTextStreamUpdate = useCallback((newText) => {
     setStreamingText(newText);
@@ -250,16 +219,22 @@ function AuthenticatedApp({ signOut, user }) {
     setIsDictationLoading(dictation.isDictationLoading);
     setIsTranscribing(dictation.isTranscribing);
     setIsWebSocketConnecting(dictation.isWebSocketConnecting);
+
+    if (wasTranscribingRef.current && !dictation.isTranscribing) {
+      console.log('[App] Dictation websocket closed (transcribing stopped)');
+    }
+    wasTranscribingRef.current = dictation.isTranscribing;
   }, [
     dictation.isDictationLoading, 
     dictation.isTranscribing, 
     dictation.isWebSocketConnecting
   ]);
 
-  useEffect(() => {
-    const fetchNotes = async () => {
+  const fetchNotes = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) {
       setIsLoading(true);
-      try {
+    }
+    try {
       // TODO: NOTELABEL FEATURE - This query will automatically include noteLabel 
       // after running `amplify push` and `amplify codegen`
       const notesData = await client.graphql({
@@ -270,45 +245,97 @@ function AuthenticatedApp({ signOut, user }) {
           limit: 120  // Increased from 50 to 120 to ensure we have enough after filtering
         }
       });
-        const fetchedNotes = notesData.data.listNotes.items;
-        
-        const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== "");
-        const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "");
-        
-        // Since we're already getting data in DESC order, just take the first 100
-        setNotes(filteredNotes.slice(0, 100));
-        setTranscripts(filteredTranscripts.slice(0, 100));
-        setQueryLoaded(true);
+      const fetchedNotes = notesData.data.listNotes.items;
+      
+      const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== "");
+      const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== "");
+      
+      // Since we're already getting data in DESC order, just take the first 100
+      setNotes(filteredNotes.slice(0, 100));
+      setTranscripts(filteredTranscripts.slice(0, 100));
+      setQueryLoaded(true);
+      setShowErrorBanner(false);
 
-        // Initialize collapsed weeks - collapse all except the most recent week
-        if (filteredNotes.length > 0 || filteredTranscripts.length > 0) {
-          // Get all items and find the most recent week
-          const allItems = [...filteredNotes, ...filteredTranscripts];
-          const groupedWeeks = groupItemsByWeek(allItems);
+      // Initialize collapsed weeks - collapse all except the most recent week
+      if (filteredNotes.length > 0 || filteredTranscripts.length > 0) {
+        // Get all items and find the most recent week
+        const allItems = [...filteredNotes, ...filteredTranscripts];
+        const groupedWeeks = groupItemsByWeek(allItems);
+        
+        if (groupedWeeks.length > 0) {
+          // Get the most recent week start timestamp
+          const mostRecentWeekStart = groupedWeeks[0].weekStart;
           
-          if (groupedWeeks.length > 0) {
-            // Get the most recent week start timestamp
-            const mostRecentWeekStart = groupedWeeks[0].weekStart;
-            
-            // Create a set of all week starts except the most recent
-            const initialCollapsedWeeks = new Set(
-              groupedWeeks
-                .slice(1) // Skip the first (most recent) week
-                .map(week => week.weekStart)
-            );
-            
-            setCollapsedWeeks(initialCollapsedWeeks);
-          }
+          // Create a set of all week starts except the most recent
+          const initialCollapsedWeeks = new Set(
+            groupedWeeks
+              .slice(1) // Skip the first (most recent) week
+              .map(week => week.weekStart)
+          );
+          
+          setCollapsedWeeks(initialCollapsedWeeks);
         }
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-      } finally {
+      }
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      setShowErrorBanner(true);
+    } finally {
+      if (showLoading) {
         setIsLoading(false);
+      }
+    }
+  }, [user.username]);
+
+  const processRefreshQueue = useCallback(async () => {
+    if (isProcessingRefreshRef.current || refreshQueueRef.current.length === 0) {
+      return;
+    }
+
+    isProcessingRefreshRef.current = true;
+    try {
+      while (refreshQueueRef.current.length > 0) {
+        refreshQueueRef.current.shift();
+        await fetchNotes({ showLoading: false });
+      }
+    } finally {
+      isProcessingRefreshRef.current = false;
+    }
+  }, [fetchNotes]);
+
+  const enqueueHistoryRefresh = useCallback((reason = 'app-resume') => {
+    refreshQueueRef.current.push({ reason, at: Date.now() });
+    processRefreshQueue();
+  }, [processRefreshQueue]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        enqueueHistoryRefresh('visibility');
       }
     };
 
-    fetchNotes();
-  }, [user.username]);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    let appStateListener;
+    if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+      appStateListener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (isActive) {
+          enqueueHistoryRefresh('app-resume');
+        }
+      });
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (appStateListener) {
+        appStateListener.remove();
+      }
+    };
+  }, [enqueueHistoryRefresh]);
 
   useEffect(() => {
     const hubListener = Hub.listen('api', (data) => {
@@ -327,7 +354,7 @@ function AuthenticatedApp({ signOut, user }) {
       variables: { owner: user.username }
     }).subscribe({
       next: ({ data }) => {
-        console.log('Received data from subscription:', data);
+        console.log('[App] Received subscription update');
         const updatedData = data.onUpdateNotesByOwner;
         
         if (updatedData.note && updatedData.note.trim() !== "") {
@@ -439,19 +466,19 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const handleLabelUpdate = async (newLabel) => {
-    console.log('🏷️ handleLabelUpdate called with:', { newLabel, selectedItem: selectedItem ? { owner: selectedItem.owner, timestamp: selectedItem.timestamp, hasNote: !!selectedItem.note, hasTranscript: !!selectedItem.transcript } : null });
+    console.log('[App] Label update requested:', { hasLabel: !!newLabel, hasSelectedItem: !!selectedItem });
     
     if (!selectedItem) {
-      console.warn('❌ handleLabelUpdate: No selectedItem found');
+      console.warn('[App] No selectedItem found for label update');
       return;
     }
     
     const uniqueId = selectedItem.owner + selectedItem.timestamp;
-    console.log('🔍 Using unique ID for updates:', uniqueId);
+    console.log('[App] Updating item with unique ID');
     
     try {
       // Update backend database using updateNotes mutation (noteLabel field is included in schema)
-      console.log('🚀 Attempting backend update...');
+      console.log('[App] Attempting backend update');
       await client.graphql({
         query: mutations.updateNotes,
         variables: {
@@ -462,55 +489,50 @@ function AuthenticatedApp({ signOut, user }) {
           }
         }
       });
-      console.log('✅ Backend update successful');
+      console.log('[App] Backend update successful');
       
       // Update local state immediately for responsive UI
-      console.log('🔄 Updating local state...');
+      console.log('[App] Updating local state');
       
       // Update notes array if the item has note content
       if (selectedItem.note && selectedItem.note.trim() !== "") {
-        console.log('📝 Updating notes array');
+        console.log('[App] Updating notes array');
         setNotes(prevNotes => {
           const updatedNotes = prevNotes.map(note => 
             (note.owner + note.timestamp) === uniqueId 
               ? { ...note, noteLabel: newLabel }
               : note
           );
-          console.log('📝 Notes array updated, found match:', updatedNotes.some(note => (note.owner + note.timestamp) === uniqueId && note.noteLabel === newLabel));
+          console.log('[App] Notes array updated:', { matchFound: updatedNotes.some(note => (note.owner + note.timestamp) === uniqueId && note.noteLabel === newLabel) });
           return updatedNotes;
         });
       }
       
       // Update transcripts array if the item has transcript content
       if (selectedItem.transcript && selectedItem.transcript.trim() !== "") {
-        console.log('📄 Updating transcripts array');
+        console.log('[App] Updating transcripts array');
         setTranscripts(prevTranscripts => {
           const updatedTranscripts = prevTranscripts.map(transcript => 
             (transcript.owner + transcript.timestamp) === uniqueId 
               ? { ...transcript, noteLabel: newLabel }
               : transcript
           );
-          console.log('📄 Transcripts array updated, found match:', updatedTranscripts.some(transcript => (transcript.owner + transcript.timestamp) === uniqueId && transcript.noteLabel === newLabel));
+          console.log('[App] Transcripts array updated:', { matchFound: updatedTranscripts.some(transcript => (transcript.owner + transcript.timestamp) === uniqueId && transcript.noteLabel === newLabel) });
           return updatedTranscripts;
         });
       }
       
       // Update the selected item
-      console.log('🎯 Updating selectedItem');
+      console.log('[App] Updating selectedItem');
       setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
       
-      console.log('✅ handleLabelUpdate completed successfully');
+      console.log('[App] Label update completed successfully');
       
     } catch (error) {
-      console.error('❌ Error updating note label:', error);
-      console.error('❌ Error details:', {
-        message: error.message,
-        graphQLErrors: error.errors,
-        networkError: error.networkError
-      });
+      console.error('[App] Error updating note label:', error.message);
       
       // Still update local state for immediate UI feedback even if backend fails
-      console.log('🔄 Backend failed, updating local state only...');
+      console.log('[App] Backend failed, updating local state only');
       
       // Update notes array if the item has note content
       if (selectedItem.note && selectedItem.note.trim() !== "") {
@@ -600,12 +622,12 @@ function AuthenticatedApp({ signOut, user }) {
               recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary)) {
           const screenWidth = window.innerWidth;
           
-          console.log('Ctrl+` pressed - Screen width:', screenWidth, 'isCollapsed:', isCollapsed, 'showEditPanel:', showEditPanel);
+          console.log('[App] Toggle panel shortcut pressed');
           
           // For medium screens (780px-1200px), close edit panel when opening history panel
           if (screenWidth >= 780 && screenWidth < 1200) {
             if (isCollapsed) {
-              console.log('Medium screen: About to open history panel, closing edit panel');
+              console.log('[App] Medium screen: closing edit panel');
               // Opening history panel - close edit panel
               setShowEditPanel(false);
             }
@@ -825,8 +847,6 @@ const ProtectedApp = () => (
 function App() {
   return (
     <Router>
-      <RouteTracker />
-      <CookieConsent />
       <Routes>
         <Route path="/" element={<Navigate to="/app" replace />} />
         <Route path="/app/*" element={<ProtectedApp />} />

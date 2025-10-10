@@ -6,7 +6,6 @@ import * as queries from '../graphql/queries';
 import * as mutations from '../graphql/mutations';
 import CreditPopup from './Recording/CreditLimit';
 import './Recording/CreditLimit.css';
-import { trackApplyChanges } from '../utils/analytics';
 
 const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws";
 const client = generateClient();
@@ -53,9 +52,6 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
 
   const editStream = async (editInput) => {
     try {
-      // Track the apply changes action
-      trackApplyChanges();
-      
       const subscription = await fetchUserSubscription();
       if (!subscription || subscription.notesleft <= 0) {
         console.error('User has no remaining notes');

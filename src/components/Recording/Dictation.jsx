@@ -117,6 +117,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
   const timerIntervalRef = useRef(null);
   const tokenRefreshTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
+  const isComponentMountedRef = useRef(false);
 
   // Data refs
   const turnsRef = useRef({});
@@ -171,23 +172,28 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       const tokenData = await response.json();
       
       // Extract the token field from the JSON response
-      const actualToken = tokenData.token;
-      console.log('[Dictation] Extracted token:', typeof actualToken, actualToken ? 'present' : 'missing');
+      const actualToken = tokenData?.token;
+      console.log('[Dictation] Token extracted:', { hasToken: !!actualToken });
       
       // Calculate expiry time
       const now = new Date();
       const expiry = new Date(now.getTime() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000);
-      
+
+      if (!isComponentMountedRef.current) {
+        console.warn('[Dictation] Component unmounted before token state update');
+        return actualToken;
+      }
+
       // Update token state
       setToken({
         value: actualToken,
         expiry: expiry
       });
-      
+
       // Schedule next refresh
       scheduleTokenRefresh(expiry);
       
-      console.log('[Dictation] Token fetched successfully, expires at:', expiry);
+      console.log('[Dictation] Token fetched successfully');
       return actualToken;
     } catch (error) {
       console.error('[Dictation] Error fetching AssemblyAI token:', error);
@@ -201,13 +207,21 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     const now = new Date();
     const timeUntilRefresh = expiry.getTime() - now.getTime() - (TOKEN_REFRESH_BUFFER_MINUTES * 60 * 1000);
     
+    if (!isComponentMountedRef.current) {
+      return;
+    }
+
     if (timeUntilRefresh > 0) {
       tokenRefreshTimeoutRef.current = setTimeout(() => {
-        fetchAssemblyAIToken();
+        if (isComponentMountedRef.current) {
+          fetchAssemblyAIToken();
+        }
       }, timeUntilRefresh);
     } else {
       // Token already expired or expiring soon, refresh immediately
-      fetchAssemblyAIToken();
+      if (isComponentMountedRef.current) {
+        fetchAssemblyAIToken();
+      }
     }
   };
 
@@ -224,12 +238,18 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
       });
       
       const userData = subscriptionData.data.getUserSubscription;
+
+      if (!isComponentMountedRef.current) {
+        console.warn('[Dictation] Skipping subscription state update - component unmounted');
+        return userData;
+      }
+
       setSubscription({
         data: userData,
         hasHours: userData ? userData.hoursleft > 0 : false
       });
       
-      console.log('[Dictation] Subscription fetched successfully');
+      console.log('[Dictation] Subscription fetched:', { hasHours: userData ? userData.hoursleft > 0 : false });
       return userData;
     } catch (error) {
       console.error('[Dictation] Error fetching user subscription:', error);
@@ -253,13 +273,15 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
         }
       });
       
-      setSubscription(prev => ({
-        ...prev,
-        data: { ...prev.data, hoursleft: newHoursLeft },
-        hasHours: newHoursLeft > 0
-      }));
+      if (isComponentMountedRef.current) {
+        setSubscription(prev => ({
+          ...prev,
+          data: { ...prev.data, hoursleft: newHoursLeft },
+          hasHours: newHoursLeft > 0
+        }));
+      }
       
-      console.log(`[Dictation] Updated hours left: ${newHoursLeft}`);
+      console.log('[Dictation] Subscription hours updated');
     } catch (error) {
       console.error('[Dictation] Error updating subscription hours:', error);
     }
@@ -425,9 +447,12 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
 
   // AssemblyAI connection setup
   const setupTranscriptionConnection = async (tokenValue) => {
-    console.log('[Dictation] Setting up transcription connection with token:', tokenValue ? 'present' : 'missing');
+    if (!tokenValue) {
+      throw new Error('Cannot set up transcription connection without a token');
+    }
+
+    console.log('[Dictation] Setting up transcription connection:', { hasToken: !!tokenValue });
     return new Promise((resolve, reject) => {
-      // Add timeout to prevent hanging
       const connectionTimeout = setTimeout(() => {
         console.error('[Dictation] StreamingTranscriber connection timeout after 10 seconds');
         reject(new Error('Connection timeout - StreamingTranscriber failed to connect'));
@@ -435,56 +460,71 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
 
       try {
         console.log('[Dictation] Creating StreamingTranscriber instance');
+
+        if (transcriberRef.current) {
+          try {
+            transcriberRef.current.close();
+          } catch (closeError) {
+            console.error('[Dictation] Error closing existing transcriber before reinitializing:', closeError);
+          }
+          transcriberRef.current = null;
+        }
+
         transcriberRef.current = new StreamingTranscriber({
           token: tokenValue,
           sampleRate: SAMPLE_RATE,
           formatTurns: true
         });
-        
+
         transcriberRef.current.on('open', () => {
           console.log('[Dictation] StreamingTranscriber connected successfully');
           clearTimeout(connectionTimeout);
-          setStatus(prev => ({ ...prev, isTranscriberReady: true }));
+          if (isComponentMountedRef.current) {
+            setStatus(prev => ({ ...prev, isTranscriberReady: true }));
+          }
           resolve();
         });
-        
+
         transcriberRef.current.on('error', (error) => {
           console.error('[Dictation] StreamingTranscriber error:', error);
           clearTimeout(connectionTimeout);
-          setStatus(prev => ({ ...prev, isTranscriberReady: false }));
+          if (isComponentMountedRef.current) {
+            setStatus(prev => ({ ...prev, isTranscriberReady: false }));
+          }
           reject(error);
         });
-        
+
         transcriberRef.current.on('turn', (turn) => {
+          if (!isComponentMountedRef.current) {
+            return;
+          }
           if (!turn.transcript) {
             return;
           }
-          
-          console.log('[Dictation] Turn received:', turn);
-          
+
+          console.log('[Dictation] Turn received:', { hasTurn: !!turn, hasTranscript: !!turn.transcript });
+
           const { transcript, turn_order, turn_is_formatted, end_of_turn } = turn;
-          
-          // Store turn by order
+
           turnsRef.current[turn_order] = {
             transcript,
             is_formatted: turn_is_formatted,
             end_of_turn
           };
-          
-          // Build text from all turns in order
+
           const sortedTurns = Object.entries(turnsRef.current)
             .sort(([a], [b]) => parseInt(a) - parseInt(b))
             .map(([, turnData]) => turnData.transcript);
-          
+
           const newText = sortedTurns.join(' ');
-          
+
           setTranscription(newText);
           setClipboardContent(newText);
         });
-        
+
         console.log('[Dictation] Attempting to connect StreamingTranscriber');
         transcriberRef.current.connect();
-        
+
       } catch (error) {
         console.error('[Dictation] Error in setupTranscriptionConnection:', error);
         clearTimeout(connectionTimeout);
@@ -538,6 +578,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     if (transcriberRef.current) {
       try {
         transcriberRef.current.close();
+        console.log('[Dictation] StreamingTranscriber closed successfully');
       } catch (error) {
         console.error('[Dictation] Error closing transcriber:', error);
       }
@@ -557,7 +598,13 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     // Reset refs
     readableStreamRef.current = null;
     heartbeatIntervalRef.current = null;
-    
+    turnsRef.current = {};
+    currentTurnOrderRef.current = -1;
+
+    if (isComponentMountedRef.current) {
+      setStatus(prev => ({ ...prev, isTranscriberReady: false }));
+    }
+
     console.log('[Dictation] Resource cleanup complete');
   }, []);
 
@@ -585,26 +632,20 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
         }
       }
       
-      // Ensure connection ready
-      console.log('[Dictation] Checking connection readiness - tokenValid:', isTokenValid(), 'transcriberReady:', status.isTranscriberReady);
-      if (!isTokenValid() || !status.isTranscriberReady) {
-        console.log('[Dictation] Connection not ready, attempting to establish');
-        let currentToken = token.value;
-        if (!isTokenValid()) {
-          console.log('[Dictation] Token invalid, fetching new token');
-          currentToken = await fetchAssemblyAIToken();
-          if (!currentToken) {
-            throw new Error('Failed to fetch AssemblyAI token');
-          }
-        }
-        if (!status.isTranscriberReady && currentToken) {
-          console.log('[Dictation] Transcriber not ready, setting up connection');
-          await setupTranscriptionConnection(currentToken);
-        }
-        console.log('[Dictation] Connection setup completed');
-      } else {
-        console.log('[Dictation] Connection already ready');
+      console.log('[Dictation] Preparing transcription connection');
+
+      let currentToken = token.value;
+      if (!isTokenValid()) {
+        console.log('[Dictation] Token invalid or expired, fetching new token');
+        currentToken = await fetchAssemblyAIToken();
       }
+
+      if (!currentToken) {
+        throw new Error('Failed to acquire AssemblyAI token');
+      }
+
+      await setupTranscriptionConnection(currentToken);
+      console.log('[Dictation] Transcription connection ready');
       
       // Setup complete audio pipeline with AudioWorklet
       await setupAudioPipeline();
@@ -668,7 +709,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     
     // Update subscription hours using captured timer value
     const hoursUsed = currentTimerValue / 3600;
-    console.log(`[Dictation] Recording duration: ${currentTimerValue} seconds (${hoursUsed.toFixed(4)} hours)`);
+    console.log('[Dictation] Recording duration:', { seconds: currentTimerValue, hours: hoursUsed.toFixed(4) });
     updateUserSubscriptionHours(hoursUsed);
     
     // Send final transcription to parent
@@ -679,27 +720,16 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     setStatus(prev => ({ 
       ...prev, 
       isTranscribing: false,
-      isStopping: false
+      isStopping: false,
+      isTranscriberReady: false
     }));
-    
-    // Re-initialize after delay
-    setTimeout(async () => {
-      if (!isTokenValid()) {
-        await fetchAssemblyAIToken();
-      }
-      if (token.value) {
-        await setupTranscriptionConnection(token.value);
-      }
-    }, 1000);
   };
 
   const toggleDictation = () => {
-    console.log('[Dictation] toggleDictation called - current status:', {
+    console.log('[Dictation] toggleDictation called:', {
       isTranscribing: status.isTranscribing,
       isStopping: status.isStopping,
-      isLoading: status.isLoading,
-      isTranscriberReady: status.isTranscriberReady,
-      isInitialized: status.isInitialized
+      isLoading: status.isLoading
     });
     
     if (status.isTranscribing || status.isStopping) {
@@ -713,43 +743,45 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
 
   // Initialize on mount
   useEffect(() => {
+    isComponentMountedRef.current = true;
+
     const initialize = async () => {
       if (isInitializingRef.current) return;
       isInitializingRef.current = true;
       
       console.log('[Dictation] Initializing component');
       
-      // Initialize NoSleep
-      noSleepRef.current = new NoSleep();
-      
-      // Fetch initial token
-      const initialToken = await fetchAssemblyAIToken();
-      
-      // Fetch user subscription
-      await fetchUserSubscription();
-      
-      // Setup initial connection if token is available
-      if (initialToken) {
-        console.log('[Dictation] Initial token available, setting up transcription connection');
-        try {
-          await setupTranscriptionConnection(initialToken);
-          console.log('[Dictation] Initial transcription connection setup completed');
-        } catch (error) {
-          console.error('[Dictation] Error setting up initial connection:', error);
+      try {
+        // Initialize NoSleep
+        noSleepRef.current = new NoSleep();
+
+        // Fetch initial token to warm credentials
+        const initialToken = await fetchAssemblyAIToken();
+        if (!initialToken) {
+          console.warn('[Dictation] Unable to acquire initial AssemblyAI token');
+        }
+
+        // Fetch user subscription
+        await fetchUserSubscription();
+
+        if (isComponentMountedRef.current) {
+          setStatus(prev => ({ ...prev, isInitialized: true }));
+        }
+      } catch (error) {
+        console.error('[Dictation] Initialization error:', error);
+        if (isComponentMountedRef.current) {
           alert('Failed to initialize dictation service. Please refresh the page and try again.');
         }
-      } else {
-        console.warn('[Dictation] No initial token available, skipping transcription connection setup');
+      } finally {
+        isInitializingRef.current = false;
       }
-      
-      setStatus(prev => ({ ...prev, isInitialized: true }));
-      isInitializingRef.current = false;
     };
     
     initialize();
     
     // Cleanup on unmount
     return () => {
+      isComponentMountedRef.current = false;
       cleanupResources();
       clearTimeout(tokenRefreshTimeoutRef.current);
       clearInterval(heartbeatIntervalRef.current);

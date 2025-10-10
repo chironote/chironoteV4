@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import captureIcon from '../assets/conversation.svg';
-import { trackDictationStart } from '../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
 const ClipboardButtons = ({ 
@@ -26,9 +25,6 @@ const ClipboardButtons = ({
   }, [isDictationLoading, isTranscribing, isWebSocketConnecting]);
 
   const handleDictationClick = () => {
-    // Track the dictation button click
-    trackDictationStart();
-    
     // Always call startDictation - the component will handle queuing if needed
     startDictation();
   };
@@ -92,7 +88,7 @@ const ClipboardButtons = ({
         <button
           id="edit-panel-btn"
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
-          onClick={toggleEditPanel}
+          style={{ pointerEvents: 'none', opacity: 0, cursor: 'default' }}
         >
           <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
         </button>

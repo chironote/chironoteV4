@@ -140,7 +140,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
       }).result;
 
-      console.log(`Successfully uploaded to: ${filePath}`, uploadResult);
+      console.log('[RecordingManager] Successfully uploaded audio chunk');
       
       // Then send a message to SQS to trigger transcription Lambda
       const selectedLanguage = localStorage.getItem('selectedLanguage');
@@ -159,7 +159,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const filenameParts = filePath.split('/');
       const lastPart = filenameParts[filenameParts.length - 1];
       const deduplicationId = `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
-      console.log('Deduplication ID:', deduplicationId);
+      console.log('[RecordingManager] Generated deduplication ID');
 
       const command = new SendMessageCommand({
         QueueUrl: queueUrl,
@@ -170,7 +170,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       try {
         const data = await sqsClient.send(command);
-        console.log("Successfully sent message to SQS:", data.MessageId);
+        console.log('[RecordingManager] Successfully sent message to SQS');
         console.log(`Queue notified of new audio segment. Is final? ${filePath.includes('_final_') ? 'True' : 'False'}`);
         
         // Set up subscription to monitor when transcript processing completes
@@ -215,12 +215,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       variables: { owner: userId }
     }).subscribe({
       next: ({ data }) => {
-        console.log('Received data from notes subscription:', data);
+        console.log('[RecordingManager] Received subscription update');
         const updatedNote = data.onUpdateNotesByOwner;
         
         // Check if this is the note we're waiting for
         if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
-          console.log('Found matching note:', updatedNote);
+          console.log('[RecordingManager] Found matching note');
           
           // Check if the note processing is completed
           if (updatedNote.isCompleted === true) {
@@ -409,9 +409,38 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }, 100);
   };
 
+  const requestMicrophonePermission = async () => {
+    // Check if user has already seen the permission rationale
+    const hasSeenPermissionRationale = localStorage.getItem('chironote_mic_permission_rationale_shown');
+    
+    if (!hasSeenPermissionRationale) {
+      // Show permission rationale dialog only on first time
+      const userConsent = window.confirm(
+        "ChiroNote needs microphone access to record and transcribe your clinical notes. Your audio is processed securely and not stored permanently. Do you want to continue?"
+      );
+      
+      if (!userConsent) {
+        console.log('[RecordingManager] User denied microphone permission rationale');
+        return false;
+      }
+      
+      // Mark that user has seen the rationale
+      localStorage.setItem('chironote_mic_permission_rationale_shown', 'true');
+    }
+    
+    return true;
+  };
+
   const setupRecorder = async () => {
     try {
       setTextStream('');
+      
+      // Request microphone permission with disclosure
+      const permissionGranted = await requestMicrophonePermission();
+      if (!permissionGranted) {
+        console.log('[RecordingManager] User denied permission rationale');
+        return;
+      }
       
       // Add Capacitor permission handling
       if (Capacitor.isNativePlatform()) {
@@ -473,39 +502,64 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
       };
     } catch (error) {
-      console.error('Error accessing microphone', error);
+      console.error('[RecordingManager] Error accessing microphone:', error);
+      
+      // Provide more specific error messages for mobile
+      let errorMessage = 'Failed to start recording.';
+      if (error.name === 'NotAllowedError') {
+        errorMessage = 'Microphone permission denied. Please enable microphone access in your device settings and try again.';
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = 'No microphone found. Please ensure your device has a microphone and try again.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage = 'Microphone not supported on this device.';
+      } else if (Capacitor.isNativePlatform()) {
+        errorMessage = 'Failed to access microphone. Please check app permissions in device settings.';
+      } else {
+        errorMessage = 'Failed to start recording. Check microphone permissions.';
+      }
+      
+      alert(errorMessage);
+      throw error; // Re-throw to prevent recording from starting
     }
   };
 
   const startRecording = async () => {
-    // Reset the chunk counter when starting a new recording
-    lastUploadedChunkRef.current = 0;
-    
-    // Set the conversation timestamp (identifies the conversation)
-    timeStampRef.current = Date.now();
-    
-    // Set a unique path identifier (for ensuring unique file paths)
-    pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    
-    await setupRecorder();
-    if (mediaRecorderRef.current) {
-      setIsRecording(true);
-      isRecordingRef.current = true;
-      setIsPaused(false);
-      isPausedRef.current = false;
+    try {
+      // Reset the chunk counter when starting a new recording
+      lastUploadedChunkRef.current = 0;
       
-      mediaRecorderRef.current.start();
+      // Set the conversation timestamp (identifies the conversation)
+      timeStampRef.current = Date.now();
       
-      if (noSleepRef.current) {
-        noSleepRef.current.enable();
-      }
-
-      recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+      // Set a unique path identifier (for ensuring unique file paths)
+      pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      
+      await setupRecorder();
+      if (mediaRecorderRef.current) {
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        setIsPaused(false);
+        isPausedRef.current = false;
+        
+        mediaRecorderRef.current.start();
+        
+        if (noSleepRef.current) {
+          noSleepRef.current.enable();
         }
-      }, 240000); // 240 seconds
+
+        recordingIntervalRef.current = setInterval(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.start();
+          }
+        }, 240000); // 240 seconds
+      }
+    } catch (error) {
+      // Error already handled in setupRecorder with user-friendly message
+      console.error('[RecordingManager] Failed to start recording:', error);
+      // Ensure recording state is reset if setup fails
+      setIsRecording(false);
+      isRecordingRef.current = false;
     }
   };
 
@@ -538,7 +592,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   async function getUserId() {
     try {
       const userId = (await getCurrentUser()).userId;
-      console.log('Current session ID:' + userId);
+      console.log('[RecordingManager] User ID retrieved');
       return userId;
     } catch (err) {
       console.log(err);
@@ -549,7 +603,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   async function generateToken() {
     const session = await fetchAuthSession();
     const accessToken = session.tokens.accessToken.toString();
-    console.log(accessToken);
+    console.log('[RecordingManager] Access token generated');
     return accessToken;
   }
 
