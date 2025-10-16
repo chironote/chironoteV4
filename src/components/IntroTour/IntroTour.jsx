@@ -135,7 +135,7 @@ function IntroTour() {
       
       const tour = new Shepherd.Tour({
         useModalOverlay: true,
-        exitOnEsc: false, // Prevent exiting with Escape key
+        exitOnEsc: true, // Allow exiting with Escape key
         keyboardNavigation: false, // Disable keyboard navigation
         defaultStepOptions: {
           classes: 'shepherd-theme-custom',
@@ -775,13 +775,20 @@ function IntroTour() {
         setTimeout(cleanupTourEffects, 50); // Small delay to let the step's hide handler run first
       });
       
-      // Ensure cleanup on Escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          console.log('Escape key pressed - cleaning up tour');
-          cleanupTourEffects();
+      // Ensure cleanup on Escape key - cancel the tour completely
+      const handleEscapeKey = (e) => {
+        if (e.key === 'Escape' && tour.isActive()) {
+          console.log('Escape key pressed - abandoning tour');
+          try {
+            tour.cancel(); // This will trigger the 'cancel' event which handles cleanup
+          } catch (error) {
+            console.error('Error cancelling tour:', error);
+            cleanupTourEffects();
+            localStorage.setItem('hasSeenAppTour', 'true');
+          }
         }
-      });
+      };
+      document.addEventListener('keydown', handleEscapeKey);
       
       // Ensure buttons in tour use clean exit
       document.addEventListener('click', (e) => {
@@ -807,8 +814,14 @@ function IntroTour() {
         // Cleanup timeout on unmount
         clearTimeout(startTourTimeout);
         
+        // Remove event listener
+        document.removeEventListener('keydown', handleEscapeKey);
+        
         // Make sure to clean up any tour effects when component unmounts
         try {
+          if (tour.isActive()) {
+            tour.cancel();
+          }
           cleanupTourEffects();
         } catch (error) {
           console.error('Error cleaning up tour effects:', error);

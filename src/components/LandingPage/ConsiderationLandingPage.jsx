@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
+import LandingNavbar from '../LandingNavbar/LandingNavbar';
 import logo from '../../assets/logo.svg';
-import textLogo from '../../assets/textlogo.svg';
-import textLogoClr from '../../assets/textlogo-clr.svg';
 import stars from '../../assets/stars.svg';
 import feature1 from '../../assets/Feature1.svg';
 import feature2 from '../../assets/Feature2.svg';
@@ -12,7 +11,7 @@ import jessImg from '../../assets/Jess.png';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import mockupMobile from '../../assets/mockup-mobile-final.png';
 import heroSvg from '../../assets/Hero.svg';
-import landingVideo from '../../assets/LandingVideo.mp4';
+import whiteboardAnimation from '../../assets/WhiteboardAnimation.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
 import hipaaLogo from '../../assets/hipaa.svg';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
@@ -112,10 +111,25 @@ const PLANS_DATA = [
 ];
 
 export default function LandingPage(props) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeFaqItem, setActiveFaqItem] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [email, setEmail] = useState('');
   const videoRef = useRef(null);
+  
+  // Load Hotjar script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://t.contentsquare.net/uxa/205ff61755493.js';
+    script.async = true;
+    document.head.appendChild(script);
+    
+    return () => {
+      // Cleanup: remove script on unmount
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
   
   // Track Meta Pixel page view when component mounts
   useEffect(() => {
@@ -142,17 +156,6 @@ export default function LandingPage(props) {
     }
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-  
-  // Close mobile menu when clicking outside
-  const handleOutsideClick = (e) => {
-    if (mobileMenuOpen && !e.target.closest('.landing-page__mobile-nav') && !e.target.closest('.landing-page__mobile-menu-button')) {
-      setMobileMenuOpen(false);
-    }
-  };
-
   const handleNavClick = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -160,7 +163,6 @@ export default function LandingPage(props) {
       const scrollOffset = sectionId === 'scheduler' ? 50 : -20;
       const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + scrollOffset;
       window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-      setMobileMenuOpen(false);
     }
   };
   
@@ -180,95 +182,19 @@ export default function LandingPage(props) {
     setActiveTestimonial((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
   };
 
-
-
-  // Add event listener for outside clicks when component mounts
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      document.addEventListener('click', handleOutsideClick);
-      return () => {
-        document.removeEventListener('click', handleOutsideClick);
-      };
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (email) {
+      handleButtonClick('Click_Awareness_Hero_EmailSignUp');
+      window.location.href = `/app?initialState=signUp&prefillEmail=${encodeURIComponent(email)}`;
     }
-  }, [mobileMenuOpen]);
+  };
 
 
   return (
     <div className="landing-page">
       {/* Header Section */}
-      <div className="landing-page__header">
-        <div className="landing-page__header-content">
-          {/* Text logo on the left - colored for desktop, white for mobile */}
-          <img
-            src={textLogoClr}
-            alt="ChiroNote"
-            className="landing-page__textlogo-left landing-page__textlogo-desktop"
-          />
-          <img
-            src={textLogo}
-            alt="ChiroNote"
-            className="landing-page__textlogo-left landing-page__textlogo-mobile"
-          />
-          
-          {/* Hamburger menu for mobile */}
-          <div className="landing-page__mobile-menu-button" onClick={toggleMobileMenu}>
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          
-          {/* Desktop navigation and Sign In button container */}
-          <div className="landing-page__nav-container">
-            {/* Desktop navigation */}
-            <div className="landing-page__nav">
-              <button 
-                className="landing-page__nav-item"
-                onClick={() => handleNavClick('how-it-works')}
-              >
-                Video
-              </button>
-              <button 
-                className="landing-page__nav-item"
-                onClick={() => handleNavClick('faq')}
-              >
-                FAQ
-              </button>
-              <button 
-                className="landing-page__nav-item"
-                onClick={() => handleNavClick('prices')}
-              >
-                Pricing
-              </button>
-            </div>
-            
-            {/* Launch app button */}
-            <a 
-              href="/app" 
-              className="landing-page__get-started-button"
-              onClick={() => handleButtonClick('Click_Landing_Header_SignIn')}
-            >
-              Sign In
-            </a>
-          </div>
-          
-          {/* Mobile navigation dropdown */}
-          <div className={`landing-page__mobile-nav ${mobileMenuOpen ? 'open' : ''}`}>
-            <div className="landing-page__mobile-nav-items">
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('testimonials')}>Testimonials</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('how-it-works')}>How we create chiropractic SOAP notes</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('prices')}>Pricing</div>
-              <div className="landing-page__mobile-nav-item" onClick={() => handleNavClick('faq')}>FAQ</div>
-              <a 
-                href="/app" 
-                className="landing-page__mobile-nav-button"
-                onClick={() => handleButtonClick('Click_Landing_MobileNav_SignIn')}
-              >
-                Sign In
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+      <LandingNavbar onNavClick={handleNavClick} handleButtonClick={handleButtonClick} />
 
       {/* Main Section with Hero Background */}
       <div className="landing-page__hero-section">
@@ -284,25 +210,14 @@ export default function LandingPage(props) {
               </div>
             </div>
             <div className="landing-page__action">
-              <div className="landing-page__action-buttons">
-                <button 
-                  className="landing-page__demo-button"
-                  onClick={() => {
-                    handleButtonClick('Click_Landing_Hero_BookDemo');
-                    handleNavClick('scheduler');
-                  }}
-                >
-                  <span className="landing-page__demo-button-main">Book my Tour</span>
-                  <span className="landing-page__demo-button-sub">15 Minutes - no sales pitch!</span>
-                </button>
-                <a 
-                  href="/app?initialState=signUp" 
-                  className="landing-page__try-free-button"
-                  onClick={() => handleButtonClick('Click_Landing_Hero_TryFree')}
-                >
-                  Try Now for Free
-                </a>
-              </div>
+              <a 
+                href="/app?initialState=signUp" 
+                className="landing-page__demo-button"
+                onClick={() => handleButtonClick('Click_Consideration_Hero_StartTrial')}
+              >
+                <span className="landing-page__demo-button-main">Start Free Trial</span>
+                <span className="landing-page__demo-button-sub">No Credit Card Required</span>
+              </a>
             </div>
           </div>
         </div>
@@ -428,7 +343,7 @@ export default function LandingPage(props) {
               playsInline
               poster={whiteboardThumbnail}
             >
-              <source src={landingVideo} type="video/mp4" />
+              <source src={whiteboardAnimation} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
@@ -447,12 +362,12 @@ export default function LandingPage(props) {
             <a 
               href="/app?initialState=signUp" 
               className="landing-page__video-cta-button"
-              onClick={() => handleButtonClick('Click_Landing_Video_SignUp')}
+              onClick={() => handleButtonClick('Click_Consideration_Video_StartTrial')}
             >
-              Try Now for Free
+              Start Your Free Trial
             </a>
             <p className="landing-page__video-cta-text">
-              Do you want to just try it for yourself -  . No credit card required and you get an hour on us so that you KNOW this works for your clinic.
+              See how easy it is? Start creating your own chiropractic SOAP notes in under 60 seconds. No credit card required - get 1 hour free to test it in your clinic.
             </p>
           </div>
         </div>
@@ -488,26 +403,6 @@ export default function LandingPage(props) {
       </div>
 
 
-      {/* Scheduler Section */}
-      <div id="scheduler" className="landing-page__scheduler-section">
-        <div className="landing-page__feature-tag">Book a Consult</div>
-        
-        {/* Scheduler info tags */}
-        <div className="landing-page__scheduler-info">
-          <span className="landing-page__scheduler-info-tag">15 minutes</span>
-          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
-          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
-        </div>
-        
-        <div className="landing-page__scheduler-container">
-          <div className="landing-page__scheduler-widget">
-            <iframe
-              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
-              title="Schedule a Demo with ChiroNote"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Pricing Section */}
       <div className="landing-page__features">

@@ -1,0 +1,183 @@
+/* Header Styles */
+.landing-navbar__header {
+  padding: 20px;
+  position: sticky;
+  top: 0;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.landing-navbar__header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 90vw;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* Text logo on the left */
+.landing-navbar__textlogo-left {
+  height: 40px;
+  display: block;
+}
+
+/* Desktop logo - colored version */
+.landing-navbar__textlogo-desktop {
+  display: block;
+}
+
+/* Mobile logo - white version */
+.landing-navbar__textlogo-mobile {
+  display: none;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .landing-navbar__header {
+    background-color: var(--dark-green);
+    border-bottom: none;
+  }
+
+  .landing-navbar__textlogo-desktop {
+    display: none;
+  }
+  
+  .landing-navbar__textlogo-mobile {
+    display: block;
+  }
+}
+
+/* Mobile menu button (hamburger) */
+.landing-navbar__mobile-menu-button {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 24px;
+  height: 18px;
+  cursor: pointer;
+  z-index: 101;
+}
+
+.landing-navbar__mobile-menu-button span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background-color: #fff;
+  transition: all 0.3s ease;
+}
+
+/* Mobile navigation */
+.landing-navbar__mobile-nav {
+  position: fixed;
+  top: 60px;
+  left: -100%;
+  width: 100%;
+  height: auto;
+  background-color: white;
+  z-index: 100;
+  transition: left 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.landing-navbar__mobile-nav.open {
+  left: 0;
+}
+
+.landing-navbar__mobile-nav-items {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing-navbar__mobile-nav-item {
+  font-size: 1.1rem;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.landing-navbar__mobile-nav-item:last-child {
+  border-bottom: none;
+}
+
+.landing-navbar__mobile-nav-button {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: transparent;
+  color: #075715;
+  text-align: center;
+  border-radius: 5px;
+  border: 2px solid #075715;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.landing-navbar__mobile-nav-button:hover {
+  background-color: #075715;
+  color: white;
+}
+
+.landing-navbar__nav-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-navbar__nav {
+  display: flex;
+  gap: 20px;
+}
+
+.landing-navbar__nav-item {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: #075715;
+  border: none;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: inherit;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.landing-navbar__nav-item:hover {
+  background-color: rgba(7, 87, 21, 0.1);
+  color: #075715;
+}
+
+/* Button Styles */
+.landing-navbar__get-started-button {
+  padding: 10px 20px;
+  background-color: transparent;
+  color: #075715;
+  border: 2px solid #075715;
+  border-radius: 5px;
+  text-decoration: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin-left: 10px;
+}
+
+.landing-navbar__get-started-button:hover {
+  background-color: #075715;
+  color: white;
+}
+
+/* Show mobile menu on smaller screens */
+@media (max-width: 768px) {
+  .landing-navbar__mobile-menu-button {
+    display: flex;
+  }
+  
+  .landing-navbar__nav-container {
+    display: none;
+  }
+}

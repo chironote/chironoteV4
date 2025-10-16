@@ -27,6 +27,11 @@ function Account({ setCurrentPage }) {
     // Track page view when the Account component mounts
     trackPageView('Account_Page');
     
+    // TODO: Track price table view for conversion funnel analysis
+    // This indicates user is considering upgrade/plan change
+    // trackEvent('AccountPage', 'View_Price_Tables');
+    // Meta Pixel: window.fbq('track', 'ViewContent', { content_name: 'Pricing Tables', content_category: 'Account Page' });
+    
     // Set the current page in the parent component
     if (setCurrentPage) {
       setCurrentPage('account');

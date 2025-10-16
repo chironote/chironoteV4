@@ -22,11 +22,17 @@ const BUFFER_SIZE = 4096;     // Web Audio API buffer size
 // AudioWorklet processor code (embedded in component)
 const audioProcessorCode = `
 const MAX_16BIT_INT = 32767;
+const TARGET_SAMPLE_RATE = 16000; // AssemblyAI requirement
 
 class AudioProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
     this.audioBufferQueue = new Int16Array(0);
+    this.resampleBuffer = [];
+    this.resampleRatio = sampleRate / TARGET_SAMPLE_RATE;
+    this.resampleIndex = 0;
+    
+    console.log('[AudioProcessor] Initialized with sample rate:', sampleRate, 'resample ratio:', this.resampleRatio);
   }
 
   process(inputs) {
@@ -35,11 +41,16 @@ class AudioProcessor extends AudioWorkletProcessor {
       if (!input || !input[0]) return true;
 
       const channelData = input[0];
-      const float32Array = Float32Array.from(channelData);
+      let processedData = Float32Array.from(channelData);
+      
+      // Resample if needed (when context sample rate != 16kHz)
+      if (this.resampleRatio !== 1) {
+        processedData = this.resample(processedData);
+      }
       
       // Convert Float32 to Int16 with proper clamping
       const int16Array = Int16Array.from(
-        float32Array.map((sample) => {
+        processedData.map((sample) => {
           const clamped = Math.max(-1, Math.min(1, sample));
           return clamped < 0 ? clamped * 32768 : clamped * MAX_16BIT_INT;
         })
@@ -64,6 +75,24 @@ class AudioProcessor extends AudioWorkletProcessor {
       console.error('[AudioProcessor] Error:', error);
       return false;
     }
+  }
+  
+  // Simple linear interpolation resampling
+  resample(inputBuffer) {
+    const outputLength = Math.floor(inputBuffer.length / this.resampleRatio);
+    const output = new Float32Array(outputLength);
+    
+    for (let i = 0; i < outputLength; i++) {
+      const srcIndex = i * this.resampleRatio;
+      const srcIndexFloor = Math.floor(srcIndex);
+      const srcIndexCeil = Math.min(srcIndexFloor + 1, inputBuffer.length - 1);
+      const t = srcIndex - srcIndexFloor;
+      
+      // Linear interpolation
+      output[i] = inputBuffer[srcIndexFloor] * (1 - t) + inputBuffer[srcIndexCeil] * t;
+    }
+    
+    return output;
   }
   
   mergeBuffers(lhs, rhs) {
@@ -278,13 +307,33 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
     }
   };
 
+  // Browser detection helper
+  const isFirefox = () => {
+    return navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+  };
+
   // Audio setup functions
-  const setupAudioContext = async () => {
-    // Create AudioContext at exactly 16kHz for AssemblyAI compatibility
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)({
-      sampleRate: SAMPLE_RATE,  // Must be exactly 16000
+  const setupAudioContext = async (microphoneSampleRate = null) => {
+    // Firefox Mac has issues with forced sample rates - let it use default
+    // The AudioWorklet will handle resampling to 16kHz for AssemblyAI
+    // Other browsers can use 16kHz directly
+    const contextSampleRate = isFirefox() 
+      ? undefined  // Let Firefox use its default sample rate
+      : SAMPLE_RATE;
+    
+    console.log('[Dictation] Creating AudioContext with sample rate:', contextSampleRate || 'default');
+    
+    // Create AudioContext
+    const contextOptions = {
       latencyHint: 'balanced'   // Optimize for real-time processing
-    });
+    };
+    
+    // Only specify sampleRate if we have a specific value (non-Firefox)
+    if (contextSampleRate) {
+      contextOptions.sampleRate = contextSampleRate;
+    }
+    
+    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)(contextOptions);
     
     // Resume context if suspended (browser autoplay policy)
     if (audioContextRef.current.state === 'suspended') {
@@ -304,7 +353,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
 
   const getMediaStream = async () => {
     // Request microphone with optimal settings for AssemblyAI
-    return await navigator.mediaDevices.getUserMedia({
+    const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         sampleRate: { ideal: 16000 },     // Prefer 16kHz but allow browser flexibility
         channelCount: { ideal: 1 },       // Prefer mono but allow browser flexibility  
@@ -313,6 +362,13 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
         autoGainControl: true            // Enable for consistent levels
       }
     });
+    
+    // Get actual sample rate from the stream for Firefox compatibility
+    const audioTrack = stream.getAudioTracks()[0];
+    const settings = audioTrack.getSettings();
+    console.log('[Dictation] Microphone stream settings:', settings);
+    
+    return { stream, sampleRate: settings.sampleRate || 48000 };
   };
 
   const setupAudioWorklet = (mediaStream) => {
@@ -367,12 +423,12 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
   };
 
   const setupAudioPipeline = async () => {
-    // 1. Setup AudioContext and load AudioWorklet
-    await setupAudioContext();
-    
-    // 2. Get microphone stream
-    const mediaStream = await getMediaStream();
+    // 1. Get microphone stream first to detect sample rate
+    const { stream: mediaStream, sampleRate: micSampleRate } = await getMediaStream();
     streamRef.current = mediaStream;
+    
+    // 2. Setup AudioContext with appropriate sample rate for Firefox
+    await setupAudioContext(micSampleRate);
     
     // 3. Setup AudioWorklet processing
     setupAudioWorklet(mediaStream);

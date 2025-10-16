@@ -121,3 +121,137 @@ The application's visual design and styling are guided by a few key principles:
 - **Iconography**: The application uses [Google's Material Symbols (Rounded)](https://fonts.google.com/icons?selected=Material+Symbols+Rounded) for all icons. This provides a consistent, modern, and easily recognizable visual language throughout the UI.
 
 - **Responsive Layout**: The app is designed to be responsive.   Account for silly mistakes llms do such as occasionally missing a comma or a period. Its most notable responsive feature is the automatic collapsing and toggling of the side panels (`TogglePanel`, `EditPanel`) on medium and small screens to maximize the usable space for the main clipboard area, ensuring a good user experience on tablets and mobile devices.
+
+## 9. Blog System
+
+The application includes a fully functional blog system accessible from all landing pages. The blog is designed to be easily maintainable, with a simple process for adding new posts.
+
+### Blog Structure
+
+- **Location**: `src/components/Blog/`
+- **Routes**: 
+  - `/blog` - Main blog listing page
+  - `/blog/:slug` - Individual post pages
+- **Navigation**: "Blog" link appears in all 3 landing pages (left of "Video" on desktop, top of mobile menu)
+
+### Key Files
+
+- **`BlogList.jsx`**: Main blog listing page that displays all posts as clickable cards
+- **`BlogPost.jsx`**: Individual post viewer with back navigation and logo
+- **`Blog.css`**: Complete styling for all blog pages (responsive design)
+- **`Post 1.jsx`, `Post 2.jsx`, etc.**: Individual blog post files
+- **`README.md`**: Detailed documentation for the blog system
+
+### Adding a New Blog Post
+
+To add a new blog post, follow these three steps:
+
+#### Step 1: Create the Post File
+
+Create a new file in `src/components/Blog/` named `Post X.jsx` (where X is your post number). Use this structure:
+
+```jsx
+import React from 'react';
+
+// Post metadata
+const metadata = {
+  title: "Your Post Title Here",
+  synopsis: "A brief 1-2 sentence description for the blog listing page.",
+  slug: 'your-post-url-slug',  // URL will be: /blog/your-post-url-slug
+};
+
+// Post content component
+function PostXContent() {
+  return (
+    <div>
+      <p>Your content goes here...</p>
+      
+      <h2>Section Heading</h2>
+      <p>More content...</p>
+      
+      <h3>Subsection</h3>
+      <ul>
+        <li>Bullet point 1</li>
+        <li>Bullet point 2</li>
+      </ul>
+      
+      <blockquote>
+        "Use blockquotes for emphasized text or quotes"
+      </blockquote>
+      
+      <p>
+        You can add <a href="/app">links</a> and <strong>bold text</strong>.
+      </p>
+    </div>
+  );
+}
+
+// Export with metadata and component
+export default {
+  ...metadata,
+  component: PostXContent,
+};
+```
+
+#### Step 2: Register in BlogList.jsx
+
+Open `src/components/Blog/BlogList.jsx`:
+
+1. Add import at the top:
+```jsx
+import Post2 from './Post 2';
+```
+
+2. Add to the `BLOG_POSTS` array:
+```jsx
+const BLOG_POSTS = [
+  Post1,
+  Post2,  // Your new post
+  // Add more posts here
+];
+```
+
+#### Step 3: Register in BlogPost.jsx
+
+Open `src/components/Blog/BlogPost.jsx`:
+
+1. Add import at the top:
+```jsx
+import Post2 from './Post 2';
+```
+
+2. Add to the `POST_MAP` object:
+```jsx
+const POST_MAP = {
+  [Post1.slug]: Post1,
+  [Post2.slug]: Post2,  // Your new post
+};
+```
+
+That's it! The new post will automatically appear on the blog listing page and be accessible at its unique URL.
+
+### Available Styling
+
+The blog CSS automatically styles these elements:
+
+- `<p>` - Paragraphs (18px, comfortable line-height)
+- `<h2>` - Major section headings (32px, bold, black)
+- `<h3>` - Subsection headings (24px, green #075715)
+- `<ul>` / `<ol>` - Lists with proper spacing
+- `<li>` - List items
+- `<a>` - Links (green with hover effect)
+- `<blockquote>` - Quoted text (left border, italic)
+- `<img>` - Images (responsive, rounded corners)
+- `<strong>` / `<b>` - Bold text
+- `<em>` / `<i>` - Italic text
+- `<hr>` - Horizontal dividers
+
+### Design Features
+
+- Clean layout with bold 3px black borders on post cards
+- Logo positioned in top-right corner
+- "Welcome to our Blog" header
+- Fully responsive (desktop → tablet → mobile)
+- Hover effects on post cards
+- Back button returns to blog list
+- Logo click returns to landing page

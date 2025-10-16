@@ -11,7 +11,7 @@ import jessImg from '../../assets/Jess.png';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import mockupMobile from '../../assets/mockup-mobile-final.png';
 import heroSvg from '../../assets/Hero.svg';
-import landingVideo from '../../assets/WhiteboardAnimation.mp4';
+import tutorialVideo from '../../assets/Tutorial.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
 import hipaaLogo from '../../assets/hipaa.svg';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
@@ -113,7 +113,7 @@ const PLANS_DATA = [
 export default function LandingPage(props) {
   const [activeFaqItem, setActiveFaqItem] = useState(null);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
-  const [email, setEmail] = useState('');
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
   const videoRef = useRef(null);
   
   // Load Hotjar script
@@ -159,6 +159,10 @@ export default function LandingPage(props) {
   const handleNavClick = (sectionId) => {
     const element = document.getElementById(sectionId);
     if (element) {
+      // TODO: Track section navigation for engagement metrics
+      // Potential tracking: trackEvent('LandingPage', `View_Landing_${sectionId}`)
+      // This helps identify which sections drive the most engagement
+      
       // Scroll offset adjusted for proper positioning
       const scrollOffset = sectionId === 'scheduler' ? 50 : -20;
       const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + scrollOffset;
@@ -167,6 +171,10 @@ export default function LandingPage(props) {
   };
   
   const toggleFaqItem = (index) => {
+    // TODO: Track FAQ engagement to understand user concerns
+    // Potential tracking: trackEvent('LandingPage', 'Expand_FAQ_Item', FAQ_ITEMS[index].question)
+    // This helps identify which questions are most important to prospects
+    
     setActiveFaqItem(activeFaqItem === index ? null : index);
   };
   
@@ -182,14 +190,6 @@ export default function LandingPage(props) {
     setActiveTestimonial((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
   };
 
-  const handleEmailSubmit = (e) => {
-    e.preventDefault();
-    if (email) {
-      handleButtonClick('Click_Awareness_Hero_EmailSignUp');
-      window.location.href = `/app?initialState=signUp&prefillEmail=${encodeURIComponent(email)}`;
-    }
-  };
-
 
   return (
     <div className="landing-page">
@@ -203,30 +203,32 @@ export default function LandingPage(props) {
           <div className="landing-page__main">
             <div className="landing-page__main-content">
               <div className="landing-page__title">
-              Spending too much time on admin tasks?
+              Built by chiropractors who got tired of charting
               </div>
               <div className="landing-page__subtitle">
-              Reduce your charting time by 67% and save time with automatic SOAP note tools.
+              We're not a tech company trying to understand your practice. We live it. That's why our notes actually sound like yours.
               </div>
             </div>
             <div className="landing-page__action">
-              <form className="landing-page__action-buttons" onSubmit={handleEmailSubmit}>
-                <input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="landing-page__email-input"
-                />
+              <div className="landing-page__action-buttons">
                 <button 
-                  type="submit"
                   className="landing-page__demo-button"
+                  onClick={() => {
+                    handleButtonClick('Click_Landing_Hero_BookDemo');
+                    handleNavClick('scheduler');
+                  }}
                 >
-                  <span className="landing-page__demo-button-main">Try Now for Free</span>
-                  <span className="landing-page__demo-button-sub">No Credit Card Required</span>
+                  <span className="landing-page__demo-button-main">Book my Tour</span>
+                  <span className="landing-page__demo-button-sub">15 Minutes - no sales pitch!</span>
                 </button>
-              </form>
+                <a 
+                  href="/app?initialState=signUp" 
+                  className="landing-page__try-free-button"
+                  onClick={() => handleButtonClick('Click_Landing_Hero_TryFree')}
+                >
+                  Try Now for Free
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -344,6 +346,11 @@ export default function LandingPage(props) {
           </div>
           
           <div className="landing-page__video-wrapper">
+            {/* TODO: Add video event listeners for engagement tracking */}
+            {/* onPlay={() => trackEvent('LandingPage', 'Play_Demo_Video')} */}
+            {/* onPause={() => trackEvent('LandingPage', 'Pause_Demo_Video')} */}
+            {/* onEnded={() => trackEvent('LandingPage', 'Complete_Demo_Video')} */}
+            {/* Video engagement is a strong conversion indicator */}
             <video 
               ref={videoRef}
               className="landing-page__video-player"
@@ -351,19 +358,36 @@ export default function LandingPage(props) {
               preload="metadata"
               playsInline
               poster={whiteboardThumbnail}
+              onLoadStart={() => setIsVideoLoading(true)}
+              onCanPlay={() => setIsVideoLoading(false)}
+              onLoadedData={() => setIsVideoLoading(false)}
             >
-              <source src={landingVideo} type="video/mp4" />
+              <source src={tutorialVideo} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
             {/* Video overlay for enhanced UX */}
-            <div className="landing-page__video-overlay">
-              <div className="landing-page__video-play-button">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
-                  <path d="M32 25L55 40L32 55V25Z" fill="white" />
-                </svg>
-              </div>
+            <div 
+              className="landing-page__video-overlay"
+              onClick={() => {
+                if (videoRef.current) {
+                  setIsVideoLoading(true);
+                  videoRef.current.play();
+                }
+              }}
+            >
+              {!isVideoLoading ? (
+                <div className="landing-page__video-play-button">
+                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                    <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
+                    <path d="M32 25L55 40L32 55V25Z" fill="white" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="landing-page__video-loading">
+                  <div className="landing-page__video-spinner"></div>
+                </div>
+              )}
             </div>
           </div>
           
@@ -376,7 +400,7 @@ export default function LandingPage(props) {
               Try Now for Free
             </a>
             <p className="landing-page__video-cta-text">
-              Do you want to just try it for yourself -  . No credit card required and you get an hour on us so that you KNOW this works for your clinic.
+              Do you want to just try it for yourself? No credit card required and you get an hour on us so that you KNOW this works for your clinic.
             </p>
           </div>
         </div>
@@ -408,6 +432,65 @@ export default function LandingPage(props) {
               />
             </div>
           </div>
+        </div>
+      </div>
+
+
+      {/* Scheduler Section */}
+      <div id="scheduler" className="landing-page__scheduler-section">
+        <div className="landing-page__feature-tag">Book a Consult</div>
+        
+        {/* Scheduler info tags */}
+        <div className="landing-page__scheduler-info">
+          <span className="landing-page__scheduler-info-tag">15 minutes</span>
+          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
+          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
+        </div>
+        
+        <div className="landing-page__scheduler-container">
+          <div className="landing-page__scheduler-widget">
+            <iframe
+              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
+              title="Schedule a Demo with ChiroNote"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="landing-page__features">
+        <div id="prices" className="landing-page__feature landing-page__pricing-section">
+          <div className="landing-page__feature-content">
+            <div className="landing-page__feature-tag">Pricing</div>
+            <div className="landing-page__feature-title">
+              Simple, transparent pricing for practices of all sizes
+            </div>
+          </div>
+          
+          {/* Pricing Cards */}
+          <div className="landing-page__pricing-cards-container">
+            {PLANS_DATA.map((plan, index) => (
+              <div key={index} className={`landing-page__pricing-card ${plan.highlight ? 'highlight' : ''}`}>
+                <div className="landing-page__pricing-card-header">
+                  <h3 className="landing-page__pricing-card-name">{plan.name}</h3>
+                  <p className="landing-page__pricing-card-description">{plan.description}</p>
+                </div>
+                <div className="landing-page__pricing-card-price">{plan.price}</div>
+                <ul className="landing-page__pricing-card-features">
+                  {plan.features.map((feature, idx) => (
+                    <li key={idx}>{feature}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <a 
+            href="/app?initialState=signUp" 
+            className="landing-page__pricing-button"
+            onClick={() => handleButtonClick('Click_Landing_Pricing_SignUp')}
+          >
+            Try Now for Free
+          </a>
         </div>
       </div>
 
@@ -449,43 +532,6 @@ export default function LandingPage(props) {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Pricing Section */}
-      <div className="landing-page__features">
-        <div id="prices" className="landing-page__feature landing-page__pricing-section">
-          <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">Pricing</div>
-            <div className="landing-page__feature-title">
-              Simple, transparent pricing for practices of all sizes
-            </div>
-          </div>
-          
-          {/* Pricing Cards */}
-          <div className="landing-page__pricing-cards-container">
-            {PLANS_DATA.map((plan, index) => (
-              <div key={index} className={`landing-page__pricing-card ${plan.highlight ? 'highlight' : ''}`}>
-                <div className="landing-page__pricing-card-header">
-                  <h3 className="landing-page__pricing-card-name">{plan.name}</h3>
-                  <p className="landing-page__pricing-card-description">{plan.description}</p>
-                </div>
-                <div className="landing-page__pricing-card-price">{plan.price}</div>
-                <ul className="landing-page__pricing-card-features">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <a 
-            href="/app?initialState=signUp" 
-            className="landing-page__pricing-button"
-            onClick={() => handleButtonClick('Click_Landing_Pricing_SignUp')}
-          >
-            Try Now for Free
-          </a>
         </div>
       </div>
       

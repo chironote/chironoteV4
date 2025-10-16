@@ -14,8 +14,11 @@ import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
-import LandingPage from './components/LandingPage/LandingPage';
+import ConversionLandingPage from './components/LandingPage/ConversionLandingPage';
 import AwarenessLandingPage from './components/LandingPage/AwarenessLandingPage';
+import ConsiderationLandingPage from './components/LandingPage/ConsiderationLandingPage';
+import BlogList from './components/Blog/BlogList';
+import BlogPost from './components/Blog/BlogPost';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
@@ -27,10 +30,10 @@ import * as queries from './graphql/queries';
 import * as mutations from './graphql/mutations';
 import { CONNECTION_STATE_CHANGE } from 'aws-amplify/api';
 import { Hub } from 'aws-amplify/utils';
-import { getCurrentUser } from 'aws-amplify/auth';
+import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { trackPageView } from './utils/analytics'; // Import our custom tracking
+import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout } from './utils/analytics'; // Import our custom tracking
 import NoSleep from 'nosleep.js';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
@@ -374,6 +377,52 @@ function AuthenticatedApp({ signOut, user }) {
 
     fetchNotes();
   }, [user.username]);
+
+  // Set user properties for GA4 tracking when user logs in
+  useEffect(() => {
+    const setUserData = async () => {
+      try {
+        const userAttributes = await fetchUserAttributes();
+        const email = userAttributes.email;
+        const userId = userAttributes.sub;
+        
+        // Set GA4 user properties (includes hashed email for enhanced conversions)
+        await setUserProperties(userId, email);
+        
+        console.log('[GA4] User properties set:', { userId, email });
+      } catch (error) {
+        console.error('Error setting user properties:', error);
+      }
+    };
+    
+    setUserData();
+  }, [user.username]);
+
+  // Listen for auth events to track account creation (PRIMARY CONVERSION)
+  useEffect(() => {
+    const authListener = Hub.listen('auth', async (data) => {
+      const { payload } = data;
+      
+      // Track when user successfully signs up
+      if (payload.event === 'signUp') {
+        try {
+          // Get user email and ID
+          const userAttributes = await fetchUserAttributes();
+          const email = userAttributes.email;
+          const userId = userAttributes.sub;
+          
+          // Track sign_up conversion event
+          await trackSignUp(email, userId);
+          
+          console.log('[GA4] Sign-up conversion tracked:', { email, userId });
+        } catch (error) {
+          console.error('Error tracking sign-up:', error);
+        }
+      }
+    });
+    
+    return () => authListener();
+  }, []);
 
   useEffect(() => {
     const hubListener = Hub.listen('api', (data) => {
@@ -939,11 +988,14 @@ function App() {
       <PWARedirect />
       <CookieConsent />
       <Routes>
-        <Route path="/" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
-        <Route path="/chiropractic-soap-notes-demo" element={<LandingPage />} />
-        <Route path="/awareness" element={<AwarenessLandingPage />} />
+        <Route path="/" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
+        <Route path="/ai-chiropractic-soap-notes" element={<ConsiderationLandingPage />} />
+        <Route path="/welcome" element={<AwarenessLandingPage />} />
+        <Route path="/learn-more" element={<ConversionLandingPage />} />
+        <Route path="/blog" element={<BlogList />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
         <Route path="/app/*" element={<ProtectedApp />} />
-        <Route path="*" element={<Navigate to="/chiropractic-soap-notes-demo" replace />} />
+        <Route path="*" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
       </Routes>
     </Router>
   );

@@ -30,6 +30,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
+  const streamRef = useRef(null); // Persist media stream for Safari permission
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -342,7 +343,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      // Don't stop stream tracks - keep alive for Safari permission persistence
+      // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
       setIsPreparingTranscript(true);
       setIsTranscriptCompleted(false);
@@ -369,8 +371,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         recordingIntervalRef.current = null;
       }
       
-      // Stop all media tracks
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      // Don't stop stream tracks - keep alive for Safari permission persistence
+      // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
     }
     
@@ -411,14 +413,23 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const setupRecorder = async () => {
     try {
       setTextStream('');
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1, // Mono
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
-      });
+      
+      // Reuse existing stream if available (Safari permission persistence)
+      let stream = streamRef.current;
+      if (!stream || !stream.active) {
+        console.log('[RecordingManager] Creating new media stream');
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1, // Mono
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        });
+        streamRef.current = stream;
+      } else {
+        console.log('[RecordingManager] Reusing existing media stream');
+      }
   
       const uaString = navigator.userAgent.toLowerCase();
       let options = {};
@@ -550,6 +561,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       // Clean up subscription when component unmounts
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
+      }
+      // Stop media stream on unmount (full cleanup)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
       }
     };
   }, []);

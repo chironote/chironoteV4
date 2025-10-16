@@ -11,7 +11,7 @@ const Clipboard = ({
   isWebSocketConnecting
 }) => {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [soapPositions, setSoapPositions] = useState({ S: 0, O: 0, A: 0, P: 0 });
+  const [soapPositions, setSoapPositions] = useState({ S: 0, O: 0, A: 0, P: 0, T: 0 });
 
   // Determine the appropriate placeholder text based on state
   const getPlaceholderText = () => {
@@ -45,7 +45,8 @@ const Clipboard = ({
       'S': 'Subjective:',
       'O': 'Objective:',
       'A': 'Assessment:',
-      'P': 'Plan:'
+      'P': 'Plan:',
+      'T': 'Treatment:'
     };
 
     const sectionHeaders = Object.values(sections);
@@ -83,7 +84,8 @@ const Clipboard = ({
       'S': 'Subjective:',
       'O': 'Objective:',
       'A': 'Assessment:',
-      'P': 'Plan:'
+      'P': 'Plan:',
+      'T': 'Treatment:'
     };
 
     const newPositions = {};
