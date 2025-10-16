@@ -6,6 +6,7 @@ import NoSleep from 'nosleep.js';
 import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from '../../graphql/subscriptions';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const client = generateClient();
 
@@ -31,6 +32,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
+  const isAppInBackgroundRef = useRef(false); // Track if app is in background
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -45,6 +47,62 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     return () => {
       if (noSleepRef.current) {
         noSleepRef.current.disable();
+      }
+    };
+  }, []);
+
+  // Background detection: Stop chunking when app is backgrounded to prevent audio loss
+  useEffect(() => {
+    let appStateListener;
+
+    if (Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+      console.log('[RecordingManager] Setting up background detection for native platform');
+      
+      appStateListener = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        console.log(`[RecordingManager] App state changed: ${isActive ? 'FOREGROUND' : 'BACKGROUND'}`);
+        
+        isAppInBackgroundRef.current = !isActive;
+        
+        if (!isActive && isRecordingRef.current && !isPausedRef.current) {
+          // App went to background during active recording
+          console.log('[RecordingManager] ⚠️ App backgrounded during recording - STOPPING chunking interval');
+          console.log('[RecordingManager] Recording will continue without interruption until user returns');
+          
+          // Stop the chunking interval to prevent stop/start cycles
+          if (recordingIntervalRef.current) {
+            clearInterval(recordingIntervalRef.current);
+            recordingIntervalRef.current = null;
+            console.log('[RecordingManager] ✓ Chunking interval cleared - continuous recording active');
+          }
+        } 
+        else if (isActive && isRecordingRef.current && !isPausedRef.current && !recordingIntervalRef.current) {
+          // App returned to foreground during active recording
+          console.log('[RecordingManager] ✓ App foregrounded during recording - RESUMING chunking interval');
+          
+          // First, trigger a chunk save for the background recording period
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            console.log('[RecordingManager] Saving background recording chunk...');
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.start();
+          }
+          
+          // Restart the chunking interval
+          recordingIntervalRef.current = setInterval(() => {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+              mediaRecorderRef.current.stop();
+              mediaRecorderRef.current.start();
+            }
+          }, 240000); // 4 minutes
+          
+          console.log('[RecordingManager] ✓ Chunking interval restarted');
+        }
+      });
+    }
+
+    return () => {
+      if (appStateListener) {
+        appStateListener.remove();
+        console.log('[RecordingManager] Background detection listener removed');
       }
     };
   }, []);

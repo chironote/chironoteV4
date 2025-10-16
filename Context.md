@@ -163,6 +163,7 @@ Both `Dictation.jsx` and `RecordingManager.jsx` have been updated to handle Capa
 - Added `Capacitor` import from `@capacitor/core`
 - Enhanced `setupRecorder()` function with native platform detection
 - Added logging for microphone access debugging on mobile devices
+- **Background Recording Protection**: Implements app state detection to prevent recording interruption when app is backgrounded
 
 **Key Implementation Pattern:**
 ```javascript
@@ -180,6 +181,50 @@ const stream = await navigator.mediaDevices.getUserMedia({
 ```
 
 This ensures proper microphone permission handling across web and native mobile platforms, resolving DOMException errors that occur when `getUserMedia` fails on mobile devices.
+
+### Background Recording Continuity (Android & iOS)
+
+**Problem:** Recording is segmented into 4-minute chunks for progressive upload. When the app is backgrounded during a chunk transition (stop/start cycle), Android WebView suspends microphone access, resulting in empty transcripts for subsequent chunks.
+
+**Solution:** `RecordingManager.jsx` now detects app state changes and adapts recording behavior:
+
+**Implementation:**
+```javascript
+import { App as CapacitorApp } from '@capacitor/app';
+
+// Listen for app state changes
+CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+  if (!isActive && isRecording) {
+    // BACKGROUNDED: Stop chunking interval, continue recording as one continuous blob
+    clearInterval(recordingIntervalRef.current);
+    // Recording continues without interruption
+  } else if (isActive && isRecording) {
+    // FOREGROUNDED: Save background chunk and resume 4-minute chunking
+    mediaRecorder.stop();
+    mediaRecorder.start();
+    // Restart chunking interval
+  }
+});
+```
+
+**Behavior:**
+- **Foreground**: Normal 4-minute chunking for progressive upload and memory management
+- **Background**: Stops chunking, lets MediaRecorder accumulate audio in a single blob
+- **Return to Foreground**: Saves the background recording chunk, resumes normal chunking
+
+**Trade-offs:**
+- ✅ **Prevents data loss** - No empty transcripts from failed chunk transitions
+- ✅ **iOS compatibility** - Works with existing `UIBackgroundModes` audio configuration
+- ✅ **Android compatibility** - Avoids WebView microphone suspension during chunk cycles
+- ⚠️ **Memory usage** - Background period accumulates larger blob (acceptable for clinical recordings)
+- ⚠️ **Note**: Android WebView may still suspend microphone after extended background time (device/manufacturer dependent)
+
+**Logging:** Comprehensive console logging tracks state transitions for debugging:
+```
+[RecordingManager] App backgrounded during recording - STOPPING chunking interval
+[RecordingManager] Recording will continue without interruption until user returns
+[RecordingManager] ✓ Chunking interval cleared - continuous recording active
+```
 
 ### Android Permissions Configuration
 
