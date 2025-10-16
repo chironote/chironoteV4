@@ -3,7 +3,7 @@ import './LandingNavbar.css';
 import textLogo from '../../assets/textlogo.svg';
 import textLogoClr from '../../assets/textlogo-clr.svg';
 
-export default function LandingNavbar({ onNavClick, handleButtonClick }) {
+export default function LandingNavbar({ onNavClick, handleButtonClick, videoLabel = 'How It Works' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -84,7 +84,7 @@ export default function LandingNavbar({ onNavClick, handleButtonClick }) {
                   className="landing-navbar__nav-item"
                   onClick={() => handleNavItemClick('how-it-works')}
                 >
-                  Video
+                  {videoLabel}
                 </button>
                 <button 
                   className="landing-navbar__nav-item"
@@ -122,7 +122,7 @@ export default function LandingNavbar({ onNavClick, handleButtonClick }) {
             {onNavClick && (
               <>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('testimonials')}>Testimonials</div>
-                <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('how-it-works')}>How we create chiropractic SOAP notes</div>
+                <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('how-it-works')}>{videoLabel}</div>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('prices')}>Pricing</div>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('faq')}>FAQ</div>
               </>

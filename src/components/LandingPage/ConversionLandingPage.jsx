@@ -194,7 +194,7 @@ export default function LandingPage(props) {
   return (
     <div className="landing-page">
       {/* Header Section */}
-      <LandingNavbar onNavClick={handleNavClick} handleButtonClick={handleButtonClick} />
+      <LandingNavbar onNavClick={handleNavClick} handleButtonClick={handleButtonClick} videoLabel="See It Now" />
 
       {/* Main Section with Hero Background */}
       <div className="landing-page__hero-section">
@@ -342,7 +342,7 @@ export default function LandingPage(props) {
       <div id="how-it-works" className="landing-page__video-section">
         <div className="landing-page__video-container">
           <div className="landing-page__video-content">
-            <div className="landing-page__feature-tag">How we create chiropractic SOAP notes</div>
+            <div className="landing-page__feature-tag">See it at Work</div>
           </div>
           
           <div className="landing-page__video-wrapper">
@@ -406,56 +406,66 @@ export default function LandingPage(props) {
         </div>
       </div>
 
-      {/* Feature Sections */}
+      {/* Comparison Section */}
       <div id="features" className="landing-page__features">
-        {/* Secure Charting Section */}
-        <div id="note-creation" className="landing-page__secure-charting-section">
-          <div className="landing-page__feature-tag">Secure Charting</div>
+        <div id="comparison" className="landing-page__comparison-section">
+          <div className="landing-page__feature-tag">Why Chiropractors Choose ChiroNote</div>
           
-          <div className="landing-page__secure-charting-content">
-            <img
-              src={mockupLaptop}
-              alt="Quick demo creating chiropractic SOAP notes"
-              className="landing-page__secure-charting-image"
-            />
-            <div className="landing-page__secure-charting-text">
-              <div className="landing-page__feature-title">
-                On our HIPAA compliant, medical grade platform
-              </div>
-              <div className="landing-page__feature-description">
-                ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
-              </div>
-              <img
-                src={hipaaLogo}
-                alt="HIPAA Compliant"
-                className="landing-page__hipaa-logo"
-              />
-            </div>
+          <div className="landing-page__comparison-table-container">
+            <table className="landing-page__comparison-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th className="landing-page__comparison-chironote">ChiroNote</th>
+                  <th className="landing-page__comparison-others">Other AI Scribes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="landing-page__comparison-category">Built by chiropractors</td>
+                  <td className="landing-page__comparison-check">✓</td>
+                  <td className="landing-page__comparison-cross">✗</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Chiropractic-specific terminology</td>
+                  <td className="landing-page__comparison-check">✓</td>
+                  <td className="landing-page__comparison-cross">✗</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Transparent pricing</td>
+                  <td className="landing-page__comparison-check">✓</td>
+                  <td className="landing-page__comparison-cross">Contact sales</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Affordable starter plan</td>
+                  <td className="landing-page__comparison-check">$19/mo</td>
+                  <td className="landing-page__comparison-cross">$85+/mo</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Learning curve</td>
+                  <td className="landing-page__comparison-check">2 clicks + copy</td>
+                  <td className="landing-page__comparison-cross">Training required</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Works with your EHR</td>
+                  <td className="landing-page__comparison-check">Any system</td>
+                  <td className="landing-page__comparison-cross">Limited integrations</td>
+                </tr>
+                <tr>
+                  <td className="landing-page__comparison-category">Setup time</td>
+                  <td className="landing-page__comparison-check">Instant</td>
+                  <td className="landing-page__comparison-cross">IT approval needed</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="landing-page__comparison-note">
+            <strong>Why copy-paste beats "integration":</strong> No IT approval, no EHR compatibility issues, no waiting. Works with every system from day one.
           </div>
         </div>
       </div>
 
-
-      {/* Scheduler Section */}
-      <div id="scheduler" className="landing-page__scheduler-section">
-        <div className="landing-page__feature-tag">Book a Consult</div>
-        
-        {/* Scheduler info tags */}
-        <div className="landing-page__scheduler-info">
-          <span className="landing-page__scheduler-info-tag">15 minutes</span>
-          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
-          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
-        </div>
-        
-        <div className="landing-page__scheduler-container">
-          <div className="landing-page__scheduler-widget">
-            <iframe
-              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
-              title="Schedule a Demo with ChiroNote"
-            />
-          </div>
-        </div>
-      </div>
 
       {/* Pricing Section */}
       <div className="landing-page__features">
@@ -491,6 +501,27 @@ export default function LandingPage(props) {
           >
             Try Now for Free
           </a>
+        </div>
+      </div>
+
+      {/* Scheduler Section */}
+      <div id="scheduler" className="landing-page__scheduler-section">
+        <div className="landing-page__feature-tag">Book a Consult</div>
+        
+        {/* Scheduler info tags */}
+        <div className="landing-page__scheduler-info">
+          <span className="landing-page__scheduler-info-tag">15 minutes</span>
+          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
+          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
+        </div>
+        
+        <div className="landing-page__scheduler-container">
+          <div className="landing-page__scheduler-widget">
+            <iframe
+              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
+              title="Schedule a Demo with ChiroNote"
+            />
+          </div>
         </div>
       </div>
 

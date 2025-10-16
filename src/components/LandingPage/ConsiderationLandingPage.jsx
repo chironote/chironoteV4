@@ -215,7 +215,7 @@ export default function LandingPage(props) {
                 className="landing-page__demo-button"
                 onClick={() => handleButtonClick('Click_Consideration_Hero_StartTrial')}
               >
-                <span className="landing-page__demo-button-main">Start Free Trial</span>
+                <span className="landing-page__demo-button-main">Try Now for Free</span>
                 <span className="landing-page__demo-button-sub">No Credit Card Required</span>
               </a>
             </div>
@@ -364,7 +364,7 @@ export default function LandingPage(props) {
               className="landing-page__video-cta-button"
               onClick={() => handleButtonClick('Click_Consideration_Video_StartTrial')}
             >
-              Start Your Free Trial
+              Try Now for Free
             </a>
             <p className="landing-page__video-cta-text">
               See how easy it is? Start creating your own chiropractic SOAP notes in under 60 seconds. No credit card required - get 1 hour free to test it in your clinic.
