@@ -45,8 +45,8 @@ Created a reusable utility function that strips all common markdown formatting:
 
 ### ✅ Cleaned on Copy Operations
 1. **Main copy button** (Copy icon in toolbar)
-2. **SOAP section buttons** (S, O, A, P, T in main clipboard)
-3. **ContentPopup SOAP buttons** (When viewing saved notes)
+2. **SOAP+T section buttons** (S, O, A, P, T buttons in main clipboard)
+3. **ContentPopup SOAP+T buttons** (When viewing saved notes)
 4. **Ctrl+C / Copy shortcut**
 
 ## Testing Recommendations
@@ -57,9 +57,9 @@ Created a reusable utility function that strips all common markdown formatting:
    - Click "Apply Changes"
    - Verify clipboard text has NO ** or other markdown
 
-2. **Test SOAP Copy Buttons**:
+2. **Test SOAP+T Copy Buttons**:
    - Generate a note with markdown
-   - Click S, O, A, or P buttons
+   - Click S, O, A, P, or T buttons
    - Paste into another app
    - Verify no markdown syntax
 

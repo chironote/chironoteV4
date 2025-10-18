@@ -106,9 +106,9 @@ While `App.jsx` orchestrates the application, several other key components encap
 
 - **`EditPanel.jsx`**: The collapsible right-side panel. This component provides a dedicated space for editing text, separate from the main `Clipboard`. It contains its own text area and logic for interacting with the clipboard content.
 
-- **`Clipboard.jsx`**: The central text area of the application. This is the user's primary workspace, where text from transcriptions, dictation, or manual edits is displayed and manipulated.
+- **`Clipboard.jsx`**: The central text area of the application. This is the user's primary workspace, where text from transcriptions, dictation, or manual edits is displayed and manipulated. Includes SOAP+T section buttons (Subjective, Objective, Assessment, Plan, Treatment) that allow quick copying of individual note sections.
 
-- **`ContentPopup.jsx`**: The modal used to display the full, detailed content of a selected note or transcript. It also contains the logic for the inline editing of a note's title (`noteLabel`).
+- **`ContentPopup.jsx`**: The modal used to display the full, detailed content of a selected note or transcript. It also contains the logic for the inline editing of a note's title (`noteLabel`). Also includes SOAP+T section buttons for copying individual sections from saved notes.
 
 ## 8. Styling and UI Approach
 
@@ -255,3 +255,52 @@ The blog CSS automatically styles these elements:
 - Hover effects on post cards
 - Back button returns to blog list
 - Logo click returns to landing page
+
+## 10. Markdown Scrubber System
+
+The application includes an automatic markdown formatting removal system to ensure clean text output suitable for EHR systems.
+
+### Purpose
+
+LLM-generated content often includes markdown formatting (headings, bold, italics, etc.) which is undesirable when copying into Electronic Health Records. The markdown scrubber automatically removes all markdown syntax before text enters the clipboard or is copied.
+
+### Implementation
+
+- **Location**: `src/utils/markdownStripper.js`
+- **Key Function**: `stripMarkdown(text)` - Removes all common markdown formatting
+
+### What Gets Stripped
+
+- Headings (#, ##, ###, etc.)
+- Bold (**text** or __text__)
+- Italics (*text* or _text_)
+- Strikethrough (~~text~~)
+- Code blocks (```code```)
+- Inline code (`code`)
+- Links ([text](url))
+- Blockquotes (>)
+- List markers (*, -, +, 1., 2., etc.)
+- Horizontal rules (---, ***, ___)
+
+### Where It's Applied
+
+1. **Automatic Streaming Cleanup** (Primary): Text is cleaned as it streams into the clipboard from:
+   - EditPanel's "Apply Changes" feature (main source of markdown)
+   - RecordingManager's note generation
+   - Dictation transcription
+
+2. **Copy Operations**: All clipboard copy operations strip markdown:
+   - Main copy button in toolbar
+   - SOAP+T section buttons (S, O, A, P, T) in main clipboard
+   - SOAP+T section buttons in ContentPopup
+   - Keyboard shortcuts (Ctrl+C)
+
+### Files Using Markdown Scrubber
+
+- `src/App.jsx` - Strips markdown in `handleTextStreamUpdate` and `extractPlainText`
+- `src/components/Clipboard.jsx` - Strips markdown in `copySection` for SOAP+T buttons
+- `src/components/ContentPopup.jsx` - Strips markdown in `handleSectionCopy` for SOAP+T buttons
+
+### User Experience
+
+The markdown removal is completely transparent to users. Text appears clean in the clipboard textarea without any markdown syntax, ready for direct pasting into EHR systems.
