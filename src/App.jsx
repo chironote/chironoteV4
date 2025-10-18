@@ -34,6 +34,7 @@ import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
 import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout } from './utils/analytics'; // Import our custom tracking
+import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
 
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
@@ -132,11 +133,14 @@ const services = {
   },
 };
 
-// Helper function to extract plain text from HTML
+// Helper function to extract plain text from HTML and strip markdown
 const extractPlainText = (html) => {
   const tempElement = document.createElement('div');
   tempElement.innerHTML = html;
-  return tempElement.textContent?.trim() || '';
+  const plainText = tempElement.textContent?.trim() || '';
+  
+  // Strip markdown formatting from the plain text
+  return stripMarkdown(plainText);
 };
 
 // Helper function to get the first sentence or a substring
@@ -281,8 +285,11 @@ function AuthenticatedApp({ signOut, user }) {
   const copyMessageTimeoutRef = useRef(null);
 
   const handleTextStreamUpdate = useCallback((newText) => {
-    setStreamingText(newText);
-    setClipboardContent(newText);
+    // Strip markdown formatting from streamed text before setting to clipboard
+    // This handles text from EditPanel (Apply Changes) and RecordingManager (note generation)
+    const cleanedText = stripMarkdown(newText);
+    setStreamingText(cleanedText);
+    setClipboardContent(cleanedText);
     // Don't automatically close the recording popup here
     // setShowRecordingPopup(false);
   }, []);

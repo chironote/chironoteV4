@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { stripMarkdown } from '../utils/markdownStripper';
 
 const Clipboard = ({
   clipboardTextareaRef,
@@ -68,7 +69,9 @@ const Clipboard = ({
 
     // Extract and copy the section text
     const sectionText = text.substring(startIndex + currentSection.length, endIndex).trim();
-    navigator.clipboard.writeText(sectionText)
+    // Strip markdown formatting before copying
+    const cleanedText = stripMarkdown(sectionText);
+    navigator.clipboard.writeText(cleanedText)
       .then(() => {
         setShowCopyMessage(true);
         setTimeout(() => setShowCopyMessage(false), 1000);

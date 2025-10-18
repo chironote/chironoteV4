@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import menuIcon from '../assets/menu.svg'; // Assuming menuIcon is still used elsewhere or can be removed if not.
+import { stripMarkdown } from '../utils/markdownStripper';
 import './ContentPopup.css'; // Import component-specific styles
 
 // Helper function to format timestamp for display in popup
@@ -87,7 +88,9 @@ const ContentPopup = ({
       return;
     }
     try {
-      await navigator.clipboard.writeText(textToCopy);
+      // Strip markdown formatting before copying
+      const cleanedText = stripMarkdown(textToCopy);
+      await navigator.clipboard.writeText(cleanedText);
       setCopiedSectionHeader(`${sectionName}_copied`);
     } catch (err) {
       console.error('Failed to copy section text: ', err);
