@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import menuIcon from '../assets/menu.svg'; // Assuming menuIcon is still used elsewhere or can be removed if not.
+import { Capacitor } from '@capacitor/core';
+import { Clipboard } from '@capacitor/clipboard';
 import './ContentPopup.css'; // Import component-specific styles
 
 // Helper function to format timestamp for display in popup
@@ -87,7 +89,12 @@ const ContentPopup = ({
       return;
     }
     try {
-      await navigator.clipboard.writeText(textToCopy);
+      // Use Capacitor Clipboard for native platforms, web clipboard API for browsers
+      if (Capacitor.isNativePlatform()) {
+        await Clipboard.write({ string: textToCopy });
+      } else {
+        await navigator.clipboard.writeText(textToCopy);
+      }
       setCopiedSectionHeader(`${sectionName}_copied`);
     } catch (err) {
       console.error('Failed to copy section text: ', err);

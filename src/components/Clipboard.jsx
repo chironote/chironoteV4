@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Clipboard as CapacitorClipboard } from '@capacitor/clipboard';
 
 const Clipboard = ({
   clipboardTextareaRef,
@@ -67,12 +69,23 @@ const Clipboard = ({
 
     // Extract and copy the section text
     const sectionText = text.substring(startIndex + currentSection.length, endIndex).trim();
-    navigator.clipboard.writeText(sectionText)
-      .then(() => {
+    
+    // Use Capacitor Clipboard for native platforms, web clipboard API for browsers
+    const copyText = async () => {
+      try {
+        if (Capacitor.isNativePlatform()) {
+          await CapacitorClipboard.write({ string: sectionText });
+        } else {
+          await navigator.clipboard.writeText(sectionText);
+        }
         setShowCopyMessage(true);
         setTimeout(() => setShowCopyMessage(false), 1000);
-      })
-      .catch(err => console.error('Failed to copy:', err));
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    };
+    
+    copyText();
   };
 
   const updatePositions = useCallback(() => {

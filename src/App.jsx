@@ -20,6 +20,7 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Clipboard } from '@capacitor/clipboard';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
 import * as mutations from './graphql/mutations';
@@ -44,6 +45,34 @@ const extractPlainText = (html) => {
   const tempElement = document.createElement('div');
   tempElement.innerHTML = html;
   return tempElement.textContent?.trim() || '';
+};
+
+// Helper function to decode any URL-encoded text
+const decodeText = (text) => {
+  try {
+    // Decode URI components if they exist
+    return decodeURIComponent(text);
+  } catch (e) {
+    // If decoding fails, return original text
+    return text;
+  }
+};
+
+// Helper function to copy text using Capacitor Clipboard API
+const copyToClipboard = async (text) => {
+  try {
+    if (Capacitor.isNativePlatform()) {
+      // Use Capacitor Clipboard for native platforms (iOS/Android)
+      await Clipboard.write({ string: text });
+    } else {
+      // Use web clipboard API for browsers
+      await navigator.clipboard.writeText(text);
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to copy to clipboard:', error);
+    throw error;
+  }
 };
 
 // Helper function to get the first sentence or a substring
@@ -438,7 +467,7 @@ function AuthenticatedApp({ signOut, user }) {
     setIsCollapsed(!isCollapsed);
   };
 
-  const handleCopy = (isPopupMenu = false) => {
+  const handleCopy = async (isPopupMenu = false) => {
     let contentToCopy;
     if (isPopupMenu) {
       contentToCopy = selectedContent || clipboardContent;
@@ -447,15 +476,18 @@ function AuthenticatedApp({ signOut, user }) {
       contentToCopy = clipboardTextareaRef.current?.value || '';
     }
     const plainText = extractPlainText(contentToCopy);
-    navigator.clipboard.writeText(plainText)
-      .then(() => {
-        setShowPopupMenu(false);
-        const setCopyMessage = isPopupMenu ? setShowPopupCopyMessage : setShowCopyMessage;
-        setCopyMessage(true);
-        if (copyMessageTimeoutRef.current) clearTimeout(copyMessageTimeoutRef.current);
-        copyMessageTimeoutRef.current = setTimeout(() => setCopyMessage(false), 1000);
-      })
-      .catch(err => alert('Failed to copy!'));
+    
+    try {
+      await copyToClipboard(plainText);
+      setShowPopupMenu(false);
+      const setCopyMessage = isPopupMenu ? setShowPopupCopyMessage : setShowCopyMessage;
+      setCopyMessage(true);
+      if (copyMessageTimeoutRef.current) clearTimeout(copyMessageTimeoutRef.current);
+      copyMessageTimeoutRef.current = setTimeout(() => setCopyMessage(false), 1000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy!');
+    }
   };
 
   const handleSendToClipboard = () => {
@@ -564,12 +596,16 @@ function AuthenticatedApp({ signOut, user }) {
     }
   };
 
-  const handleCopyPaste = useCallback((e) => {
+  const handleCopyPaste = useCallback(async (e) => {
     const plainText = extractPlainText(clipboardContent);
-    navigator.clipboard.writeText(plainText);
-    setShowCopyMessage(true);
-    if (copyMessageTimeoutRef.current) clearTimeout(copyMessageTimeoutRef.current);
-    copyMessageTimeoutRef.current = setTimeout(() => setShowCopyMessage(false), 1000);
+    try {
+      await copyToClipboard(plainText);
+      setShowCopyMessage(true);
+      if (copyMessageTimeoutRef.current) clearTimeout(copyMessageTimeoutRef.current);
+      copyMessageTimeoutRef.current = setTimeout(() => setShowCopyMessage(false), 1000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
   }, [clipboardContent]);
 
   useEffect(() => {

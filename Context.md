@@ -149,6 +149,54 @@ The APK will be generated in `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ## 10. Capacitor-Specific Code Implementations
 
+### Clipboard API Implementation (iOS/Android Fix)
+
+**Issue:** On iPhone and some Android devices, using the web `navigator.clipboard.writeText()` API caused URL-encoded characters (like `%20` for spaces) to appear in pasted text, making copied content unusable.
+
+**Root Cause:** iOS and Android have different clipboard handling compared to web browsers. The web Clipboard API doesn't always properly encode text for native platforms, resulting in URL-encoded output when pasting.
+
+**Solution:** Implemented Capacitor's native Clipboard plugin (`@capacitor/clipboard`) which provides proper clipboard handling across all platforms.
+
+**Implementation:**
+
+**App.jsx:**
+- Added `Clipboard` import from `@capacitor/clipboard`
+- Created `copyToClipboard()` helper function that detects platform and uses appropriate API
+- Updated `handleCopy()` to use async/await with `copyToClipboard()`
+- Updated `handleCopyPaste()` to use the new clipboard helper
+
+**ContentPopup.jsx:**
+- Added `Clipboard` import from `@capacitor/clipboard`
+- Updated `handleSectionCopy()` to use Capacitor Clipboard API for native platforms
+- Maintains backward compatibility with web clipboard API for browsers
+
+**Clipboard.jsx:**
+- Added `Clipboard` import from `@capacitor/clipboard`
+- Updated `copySection()` SOAP button functionality to use Capacitor Clipboard API
+- Ensures consistent clipboard behavior across all copy operations
+
+**Key Code Pattern:**
+```javascript
+import { Capacitor } from '@capacitor/core';
+import { Clipboard } from '@capacitor/clipboard';
+
+const copyToClipboard = async (text) => {
+  if (Capacitor.isNativePlatform()) {
+    // Use Capacitor Clipboard for iOS/Android
+    await Clipboard.write({ string: text });
+  } else {
+    // Use web clipboard API for browsers
+    await navigator.clipboard.writeText(text);
+  }
+};
+```
+
+**Impact:**
+- ✅ Fixes %20 encoding issue on iPhone
+- ✅ Ensures proper text encoding across all platforms
+- ✅ Maintains web browser compatibility
+- ✅ Applies to all copy operations: main clipboard copy, ContentPopup copy, and SOAP section buttons
+
 ### Microphone Permission Handling
 
 Both `Dictation.jsx` and `RecordingManager.jsx` have been updated to handle Capacitor's native platform requirements for microphone access:
