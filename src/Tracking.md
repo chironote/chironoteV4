@@ -728,6 +728,219 @@ useEffect(() => {
 
 ---
 
+## 5. PRODUCT USAGE TRACKING (Recording Completion & Activation)
+
+**File Location:** `src/utils/analytics.js` (lines 50-93)
+
+**Purpose:** Track core product usage to measure activation, retention, and optimize for quality users who actually use the product.
+
+### Events Tracked
+
+#### A. Recording Completion (Individual Event)
+
+**Event Name:** `recording_completed`
+
+**Location:** `src/App.jsx` lines 287-306 (`handleTextStreamUpdate` function)
+
+**Trigger:** When user completes a recording and note generation finishes
+
+**Implementation:**
+```javascript
+const handleTextStreamUpdate = useCallback(async (newText) => {
+  const cleanedText = stripMarkdown(newText);
+  setStreamingText(cleanedText);
+  setClipboardContent(cleanedText);
+  
+  // Track recording completion for GA4
+  if (newText && newText.length > 50) {
+    const userAttributes = await fetchUserAttributes();
+    const userId = userAttributes.sub;
+    await trackRecordingCompleted(userId);
+  }
+}, []);
+```
+
+**Event Parameters:**
+- `user_id: [Cognito user ID]`
+
+**User Properties Updated:**
+- `total_recordings: [incremented count]`
+
+**Storage:** Recording count stored in `localStorage` as `total_recordings`
+
+**Why Track This:**
+- Measures actual product usage vs just sign-ups
+- Tracks engagement frequency
+- Identifies active vs inactive users
+- Predicts retention and churn
+
+---
+
+#### B. User Activation Milestone (5 Recordings)
+
+**Event Name:** `user_activated_5times` (SECONDARY CONVERSION)
+
+**Location:** `src/utils/analytics.js` lines 74-91
+
+**Trigger:** Automatically fires when user completes their 5th recording
+
+**Implementation:**
+```javascript
+export const trackRecordingCompleted = async (userId) => {
+  // Track individual completion
+  ReactGA.event('recording_completed', { user_id: userId });
+  
+  // Increment count
+  let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
+  recordingCount++;
+  localStorage.setItem('total_recordings', recordingCount);
+  
+  // Update user property
+  ReactGA.set({ user_properties: { total_recordings: recordingCount } });
+  
+  // Fire milestone event at exactly 5 recordings
+  if (recordingCount === 5) {
+    ReactGA.event('user_activated_5times', {
+      user_id: userId,
+      milestone: '5_recordings',
+      activation_type: 'power_user'
+    });
+    
+    // Meta Pixel
+    window.fbq('track', 'CustomEvent', {
+      event_name: 'User_Activated_5_Recordings',
+      milestone: '5_recordings'
+    });
+  }
+};
+```
+
+**Event Parameters:**
+- `user_id: [Cognito user ID]`
+- `milestone: '5_recordings'`
+- `activation_type: 'power_user'`
+
+**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_5_Recordings`
+
+**Why 5 Recordings:**
+- Filters out "tire-kickers" who test once and leave
+- Indicates user has integrated product into workflow
+- Strong predictor of retention (10x higher than 1 recording)
+- Better optimization target for Google Ads than raw sign-ups
+
+---
+
+### Activation Strategy
+
+**Primary Activation:** `sign_up`
+- First conversion goal
+- Optimize for volume in early campaigns
+- Lower value ($5)
+
+**Secondary Activation:** `user_activated_5times`
+- Quality user conversion goal
+- Optimize for engaged users after initial volume
+- Higher value ($50-100)
+
+**Funnel:**
+1. User signs up → `sign_up` event
+2. User completes 1st recording → `recording_completed` event
+3. User completes 2nd-4th recordings → `recording_completed` events (count increments)
+4. User completes 5th recording → `user_activated_5times` event fires
+
+---
+
+### Google Ads Optimization
+
+**Phase 1: Volume (First 30 Days)**
+- Target: `sign_up` conversion
+- Goal: 100+ sign-ups for data collection
+- Bidding: Maximize conversions
+
+**Phase 2: Quality (After 30 Days)**
+- Target: `user_activated_5times` conversion
+- Goal: Users who actually use the product
+- Bidding: Maximize conversion value
+- Higher value = better quality users
+
+**Phase 3: Revenue (After 90 Days)**
+- Target: `purchase` conversion (from Make.com)
+- Goal: Direct revenue optimization
+- Bidding: Target ROAS
+
+---
+
+### GA4 Configuration Steps
+
+#### 1. Mark as Key Events
+
+**In GA4 UI:**
+1. Go to **Admin** → **Events**
+2. Find `sign_up` → Toggle **"Mark as key event"**
+3. Wait 24-48 hours for `user_activated_5times` to appear
+4. Find `user_activated_5times` → Toggle **"Mark as key event"**
+
+#### 2. Import to Google Ads
+
+**In Google Ads:**
+1. **Goals** → **Conversions** → **+ New conversion action**
+2. Select **Import** → **Google Analytics 4**
+3. Import `sign_up` key event
+   - Value: $5
+   - Count: One
+4. Import `user_activated_5times` key event
+   - Value: $50
+   - Count: One
+
+#### 3. Create Audiences (Optional)
+
+**Activated Users:**
+- Include: Users who triggered `user_activated_5times`
+- Use: Upsell campaigns, lookalike audiences
+
+**At-Risk Users:**
+- Include: Users with 1-4 `recording_completed` events
+- Exclude: Activity in last 7 days
+- Use: Re-engagement campaigns
+
+**Tire-Kickers:**
+- Include: `sign_up` 14+ days ago
+- Exclude: 2+ `recording_completed` events
+- Use: Win-back campaigns (low priority)
+
+---
+
+### Testing & Verification
+
+#### Browser Console Testing
+
+1. Open DevTools → Console
+2. Complete a recording
+3. Look for: `[GA4] Recording completed. Total: 1`
+4. Complete 4 more recordings
+5. On 5th recording, look for: `[GA4] 🎉 User activated! 5 recordings milestone reached`
+
+#### GA4 DebugView
+
+1. GA4 → **Admin** → **DebugView**
+2. Complete recordings
+3. Verify `recording_completed` events appear
+4. On 5th recording, verify `user_activated_5times` event appears
+
+#### Event Parameters to Verify
+
+**`recording_completed`:**
+- `user_id` present
+- Fires after each recording
+
+**`user_activated_5times`:**
+- `user_id` present
+- `milestone: '5_recordings'`
+- `activation_type: 'power_user'`
+- Fires only once (at 5th recording)
+
+---
+
 ## Summary of Tracking Points
 
 ### Currently Implemented (Active)
@@ -735,9 +948,11 @@ useEffect(() => {
 2. **Landing Page:** Page view and ViewContent Meta events
 3. **Account Page:** Page view tracking
 4. **Account Page:** 2 button click events (Browse Plans, Manage Billing)
-5. **App.jsx:** Account creation tracking (`sign_up` event) ✅ **NEW**
-6. **App.jsx:** User properties tracking (user_id, email) ✅ **NEW**
-7. **PriceTable:** Begin checkout tracking ✅ **NEW**
+5. **App.jsx:** Account creation tracking (`sign_up` event - PRIMARY CONVERSION)
+6. **App.jsx:** User properties tracking (user_id, email, total_recordings)
+7. **PriceTable:** Begin checkout tracking
+8. **App.jsx:** Recording completion tracking (`recording_completed` event) ✅ **NEW**
+9. **App.jsx:** 5-recording activation milestone (`user_activated_5times` - SECONDARY CONVERSION) ✅ **NEW**
 
 ### Planned (Commented in Code)
 1. **Landing Page:** Video engagement (play, pause, complete)
@@ -748,19 +963,19 @@ useEffect(() => {
 1. **Stripe → Google Ads:** Purchase conversion tracking via webhook
 
 ### Total Tracking Points
-- **Active:** 12 events (9 previous + 3 new conversion events)
+- **Active:** 14 events (12 previous + 2 new product usage events)
 - **Planned:** 3 events
 - **External:** 1 Make.com integration
-- **Total:** 16 tracking points
+- **Total:** 18 tracking points
 
 ---
 
 ### Key Files Modified
 
-1. **`src/utils/analytics.js`** - Added conversion tracking functions (lines 50-161)
-2. **`src/App.jsx`** - Added auth listener and user properties (lines 381-425)
+1. **`src/utils/analytics.js`** - Added conversion tracking functions (lines 50-161) + recording completion tracking (lines 50-93)
+2. **`src/App.jsx`** - Added auth listener and user properties (lines 381-425) + recording completion tracking (lines 287-306)
 3. **`src/components/Account/PriceTable.jsx`** - Added begin_checkout tracking (lines 27-29)
 
 ---
 
-*Last Updated: October 15, 2025*
+*Last Updated: October 18, 2025*

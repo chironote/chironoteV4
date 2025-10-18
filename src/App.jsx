@@ -33,7 +33,7 @@ import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout } from './utils/analytics'; // Import our custom tracking
+import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted } from './utils/analytics'; // Import our custom tracking
 import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
 
@@ -284,12 +284,23 @@ function AuthenticatedApp({ signOut, user }) {
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
 
-  const handleTextStreamUpdate = useCallback((newText) => {
+  const handleTextStreamUpdate = useCallback(async (newText) => {
     // Strip markdown formatting from streamed text before setting to clipboard
     // This handles text from EditPanel (Apply Changes) and RecordingManager (note generation)
     const cleanedText = stripMarkdown(newText);
     setStreamingText(cleanedText);
     setClipboardContent(cleanedText);
+    
+    // Track recording completion for GA4 (only when text is finalized)
+    if (newText && newText.length > 50) { // Only track substantial completions
+      try {
+        const userAttributes = await fetchUserAttributes();
+        const userId = userAttributes.sub;
+        await trackRecordingCompleted(userId);
+      } catch (error) {
+        console.error('Error tracking recording completion:', error);
+      }
+    }
     // Don't automatically close the recording popup here
     // setShowRecordingPopup(false);
   }, []);

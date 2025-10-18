@@ -47,6 +47,51 @@ export const trackAccountPageButtonClick = (actionName) => {
   trackEvent('AccountPage', actionName);
 };
 
+// Track recording completion and check for 5-recording milestone
+export const trackRecordingCompleted = async (userId) => {
+  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
+  
+  if (hasConsent && userId) {
+    // Track individual recording completion
+    ReactGA.event('recording_completed', {
+      user_id: userId
+    });
+    
+    // Get current recording count from localStorage
+    let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
+    recordingCount++;
+    localStorage.setItem('total_recordings', recordingCount);
+    
+    // Update user property with new count
+    ReactGA.set({ 
+      user_properties: {
+        total_recordings: recordingCount
+      }
+    });
+    
+    console.log(`[GA4] Recording completed. Total: ${recordingCount}`);
+    
+    // Fire milestone event when hitting exactly 5 recordings
+    if (recordingCount === 5) {
+      ReactGA.event('user_activated_5times', {
+        user_id: userId,
+        milestone: '5_recordings',
+        activation_type: 'power_user'
+      });
+      
+      // Also track with Meta Pixel
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'CustomEvent', {
+          event_name: 'User_Activated_5_Recordings',
+          milestone: '5_recordings'
+        });
+      }
+      
+      console.log('[GA4] 🎉 User activated! 5 recordings milestone reached');
+    }
+  }
+};
+
 // ============================================
 // CONVERSION TRACKING FOR GOOGLE ADS
 // ============================================
