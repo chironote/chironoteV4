@@ -620,6 +620,8 @@ function AuthenticatedApp({ signOut, user }) {
     // Only enable keyboard shortcuts on desktop (window width > 768px)
     if (window.innerWidth > 768) {
       // Ctrl+B shortcut to toggle edit panel and focus on edit text field
+      // DISABLED: Commenting out for now, might bring back later
+      /*
       if (event.ctrlKey && event.key === 'b') {
         event.preventDefault();
         const screenWidth = window.innerWidth;
@@ -642,6 +644,7 @@ function AuthenticatedApp({ signOut, user }) {
           }, 100);
         }
       }
+      */
       
       // Ctrl+Backspace shortcut to clear the clipboard textarea
       if (event.ctrlKey && event.key === 'Backspace') {

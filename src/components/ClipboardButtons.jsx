@@ -83,7 +83,7 @@ const ClipboardButtons = ({
           <span className="material-symbols-rounded toolbar-icon">delete</span>
         </button>
 
-        <div className="toolbar-divider hide-on-mobile"></div>
+        <div className="toolbar-divider hide-on-mobile" style={{ display: 'none' }}></div>
         
         <button
           id="edit-panel-btn"
