@@ -51,27 +51,32 @@ export const trackAccountPageButtonClick = (actionName) => {
 export const trackRecordingCompleted = async (userId) => {
   const hasConsent = localStorage.getItem('cookieConsent') === 'true';
   
-  if (hasConsent && userId) {
-    // Track individual recording completion
-    ReactGA.event('recording_completed', {
-      user_id: userId
-    });
+  if (userId) {
+    // Track individual recording completion (respects consent)
+    if (hasConsent) {
+      ReactGA.event('recording_completed', {
+        user_id: userId
+      });
+    }
     
     // Get current recording count from localStorage
     let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
     recordingCount++;
     localStorage.setItem('total_recordings', recordingCount);
     
-    // Update user property with new count
-    ReactGA.set({ 
-      user_properties: {
-        total_recordings: recordingCount
-      }
-    });
+    // Update user property with new count (respects consent)
+    if (hasConsent) {
+      ReactGA.set({ 
+        user_properties: {
+          total_recordings: recordingCount
+        }
+      });
+    }
     
     console.log(`[GA4] Recording completed. Total: ${recordingCount}`);
     
     // Fire milestone event when hitting exactly 5 recordings
+    // KEY CONVERSION EVENT - Always track regardless of consent
     if (recordingCount === 5) {
       ReactGA.event('user_activated_5times', {
         user_id: userId,
@@ -135,25 +140,25 @@ export const setUserProperties = async (userId, email) => {
 };
 
 // Track successful account creation (PRIMARY CONVERSION)
+// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
 export const trackSignUp = async (email, userId) => {
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
+  // Standard GA4 sign_up event (recommended event)
+  // This is a critical business conversion that should always be tracked
+  ReactGA.event('sign_up', {
+    method: 'email',
+    user_email: email,
+    user_id: userId
+  });
   
-  if (hasConsent) {
-    // Standard GA4 sign_up event (recommended event)
-    ReactGA.event('sign_up', {
-      method: 'email',
-      user_email: email,
-      user_id: userId
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'CompleteRegistration', {
+      content_name: 'Account Creation',
+      status: 'completed'
     });
-    
-    // Also track with Meta Pixel if available
-    if (typeof window.fbq === 'function') {
-      window.fbq('track', 'CompleteRegistration', {
-        content_name: 'Account Creation',
-        status: 'completed'
-      });
-    }
   }
+  
+  console.log('[GA4] Sign-up conversion tracked (no consent required):', { email, userId });
 };
 
 // Track when user begins checkout process (views pricing table)

@@ -36,6 +36,25 @@ The following conversion events are currently tracked on the landing page:
 
 **Utility File:** `src/utils/analytics.js`
 
+#### GA4 Configuration Reference
+
+| Configuration Item | ID / Value | Location | Notes |
+|-------------------|------------|----------|-------|
+| **Measurement ID** | `G-02117DNZDH` | `src/index.js` (line 17)<br>`src/components/CookieConsent/CookieConsent.jsx` (line 34) | Primary GA4 tracking ID |
+| **Property ID** | *[NEEDED]* | GA4 Admin → Property Settings | Numeric ID (e.g., 123456789) |
+| **Stream ID** | *[NEEDED]* | GA4 Admin → Data Streams → Web Stream | Numeric stream identifier |
+| **Meta Pixel ID** | `3249774745170747` | `public/index.html` (line 61) | Facebook/Meta tracking pixel |
+
+**Key Conversion Events (No Consent Required):**
+- ✅ `sign_up` - Account creation (PRIMARY CONVERSION)
+- ✅ `user_activated_5times` - 5 recordings milestone (SECONDARY CONVERSION)
+
+**Standard Events (Consent Required):**
+- `recording_completed` - Individual recording tracking
+- `begin_checkout` - Pricing table views
+- Landing page button clicks
+- User property updates
+
 #### Core Tracking Function
 
 ```javascript
@@ -975,6 +994,17 @@ export const trackRecordingCompleted = async (userId) => {
 1. **`src/utils/analytics.js`** - Added conversion tracking functions (lines 50-161) + recording completion tracking (lines 50-93)
 2. **`src/App.jsx`** - Added auth listener and user properties (lines 381-425) + recording completion tracking (lines 287-306)
 3. **`src/components/Account/PriceTable.jsx`** - Added begin_checkout tracking (lines 27-29)
+
+---
+
+## Quick Reference: Missing Configuration Items
+
+To complete your tracking setup, you need to add these IDs to the table above:
+
+1. **GA4 Property ID**: Found in GA4 Admin → Property Settings (numeric ID)
+2. **GA4 Stream ID**: Found in GA4 Admin → Data Streams → [Your Web Stream] → Stream details (numeric ID)
+
+Once you have these IDs, update the table in the "GA4 Configuration Reference" section at the top of this document.
 
 ---
 
