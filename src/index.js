@@ -11,17 +11,20 @@ Amplify.configure(config);
 
 const client = generateClient();
 
-// Initialize GA4 with default privacy settings
-// Full configuration with user consent will be handled in CookieConsent component
-try {
-  ReactGA.initialize("G-02117DNZDH", {
-    client_storage: 'none', // Default to cookies disabled
-    anonymize_ip: true // Default to anonymize IP
-  });
-  // Initial pageview will be sent after consent check
-} catch (error) {
-  console.error("Error initializing Google Analytics:", error);
-}
+// Defer GA4 initialization until after page load for better performance
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    try {
+      ReactGA.initialize("G-02117DNZDH", {
+        client_storage: 'none', // Default to cookies disabled
+        anonymize_ip: true // Default to anonymize IP
+      });
+      // Initial pageview will be sent after consent check
+    } catch (error) {
+      console.error("Error initializing Google Analytics:", error);
+    }
+  }, 1500); // Load 1.5 seconds after page load
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

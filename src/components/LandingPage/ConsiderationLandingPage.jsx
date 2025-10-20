@@ -1,20 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
 import LandingNavbar from '../LandingNavbar/LandingNavbar';
-import logo from '../../assets/logo.svg';
+import { trackLandingPageButtonClick } from '../../utils/analytics';
+
+// Only import critical above-the-fold assets
 import stars from '../../assets/stars.svg';
-import feature1 from '../../assets/Feature1.svg';
-import feature2 from '../../assets/Feature2.svg';
+
+// Import below-the-fold assets (webpack processes them, but they load lazily via loading="lazy")
 import mattImg from '../../assets/Matt.png';
 import samImg from '../../assets/Sam.png';
 import jessImg from '../../assets/Jess.png';
-import mockupLaptop from '../../assets/mockup-laptop-final.png';
-import mockupMobile from '../../assets/mockup-mobile-final.png';
-import heroSvg from '../../assets/Hero.svg';
 import whiteboardAnimation from '../../assets/WhiteboardAnimation.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
+import mockupLaptop from '../../assets/mockup-laptop-final.png';
 import hipaaLogo from '../../assets/hipaa.svg';
-import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 // Data constants
 const TESTIMONIALS = [
@@ -384,6 +383,8 @@ export default function LandingPage(props) {
               src={mockupLaptop}
               alt="Quick demo creating chiropractic SOAP notes"
               className="landing-page__secure-charting-image"
+              loading="lazy"
+              decoding="async"
             />
             <div className="landing-page__secure-charting-text">
               <div className="landing-page__feature-title">
@@ -396,6 +397,8 @@ export default function LandingPage(props) {
                 src={hipaaLogo}
                 alt="HIPAA Compliant"
                 className="landing-page__hipaa-logo"
+                loading="lazy"
+                decoding="async"
               />
             </div>
           </div>

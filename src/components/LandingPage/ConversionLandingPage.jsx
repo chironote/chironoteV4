@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
 import LandingNavbar from '../LandingNavbar/LandingNavbar';
-import logo from '../../assets/logo.svg';
+import { trackLandingPageButtonClick } from '../../utils/analytics';
+
+// Only import critical above-the-fold assets
 import stars from '../../assets/stars.svg';
-import feature1 from '../../assets/Feature1.svg';
-import feature2 from '../../assets/Feature2.svg';
+
+// Import below-the-fold assets (webpack processes them, but they load lazily via loading="lazy")
 import mattImg from '../../assets/Matt.png';
 import samImg from '../../assets/Sam.png';
 import jessImg from '../../assets/Jess.png';
-import mockupLaptop from '../../assets/mockup-laptop-final.png';
-import mockupMobile from '../../assets/mockup-mobile-final.png';
-import heroSvg from '../../assets/Hero.svg';
 import tutorialVideo from '../../assets/Tutorial.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
-import hipaaLogo from '../../assets/hipaa.svg';
-import { trackLandingPageButtonClick } from '../../utils/analytics';
 
 // Data constants
 const TESTIMONIALS = [
@@ -116,32 +113,22 @@ export default function LandingPage(props) {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const videoRef = useRef(null);
   
-  // Load Hotjar script
+  // Defer Hotjar script - load after page is interactive
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://t.contentsquare.net/uxa/205ff61755493.js';
-    script.async = true;
-    document.head.appendChild(script);
-    
-    return () => {
-      // Cleanup: remove script on unmount
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+    const loadHotjar = () => {
+      setTimeout(() => {
+        const script = document.createElement('script');
+        script.src = 'https://t.contentsquare.net/uxa/205ff61755493.js';
+        script.async = true;
+        document.head.appendChild(script);
+      }, 4000); // Load 4 seconds after page load
     };
+    
+    window.addEventListener('load', loadHotjar);
+    return () => window.removeEventListener('load', loadHotjar);
   }, []);
   
-  // Track Meta Pixel page view when component mounts
-  useEffect(() => {
-    if (typeof window.fbq === 'function') {
-      window.fbq('track', 'PageView');
-      // Also track a custom landing page view event
-      window.fbq('track', 'ViewContent', {
-        content_name: 'Landing Page',
-        content_category: 'Marketing Page'
-      });
-    }
-  }, []);
+  // Meta Pixel tracking handled in index.html - no need for duplicate tracking here
   
   const handleButtonClick = (actionName) => {
     trackLandingPageButtonClick(actionName); // Google Analytics tracking
@@ -257,6 +244,8 @@ export default function LandingPage(props) {
                     src={testimonial.avatar}
                     alt={testimonial.name}
                     className="landing-page__testimonial-avatar"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
                 <div className="landing-page__testimonial-user">
@@ -266,6 +255,8 @@ export default function LandingPage(props) {
                       src={stars}
                       alt="5 Stars"
                       className="landing-page__stars-icon"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 </div>
@@ -355,9 +346,10 @@ export default function LandingPage(props) {
               ref={videoRef}
               className="landing-page__video-player"
               controls
-              preload="metadata"
+              preload="none"
               playsInline
               poster={whiteboardThumbnail}
+              loading="lazy"
               onLoadStart={() => setIsVideoLoading(true)}
               onCanPlay={() => setIsVideoLoading(false)}
               onLoadedData={() => setIsVideoLoading(false)}

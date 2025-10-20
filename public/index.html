@@ -12,9 +12,27 @@
   <link rel="canonical" href="https://www.chironote.ai/" />
   <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
   <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
-  <!-- Google fonts link for icons -->
-  <link rel="stylesheet"
-    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+  
+  <!-- Preconnect to critical third-party domains -->
+  <link rel="preconnect" href="https://connect.facebook.net">
+  <link rel="preconnect" href="https://t.contentsquare.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  <!-- Critical CSS inlined for instant render -->
+  <style>html{scroll-padding-top:50px}.landing-page{display:flex;flex-direction:column;min-height:100vh;overflow-x:hidden;width:100%}.landing-page__header{padding:20px;position:sticky;top:0;background-color:rgba(255,255,255,.95);backdrop-filter:blur(10px);z-index:1000;border-bottom:1px solid rgba(0,0,0,.1)}.landing-page__header-content{display:flex;justify-content:space-between;align-items:center;max-width:90vw;margin:0 auto;position:relative}.landing-page__textlogo-left{height:40px;display:block}.landing-page__textlogo-desktop{display:block}.landing-page__textlogo-mobile{display:none}@media (max-width:768px){.landing-page__textlogo-desktop{display:none}.landing-page__textlogo-mobile{display:block}}.landing-page__hero-section{position:relative;width:100%;min-height:70vh;overflow:visible}.landing-page__hero-background{position:absolute;top:-25%;left:0;width:100%;height:130%;background-image:url('/static/media/Hero.svg');background-size:100% auto;background-position:bottom;background-repeat:no-repeat;z-index:1}.landing-page__hero-container{position:relative;z-index:2;padding:80px 0 40px;display:flex;align-items:center;justify-content:center}.landing-page__main{padding:50px 20px;text-align:center;position:relative;z-index:3;width:100%;max-width:1200px;margin:0 auto}.landing-page__main-content{max-width:800px;margin:0 auto 40px;position:relative;z-index:1;text-align:center}@keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.landing-page__title{font-size:clamp(2rem,4vw,3.5rem);margin:-20px auto 24px;line-height:1.2;font-weight:700;color:#1a1a1a;animation:fadeInUp .8s ease-out forwards;max-width:800px;text-align:center}.landing-page__subtitle{font-size:clamp(1.2rem,2vw,1.25rem);font-weight:500;color:#666;margin:0 auto 32px;max-width:600px;line-height:1.6;animation:fadeInUp .8s ease-out .2s forwards;opacity:0;text-align:center}.landing-page__action{position:relative;z-index:1;margin-top:40px}.landing-page__demo-button{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 40px;background:linear-gradient(135deg,#0a8822 0%,#075715 100%);color:#fff;border-radius:12px;text-decoration:none;box-shadow:0 8px 25px rgba(7,87,21,.35),0 4px 10px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.1);transition:all .3s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden;animation:fadeIn .6s ease-out .4s forwards;opacity:0;border:3px solid rgba(255,255,255,.2);cursor:pointer;min-height:80px}.landing-page__demo-button-main{font-size:1.4rem;font-weight:700}.landing-page__demo-button-sub{font-size:.9rem;opacity:.9;margin-top:4px}@media (max-width:768px){.landing-page__hero-section{height:90vh;min-height:90vh}.landing-page__hero-container{padding:80px 0 0}.landing-page__hero-background{background-position:center bottom;background-size:160% auto;bottom:0;top:-35%}}</style>
+  
+  <!-- Defer non-critical resources -->
+  <script>
+    // Defer Google Fonts loading
+    window.addEventListener('load', function() {
+      var link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=swap';
+      document.head.appendChild(link);
+    });
+  </script>
+  
   <title>ChiroNote | Quick AI Chiropractic SOAP Notes Software</title>
 
   <!-- Open Graph / Facebook -->
@@ -48,18 +66,29 @@
     }
   </script>
 
-  <!-- Meta Pixel Code -->
+  <!-- Meta Pixel Code - Deferred for performance -->
   <script>
-  !function(f,b,e,v,n,t,s)
-  {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-  n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-  if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-  n.queue=[];t=b.createElement(e);t.async=!0;
-  t.src=v;s=b.getElementsByTagName(e)[0];
-  s.parentNode.insertBefore(t,s)}(window, document,'script',
-  'https://connect.facebook.net/en_US/fbevents.js');
-  fbq('init', '3249774745170747');
-  fbq('track', 'PageView');
+  // Stub fbq to queue events until script loads
+  window.fbq = window.fbq || function() {
+    (window.fbq.q = window.fbq.q || []).push(arguments);
+  };
+  window.fbq.q = [];
+  
+  // Load Meta Pixel after page is interactive
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq && f.fbq.loaded)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=window.fbq.q||[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', '3249774745170747');
+      fbq('track', 'PageView');
+    }, 2000); // Load 2 seconds after page load
+  });
   </script>
   <noscript><img height="1" width="1" style="display:none"
   src="https://www.facebook.com/tr?id=3249774745170747&ev=PageView&noscript=1"

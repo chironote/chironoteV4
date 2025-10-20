@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'; 
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react'; 
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
@@ -14,11 +14,6 @@ import ContentPopup from './components/ContentPopup';
 import Header from './components/AuthUI/SignIn';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
-import ConversionLandingPage from './components/LandingPage/ConversionLandingPage';
-import AwarenessLandingPage from './components/LandingPage/AwarenessLandingPage';
-import ConsiderationLandingPage from './components/LandingPage/ConsiderationLandingPage';
-import BlogList from './components/Blog/BlogList';
-import BlogPost from './components/Blog/BlogPost';
 import CookieConsent from './components/CookieConsent/CookieConsent';
 import CreditPopup from './components/Recording/CreditLimit';
 import IntroTour from './components/IntroTour/IntroTour';
@@ -33,14 +28,19 @@ import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted } from './utils/analytics'; // Import our custom tracking
+import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted } from './utils/analytics';
 import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
-
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
-
 import config from './amplifyconfiguration.json';
+
+// Code-split landing pages and blog for better mobile performance
+const ConversionLandingPage = lazy(() => import('./components/LandingPage/ConversionLandingPage'));
+const AwarenessLandingPage = lazy(() => import('./components/LandingPage/AwarenessLandingPage'));
+const ConsiderationLandingPage = lazy(() => import('./components/LandingPage/ConsiderationLandingPage'));
+const BlogList = lazy(() => import('./components/Blog/BlogList'));
+const BlogPost = lazy(() => import('./components/Blog/BlogPost'));
 Amplify.configure(config);
 
 const client = generateClient();
@@ -1005,16 +1005,18 @@ function App() {
       <RouteTracker />
       <PWARedirect />
       <CookieConsent />
-      <Routes>
-        <Route path="/" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
-        <Route path="/ai-chiropractic-soap-notes" element={<ConsiderationLandingPage />} />
-        <Route path="/welcome" element={<AwarenessLandingPage />} />
-        <Route path="/learn-more" element={<ConversionLandingPage />} />
-        <Route path="/blog" element={<BlogList />} />
-        <Route path="/blog/:slug" element={<BlogPost />} />
-        <Route path="/app/*" element={<ProtectedApp />} />
-        <Route path="*" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
-      </Routes>
+      <Suspense fallback={<div style={{display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh'}}>Loading...</div>}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
+          <Route path="/ai-chiropractic-soap-notes" element={<ConsiderationLandingPage />} />
+          <Route path="/welcome" element={<AwarenessLandingPage />} />
+          <Route path="/learn-more" element={<ConversionLandingPage />} />
+          <Route path="/blog" element={<BlogList />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/app/*" element={<ProtectedApp />} />
+          <Route path="*" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
