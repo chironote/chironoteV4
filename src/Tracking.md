@@ -496,26 +496,53 @@ useEffect(() => {
 
 **Event Name:** `sign_up` (standard GA4 event)
 
-**Location:** `src/App.jsx` lines 401-425
+**Location:** Tutorial launch logic (triggered by localStorage)
 
-**Trigger:** AWS Amplify Hub auth event when user completes registration
+**Trigger:** When the tutorial/onboarding tour launches for the first time
 
-**Implementation:**
-```javascript
-useEffect(() => {
-  const authListener = Hub.listen('auth', async (data) => {
-    const { payload } = data;
-    if (payload.event === 'signUp') {
-      const userAttributes = await fetchUserAttributes();
-      const email = userAttributes.email;
-      const userId = userAttributes.sub;
-      
-      await trackSignUp(email, userId);
-    }
-  });
-  return () => authListener();
-}, []);
-```
+**Challenge:** AWS Amplify's `withAuthenticator` HOC does not expose the `signUp` Hub event reliably, and the auth flow happens before the main app component mounts. This creates a timing issue where Hub listeners miss the sign-up event.
+
+**Solution:** Fire the `sign_up` GA4 event at the same time the tutorial launches (controlled by localStorage), but with a critical database check first.
+
+**Implementation Plan:**
+
+1. **Tutorial Launch Detection:**
+   - The tutorial is triggered by checking localStorage (e.g., `localStorage.getItem('hasSeenTutorial')`)
+   - When tutorial launches, this indicates a new user's first session
+
+2. **Database Check (CRITICAL):**
+   - Before firing the GA4 event, query the subscription table
+   - Check if `eventFired` field equals `false`
+   - **If `eventFired === true`:** Do NOT fire the GA4 event (already tracked)
+   - **If `eventFired === false`:** Fire the GA4 event and update `eventFired` to `true`
+
+3. **Event Flow:**
+   ```javascript
+   // Pseudocode - NOT YET IMPLEMENTED
+   useEffect(() => {
+     const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
+     
+     if (!hasSeenTutorial) {
+       // Check subscription table
+       const subscription = await fetchUserSubscription(userId);
+       
+       if (subscription.eventFired === false) {
+         // Fire GA4 sign_up event
+         await trackSignUp(email, userId);
+         
+         // Update database to prevent duplicate firing
+         await updateSubscription(userId, { eventFired: true });
+       }
+       
+       // Launch tutorial
+       startTutorial();
+     }
+   }, []);
+   ```
+
+4. **Database Schema Requirement:**
+   - Subscription table must have `eventFired` field (Boolean, default: false)
+   - This field prevents duplicate GA4 events if user clears localStorage
 
 **Event Parameters:**
 - `method: 'email'`
@@ -525,6 +552,12 @@ useEffect(() => {
 **Meta Pixel:** Also fires `CompleteRegistration` event
 
 **Make.com Matching:** Email sent to GA4 for matching with future Stripe purchases
+
+**Why This Approach:**
+- Tutorial launch is a reliable indicator of first-time user
+- Database check prevents duplicate events (more reliable than localStorage alone)
+- Avoids timing issues with Amplify's auth flow
+- Works regardless of when the main app component mounts
 
 ---
 
@@ -795,21 +828,163 @@ const handleTextStreamUpdate = useCallback(async (newText) => {
 
 ---
 
-#### B. User Activation Milestone (5 Recordings)
+#### B. Early Activation Milestone (2 Recordings)
+
+**Event Name:** `user_activated_2times` (EARLY ENGAGEMENT CONVERSION)
+
+**Location:** `src/utils/analytics.js`
+
+**Trigger:** Automatically fires when user completes their 2nd **FINAL** recording
+
+**Purpose:** Track users who move beyond initial trial and demonstrate early product adoption. This is a leading indicator for future retention and helps optimize for users who are likely to become power users.
+
+**CRITICAL REQUIREMENT:** Must only fire on **completed recordings**, NOT on:
+- Streaming chunks during note generation
+- Partial recordings
+- Intermediate text updates
+- Any non-final recording state
+
+**Implementation Plan:**
+
+1. **isFinal Flag (REQUIRED):**
+   - `trackRecordingCompleted(userId, isFinal)` must accept an `isFinal` boolean parameter
+   - Only increment count and check milestone when `isFinal === true`
+   - Prevents firing on stream chunks or partial updates
+
+2. **Database Check (CRITICAL):**
+   - Before firing the GA4 event, query the subscription table
+   - Check if `userActivated2` field equals `false`
+   - **If `userActivated2 === true`:** Do NOT fire the GA4 event (already tracked)
+   - **If `userActivated2 === false`:** Fire the GA4 event and update `userActivated2` to `true`
+
+3. **Dual Tracking (localStorage + Database):**
+   - LocalStorage tracks count for UI/UX purposes
+   - Database `userActivated2` prevents duplicate GA4 events
+   - Database is source of truth for event firing
+
+**Implementation:**
+```javascript
+// Pseudocode - NOT YET IMPLEMENTED
+export const trackRecordingCompleted = async (userId, isFinal = false) => {
+  // Only track completed recordings, not stream chunks
+  if (!isFinal) {
+    return; // Exit early if not a final recording
+  }
+  
+  // Track individual completion
+  ReactGA.event('recording_completed', { user_id: userId });
+  
+  // Increment count in localStorage
+  let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
+  recordingCount++;
+  localStorage.setItem('total_recordings', recordingCount);
+  
+  // Update user property
+  ReactGA.set({ user_properties: { total_recordings: recordingCount } });
+  
+  // Fire 2-recording milestone event
+  if (recordingCount === 2) {
+    // Check database to prevent duplicate firing
+    const subscription = await fetchUserSubscription(userId);
+    
+    if (subscription.userActivated2 === false) {
+      // Fire GA4 event
+      ReactGA.event('user_activated_2times', {
+        user_id: userId,
+        milestone: '2_recordings',
+        activation_type: 'early_adopter'
+      });
+      
+      // Meta Pixel
+      window.fbq('track', 'CustomEvent', {
+        event_name: 'User_Activated_2_Recordings',
+        milestone: '2_recordings'
+      });
+      
+      // Update database to prevent duplicate firing
+      await updateSubscription(userId, { userActivated2: true });
+    }
+  }
+  
+  // Fire 5-recording milestone event (see section C below)
+  if (recordingCount === 5) {
+    // ... (5-recording logic)
+  }
+};
+```
+
+4. **Database Schema Requirement:**
+   - Subscription table must have `userActivated2` field (Boolean, default: false)
+   - This field prevents duplicate GA4 events if localStorage is cleared
+
+**Event Parameters:**
+- `user_id: [Cognito user ID]`
+- `milestone: '2_recordings'`
+- `activation_type: 'early_adopter'`
+
+**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_2_Recordings`
+
+**Why 2 Recordings:**
+- Filters out single-use testers who never return
+- Indicates user found value and came back
+- Early signal of product-market fit
+- Faster feedback loop than waiting for 5 recordings
+- Helps identify successful onboarding
+
+**Why Database Check:**
+- Prevents duplicate events if user clears localStorage
+- Ensures event fires exactly once per user
+- More reliable than localStorage alone
+- Syncs across devices/sessions
+
+**Google Ads Value:** $15-25 (between sign_up and 5-recording milestone)
+
+---
+
+#### C. Power User Milestone (5 Recordings)
 
 **Event Name:** `user_activated_5times` (SECONDARY CONVERSION)
 
 **Location:** `src/utils/analytics.js` lines 74-91
 
-**Trigger:** Automatically fires when user completes their 5th recording
+**Trigger:** Automatically fires when user completes their 5th **FINAL** recording
+
+**CRITICAL REQUIREMENT:** Must only fire on **completed recordings**, NOT on:
+- Streaming chunks during note generation
+- Partial recordings
+- Intermediate text updates
+- Any non-final recording state
+
+**Implementation Plan:**
+
+1. **isFinal Flag (REQUIRED):**
+   - `trackRecordingCompleted(userId, isFinal)` must accept an `isFinal` boolean parameter
+   - Only increment count and check milestone when `isFinal === true`
+   - Prevents firing on stream chunks or partial updates
+
+2. **Database Check (CRITICAL):**
+   - Before firing the GA4 event, query the subscription table
+   - Check if `userActivated` field equals `false`
+   - **If `userActivated === true`:** Do NOT fire the GA4 event (already tracked)
+   - **If `userActivated === false`:** Fire the GA4 event and update `userActivated` to `true`
+
+3. **Dual Tracking (localStorage + Database):**
+   - LocalStorage tracks count for UI/UX purposes
+   - Database `userActivated` prevents duplicate GA4 events
+   - Database is source of truth for event firing
 
 **Implementation:**
 ```javascript
-export const trackRecordingCompleted = async (userId) => {
+export const trackRecordingCompleted = async (userId, isFinal = false) => {
+  // Only track completed recordings, not stream chunks
+  if (!isFinal) {
+    return; // Exit early if not a final recording
+  }
+  
   // Track individual completion
   ReactGA.event('recording_completed', { user_id: userId });
   
-  // Increment count
+  // Increment count in localStorage
   let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
   recordingCount++;
   localStorage.setItem('total_recordings', recordingCount);
@@ -819,20 +994,46 @@ export const trackRecordingCompleted = async (userId) => {
   
   // Fire milestone event at exactly 5 recordings
   if (recordingCount === 5) {
-    ReactGA.event('user_activated_5times', {
-      user_id: userId,
-      milestone: '5_recordings',
-      activation_type: 'power_user'
-    });
+    // Check database to prevent duplicate firing
+    const subscription = await fetchUserSubscription(userId);
     
-    // Meta Pixel
-    window.fbq('track', 'CustomEvent', {
-      event_name: 'User_Activated_5_Recordings',
-      milestone: '5_recordings'
-    });
+    if (subscription.userActivated === false) {
+      // Fire GA4 event
+      ReactGA.event('user_activated_5times', {
+        user_id: userId,
+        milestone: '5_recordings',
+        activation_type: 'power_user'
+      });
+      
+      // Meta Pixel
+      window.fbq('track', 'CustomEvent', {
+        event_name: 'User_Activated_5_Recordings',
+        milestone: '5_recordings'
+      });
+      
+      // Update database to prevent duplicate firing
+      await updateSubscription(userId, { userActivated: true });
+    }
   }
 };
 ```
+
+4. **Database Schema Requirement:**
+   - Subscription table must have `userActivated` field (Boolean, default: false)
+   - This field prevents duplicate GA4 events if localStorage is cleared
+
+5. **Calling Pattern:**
+   ```javascript
+   // WRONG - fires on every stream chunk
+   handleTextStreamUpdate(newText) {
+     await trackRecordingCompleted(userId); // ❌ NO!
+   }
+   
+   // CORRECT - only fires when recording is complete
+   handleRecordingComplete(finalText) {
+     await trackRecordingCompleted(userId, isFinal: true); // ✅ YES!
+   }
+   ```
 
 **Event Parameters:**
 - `user_id: [Cognito user ID]`
@@ -847,6 +1048,12 @@ export const trackRecordingCompleted = async (userId) => {
 - Strong predictor of retention (10x higher than 1 recording)
 - Better optimization target for Google Ads than raw sign-ups
 
+**Why Database Check:**
+- Prevents duplicate events if user clears localStorage
+- Ensures event fires exactly once per user
+- More reliable than localStorage alone
+- Syncs across devices/sessions
+
 ---
 
 ### Activation Strategy
@@ -854,18 +1061,24 @@ export const trackRecordingCompleted = async (userId) => {
 **Primary Activation:** `sign_up`
 - First conversion goal
 - Optimize for volume in early campaigns
-- Lower value ($5)
+- Value: $5
 
-**Secondary Activation:** `user_activated_5times`
+**Early Activation:** `user_activated_2times`
+- Early engagement signal
+- Indicates user returned and found value
+- Value: $15-25
+
+**Power User Activation:** `user_activated_5times`
 - Quality user conversion goal
 - Optimize for engaged users after initial volume
-- Higher value ($50-100)
+- Value: $50-100
 
-**Funnel:**
+**Activation Funnel:**
 1. User signs up → `sign_up` event
 2. User completes 1st recording → `recording_completed` event
-3. User completes 2nd-4th recordings → `recording_completed` events (count increments)
-4. User completes 5th recording → `user_activated_5times` event fires
+3. User completes 2nd recording → `user_activated_2times` event fires
+4. User completes 3rd-4th recordings → `recording_completed` events (count increments)
+5. User completes 5th recording → `user_activated_5times` event fires
 
 ---
 
@@ -875,17 +1088,27 @@ export const trackRecordingCompleted = async (userId) => {
 - Target: `sign_up` conversion
 - Goal: 100+ sign-ups for data collection
 - Bidding: Maximize conversions
+- Value: $5
 
-**Phase 2: Quality (After 30 Days)**
-- Target: `user_activated_5times` conversion
-- Goal: Users who actually use the product
+**Phase 2: Early Engagement (After 30 Days)**
+- Target: `user_activated_2times` conversion
+- Goal: Users who return and demonstrate early adoption
 - Bidding: Maximize conversion value
-- Higher value = better quality users
+- Value: $15-25
+- Why: Faster feedback loop than 5 recordings, filters out one-time testers
 
-**Phase 3: Revenue (After 90 Days)**
+**Phase 3: Power Users (After 60 Days)**
+- Target: `user_activated_5times` conversion
+- Goal: Users who integrate product into workflow
+- Bidding: Maximize conversion value
+- Value: $50-100
+- Why: Strong retention predictor, optimize for quality users
+
+**Phase 4: Revenue (After 90 Days)**
 - Target: `purchase` conversion (from Make.com)
 - Goal: Direct revenue optimization
 - Bidding: Target ROAS
+- Why: Direct monetization, optimize for paying customers
 
 ---
 
@@ -896,8 +1119,10 @@ export const trackRecordingCompleted = async (userId) => {
 **In GA4 UI:**
 1. Go to **Admin** → **Events**
 2. Find `sign_up` → Toggle **"Mark as key event"**
-3. Wait 24-48 hours for `user_activated_5times` to appear
-4. Find `user_activated_5times` → Toggle **"Mark as key event"**
+3. Wait 24-48 hours for `user_activated_2times` to appear
+4. Find `user_activated_2times` → Toggle **"Mark as key event"**
+5. Wait 24-48 hours for `user_activated_5times` to appear
+6. Find `user_activated_5times` → Toggle **"Mark as key event"**
 
 #### 2. Import to Google Ads
 
@@ -907,25 +1132,39 @@ export const trackRecordingCompleted = async (userId) => {
 3. Import `sign_up` key event
    - Value: $5
    - Count: One
-4. Import `user_activated_5times` key event
-   - Value: $50
+4. Import `user_activated_2times` key event
+   - Value: $20 (or $15-25 range)
+   - Count: One
+5. Import `user_activated_5times` key event
+   - Value: $75 (or $50-100 range)
    - Count: One
 
 #### 3. Create Audiences (Optional)
 
-**Activated Users:**
+**Power Users:**
 - Include: Users who triggered `user_activated_5times`
-- Use: Upsell campaigns, lookalike audiences
+- Use: Upsell campaigns, lookalike audiences, testimonial requests
 
-**At-Risk Users:**
-- Include: Users with 1-4 `recording_completed` events
+**Early Adopters:**
+- Include: Users who triggered `user_activated_2times`
+- Exclude: Users who triggered `user_activated_5times`
+- Use: Nurture campaigns, feature education, upgrade prompts
+
+**At-Risk Early Adopters:**
+- Include: Users who triggered `user_activated_2times`
+- Exclude: Activity in last 14 days
+- Use: Re-engagement campaigns, "We miss you" emails
+
+**Single-Use Testers:**
+- Include: `sign_up` 7+ days ago
+- Include: Exactly 1 `recording_completed` event
 - Exclude: Activity in last 7 days
-- Use: Re-engagement campaigns
+- Use: Onboarding improvement, "Need help?" campaigns
 
 **Tire-Kickers:**
 - Include: `sign_up` 14+ days ago
-- Exclude: 2+ `recording_completed` events
-- Use: Win-back campaigns (low priority)
+- Exclude: Any `recording_completed` events
+- Use: Win-back campaigns (low priority), survey for feedback
 
 ---
 
@@ -936,27 +1175,39 @@ export const trackRecordingCompleted = async (userId) => {
 1. Open DevTools → Console
 2. Complete a recording
 3. Look for: `[GA4] Recording completed. Total: 1`
-4. Complete 4 more recordings
-5. On 5th recording, look for: `[GA4] 🎉 User activated! 5 recordings milestone reached`
+4. Complete 2nd recording
+5. Look for: `[GA4] 🎉 Early adopter! 2 recordings milestone reached`
+6. Complete 3rd-4th recordings
+7. On 5th recording, look for: `[GA4] 🎉 Power user! 5 recordings milestone reached`
 
 #### GA4 DebugView
 
 1. GA4 → **Admin** → **DebugView**
 2. Complete recordings
-3. Verify `recording_completed` events appear
-4. On 5th recording, verify `user_activated_5times` event appears
+3. Verify `recording_completed` events appear after each recording
+4. On 2nd recording, verify `user_activated_2times` event appears
+5. On 5th recording, verify `user_activated_5times` event appears
 
 #### Event Parameters to Verify
 
 **`recording_completed`:**
 - `user_id` present
-- Fires after each recording
+- Fires after each completed recording (isFinal = true)
+- Does NOT fire on stream chunks
+
+**`user_activated_2times`:**
+- `user_id` present
+- `milestone: '2_recordings'`
+- `activation_type: 'early_adopter'`
+- Fires only once (at 2nd recording)
+- Database check: `userActivated2 === false` before firing
 
 **`user_activated_5times`:**
 - `user_id` present
 - `milestone: '5_recordings'`
 - `activation_type: 'power_user'`
 - Fires only once (at 5th recording)
+- Database check: `userActivated === false` before firing
 
 ---
 
@@ -971,7 +1222,8 @@ export const trackRecordingCompleted = async (userId) => {
 6. **App.jsx:** User properties tracking (user_id, email, total_recordings)
 7. **PriceTable:** Begin checkout tracking
 8. **App.jsx:** Recording completion tracking (`recording_completed` event) ✅ **NEW**
-9. **App.jsx:** 5-recording activation milestone (`user_activated_5times` - SECONDARY CONVERSION) ✅ **NEW**
+9. **App.jsx:** 2-recording activation milestone (`user_activated_2times` - EARLY ENGAGEMENT) ✅ **NEW**
+10. **App.jsx:** 5-recording activation milestone (`user_activated_5times` - POWER USER) ✅ **NEW**
 
 ### Planned (Commented in Code)
 1. **Landing Page:** Video engagement (play, pause, complete)
@@ -982,10 +1234,10 @@ export const trackRecordingCompleted = async (userId) => {
 1. **Stripe → Google Ads:** Purchase conversion tracking via webhook
 
 ### Total Tracking Points
-- **Active:** 14 events (12 previous + 2 new product usage events)
+- **Active:** 15 events (12 previous + 3 new product usage events)
 - **Planned:** 3 events
 - **External:** 1 Make.com integration
-- **Total:** 18 tracking points
+- **Total:** 19 tracking points
 
 ---
 

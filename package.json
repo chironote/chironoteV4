@@ -29,6 +29,15 @@
     "start": "react-scripts start",
     "build": "react-scripts build && node defer-css.js",
     "test": "react-scripts test",
+    "test:coverage": "react-scripts test --coverage --watchAll=false",
+    "test:critical": "react-scripts test --testNamePattern=\"Billing|NoSleep\" --watchAll=false",
+    "test:watch": "react-scripts test --watch",
+    "test:integration": "react-scripts test Integration --watchAll=false",
+    "test:dictation": "react-scripts test Dictation --watchAll=false",
+    "test:recording": "react-scripts test RecordingManager --watchAll=false",
+    "test:settings": "react-scripts test NoteSettings --watchAll=false",
+    "test:edge": "react-scripts test EdgeCases --watchAll=false",
+    "test:all": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

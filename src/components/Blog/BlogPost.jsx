@@ -5,10 +5,12 @@ import LandingNavbar from '../LandingNavbar/LandingNavbar';
 
 // Import all blog posts
 import Post1 from './Post 1';
+import Post2 from './Post 2';
 
 // Map slugs to post components
 const POST_MAP = {
   [Post1.slug]: Post1,
+  [Post2.slug]: Post2,
   // Add more posts here as you create them
 };
 
