@@ -48,10 +48,12 @@ The following conversion events are currently tracked on the landing page:
 **Key Conversion Events (No Consent Required):**
 - ✅ `sign_up` - Account creation (PRIMARY CONVERSION)
 - ✅ `user_activated_5times` - 5 recordings milestone (SECONDARY CONVERSION)
+- ✅ `viewedCart` - Pricing table views (CONVERSION FUNNEL TRACKING)
+- ✅ `purchasedStandard` - Standard plan purchase (CONVERSION)
+- ✅ `purchasedProfessional` - Professional plan purchase (CONVERSION)
 
 **Standard Events (Consent Required):**
 - `recording_completed` - Individual recording tracking
-- `begin_checkout` - Pricing table views
 - Landing page button clicks
 - User property updates
 
@@ -506,43 +508,93 @@ useEffect(() => {
 
 **Implementation Plan:**
 
-1. **Tutorial Launch Detection:**
-   - The tutorial is triggered by checking localStorage (e.g., `localStorage.getItem('hasSeenTutorial')`)
-   - When tutorial launches, this indicates a new user's first session
+**STEP 1: GraphQL Schema Update**
 
-2. **Database Check (CRITICAL):**
-   - Before firing the GA4 event, query the subscription table
-   - Check if `eventFired` field equals `false`
-   - **If `eventFired === true`:** Do NOT fire the GA4 event (already tracked)
-   - **If `eventFired === false`:** Fire the GA4 event and update `eventFired` to `true`
+Add the `isActivated` field to the Subscription table in your GraphQL schema:
 
-3. **Event Flow:**
-   ```javascript
-   // Pseudocode - NOT YET IMPLEMENTED
-   useEffect(() => {
-     const hasSeenTutorial = localStorage.getItem('hasSeenTutorial');
-     
-     if (!hasSeenTutorial) {
-       // Check subscription table
-       const subscription = await fetchUserSubscription(userId);
-       
-       if (subscription.eventFired === false) {
-         // Fire GA4 sign_up event
-         await trackSignUp(email, userId);
-         
-         // Update database to prevent duplicate firing
-         await updateSubscription(userId, { eventFired: true });
-       }
-       
-       // Launch tutorial
-       startTutorial();
-     }
-   }, []);
-   ```
+```graphql
+# File: amplify/backend/api/chironotev4/schema.graphql
+type Subscription @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  owner: String
+  plan: String
+  status: String
+  # ... existing fields ...
+  isActivated: Boolean  # NEW: Controls tutorial visibility and sign_up event
+  has3Notes: Boolean    # NEW: Tracks 3-note milestone completion
+  has5Notes: Boolean    # NEW: Tracks 5-note milestone completion
+}
+```
 
-4. **Database Schema Requirement:**
-   - Subscription table must have `eventFired` field (Boolean, default: false)
-   - This field prevents duplicate GA4 events if user clears localStorage
+**STEP 2: Tutorial Integration**
+
+The tutorial component (IntroTour.jsx) must:
+
+1. **Read `isActivated` from subscription table** on component mount
+2. **Only show tutorial if `isActivated === false`**
+3. **Fire `sign_up` GA4 event** on tutorial's first load (before it displays)
+4. **Update `isActivated` to `true`** when tutorial is completed or skipped
+
+```javascript
+// File: src/components/IntroTour/IntroTour.jsx
+// Implementation pseudocode - WAITING FOR BACKEND DEPLOYMENT
+
+useEffect(() => {
+  const initializeTutorial = async () => {
+    // Fetch user's subscription record
+    const userAttributes = await fetchUserAttributes();
+    const userId = userAttributes.sub;
+    const email = userAttributes.email;
+    const subscription = await fetchUserSubscription(userId);
+    
+    // Check if user has already been activated
+    if (subscription.isActivated === true) {
+      // User already completed tutorial - do not show again
+      return;
+    }
+    
+    // User is new - fire sign_up event ONCE
+    if (subscription.isActivated === false) {
+      await trackSignUp(email, userId);
+      console.log('[GA4] Sign-up conversion tracked on first tutorial load');
+    }
+    
+    // Show tutorial
+    startTutorial();
+  };
+  
+  initializeTutorial();
+}, []);
+
+// When tutorial completes or is skipped
+const handleTutorialComplete = async () => {
+  const userAttributes = await fetchUserAttributes();
+  const userId = userAttributes.sub;
+  
+  // Update database to mark user as activated
+  await updateSubscription(userId, { isActivated: true });
+  
+  // Close tutorial
+  closeTutorial();
+};
+```
+
+**STEP 3: Prevent Duplicate Events**
+
+The `isActivated` field serves as the source of truth:
+- **`isActivated === false`:** User is new, show tutorial, fire `sign_up` event
+- **`isActivated === true`:** User already completed onboarding, skip tutorial
+- **Benefits:** Works across all devices and survives localStorage clears
+
+**STEP 4: Tutorial Flow**
+
+1. User creates account via Amplify authentication
+2. User redirects to authenticated app
+3. App loads IntroTour component
+4. IntroTour queries `isActivated` from subscription table
+5. If `false`, fire `sign_up` GA4 event and show tutorial
+6. When tutorial finishes/skips, update `isActivated` to `true`
+7. Future sessions check `isActivated === true` and skip tutorial
 
 **Event Parameters:**
 - `method: 'email'`
@@ -561,11 +613,11 @@ useEffect(() => {
 
 ---
 
-#### B. Begin Checkout
+#### B. Viewed Cart (Pricing Table View)
 
-**Event Name:** `begin_checkout` (standard GA4 e-commerce event)
+**Event Name:** `viewedCart` (custom GA4 event)
 
-**Location:** `src/components/Account/PriceTable.jsx` lines 27-29
+**Location:** `src/components/Account/PriceTable.jsx` lines 27-28
 
 **Trigger:** When user views Stripe pricing table on `/app/pricingplans`
 
@@ -577,7 +629,8 @@ useEffect(() => {
     const email = userAttributes.email;
     const userId = userAttributes.sub;
     
-    await trackBeginCheckout(email, userId);
+    // Track viewedCart conversion (no consent required)
+    await trackViewedCart(email, userId);
   };
   getUserEmail();
 }, []);
@@ -586,9 +639,13 @@ useEffect(() => {
 **Event Parameters:**
 - `user_email: [user email address]`
 - `user_id: [Cognito user ID]`
-- `items: [{ item_name: 'ChiroNote Subscription', item_category: 'subscription' }]`
+- `content_type: 'pricing_table'`
 
-**Purpose:** Track checkout funnel drop-off and optimize for users who view pricing but don't purchase
+**Meta Pixel:** Also fires `ViewContent` event with pricing metadata
+
+**Purpose:** Track checkout funnel and optimize for users who view pricing but don't purchase. This is a KEY CONVERSION EVENT that always tracks regardless of cookie consent.
+
+**Why No Consent Required:** Viewing the pricing table is a critical conversion funnel indicator for Google Ads optimization. This event helps identify users in the consideration phase.
 
 ---
 
@@ -828,231 +885,215 @@ const handleTextStreamUpdate = useCallback(async (newText) => {
 
 ---
 
-#### B. Early Activation Milestone (2 Recordings)
+#### B. Early Activation Milestone (3 Notes)
 
-**Event Name:** `user_activated_2times` (EARLY ENGAGEMENT CONVERSION)
+**Event Name:** `user_activated_3notes` (EARLY ENGAGEMENT CONVERSION)
 
-**Location:** `src/utils/analytics.js`
+**Location:** Existing note-saving logic in `src/App.jsx` (where notes are persisted to database)
 
-**Trigger:** Automatically fires when user completes their 2nd **FINAL** recording
+**Trigger:** Automatically fires when user saves their 3rd **FINAL** note to the database
 
 **Purpose:** Track users who move beyond initial trial and demonstrate early product adoption. This is a leading indicator for future retention and helps optimize for users who are likely to become power users.
 
-**CRITICAL REQUIREMENT:** Must only fire on **completed recordings**, NOT on:
+**CRITICAL REQUIREMENT:** Must only fire when a **completed note is saved to the database**, NOT on:
 - Streaming chunks during note generation
 - Partial recordings
-- Intermediate text updates
-- Any non-final recording state
+- Draft notes not yet saved
+- Any non-final note state
 
 **Implementation Plan:**
 
-1. **isFinal Flag (REQUIRED):**
-   - `trackRecordingCompleted(userId, isFinal)` must accept an `isFinal` boolean parameter
-   - Only increment count and check milestone when `isFinal === true`
-   - Prevents firing on stream chunks or partial updates
+**STEP 1: Use Existing Note-Counting Logic**
 
-2. **Database Check (CRITICAL):**
-   - Before firing the GA4 event, query the subscription table
-   - Check if `userActivated2` field equals `false`
-   - **If `userActivated2 === true`:** Do NOT fire the GA4 event (already tracked)
-   - **If `userActivated2 === false`:** Fire the GA4 event and update `userActivated2` to `true`
+The app already has logic that counts notes when saving/updating. Integrate the milestone check into this existing workflow:
 
-3. **Dual Tracking (localStorage + Database):**
-   - LocalStorage tracks count for UI/UX purposes
-   - Database `userActivated2` prevents duplicate GA4 events
-   - Database is source of truth for event firing
-
-**Implementation:**
 ```javascript
-// Pseudocode - NOT YET IMPLEMENTED
-export const trackRecordingCompleted = async (userId, isFinal = false) => {
-  // Only track completed recordings, not stream chunks
-  if (!isFinal) {
-    return; // Exit early if not a final recording
-  }
+// File: src/App.jsx (in the note-saving function)
+// Pseudocode - WAITING FOR BACKEND DEPLOYMENT
+
+// After successfully saving note to database
+const handleNoteSaved = async (savedNote) => {
+  // ... existing note save logic ...
   
-  // Track individual completion
-  ReactGA.event('recording_completed', { user_id: userId });
+  // Count total notes for this user (from database, not localStorage)
+  const userNotes = await fetchUserNotes(userId);
+  const noteCount = userNotes.length;
   
-  // Increment count in localStorage
-  let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
-  recordingCount++;
-  localStorage.setItem('total_recordings', recordingCount);
-  
-  // Update user property
-  ReactGA.set({ user_properties: { total_recordings: recordingCount } });
-  
-  // Fire 2-recording milestone event
-  if (recordingCount === 2) {
-    // Check database to prevent duplicate firing
+  // Check 3-note milestone
+  if (noteCount === 3) {
     const subscription = await fetchUserSubscription(userId);
     
-    if (subscription.userActivated2 === false) {
+    // Only fire if has3Notes is false (prevents duplicate firing)
+    if (subscription.has3Notes === false) {
       // Fire GA4 event
-      ReactGA.event('user_activated_2times', {
-        user_id: userId,
-        milestone: '2_recordings',
+      await trackMilestone('user_activated_3notes', userId, {
+        milestone: '3_notes',
         activation_type: 'early_adopter'
       });
       
-      // Meta Pixel
-      window.fbq('track', 'CustomEvent', {
-        event_name: 'User_Activated_2_Recordings',
-        milestone: '2_recordings'
-      });
-      
       // Update database to prevent duplicate firing
-      await updateSubscription(userId, { userActivated2: true });
+      await updateSubscription(userId, { has3Notes: true });
+      
+      console.log('[GA4] 🎉 Early adopter! 3 notes milestone reached');
     }
-  }
-  
-  // Fire 5-recording milestone event (see section C below)
-  if (recordingCount === 5) {
-    // ... (5-recording logic)
   }
 };
 ```
 
-4. **Database Schema Requirement:**
-   - Subscription table must have `userActivated2` field (Boolean, default: false)
-   - This field prevents duplicate GA4 events if localStorage is cleared
+**STEP 2: Database Check (CRITICAL)**
+
+- Before firing the GA4 event, query the subscription table
+- Check if `has3Notes` field equals `false`
+- **If `has3Notes === true`:** Do NOT fire the GA4 event (already tracked)
+- **If `has3Notes === false`:** Fire the GA4 event and update `has3Notes` to `true`
+
+**STEP 3: Count from Database, Not localStorage**
+
+- Use the actual count of notes in the database (via GraphQL query)
+- This ensures accuracy across devices and survives app uninstalls
+- Database is the single source of truth
+
+**STEP 4: GraphQL Schema Requirement**
+
+- Subscription table must have `has3Notes` field (Boolean, default: false)
+- This field prevents duplicate GA4 events
+- Already defined in schema (see Section A, Step 1)
 
 **Event Parameters:**
 - `user_id: [Cognito user ID]`
-- `milestone: '2_recordings'`
+- `milestone: '3_notes'`
 - `activation_type: 'early_adopter'`
 
-**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_2_Recordings`
+**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_3_Notes`
 
-**Why 2 Recordings:**
+**Why 3 Notes:**
 - Filters out single-use testers who never return
-- Indicates user found value and came back
+- Indicates user found value and came back multiple times
 - Early signal of product-market fit
-- Faster feedback loop than waiting for 5 recordings
+- Faster feedback loop than waiting for 5 notes
 - Helps identify successful onboarding
 
 **Why Database Check:**
-- Prevents duplicate events if user clears localStorage
+- Prevents duplicate events across devices
 - Ensures event fires exactly once per user
-- More reliable than localStorage alone
-- Syncs across devices/sessions
+- More reliable than localStorage
+- Syncs across all sessions
 
-**Google Ads Value:** $15-25 (between sign_up and 5-recording milestone)
+**Google Ads Value:** $15-25 (between sign_up and 5-note milestone)
 
 ---
 
-#### C. Power User Milestone (5 Recordings)
+#### C. Power User Milestone (5 Notes)
 
-**Event Name:** `user_activated_5times` (SECONDARY CONVERSION)
+**Event Name:** `user_activated_5notes` (SECONDARY CONVERSION)
 
-**Location:** `src/utils/analytics.js` lines 74-91
+**Location:** Existing note-saving logic in `src/App.jsx` (where notes are persisted to database)
 
-**Trigger:** Automatically fires when user completes their 5th **FINAL** recording
+**Trigger:** Automatically fires when user saves their 5th **FINAL** note to the database
 
-**CRITICAL REQUIREMENT:** Must only fire on **completed recordings**, NOT on:
+**Purpose:** Track users who have fully integrated the product into their workflow and demonstrate consistent usage patterns.
+
+**CRITICAL REQUIREMENT:** Must only fire when a **completed note is saved to the database**, NOT on:
 - Streaming chunks during note generation
 - Partial recordings
-- Intermediate text updates
-- Any non-final recording state
+- Draft notes not yet saved
+- Any non-final note state
 
 **Implementation Plan:**
 
-1. **isFinal Flag (REQUIRED):**
-   - `trackRecordingCompleted(userId, isFinal)` must accept an `isFinal` boolean parameter
-   - Only increment count and check milestone when `isFinal === true`
-   - Prevents firing on stream chunks or partial updates
+**STEP 1: Use Existing Note-Counting Logic**
 
-2. **Database Check (CRITICAL):**
-   - Before firing the GA4 event, query the subscription table
-   - Check if `userActivated` field equals `false`
-   - **If `userActivated === true`:** Do NOT fire the GA4 event (already tracked)
-   - **If `userActivated === false`:** Fire the GA4 event and update `userActivated` to `true`
+The app already has logic that counts notes when saving/updating. Integrate the milestone check into this existing workflow:
 
-3. **Dual Tracking (localStorage + Database):**
-   - LocalStorage tracks count for UI/UX purposes
-   - Database `userActivated` prevents duplicate GA4 events
-   - Database is source of truth for event firing
-
-**Implementation:**
 ```javascript
-export const trackRecordingCompleted = async (userId, isFinal = false) => {
-  // Only track completed recordings, not stream chunks
-  if (!isFinal) {
-    return; // Exit early if not a final recording
+// File: src/App.jsx (in the note-saving function)
+// Pseudocode - WAITING FOR BACKEND DEPLOYMENT
+
+// After successfully saving note to database
+const handleNoteSaved = async (savedNote) => {
+  // ... existing note save logic ...
+  
+  // Count total notes for this user (from database, not localStorage)
+  const userNotes = await fetchUserNotes(userId);
+  const noteCount = userNotes.length;
+  
+  // Check 3-note milestone
+  if (noteCount === 3) {
+    const subscription = await fetchUserSubscription(userId);
+    if (subscription.has3Notes === false) {
+      await trackMilestone('user_activated_3notes', userId, {
+        milestone: '3_notes',
+        activation_type: 'early_adopter'
+      });
+      await updateSubscription(userId, { has3Notes: true });
+      console.log('[GA4] 🎉 Early adopter! 3 notes milestone reached');
+    }
   }
   
-  // Track individual completion
-  ReactGA.event('recording_completed', { user_id: userId });
-  
-  // Increment count in localStorage
-  let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
-  recordingCount++;
-  localStorage.setItem('total_recordings', recordingCount);
-  
-  // Update user property
-  ReactGA.set({ user_properties: { total_recordings: recordingCount } });
-  
-  // Fire milestone event at exactly 5 recordings
-  if (recordingCount === 5) {
-    // Check database to prevent duplicate firing
+  // Check 5-note milestone
+  if (noteCount === 5) {
     const subscription = await fetchUserSubscription(userId);
     
-    if (subscription.userActivated === false) {
-      // Fire GA4 event
-      ReactGA.event('user_activated_5times', {
-        user_id: userId,
-        milestone: '5_recordings',
+    // Only fire if has5Notes is false (prevents duplicate firing)
+    if (subscription.has5Notes === false) {
+      // Fire GA4 event (NO CONSENT REQUIRED)
+      await trackMilestone('user_activated_5notes', userId, {
+        milestone: '5_notes',
         activation_type: 'power_user'
       });
       
-      // Meta Pixel
-      window.fbq('track', 'CustomEvent', {
-        event_name: 'User_Activated_5_Recordings',
-        milestone: '5_recordings'
-      });
-      
       // Update database to prevent duplicate firing
-      await updateSubscription(userId, { userActivated: true });
+      await updateSubscription(userId, { has5Notes: true });
+      
+      console.log('[GA4] 🎉 Power user! 5 notes milestone reached');
     }
   }
 };
 ```
 
-4. **Database Schema Requirement:**
-   - Subscription table must have `userActivated` field (Boolean, default: false)
-   - This field prevents duplicate GA4 events if localStorage is cleared
+**STEP 2: Database Check (CRITICAL)**
 
-5. **Calling Pattern:**
-   ```javascript
-   // WRONG - fires on every stream chunk
-   handleTextStreamUpdate(newText) {
-     await trackRecordingCompleted(userId); // ❌ NO!
-   }
-   
-   // CORRECT - only fires when recording is complete
-   handleRecordingComplete(finalText) {
-     await trackRecordingCompleted(userId, isFinal: true); // ✅ YES!
-   }
-   ```
+- Before firing the GA4 event, query the subscription table
+- Check if `has5Notes` field equals `false`
+- **If `has5Notes === true`:** Do NOT fire the GA4 event (already tracked)
+- **If `has5Notes === false`:** Fire the GA4 event and update `has5Notes` to `true`
+
+**STEP 3: Count from Database, Not localStorage**
+
+- Use the actual count of notes in the database (via GraphQL query)
+- This ensures accuracy across devices and survives app uninstalls
+- Database is the single source of truth
+
+**STEP 4: GraphQL Schema Requirement**
+
+- Subscription table must have `has5Notes` field (Boolean, default: false)
+- This field prevents duplicate GA4 events
+- Already defined in schema (see Section A, Step 1)
+
+**STEP 5: No Consent Required**
+
+- This is a **critical conversion event** that fires regardless of cookie consent
+- Required for Google Ads optimization (per existing implementation in analytics.js)
+- Already implemented in `trackMilestone()` function
 
 **Event Parameters:**
 - `user_id: [Cognito user ID]`
-- `milestone: '5_recordings'`
+- `milestone: '5_notes'`
 - `activation_type: 'power_user'`
 
-**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_5_Recordings`
+**Meta Pixel:** Also fires `CustomEvent` with name `User_Activated_5_Notes`
 
-**Why 5 Recordings:**
+**Why 5 Notes:**
 - Filters out "tire-kickers" who test once and leave
 - Indicates user has integrated product into workflow
-- Strong predictor of retention (10x higher than 1 recording)
+- Strong predictor of retention (10x higher than 1 note)
 - Better optimization target for Google Ads than raw sign-ups
 
 **Why Database Check:**
-- Prevents duplicate events if user clears localStorage
+- Prevents duplicate events across devices
 - Ensures event fires exactly once per user
-- More reliable than localStorage alone
-- Syncs across devices/sessions
+- More reliable than localStorage
+- Syncs across all sessions
 
 ---
 
@@ -1062,23 +1103,27 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 - First conversion goal
 - Optimize for volume in early campaigns
 - Value: $5
+- Fires: On tutorial first load (via `isActivated` field)
 
-**Early Activation:** `user_activated_2times`
+**Early Activation:** `user_activated_3notes`
 - Early engagement signal
-- Indicates user returned and found value
+- Indicates user returned and found value multiple times
 - Value: $15-25
+- Fires: When 3rd note is saved (via `has3Notes` field)
 
-**Power User Activation:** `user_activated_5times`
+**Power User Activation:** `user_activated_5notes`
 - Quality user conversion goal
 - Optimize for engaged users after initial volume
 - Value: $50-100
+- Fires: When 5th note is saved (via `has5Notes` field)
 
 **Activation Funnel:**
-1. User signs up → `sign_up` event
-2. User completes 1st recording → `recording_completed` event
-3. User completes 2nd recording → `user_activated_2times` event fires
-4. User completes 3rd-4th recordings → `recording_completed` events (count increments)
-5. User completes 5th recording → `user_activated_5times` event fires
+1. User creates account → Tutorial loads → `sign_up` event (isActivated = false → true)
+2. User completes 1st note → `recording_completed` event (individual tracking)
+3. User completes 2nd note → `recording_completed` event (individual tracking)
+4. User completes 3rd note → `user_activated_3notes` event fires (has3Notes = false → true)
+5. User completes 4th note → `recording_completed` event (individual tracking)
+6. User completes 5th note → `user_activated_5notes` event fires (has5Notes = false → true)
 
 ---
 
@@ -1091,14 +1136,14 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 - Value: $5
 
 **Phase 2: Early Engagement (After 30 Days)**
-- Target: `user_activated_2times` conversion
+- Target: `user_activated_3notes` conversion
 - Goal: Users who return and demonstrate early adoption
 - Bidding: Maximize conversion value
 - Value: $15-25
-- Why: Faster feedback loop than 5 recordings, filters out one-time testers
+- Why: Faster feedback loop than 5 notes, filters out one-time testers
 
 **Phase 3: Power Users (After 60 Days)**
-- Target: `user_activated_5times` conversion
+- Target: `user_activated_5notes` conversion
 - Goal: Users who integrate product into workflow
 - Bidding: Maximize conversion value
 - Value: $50-100
@@ -1119,10 +1164,10 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 **In GA4 UI:**
 1. Go to **Admin** → **Events**
 2. Find `sign_up` → Toggle **"Mark as key event"**
-3. Wait 24-48 hours for `user_activated_2times` to appear
-4. Find `user_activated_2times` → Toggle **"Mark as key event"**
-5. Wait 24-48 hours for `user_activated_5times` to appear
-6. Find `user_activated_5times` → Toggle **"Mark as key event"**
+3. Wait 24-48 hours for `user_activated_3notes` to appear
+4. Find `user_activated_3notes` → Toggle **"Mark as key event"**
+5. Wait 24-48 hours for `user_activated_5notes` to appear
+6. Find `user_activated_5notes` → Toggle **"Mark as key event"**
 
 #### 2. Import to Google Ads
 
@@ -1132,26 +1177,26 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 3. Import `sign_up` key event
    - Value: $5
    - Count: One
-4. Import `user_activated_2times` key event
+4. Import `user_activated_3notes` key event
    - Value: $20 (or $15-25 range)
    - Count: One
-5. Import `user_activated_5times` key event
+5. Import `user_activated_5notes` key event
    - Value: $75 (or $50-100 range)
    - Count: One
 
 #### 3. Create Audiences (Optional)
 
 **Power Users:**
-- Include: Users who triggered `user_activated_5times`
+- Include: Users who triggered `user_activated_5notes`
 - Use: Upsell campaigns, lookalike audiences, testimonial requests
 
 **Early Adopters:**
-- Include: Users who triggered `user_activated_2times`
-- Exclude: Users who triggered `user_activated_5times`
+- Include: Users who triggered `user_activated_3notes`
+- Exclude: Users who triggered `user_activated_5notes`
 - Use: Nurture campaigns, feature education, upgrade prompts
 
 **At-Risk Early Adopters:**
-- Include: Users who triggered `user_activated_2times`
+- Include: Users who triggered `user_activated_3notes`
 - Exclude: Activity in last 14 days
 - Use: Re-engagement campaigns, "We miss you" emails
 
@@ -1173,41 +1218,51 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 #### Browser Console Testing
 
 1. Open DevTools → Console
-2. Complete a recording
-3. Look for: `[GA4] Recording completed. Total: 1`
-4. Complete 2nd recording
-5. Look for: `[GA4] 🎉 Early adopter! 2 recordings milestone reached`
-6. Complete 3rd-4th recordings
-7. On 5th recording, look for: `[GA4] 🎉 Power user! 5 recordings milestone reached`
+2. Create new account → Look for: `[GA4] Sign-up conversion tracked on first tutorial load`
+3. Complete tutorial → Verify `isActivated` updated to `true`
+4. Complete 1st note → Look for: `[GA4] Recording completed. Total: 1`
+5. Complete 2nd note → Look for: `[GA4] Recording completed. Total: 2`
+6. Complete 3rd note → Look for: `[GA4] 🎉 Early adopter! 3 notes milestone reached`
+7. Complete 4th note → Look for: `[GA4] Recording completed. Total: 4`
+8. Complete 5th note → Look for: `[GA4] 🎉 Power user! 5 notes milestone reached`
 
 #### GA4 DebugView
 
 1. GA4 → **Admin** → **DebugView**
-2. Complete recordings
-3. Verify `recording_completed` events appear after each recording
-4. On 2nd recording, verify `user_activated_2times` event appears
-5. On 5th recording, verify `user_activated_5times` event appears
+2. Create new account and complete tutorial
+3. Verify `sign_up` event appears with email parameter
+4. Complete notes
+5. Verify `recording_completed` events appear after each note
+6. On 3rd note, verify `user_activated_3notes` event appears
+7. On 5th note, verify `user_activated_5notes` event appears
 
 #### Event Parameters to Verify
 
+**`sign_up`:**
+- `user_id` present
+- `user_email` present
+- `method: 'email'`
+- Fires only once (on tutorial first load)
+- Database check: `isActivated === false` before firing
+
 **`recording_completed`:**
 - `user_id` present
-- Fires after each completed recording (isFinal = true)
+- Fires after each completed note saved to database
 - Does NOT fire on stream chunks
 
-**`user_activated_2times`:**
+**`user_activated_3notes`:**
 - `user_id` present
-- `milestone: '2_recordings'`
+- `milestone: '3_notes'`
 - `activation_type: 'early_adopter'`
-- Fires only once (at 2nd recording)
-- Database check: `userActivated2 === false` before firing
+- Fires only once (at 3rd note)
+- Database check: `has3Notes === false` before firing
 
-**`user_activated_5times`:**
+**`user_activated_5notes`:**
 - `user_id` present
-- `milestone: '5_recordings'`
+- `milestone: '5_notes'`
 - `activation_type: 'power_user'`
-- Fires only once (at 5th recording)
-- Database check: `userActivated === false` before firing
+- Fires only once (at 5th note)
+- Database check: `has5Notes === false` before firing
 
 ---
 
@@ -1218,12 +1273,24 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 2. **Landing Page:** Page view and ViewContent Meta events
 3. **Account Page:** Page view tracking
 4. **Account Page:** 2 button click events (Browse Plans, Manage Billing)
-5. **App.jsx:** Account creation tracking (`sign_up` event - PRIMARY CONVERSION)
-6. **App.jsx:** User properties tracking (user_id, email, total_recordings)
-7. **PriceTable:** Begin checkout tracking
-8. **App.jsx:** Recording completion tracking (`recording_completed` event) ✅ **NEW**
-9. **App.jsx:** 2-recording activation milestone (`user_activated_2times` - EARLY ENGAGEMENT) ✅ **NEW**
-10. **App.jsx:** 5-recording activation milestone (`user_activated_5times` - POWER USER) ✅ **NEW**
+5. **App.jsx:** User properties tracking (user_id, email, total_recordings)
+6. **PriceTable:** Begin checkout tracking
+7. **App.jsx:** Recording completion tracking (`recording_completed` event)
+
+### Waiting for Backend Deployment
+These features are fully designed and documented but require GraphQL schema updates:
+
+1. **IntroTour:** Sign-up conversion tracking (`sign_up` event - PRIMARY CONVERSION) 🔴 **WAITING**
+   - Requires: `isActivated` field in Subscription table
+   - Fires: On tutorial first load when `isActivated === false`
+   
+2. **App.jsx:** 3-note activation milestone (`user_activated_3notes` - EARLY ENGAGEMENT) 🔴 **WAITING**
+   - Requires: `has3Notes` field in Subscription table
+   - Fires: When 3rd note is saved and `has3Notes === false`
+   
+3. **App.jsx:** 5-note activation milestone (`user_activated_5notes` - POWER USER) 🔴 **WAITING**
+   - Requires: `has5Notes` field in Subscription table
+   - Fires: When 5th note is saved and `has5Notes === false`
 
 ### Planned (Commented in Code)
 1. **Landing Page:** Video engagement (play, pause, complete)
@@ -1234,10 +1301,11 @@ export const trackRecordingCompleted = async (userId, isFinal = false) => {
 1. **Stripe → Google Ads:** Purchase conversion tracking via webhook
 
 ### Total Tracking Points
-- **Active:** 15 events (12 previous + 3 new product usage events)
-- **Planned:** 3 events
+- **Active:** 10 events
+- **Waiting for Backend:** 3 critical conversion events
+- **Planned:** 3 engagement events
 - **External:** 1 Make.com integration
-- **Total:** 19 tracking points
+- **Total:** 17 tracking points
 
 ---
 
@@ -1260,4 +1328,587 @@ Once you have these IDs, update the table in the "GA4 Configuration Reference" s
 
 ---
 
-*Last Updated: October 18, 2025*
+## 🚀 DEPLOYMENT INSTRUCTIONS: GraphQL Schema Updates
+
+This section provides step-by-step instructions for deploying the new tracking fields to your AWS Amplify backend.
+
+### Prerequisites
+
+Before starting, ensure you have:
+- ✅ AWS Amplify CLI installed (`npm install -g @aws-amplify/cli`)
+- ✅ AWS credentials configured (`amplify configure`)
+- ✅ Amplify project initialized in your workspace
+- ✅ Access to AWS console with appropriate permissions
+- ✅ All code changes committed to version control (recommended)
+
+---
+
+### STEP 1: Update GraphQL Schema
+
+**File:** `amplify/backend/api/chironotev4/schema.graphql`
+
+Locate the `Subscription` type definition and add the three new Boolean fields:
+
+```graphql
+type Subscription @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  owner: String
+  plan: String
+  status: String
+  # ... your existing fields (stripeCustomerId, subscriptionId, etc.) ...
+  
+  # NEW FIELDS FOR CONVERSION TRACKING
+  isActivated: Boolean     # Controls tutorial visibility and sign_up event
+  has3Notes: Boolean       # Tracks 3-note milestone completion  
+  has5Notes: Boolean       # Tracks 5-note milestone completion
+}
+```
+
+**⚠️ IMPORTANT:**
+- Add these fields to your existing `Subscription` type
+- Do NOT create a new type
+- Keep all existing fields unchanged
+- Default value for Boolean fields is `null` (will be handled in code)
+
+---
+
+### STEP 2: Review Schema Changes
+
+Before pushing to the backend, verify:
+
+1. **Backup existing schema:**
+   ```bash
+   cp amplify/backend/api/chironotev4/schema.graphql amplify/backend/api/chironotev4/schema.graphql.backup
+   ```
+
+2. **Validate syntax:**
+   - Open the schema file and check for typos
+   - Ensure proper indentation
+   - Verify all existing fields are still present
+
+3. **Check related files:**
+   - Confirm no other schema files need updates
+   - Review any custom resolvers (if applicable)
+
+---
+
+### STEP 3: Push Schema to Backend
+
+Deploy the updated schema to AWS:
+
+```bash
+# Navigate to project root
+cd c:\ChiroNote\Code\chironote
+
+# Push schema changes to AWS
+amplify push
+```
+
+**You will be prompted with:**
+```
+? Are you sure you want to continue? (Y/n)
+```
+**Type:** `Y` and press Enter
+
+**Next prompt:**
+```
+? Do you want to generate code for your newly created GraphQL API? (Y/n)
+```
+**Type:** `Y` and press Enter
+
+**Next prompt:**
+```
+? Choose the code generation language target: (Use arrow keys)
+  javascript
+  typescript
+  flow
+```
+**Select:** `javascript` (press Enter)
+
+**Next prompt:**
+```
+? Enter the file name pattern of graphql queries, mutations and subscriptions:
+```
+**Type:** `src/graphql/**/*.js` (press Enter)
+
+**Next prompt:**
+```
+? Do you want to generate/update all possible GraphQL operations? (Y/n)
+```
+**Type:** `Y` and press Enter
+
+**Deployment process will start:**
+- ⏳ CloudFormation stack creation/update (5-15 minutes)
+- ⏳ DynamoDB table migration
+- ⏳ AppSync API update
+- ⏳ Code generation
+
+---
+
+### STEP 4: Verify Backend Deployment
+
+After deployment completes, verify the changes:
+
+1. **Check AWS Console:**
+   - Open AWS AppSync Console
+   - Navigate to your API
+   - Go to **Schema** tab
+   - Verify `isActivated`, `has3Notes`, `has5Notes` fields exist in Subscription type
+
+2. **Check DynamoDB:**
+   - Open DynamoDB Console
+   - Find your Subscription table (e.g., `Subscription-xxxxx-dev`)
+   - The table now supports the new fields (they'll appear when data is written)
+
+3. **Test in AppSync Queries:**
+   ```graphql
+   query GetUserSubscription {
+     getSubscription(id: "your-subscription-id") {
+       id
+       owner
+       plan
+       isActivated
+       has3Notes
+       has5Notes
+     }
+   }
+   ```
+
+---
+
+### STEP 5: Verify Generated GraphQL Files
+
+Check that the new fields appear in your local GraphQL operations:
+
+1. **File:** `src/graphql/queries.js`
+   - Open the file
+   - Find `getSubscription` and `listSubscriptions`
+   - Verify `isActivated`, `has3Notes`, `has5Notes` are included
+
+2. **File:** `src/graphql/mutations.js`
+   - Open the file
+   - Find `createSubscription` and `updateSubscription`
+   - Verify new fields are included
+
+3. **File:** `src/graphql/subscriptions.js`
+   - Open the file
+   - Verify new fields are included in subscription operations
+
+**Example (queries.js):**
+```javascript
+export const getSubscription = /* GraphQL */ `
+  query GetSubscription($id: ID!) {
+    getSubscription(id: $id) {
+      id
+      owner
+      plan
+      status
+      isActivated
+      has3Notes
+      has5Notes
+      createdAt
+      updatedAt
+    }
+  }
+`;
+```
+
+---
+
+### STEP 6: Update Frontend Components
+
+Now implement the tracking logic in your frontend components:
+
+#### A. IntroTour Component (Tutorial + sign_up event)
+
+**File:** `src/components/IntroTour/IntroTour.jsx`
+
+Add the tutorial initialization logic:
+
+```javascript
+import { fetchUserAttributes } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import { getSubscription, updateSubscription } from '../../graphql/mutations';
+import { trackSignUp } from '../../utils/analytics';
+
+const client = generateClient();
+
+useEffect(() => {
+  const initializeTutorial = async () => {
+    try {
+      // Get user attributes
+      const userAttributes = await fetchUserAttributes();
+      const userId = userAttributes.sub;
+      const email = userAttributes.email;
+      
+      // Fetch subscription record
+      const subscriptionData = await client.graphql({
+        query: getSubscription,
+        variables: { id: userId }
+      });
+      
+      const subscription = subscriptionData.data.getSubscription;
+      
+      // Check if user is already activated
+      if (subscription?.isActivated === true) {
+        console.log('[Tutorial] User already activated, skipping tutorial');
+        return; // Don't show tutorial
+      }
+      
+      // Fire sign_up GA4 event (first time only)
+      if (subscription?.isActivated !== true) {
+        await trackSignUp(email, userId);
+        console.log('[GA4] Sign-up conversion tracked on first tutorial load');
+      }
+      
+      // Show tutorial
+      startTutorial();
+      
+    } catch (error) {
+      console.error('[Tutorial] Initialization error:', error);
+    }
+  };
+  
+  initializeTutorial();
+}, []);
+
+// When tutorial completes or is skipped
+const handleTutorialComplete = async () => {
+  try {
+    const userAttributes = await fetchUserAttributes();
+    const userId = userAttributes.sub;
+    
+    // Update isActivated to prevent future tutorial displays
+    await client.graphql({
+      query: updateSubscription,
+      variables: {
+        input: {
+          id: userId,
+          isActivated: true
+        }
+      }
+    });
+    
+    console.log('[Tutorial] User activated, tutorial will not show again');
+    closeTutorial();
+    
+  } catch (error) {
+    console.error('[Tutorial] Activation update error:', error);
+    closeTutorial(); // Still close tutorial even if update fails
+  }
+};
+```
+
+#### B. App.jsx (Note Milestone Tracking)
+
+**File:** `src/App.jsx`
+
+Add milestone checking to your note-saving function:
+
+```javascript
+import { fetchUserAttributes } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import { listNotes } from './graphql/queries';
+import { updateSubscription } from './graphql/mutations';
+import ReactGA from 'react-ga4';
+
+const client = generateClient();
+
+// Add this helper function
+const trackNoteMilestone = async (userId) => {
+  try {
+    // Get user's subscription
+    const subscriptionData = await client.graphql({
+      query: getSubscription,
+      variables: { id: userId }
+    });
+    const subscription = subscriptionData.data.getSubscription;
+    
+    // Get user's total notes count from database
+    const notesData = await client.graphql({
+      query: listNotes,
+      variables: {
+        filter: { owner: { eq: userId } }
+      }
+    });
+    const noteCount = notesData.data.listNotes.items.length;
+    
+    console.log(`[Tracking] User has ${noteCount} total notes`);
+    
+    // Check 3-note milestone
+    if (noteCount === 3 && subscription?.has3Notes !== true) {
+      // Fire GA4 event
+      ReactGA.event('user_activated_3notes', {
+        user_id: userId,
+        milestone: '3_notes',
+        activation_type: 'early_adopter'
+      });
+      
+      // Meta Pixel
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'CustomEvent', {
+          event_name: 'User_Activated_3_Notes',
+          milestone: '3_notes'
+        });
+      }
+      
+      // Update database
+      await client.graphql({
+        query: updateSubscription,
+        variables: {
+          input: {
+            id: userId,
+            has3Notes: true
+          }
+        }
+      });
+      
+      console.log('[GA4] 🎉 Early adopter! 3 notes milestone reached');
+    }
+    
+    // Check 5-note milestone
+    if (noteCount === 5 && subscription?.has5Notes !== true) {
+      // Fire GA4 event (NO CONSENT REQUIRED)
+      ReactGA.event('user_activated_5notes', {
+        user_id: userId,
+        milestone: '5_notes',
+        activation_type: 'power_user'
+      });
+      
+      // Meta Pixel
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'CustomEvent', {
+          event_name: 'User_Activated_5_Notes',
+          milestone: '5_notes'
+        });
+      }
+      
+      // Update database
+      await client.graphql({
+        query: updateSubscription,
+        variables: {
+          input: {
+            id: userId,
+            has5Notes: true
+          }
+        }
+      });
+      
+      console.log('[GA4] 🎉 Power user! 5 notes milestone reached');
+    }
+    
+  } catch (error) {
+    console.error('[Tracking] Milestone check error:', error);
+  }
+};
+
+// Call this function after successfully saving a note
+const handleNoteSaved = async (savedNote) => {
+  // ... your existing note save logic ...
+  
+  // Check milestones after save
+  const userAttributes = await fetchUserAttributes();
+  const userId = userAttributes.sub;
+  await trackNoteMilestone(userId);
+};
+```
+
+---
+
+### STEP 7: Test the Implementation
+
+Complete end-to-end testing:
+
+#### Test Sign-Up Tracking:
+1. Create a new test account
+2. Open browser console (F12)
+3. Look for: `[GA4] Sign-up conversion tracked on first tutorial load`
+4. Complete or skip tutorial
+5. Refresh page
+6. Verify tutorial does NOT show again
+7. Check DynamoDB: `isActivated` should be `true`
+
+#### Test 3-Note Milestone:
+1. Using test account, create 1st note
+2. Create 2nd note
+3. Create 3rd note → Look for: `[GA4] 🎉 Early adopter! 3 notes milestone reached`
+4. Check DynamoDB: `has3Notes` should be `true`
+5. Create more notes → Verify milestone does NOT fire again
+
+#### Test 5-Note Milestone:
+1. Continue with same test account
+2. Create 4th note
+3. Create 5th note → Look for: `[GA4] 🎉 Power user! 5 notes milestone reached`
+4. Check DynamoDB: `has5Notes` should be `true`
+5. Create more notes → Verify milestone does NOT fire again
+
+#### Verify GA4 Events:
+1. Open GA4 → Configure → DebugView
+2. Filter by your test user
+3. Verify these events appear:
+   - `sign_up` (with email parameter)
+   - `user_activated_3notes` (on 3rd note)
+   - `user_activated_5notes` (on 5th note)
+
+---
+
+### STEP 8: Monitor Production Deployment
+
+After deploying to production:
+
+1. **Monitor CloudWatch Logs:**
+   - Check for GraphQL errors
+   - Watch for unexpected null values
+   - Monitor API response times
+
+2. **Track Initial Users:**
+   - Watch first 10-20 sign-ups
+   - Verify events fire correctly
+   - Check DynamoDB for field updates
+
+3. **GA4 Monitoring:**
+   - Go to GA4 → Reports → Realtime
+   - Watch for `sign_up` events
+   - Monitor `user_activated_3notes` after a few days
+   - Monitor `user_activated_5notes` after 1-2 weeks
+
+4. **Error Handling:**
+   - Set up alerts for GraphQL errors
+   - Monitor console errors in production
+   - Have rollback plan ready if needed
+
+---
+
+### Troubleshooting
+
+#### Issue: Fields not appearing in GraphQL operations
+
+**Solution:**
+```bash
+amplify codegen
+```
+This regenerates the GraphQL files.
+
+#### Issue: CloudFormation stack update fails
+
+**Solution:**
+1. Check AWS Console → CloudFormation
+2. View stack events for error details
+3. Common causes:
+   - Insufficient permissions
+   - Conflicting resource names
+   - Schema syntax errors
+
+#### Issue: DynamoDB fields not updating
+
+**Solution:**
+1. Verify subscription ID matches user ID
+2. Check user has proper authentication
+3. Verify IAM permissions for owner-based access
+4. Test with AppSync console directly
+
+#### Issue: Tutorial shows every time despite isActivated = true
+
+**Solution:**
+1. Check subscription query returns data
+2. Verify userId matches subscription id
+3. Add defensive checks for null/undefined
+4. Clear browser localStorage as test
+
+---
+
+### Rollback Plan
+
+If deployment causes issues:
+
+1. **Revert Schema:**
+   ```bash
+   # Restore backup
+   cp amplify/backend/api/chironotev4/schema.graphql.backup amplify/backend/api/chironotev4/schema.graphql
+   
+   # Push reverted schema
+   amplify push
+   ```
+
+2. **Revert Code:**
+   ```bash
+   git revert [commit-hash]
+   git push origin main
+   ```
+
+3. **Keep Backend, Remove Frontend:**
+   - Comment out milestone tracking code
+   - Keep backend fields (they won't cause issues)
+   - Re-enable when ready
+
+---
+
+### Post-Deployment Checklist
+
+- [ ] Schema deployed successfully to AWS
+- [ ] New fields visible in AppSync console
+- [ ] GraphQL operations regenerated with new fields
+- [ ] IntroTour component updated with tutorial logic
+- [ ] App.jsx updated with milestone tracking
+- [ ] Test account created and verified
+- [ ] `sign_up` event fires on first tutorial
+- [ ] Tutorial doesn't show after completion
+- [ ] `user_activated_3notes` fires on 3rd note
+- [ ] `user_activated_5notes` fires on 5th note
+- [ ] Events visible in GA4 DebugView
+- [ ] DynamoDB fields updating correctly
+- [ ] No console errors in production
+- [ ] CloudWatch logs clean
+- [ ] Documentation updated
+- [ ] Team notified of changes
+
+---
+
+### Success Criteria
+
+Your deployment is successful when:
+
+✅ **Backend:**
+- New fields exist in AppSync schema
+- DynamoDB table supports new fields
+- No CloudFormation errors
+
+✅ **Frontend:**
+- Tutorial shows once for new users
+- `sign_up` event fires on first tutorial load
+- Tutorial never shows after completion
+- Milestone events fire at exactly 3rd and 5th notes
+- Events never fire more than once per user
+
+✅ **Analytics:**
+- Events appear in GA4 DebugView
+- Event parameters are correct
+- No duplicate events
+- Events attributed to correct users
+
+✅ **Production:**
+- No error logs
+- Normal app performance
+- Users report no issues
+- Conversion tracking working in Google Ads
+
+---
+
+## Changelog
+
+### October 24, 2025
+**Schema Update:**
+- Added `hoursSavedLifetime` field to UserSubscription type for cumulative hours saved tracking
+
+**Tracking Update:**
+- Replaced `begin_checkout` event with `viewedCart` event for pricing table views
+- `viewedCart` is now a KEY CONVERSION EVENT (no consent required)
+- Updated `src/components/Account/PriceTable.jsx` to use `trackViewedCart()` function
+- Added `trackViewedCart()` function to `src/utils/analytics.js` (lines 299-317)
+- Event includes email, userId, and content_type parameters
+- Meta Pixel integration: Fires `ViewContent` event with pricing metadata
+- Purpose: Critical conversion funnel tracking for Google Ads optimization
+
+---
+
+*Last Updated: October 24, 2025*

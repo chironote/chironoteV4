@@ -312,8 +312,14 @@ const mockGenerateClient = () => ({
   graphql: jest.fn(() => Promise.resolve({
     data: {
       getUserSubscription: {
-        transcriptionHours: 10,
-        monthlyNotes: 100
+        owner: 'test-user-id',
+        tier: 'free',
+        hoursleft: 10,
+        notesleft: 100,
+        hoursSaved: 0,
+        isActivated: false,
+        has3Notes: false,
+        has5Notes: false
       }
     }
   }))

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
+import PurchaseSuccess from './components/Account/PurchaseSuccess';
 import Feedback from './components/Feedback/Feedback';
 import Recording from './components/Recording/Recording';
 import Dictation from './components/Recording/Dictation';
@@ -28,7 +29,7 @@ import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted } from './utils/analytics';
+import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted, trackMilestone } from './utils/analytics';
 import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
@@ -310,6 +311,82 @@ function AuthenticatedApp({ signOut, user }) {
     setShowRecordingPopup(false);
   }, []);
 
+  // Helper function to check and track note milestones (3 notes, 5 notes)
+  // Called when a new note is saved to the database
+  const checkNoteMilestones = useCallback(async () => {
+    try {
+      const userAttributes = await fetchUserAttributes();
+      const userId = userAttributes.sub;
+      
+      // Fetch user's subscription to check milestone flags
+      const subscriptionData = await client.graphql({
+        query: queries.getUserSubscription,
+        variables: { owner: userId }
+      });
+      const subscription = subscriptionData.data.getUserSubscription;
+      
+      // Get user's total notes count from database
+      const notesData = await client.graphql({
+        query: queries.listNotes,
+        variables: {
+          owner: userId
+        }
+      });
+      const allNotes = notesData.data.listNotes.items;
+      // Count only completed notes (notes with actual content)
+      const noteCount = allNotes.filter(note => note.note && note.note.trim() !== "").length;
+      
+      console.log(`[Tracking] User has ${noteCount} total notes`);
+      
+      // Check 3-note milestone (Early Adopter)
+      if (noteCount === 3 && subscription?.has3Notes !== true) {
+        // Fire GA4 event
+        await trackMilestone('user_activated_3notes', userId, {
+          milestone: '3_notes',
+          activation_type: 'early_adopter'
+        });
+        
+        // Update database to prevent duplicate firing
+        await client.graphql({
+          query: mutations.updateUserSubscription,
+          variables: {
+            input: {
+              owner: userId,
+              has3Notes: true
+            }
+          }
+        });
+        
+        console.log('[GA4] 🎉 Early adopter! 3 notes milestone reached');
+      }
+      
+      // Check 5-note milestone (Power User)
+      if (noteCount === 5 && subscription?.has5Notes !== true) {
+        // Fire GA4 event (NO CONSENT REQUIRED)
+        await trackMilestone('user_activated_5notes', userId, {
+          milestone: '5_notes',
+          activation_type: 'power_user'
+        });
+        
+        // Update database to prevent duplicate firing
+        await client.graphql({
+          query: mutations.updateUserSubscription,
+          variables: {
+            input: {
+              owner: userId,
+              has5Notes: true
+            }
+          }
+        });
+        
+        console.log('[GA4] 🎉 Power user! 5 notes milestone reached');
+      }
+      
+    } catch (error) {
+      console.error('[Tracking] Milestone check error:', error);
+    }
+  }, []);
+
   const recordingManager = RecordingManager({ 
     onTextStreamUpdate: handleTextStreamUpdate,
     onTransitionToMainApp: handleTransitionToMainApp
@@ -468,6 +545,10 @@ function AuthenticatedApp({ signOut, user }) {
             setNewItems(new Set([...newItems, updatedData.timestamp]));
             return updatedNotes.slice(0, 100);
           });
+          
+          // Check for note milestones (3 notes, 5 notes) after note is saved
+          // This fires when a new note is created or an existing note is updated
+          checkNoteMilestones();
         }
         
         if (updatedData.transcript && updatedData.transcript.trim() !== "") {
@@ -485,7 +566,7 @@ function AuthenticatedApp({ signOut, user }) {
       subscription.unsubscribe();
       hubListener();
     };
-  }, [user.username, newItems]);
+  }, [user.username, newItems, checkNoteMilestones]);
 
   const toggleEditPanel = () => {
     const screenWidth = window.innerWidth;
@@ -947,6 +1028,7 @@ function AuthenticatedApp({ signOut, user }) {
           </main>
         } />
         <Route path="/account" element={<Account />} />
+        <Route path="/account/success" element={<PurchaseSuccess />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>

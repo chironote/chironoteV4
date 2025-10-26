@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import { trackBeginCheckout } from '../../utils/analytics';
+import { trackViewedCart } from '../../utils/analytics';
 import './PriceTable.css';
 
 const StripePricingTable = () => {
@@ -24,10 +24,10 @@ const StripePricingTable = () => {
         
         setUserEmail(email);
         
-        // Track begin_checkout conversion when user views pricing table
-        await trackBeginCheckout(email, userId);
+        // Track viewedCart conversion when user views pricing table (no consent required)
+        await trackViewedCart(email, userId);
         
-        console.log('[GA4] Begin checkout tracked:', { email, userId });
+        console.log('[GA4] Cart viewed (pricing table) tracked:', { email, userId });
       } catch (error) {
         console.error('Error fetching user email:', error);
       }

@@ -47,6 +47,26 @@ export const trackAccountPageButtonClick = (actionName) => {
   trackEvent('AccountPage', actionName);
 };
 
+// Video engagement tracking
+// KEY CONVERSION EVENT - Always track regardless of consent
+export const trackVideoProgress = (videoName, progressPercentage) => {
+  // Fire GA4 event (no consent required for critical conversion events)
+  ReactGA.event('VideoEngagement', {
+    action: `Video_${progressPercentage}%_Watched`,
+    label: videoName
+  });
+  
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'CustomEvent', {
+      event_name: `Video_${progressPercentage}_Percent_Watched`,
+      video_name: videoName
+    });
+  }
+  
+  console.log(`[GA4] Video engagement tracked (no consent required): ${progressPercentage}% of ${videoName}`);
+};
+
 // Track recording completion and check for 5-recording milestone
 export const trackRecordingCompleted = async (userId) => {
   const hasConsent = localStorage.getItem('cookieConsent') === 'true';
@@ -95,6 +115,30 @@ export const trackRecordingCompleted = async (userId) => {
       console.log('[GA4] 🎉 User activated! 5 recordings milestone reached');
     }
   }
+};
+
+// Track milestone events (3 notes, 5 notes)
+// KEY CONVERSION EVENTS - Always track regardless of consent
+export const trackMilestone = async (eventName, userId, params = {}) => {
+  // Fire GA4 event (no consent required for critical conversion events)
+  ReactGA.event(eventName, {
+    user_id: userId,
+    ...params
+  });
+  
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    const metaEventName = eventName === 'user_activated_3notes' 
+      ? 'User_Activated_3_Notes' 
+      : 'User_Activated_5_Notes';
+    
+    window.fbq('track', 'CustomEvent', {
+      event_name: metaEventName,
+      milestone: params.milestone
+    });
+  }
+  
+  console.log(`[GA4] Milestone event tracked (no consent required): ${eventName}`, params);
 };
 
 // ============================================
@@ -208,4 +252,66 @@ export const trackPurchase = async (email, userId, planName, value) => {
       });
     }
   }
+};
+
+// Track Standard plan purchase conversion
+// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
+export const trackPurchasedStandard = () => {
+  ReactGA.event('purchasedStandard', {
+    plan: 'standard',
+    value: 19,
+    currency: 'USD'
+  });
+  
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'Purchase', {
+      value: 19,
+      currency: 'USD',
+      content_name: 'Standard Plan'
+    });
+  }
+  
+  console.log('[GA4] Standard plan purchase tracked (no consent required)');
+};
+
+// Track Professional plan purchase conversion
+// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
+export const trackPurchasedProfessional = () => {
+  ReactGA.event('purchasedProfessional', {
+    plan: 'professional',
+    value: 75,
+    currency: 'USD'
+  });
+  
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'Purchase', {
+      value: 75,
+      currency: 'USD',
+      content_name: 'Professional Plan'
+    });
+  }
+  
+  console.log('[GA4] Professional plan purchase tracked (no consent required)');
+};
+
+// Track when user views the pricing table (cart view)
+// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
+export const trackViewedCart = (email, userId) => {
+  ReactGA.event('viewedCart', {
+    user_email: email,
+    user_id: userId,
+    content_type: 'pricing_table'
+  });
+  
+  // Also track with Meta Pixel if available
+  if (typeof window.fbq === 'function') {
+    window.fbq('track', 'ViewContent', {
+      content_name: 'Pricing Table',
+      content_category: 'Pricing'
+    });
+  }
+  
+  console.log('[GA4] Cart viewed (pricing table) tracked (no consent required):', { email, userId });
 };

@@ -3,6 +3,11 @@ type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) 
   tier: String!
   hoursleft: Float!
   notesleft: Int
+  hoursSaved: Float        # Total hours saved by user (for Account page display)
+  hoursSavedLifetime: Float # Total hours saved by user across all time (cumulative)
+  isActivated: Boolean     # Controls tutorial visibility and sign_up event tracking
+  has3Notes: Boolean       # Tracks 3-note milestone completion (early adopter)
+  has5Notes: Boolean       # Tracks 5-note milestone completion (power user)
 }
 
 type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {

@@ -6,7 +6,13 @@
 
 /* eslint-disable */
 import * as React from "react";
-import { Button, Flex, Grid, TextField } from "@aws-amplify/ui-react";
+import {
+  Button,
+  Flex,
+  Grid,
+  SwitchField,
+  TextField,
+} from "@aws-amplify/ui-react";
 import { fetchByPath, getOverrideProps, validateField } from "./utils";
 import { generateClient } from "aws-amplify/api";
 import { createUserSubscription } from "../graphql/mutations";
@@ -27,17 +33,36 @@ export default function UserSubscriptionCreateForm(props) {
     tier: "",
     hoursleft: "",
     notesleft: "",
+    hoursSaved: "",
+    hoursSavedLifetime: "",
+    isActivated: false,
+    has3Notes: false,
+    has5Notes: false,
   };
   const [owner, setOwner] = React.useState(initialValues.owner);
   const [tier, setTier] = React.useState(initialValues.tier);
   const [hoursleft, setHoursleft] = React.useState(initialValues.hoursleft);
   const [notesleft, setNotesleft] = React.useState(initialValues.notesleft);
+  const [hoursSaved, setHoursSaved] = React.useState(initialValues.hoursSaved);
+  const [hoursSavedLifetime, setHoursSavedLifetime] = React.useState(
+    initialValues.hoursSavedLifetime
+  );
+  const [isActivated, setIsActivated] = React.useState(
+    initialValues.isActivated
+  );
+  const [has3Notes, setHas3Notes] = React.useState(initialValues.has3Notes);
+  const [has5Notes, setHas5Notes] = React.useState(initialValues.has5Notes);
   const [errors, setErrors] = React.useState({});
   const resetStateValues = () => {
     setOwner(initialValues.owner);
     setTier(initialValues.tier);
     setHoursleft(initialValues.hoursleft);
     setNotesleft(initialValues.notesleft);
+    setHoursSaved(initialValues.hoursSaved);
+    setHoursSavedLifetime(initialValues.hoursSavedLifetime);
+    setIsActivated(initialValues.isActivated);
+    setHas3Notes(initialValues.has3Notes);
+    setHas5Notes(initialValues.has5Notes);
     setErrors({});
   };
   const validations = {
@@ -45,6 +70,11 @@ export default function UserSubscriptionCreateForm(props) {
     tier: [{ type: "Required" }],
     hoursleft: [{ type: "Required" }],
     notesleft: [],
+    hoursSaved: [],
+    hoursSavedLifetime: [],
+    isActivated: [],
+    has3Notes: [],
+    has5Notes: [],
   };
   const runValidationTasks = async (
     fieldName,
@@ -76,6 +106,11 @@ export default function UserSubscriptionCreateForm(props) {
           tier,
           hoursleft,
           notesleft,
+          hoursSaved,
+          hoursSavedLifetime,
+          isActivated,
+          has3Notes,
+          has5Notes,
         };
         const validationResponses = await Promise.all(
           Object.keys(validations).reduce((promises, fieldName) => {
@@ -142,6 +177,11 @@ export default function UserSubscriptionCreateForm(props) {
               tier,
               hoursleft,
               notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes,
             };
             const result = onChange(modelFields);
             value = result?.owner ?? value;
@@ -169,6 +209,11 @@ export default function UserSubscriptionCreateForm(props) {
               tier: value,
               hoursleft,
               notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes,
             };
             const result = onChange(modelFields);
             value = result?.tier ?? value;
@@ -200,6 +245,11 @@ export default function UserSubscriptionCreateForm(props) {
               tier,
               hoursleft: value,
               notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes,
             };
             const result = onChange(modelFields);
             value = result?.hoursleft ?? value;
@@ -231,6 +281,11 @@ export default function UserSubscriptionCreateForm(props) {
               tier,
               hoursleft,
               notesleft: value,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes,
             };
             const result = onChange(modelFields);
             value = result?.notesleft ?? value;
@@ -245,6 +300,176 @@ export default function UserSubscriptionCreateForm(props) {
         hasError={errors.notesleft?.hasError}
         {...getOverrideProps(overrides, "notesleft")}
       ></TextField>
+      <TextField
+        label="Hours saved"
+        isRequired={false}
+        isReadOnly={false}
+        type="number"
+        step="any"
+        value={hoursSaved}
+        onChange={(e) => {
+          let value = isNaN(parseFloat(e.target.value))
+            ? e.target.value
+            : parseFloat(e.target.value);
+          if (onChange) {
+            const modelFields = {
+              owner,
+              tier,
+              hoursleft,
+              notesleft,
+              hoursSaved: value,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes,
+            };
+            const result = onChange(modelFields);
+            value = result?.hoursSaved ?? value;
+          }
+          if (errors.hoursSaved?.hasError) {
+            runValidationTasks("hoursSaved", value);
+          }
+          setHoursSaved(value);
+        }}
+        onBlur={() => runValidationTasks("hoursSaved", hoursSaved)}
+        errorMessage={errors.hoursSaved?.errorMessage}
+        hasError={errors.hoursSaved?.hasError}
+        {...getOverrideProps(overrides, "hoursSaved")}
+      ></TextField>
+      <TextField
+        label="Hours saved lifetime"
+        isRequired={false}
+        isReadOnly={false}
+        type="number"
+        step="any"
+        value={hoursSavedLifetime}
+        onChange={(e) => {
+          let value = isNaN(parseFloat(e.target.value))
+            ? e.target.value
+            : parseFloat(e.target.value);
+          if (onChange) {
+            const modelFields = {
+              owner,
+              tier,
+              hoursleft,
+              notesleft,
+              hoursSaved,
+              hoursSavedLifetime: value,
+              isActivated,
+              has3Notes,
+              has5Notes,
+            };
+            const result = onChange(modelFields);
+            value = result?.hoursSavedLifetime ?? value;
+          }
+          if (errors.hoursSavedLifetime?.hasError) {
+            runValidationTasks("hoursSavedLifetime", value);
+          }
+          setHoursSavedLifetime(value);
+        }}
+        onBlur={() =>
+          runValidationTasks("hoursSavedLifetime", hoursSavedLifetime)
+        }
+        errorMessage={errors.hoursSavedLifetime?.errorMessage}
+        hasError={errors.hoursSavedLifetime?.hasError}
+        {...getOverrideProps(overrides, "hoursSavedLifetime")}
+      ></TextField>
+      <SwitchField
+        label="Is activated"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={isActivated}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              owner,
+              tier,
+              hoursleft,
+              notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated: value,
+              has3Notes,
+              has5Notes,
+            };
+            const result = onChange(modelFields);
+            value = result?.isActivated ?? value;
+          }
+          if (errors.isActivated?.hasError) {
+            runValidationTasks("isActivated", value);
+          }
+          setIsActivated(value);
+        }}
+        onBlur={() => runValidationTasks("isActivated", isActivated)}
+        errorMessage={errors.isActivated?.errorMessage}
+        hasError={errors.isActivated?.hasError}
+        {...getOverrideProps(overrides, "isActivated")}
+      ></SwitchField>
+      <SwitchField
+        label="Has3 notes"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={has3Notes}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              owner,
+              tier,
+              hoursleft,
+              notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes: value,
+              has5Notes,
+            };
+            const result = onChange(modelFields);
+            value = result?.has3Notes ?? value;
+          }
+          if (errors.has3Notes?.hasError) {
+            runValidationTasks("has3Notes", value);
+          }
+          setHas3Notes(value);
+        }}
+        onBlur={() => runValidationTasks("has3Notes", has3Notes)}
+        errorMessage={errors.has3Notes?.errorMessage}
+        hasError={errors.has3Notes?.hasError}
+        {...getOverrideProps(overrides, "has3Notes")}
+      ></SwitchField>
+      <SwitchField
+        label="Has5 notes"
+        defaultChecked={false}
+        isDisabled={false}
+        isChecked={has5Notes}
+        onChange={(e) => {
+          let value = e.target.checked;
+          if (onChange) {
+            const modelFields = {
+              owner,
+              tier,
+              hoursleft,
+              notesleft,
+              hoursSaved,
+              hoursSavedLifetime,
+              isActivated,
+              has3Notes,
+              has5Notes: value,
+            };
+            const result = onChange(modelFields);
+            value = result?.has5Notes ?? value;
+          }
+          if (errors.has5Notes?.hasError) {
+            runValidationTasks("has5Notes", value);
+          }
+          setHas5Notes(value);
+        }}
+        onBlur={() => runValidationTasks("has5Notes", has5Notes)}
+        errorMessage={errors.has5Notes?.errorMessage}
+        hasError={errors.has5Notes?.hasError}
+        {...getOverrideProps(overrides, "has5Notes")}
+      ></SwitchField>
       <Flex
         justifyContent="space-between"
         {...getOverrideProps(overrides, "CTAFlex")}

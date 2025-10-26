@@ -8,6 +8,11 @@ export const getUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }
@@ -32,6 +37,11 @@ export const listUserSubscriptions = /* GraphQL */ `
         tier
         hoursleft
         notesleft
+        hoursSaved
+        hoursSavedLifetime
+        isActivated
+        has3Notes
+        has5Notes
         __typename
       }
       nextToken

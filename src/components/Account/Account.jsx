@@ -19,6 +19,7 @@ function Account({ setCurrentPage }) {
   const [currentPlan, setCurrentPlan] = useState('');
   const [remainingHours, setRemainingHours] = useState(0);
   const [notesLeft, setNotesLeft] = useState(0);
+  const [hoursSaved, setHoursSaved] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isQueryLoading, setIsQueryLoading] = useState(true);
   const navigate = useNavigate();
@@ -54,10 +55,12 @@ function Account({ setCurrentPage }) {
       const currentTier = data.data.getUserSubscription.tier.toLowerCase();
       const hoursLeft = data.data.getUserSubscription.hoursleft;
       const notesLeftValue = data.data.getUserSubscription.notesleft;
+      const hoursSavedValue = data.data.getUserSubscription.hoursSaved;
       
       setCurrentPlan(currentTier);
       setRemainingHours(hoursLeft || 0);
       setNotesLeft(notesLeftValue || 0);
+      setHoursSaved(hoursSavedValue || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     } finally {

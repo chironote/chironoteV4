@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './LandingPage.css';
 import LandingNavbar from '../LandingNavbar/LandingNavbar';
-import { trackLandingPageButtonClick } from '../../utils/analytics';
+import { trackLandingPageButtonClick, trackVideoProgress } from '../../utils/analytics';
 
 // Only import critical above-the-fold assets
 import stars from '../../assets/stars.svg';
@@ -114,6 +114,7 @@ export default function LandingPage(props) {
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [email, setEmail] = useState('');
   const videoRef = useRef(null);
+  const [video75Tracked, setVideo75Tracked] = useState(false);
   
   // Load Hotjar script
   useEffect(() => {
@@ -186,6 +187,20 @@ export default function LandingPage(props) {
     if (email) {
       handleButtonClick('Click_Awareness_Hero_EmailSignUp');
       window.location.href = `/app?initialState=signUp&prefillEmail=${encodeURIComponent(email)}`;
+    }
+  };
+
+  const handleVideoTimeUpdate = () => {
+    if (videoRef.current && !video75Tracked) {
+      const video = videoRef.current;
+      const progress = (video.currentTime / video.duration) * 100;
+      
+      // Track when user reaches 75% of video
+      if (progress >= 75) {
+        trackVideoProgress('Consideration_Landing_Demo_Video', 75);
+        setVideo75Tracked(true);
+        console.log('[GA4] Video 75% watched tracked');
+      }
     }
   };
 
@@ -341,6 +356,7 @@ export default function LandingPage(props) {
               preload="metadata"
               playsInline
               poster={whiteboardThumbnail}
+              onTimeUpdate={handleVideoTimeUpdate}
             >
               <source src={whiteboardAnimation} type="video/mp4" />
               Your browser does not support the video tag.
