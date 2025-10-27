@@ -252,6 +252,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const streamResponse = async () => {
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
+    
+    // Clear any existing clipboard content before streaming new note
+    // This prevents old notes from briefly appearing when popup closes
+    onTextStreamUpdate('');
+    
     // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
     generateTimeoutRef.current = setTimeout(() => {
       console.warn('Generating Note timeout (2 minutes) - closing spinner and returning to main app');
