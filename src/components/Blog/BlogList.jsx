@@ -29,7 +29,6 @@ export default function BlogList() {
       
       <div className="blog-list__content">
         <div className="blog-list__header">
-          <h1 className="blog-list__title">ChiroNote Blog</h1>
           <p className="blog-list__subtitle">Insights on AI, chiropractic practice management, and healthcare technology</p>
         </div>
 
