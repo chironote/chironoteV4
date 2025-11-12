@@ -32,6 +32,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const streamRef = useRef(null); // Persist media stream for Safari permission
 
+  // Android device detection for audio duration fix
+  const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
+
   useEffect(() => {
     isRecordingRef.current = isRecording;
   }, [isRecording]);
@@ -501,7 +504,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       setIsPaused(false);
       isPausedRef.current = false;
       
-      mediaRecorderRef.current.start();
+      // CRITICAL ANDROID FIX: Use timeslice on Android to ensure proper audio blob duration metadata
+      // Recent Android updates cause MediaRecorder to produce blobs with duration=0 without timeslice
+      // Timeslice forces regular ondataavailable events with proper metadata
+      // Using 10 second timeslice for Android only to prevent zero-duration crashes
+      if (isAndroid) {
+        mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+      } else {
+        mediaRecorderRef.current.start(); // No timeslice for other platforms
+      }
       
       if (noSleepRef.current) {
         noSleepRef.current.enable();
@@ -510,7 +521,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+          // CRITICAL ANDROID FIX: Apply timeslice on restart for Android
+          if (isAndroid) {
+            mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+          } else {
+            mediaRecorderRef.current.start(); // No timeslice for other platforms
+          }
         }
       }, 240000); // 240 seconds
     }
@@ -536,7 +552,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+          // CRITICAL ANDROID FIX: Apply timeslice on restart after resume for Android
+          if (isAndroid) {
+            mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+          } else {
+            mediaRecorderRef.current.start(); // No timeslice for other platforms
+          }
         }
       }, 240000);
     }

@@ -217,10 +217,10 @@ export default function LandingPage(props) {
           <div className="landing-page__main">
             <div className="landing-page__main-content">
               <div className="landing-page__title">
-              Chiropractic SOAP notes in 60 seconds
+              Cut down your charting time by <span className="landing-page__title-highlight">45%</span> today
               </div>
               <div className="landing-page__subtitle">
-              Watch our HIPAA-compliant, browser-based tool create chiropractic SOAP notes while you talk. Works with any EHR.
+              Our HIPAA-compliant, browser-based tool creates chiropractic SOAP notes while you talk. Works with any EHR.
               </div>
             </div>
             <div className="landing-page__action">
@@ -451,11 +451,13 @@ export default function LandingPage(props) {
             ))}
           </div>
           <a 
-            href="/app?initialState=signUp" 
+            href="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo" 
             className="landing-page__pricing-button"
-            onClick={() => handleButtonClick('Click_Landing_Pricing_SignUp')}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => handleButtonClick('Click_Landing_Pricing_ScheduleDemo')}
           >
-            Try Now for Free
+            Schedule Personal Walkthrough
           </a>
         </div>
       </div>

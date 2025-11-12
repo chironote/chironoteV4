@@ -7,13 +7,14 @@ import LandingNavbar from '../LandingNavbar/LandingNavbar';
 // Each post should export: { title, synopsis, slug, component }
 import Post1 from './Post 1';
 import Post2 from './Post 2';
+import Post3 from './Post 3';
 
 // Array of all blog posts - add new posts here
 const BLOG_POSTS = [
   Post1,
   Post2,
+  Post3,
   // Add more posts here as you create them:
-  // Post3,
 ];
 
 export default function BlogList() {

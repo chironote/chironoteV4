@@ -304,3 +304,47 @@ LLM-generated content often includes markdown formatting (headings, bold, italic
 ### User Experience
 
 The markdown removal is completely transparent to users. Text appears clean in the clipboard textarea without any markdown syntax, ready for direct pasting into EHR systems.
+
+## 11. Critical Android Audio Duration Fix
+
+### Problem
+
+After a recent Android system update, the MediaRecorder API on Android devices began producing audio blobs with `duration = 0`, causing the app to crash during audio processing. This issue was critical as it affected all Android users, including active medical practitioners using the app for clinical documentation.
+
+### Root Cause
+
+Android's WebView implementation changed how MediaRecorder handles audio blob metadata. When `MediaRecorder.start()` is called without a `timeslice` parameter, the resulting audio blobs have valid size but zero duration, which caused crashes in downstream processing.
+
+### Solution
+
+An Android-specific fix was implemented in `RecordingManager.jsx` that:
+
+1. **Detects Android devices** using user agent detection:
+   ```javascript
+   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
+   ```
+
+2. **Uses timeslice parameter for Android only**:
+   - Android: `mediaRecorderRef.current.start(10000)` - 10 second timeslice
+   - Other platforms: `mediaRecorderRef.current.start()` - no timeslice
+
+3. **Applied in three locations**:
+   - `startRecording()` function (line 511-515)
+   - Recording interval restart logic (line 525-529)
+   - `resumeRecording()` function (line 556-560)
+
+### Technical Details
+
+The timeslice parameter forces MediaRecorder to fire `ondataavailable` events every 10 seconds with proper duration metadata. This ensures:
+- Audio blobs have valid duration property on Android
+- No crashes during audio processing
+- Backend can properly handle audio files
+- **No impact on other platforms** (iOS, web browsers)
+
+### Platform-Specific Behavior
+
+- **Android**: Uses 10-second timeslice, creates more frequent chunks with proper metadata
+- **iOS**: Uses original implementation (no timeslice)
+- **Web browsers**: Uses original implementation (no timeslice)
+
+This fix ensures the app remains stable on Android devices while preserving existing behavior on all other platforms.

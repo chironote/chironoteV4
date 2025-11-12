@@ -492,6 +492,11 @@ html {
   text-align: center;
 }
 
+.landing-page__title-highlight {
+  font-size: 1.15em;
+  color: #075715;
+}
+
 .landing-page__subtitle {
   font-size: clamp(1.2rem, 2vw, 1.25rem);
   font-weight: 500;
@@ -1981,21 +1986,22 @@ html {
   }
 
   .landing-page__title {
-    font-size: 1.8rem;
-    margin: -20px auto 16px;
-    max-width: 85%;
+    font-size: 1.9rem;
+    margin: -50px auto 70px;
+    max-width: 90%;
+    line-height: 1.25;
   }
   
 
   .landing-page__subtitle {
-    font-size: 1rem;
-    max-width: 85%;
-    margin: 0 auto 24px;
-    line-height: 1.5;
+    font-size: 1.05rem;
+    max-width: 90%;
+    margin: -12px auto 36px;
+    line-height: 1.55;
   }
 
   .landing-page__main {
-    padding: 70px 15px 20px;
+    padding: 60px 20px 20px;
     min-height: 480px; /* Increased height to accommodate stacked buttons */
   }
   
@@ -2110,19 +2116,19 @@ html {
   }
   
   .landing-page__main {
-    padding-top: 60px;
+    padding-top: 50px;
   }
   
   .landing-page__title {
-    font-size: 1.5rem;
+    font-size: 1.65rem;
     line-height: 1.3;
-    margin: -5px auto 14px;
+    margin: -45px auto 66px;
   }
   
   .landing-page__subtitle {
-    font-size: 0.85rem;
-    line-height: 1.4;
-    margin: 0 auto 20px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: -12px auto 32px;
   }
   
   /* Demo button mobile styles */

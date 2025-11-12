@@ -9,7 +9,9 @@ Blog/
 ├── BlogList.jsx       # Main blog listing page (displays all posts)
 ├── BlogPost.jsx       # Individual post viewer (displays single post)
 ├── Blog.css           # All styling for blog pages
-├── Post 1.jsx         # Example blog post
+├── Post 1.jsx         # Blog post: A Chiropractor's Guide to Understanding AI
+├── Post 2.jsx         # Blog post: Top 3 Automations for a Chiropractic Practice
+├── Post 3.jsx         # Blog post: Top 3 AI SOAP Note Tools for Chiropractors
 └── README.md          # This file
 ```
 
@@ -124,3 +126,31 @@ Main routes:
 - Fully responsive (desktop, tablet, mobile)
 - Hover effects on post cards
 - Professional typography and spacing
+
+## Troubleshooting
+
+### Error: "Cannot read properties of undefined (reading 'slug')"
+
+**Cause:** This error occurs when the post file's export statement is malformed or missing the semicolon.
+
+**Solution:** Ensure your post file ends with a proper export statement:
+
+```jsx
+// Export with metadata and component
+export default {
+  ...metadata,
+  component: PostXContent,
+};
+```
+
+**Common mistakes:**
+- Missing semicolon at the end of the export statement
+- Extra blank lines or whitespace after the export
+- Typo in the component name (e.g., `Post3Content` vs `PostXContent`)
+- Missing or incomplete metadata object
+
+**How to verify:**
+1. Check that the export statement has a semicolon
+2. Ensure no extra blank lines after the export
+3. Verify the component name matches the function name
+4. Confirm metadata has `title`, `synopsis`, and `slug` fields
