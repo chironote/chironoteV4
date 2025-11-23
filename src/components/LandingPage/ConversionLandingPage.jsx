@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './LandingPage.css';
+import './ConversionLandingPage.css';
 import LandingNavbar from '../LandingNavbar/LandingNavbar';
 import { trackLandingPageButtonClick } from '../../utils/analytics';
 
@@ -7,28 +7,32 @@ import { trackLandingPageButtonClick } from '../../utils/analytics';
 import stars from '../../assets/stars.svg';
 
 // Import below-the-fold assets (webpack processes them, but they load lazily via loading="lazy")
-import mattImg from '../../assets/Matt.png';
-import samImg from '../../assets/Sam.png';
-import jessImg from '../../assets/Jess.png';
 import tutorialVideo from '../../assets/Tutorial.mp4';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
 
 // Data constants
-const TESTIMONIALS = [
+
+const WORKFLOW_TIPS = [
   {
-    name: 'Dr. Matt Fryauf',
-    avatar: mattImg,
-    text: 'I highly recommend this app for high volume practices'
+    id: 1,
+    title: "Start Strong",
+    text: "Speak the patient's name and subjective complaints before starting treatment.",
+    detail: "Saying 'John Doe is here for lower back pain' primes the AI to expect specific clinical context, ensuring 99% accuracy on the first try.",
+    tag: "PRO TIP"
   },
   {
-    name: 'Dr. Jessica Yeung',
-    avatar: jessImg,
-    text: 'Enables me to concentrate my time on patient care instead of paperwork'
+    id: 2,
+    title: "Focus on Care",
+    text: "Place your phone on the desk and forget about it while you treat.",
+    detail: "Our microphone technology filters background noise so you can move freely around the table. Just treat naturally—we'll catch every word.",
+    tag: "HANDS FREE"
   },
   {
-    name: 'Sam Battochio',
-    avatar: samImg,
-    text: 'Its speed and accuracy make it an invaluable tool'
+    id: 3,
+    title: "Finish Fast",
+    text: "Monologue your objective findings and plan as the patient gets up.",
+    detail: "Take 15 seconds to rattle off 'positive Kemp's right, adjustment to L4-L5, ice at home.' By the time they reach the front desk, your note is done.",
+    tag: "SPEED CHARTING"
   }
 ];
 
@@ -109,7 +113,7 @@ const PLANS_DATA = [
 
 export default function LandingPage(props) {
   const [activeFaqItem, setActiveFaqItem] = useState(null);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [activeTip, setActiveTip] = useState(1); // Default to middle tip or first tip
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const videoRef = useRef(null);
   
@@ -164,19 +168,6 @@ export default function LandingPage(props) {
     
     setActiveFaqItem(activeFaqItem === index ? null : index);
   };
-  
-  const handleTestimonialChange = (index) => {
-    setActiveTestimonial(index);
-  };
-  
-  const handleNextTestimonial = () => {
-    setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length);
-  };
-  
-  const handlePrevTestimonial = () => {
-    setActiveTestimonial((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length);
-  };
-
 
   return (
     <div className="landing-page">
@@ -190,10 +181,10 @@ export default function LandingPage(props) {
           <div className="landing-page__main">
             <div className="landing-page__main-content">
               <div className="landing-page__title">
-              Built by chiropractors who got tired of charting
+              Stop Taking Notes Home. Finish Charting Before Your Patients Leave.
               </div>
               <div className="landing-page__subtitle">
-              We're not a tech company trying to understand your practice. We live it. That's why our notes actually sound like yours.
+              Simple, reliable software that writes your SOAP notes for you. No complex setup, no typing—just speak naturally and get back to adjusting.
               </div>
             </div>
             <div className="landing-page__action">
@@ -221,119 +212,17 @@ export default function LandingPage(props) {
         </div>
       </div>
 
-      {/* Testimonials Section */}
-      <div id="testimonials" className="landing-page__testimonials">
-        {/* Trust tags above testimonials */}
-        <div className="landing-page__trust-tags">
-          <span className="landing-page__trust-tag">Trusted by busy chiropractic clinics</span>
-          <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">HIPAA-compliant</span>
-          <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">Quick setup</span>
-          <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">No install</span>
-        </div>
-        
-        {/* Regular testimonial cards for desktop/tablet */}
-        <div className="landing-page__testimonial-cards">
-          {TESTIMONIALS.map((testimonial, index) => (
-            <div key={index} className="landing-page__testimonial-card">
-              <div className="landing-page__testimonial-header">
-                <div className="landing-page__testimonial-avatar-container">
-                  <img
-                    src={testimonial.avatar}
-                    alt={testimonial.name}
-                    className="landing-page__testimonial-avatar"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </div>
-                <div className="landing-page__testimonial-user">
-                  <div className="landing-page__testimonial-name">{testimonial.name}</div>
-                  <div className="landing-page__testimonial-stars">
-                    <img
-                      src={stars}
-                      alt="5 Stars"
-                      className="landing-page__stars-icon"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="landing-page__testimonial-text">
-                {testimonial.text}
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Mobile carousel version */}
-        <div className="landing-page__testimonial-cards-container">
-          <div 
-            className="landing-page__testimonial-cards"
-            style={{ transform: `translateX(-${activeTestimonial * 33.333}%)` }}
-          >
-            {TESTIMONIALS.map((testimonial, index) => (
-              <div 
-                key={index} 
-                className="landing-page__testimonial-card" 
-                style={{ opacity: activeTestimonial === index ? 1 : 0 }}
-              >
-                <div className="landing-page__testimonial-header">
-                  <div className="landing-page__testimonial-avatar-container">
-                    <img
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="landing-page__testimonial-avatar"
-                    />
-                  </div>
-                  <div className="landing-page__testimonial-user">
-                    <div className="landing-page__testimonial-name">{testimonial.name}</div>
-                    <div className="landing-page__testimonial-stars">
-                      <img
-                        src={stars}
-                        alt="5 Stars"
-                        className="landing-page__stars-icon"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="landing-page__testimonial-text">
-                  {testimonial.text}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          {/* Carousel Navigation Arrows - Only visible on mobile */}
-          <div className="testimonial-carousel-arrow testimonial-carousel-prev" onClick={handlePrevTestimonial}>
-            ‹
-          </div>
-          <div className="testimonial-carousel-arrow testimonial-carousel-next" onClick={handleNextTestimonial}>
-            ›
-          </div>
-        </div>
-        
-        {/* Carousel Dots Navigation - Only visible on mobile */}
-        <div className="testimonial-carousel-nav">
-          {Array.from({ length: TESTIMONIALS.length }).map((_, index) => (
-            <div 
-              key={index}
-              className={`testimonial-carousel-dot ${activeTestimonial === index ? 'active' : ''}`}
-              onClick={() => handleTestimonialChange(index)}
-            />
-          ))}
-        </div>
-      </div>
-
-
-
       {/* Video Demo Section */}
       <div id="how-it-works" className="landing-page__video-section">
         <div className="landing-page__video-container">
           <div className="landing-page__video-content">
             <div className="landing-page__feature-tag">See it at Work</div>
+            <div className="landing-page__feature-title">
+              Experience the Speed of AI Charting
+            </div>
+            <div className="landing-page__subtitle" style={{maxWidth: '700px', margin: '0 auto 40px'}}>
+              Watch how ChiroNote transforms a real patient encounter into a complete SOAP note in seconds.
+            </div>
           </div>
           
           <div className="landing-page__video-wrapper">
@@ -392,69 +281,40 @@ export default function LandingPage(props) {
               Try Now for Free
             </a>
             <p className="landing-page__video-cta-text">
-              Do you want to just try it for yourself? No credit card required and you get an hour on us so that you KNOW this works for your clinic.
+              See how easy it is to clear your desk by 5 PM. Try it risk-free with no credit card required.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Comparison Section */}
-      <div id="features" className="landing-page__features">
-        <div id="comparison" className="landing-page__comparison-section">
-          <div className="landing-page__feature-tag">Why Chiropractors Choose ChiroNote</div>
-          
-          <div className="landing-page__comparison-table-container">
-            <table className="landing-page__comparison-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th className="landing-page__comparison-chironote">ChiroNote</th>
-                  <th className="landing-page__comparison-others">Other AI Scribes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td className="landing-page__comparison-category">Built by chiropractors</td>
-                  <td className="landing-page__comparison-check">✓</td>
-                  <td className="landing-page__comparison-cross">✗</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Chiropractic-specific terminology</td>
-                  <td className="landing-page__comparison-check">✓</td>
-                  <td className="landing-page__comparison-cross">✗</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Transparent pricing</td>
-                  <td className="landing-page__comparison-check">✓</td>
-                  <td className="landing-page__comparison-cross">Contact sales</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Affordable starter plan</td>
-                  <td className="landing-page__comparison-check">$19/mo</td>
-                  <td className="landing-page__comparison-cross">$85+/mo</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Learning curve</td>
-                  <td className="landing-page__comparison-check">2 clicks + copy</td>
-                  <td className="landing-page__comparison-cross">Training required</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Works with your EHR</td>
-                  <td className="landing-page__comparison-check">Any system</td>
-                  <td className="landing-page__comparison-cross">Limited integrations</td>
-                </tr>
-                <tr>
-                  <td className="landing-page__comparison-category">Setup time</td>
-                  <td className="landing-page__comparison-check">Instant</td>
-                  <td className="landing-page__comparison-cross">IT approval needed</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          
-          <div className="landing-page__comparison-note">
-            <strong>Why copy-paste beats "integration":</strong> No IT approval, no EHR compatibility issues, no waiting. Works with every system from day one.
-          </div>
+      {/* Interactive Workflow Section (Replaces Comparison) */}
+      <div id="how-it-works-tips" className="landing-page__tips-section">
+        <div className="landing-page__feature-tag">Master the Workflow</div>
+        <div className="landing-page__feature-title">
+          A Workflow That Gives You Your Evenings Back
+        </div>
+        <div className="landing-page__subtitle" style={{maxWidth: '700px'}}>
+          You don't need to change how you treat. Just small adjustments to let the software handle the paperwork.
+        </div>
+        
+        <div className="landing-page__tips-container">
+          {WORKFLOW_TIPS.map((tip, index) => (
+            <div 
+              key={tip.id}
+              className={`landing-page__tip-card ${activeTip === tip.id ? 'active' : ''}`}
+              onClick={() => setActiveTip(tip.id)}
+            >
+              <div className="landing-page__tip-number">{tip.id}</div>
+              <div className="landing-page__tip-content">
+                <span className="landing-page__tip-pro-label">{tip.tag}</span>
+                <div className="landing-page__tip-title">{tip.title}</div>
+                <div className="landing-page__tip-text">{tip.text}</div>
+                <div className="landing-page__tip-detail">
+                  {tip.detail}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -465,7 +325,7 @@ export default function LandingPage(props) {
           <div className="landing-page__feature-content">
             <div className="landing-page__feature-tag">Pricing</div>
             <div className="landing-page__feature-title">
-              Simple, transparent pricing for practices of all sizes
+              Honest Pricing. No Hidden Fees. No Long-Term Contracts.
             </div>
           </div>
           
@@ -486,19 +346,21 @@ export default function LandingPage(props) {
               </div>
             ))}
           </div>
-          <a 
-            href="/app?initialState=signUp" 
+          <button 
             className="landing-page__pricing-button"
-            onClick={() => handleButtonClick('Click_Landing_Pricing_SignUp')}
+            onClick={() => {
+              handleButtonClick('Click_Landing_Pricing_BookDemo');
+              handleNavClick('scheduler');
+            }}
           >
-            Try Now for Free
-          </a>
+            Book Demo
+          </button>
         </div>
       </div>
 
       {/* Scheduler Section */}
       <div id="scheduler" className="landing-page__scheduler-section">
-        <div className="landing-page__feature-tag">Book a Consult</div>
+        <div className="landing-page__feature-tag">Schedule a Friendly Walkthrough</div>
         
         {/* Scheduler info tags */}
         <div className="landing-page__scheduler-info">

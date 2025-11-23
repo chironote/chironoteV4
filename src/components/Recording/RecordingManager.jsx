@@ -507,9 +507,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       // CRITICAL ANDROID FIX: Use timeslice on Android to ensure proper audio blob duration metadata
       // Recent Android updates cause MediaRecorder to produce blobs with duration=0 without timeslice
       // Timeslice forces regular ondataavailable events with proper metadata
-      // Using 10 second timeslice for Android only to prevent zero-duration crashes
+      // Using 4 minute timeslice for Android only to prevent zero-duration crashes
       if (isAndroid) {
-        mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+        mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
       } else {
         mediaRecorderRef.current.start(); // No timeslice for other platforms
       }
@@ -523,7 +523,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           // CRITICAL ANDROID FIX: Apply timeslice on restart for Android
           if (isAndroid) {
-            mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+            mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
           } else {
             mediaRecorderRef.current.start(); // No timeslice for other platforms
           }
@@ -554,7 +554,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           mediaRecorderRef.current.stop();
           // CRITICAL ANDROID FIX: Apply timeslice on restart after resume for Android
           if (isAndroid) {
-            mediaRecorderRef.current.start(10000); // 10 second timeslice for Android
+            mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
           } else {
             mediaRecorderRef.current.start(); // No timeslice for other platforms
           }
