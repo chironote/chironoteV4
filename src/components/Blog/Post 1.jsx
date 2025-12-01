@@ -12,7 +12,7 @@ function Post1Content() {
   return (
     <div>
       <p>
-        Slowly becoming a source of a lot of excitement, the new GPT technology has taken the world by storm. Yet when it comes to actually getting some concrete use out of it in your practice, most chiropractors are left scratching their heads. So is the technology just hype or are you using it wrong? Let's gain a slightly better understanding of what these tools actually do and I'm going to show you some simple ways to put them to work in your clinic.
+        Slowly becoming a source of a lot of excitement, the new GPT technology has taken the world by storm. Yet when it comes to actually getting some concrete use out of it in your practice, most chiropractors are left scratching their heads. So is the technology just hype or are you using it wrong? Let's gain a slightly better understanding of what these chiro AI tools actually do and I'm going to show you some simple ways to put them to work in your clinic.
       </p>
       
       <p>
@@ -55,7 +55,7 @@ function Post1Content() {
       </p>
       
       <p>
-        The implications are quite powerful because we all have that one patient that suffers in silence, nodding along politely to the imaging report of findings. This technology can boost your communication and transform a patient that feels just along for the ride into an active participant genuinely interested in the treatment plan thus not only improving compliance, but clinical outcomes as well.
+        The implications are quite powerful because we all have that one patient that suffers in silence, nodding along politely to the imaging report of findings. This AI chiro technology can boost your communication and transform a patient that feels just along for the ride into an active participant genuinely interested in the treatment plan thus not only improving compliance, but clinical outcomes as well.
       </p>
 
       <h2>Summarize</h2>
@@ -74,7 +74,7 @@ function Post1Content() {
       </p>
       
       <p>
-        Luckily ChiroNote is a completely HIPAA compliant SOAP note application that ensures PHI is encrypted, transferred and processed according to the rigorous standards of HIPAA. Our AI handles your clinical summaries without compromising patient privacy. <a href="/ai-chiropractic-soap-notes">Learn more about us here</a>.
+        Luckily ChiroNote is a completely HIPAA compliant SOAP note application that ensures PHI is encrypted, transferred and processed according to the rigorous standards of HIPAA. Our chiro AI handles your clinical summaries without compromising patient privacy. <a href="/ai-chiropractic-soap-notes">Learn more about us here</a>.
       </p>
     </div>
   );

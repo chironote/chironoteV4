@@ -14,6 +14,9 @@
   text-align: center;
   flex-direction: column;
   background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* General panel styles */
@@ -42,12 +45,18 @@
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--off-white);
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* Add styles to fix cut-off content */
 .list-container {
   overflow-y: auto;
   height: auto;
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .list-item {
@@ -859,6 +868,8 @@
     height: calc(100vh - 70px);
     position: relative;
     overflow: hidden;
+    /* iOS: Prevent body scroll when panel is open */
+    overscroll-behavior: none;
   }
 
   .left-panel {
@@ -873,6 +884,11 @@
     transition: transform 0.3s ease;
     transform: translateX(0);
     overflow-y: auto;
+    /* iOS scroll fixes - critical for iPhone */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    /* Prevent iOS rubber-banding from affecting parent */
+    touch-action: pan-y;
   }
 
   .left-panel.collapsed {
@@ -1330,6 +1346,10 @@
     transition: transform 0.3s ease;
     transform: translateX(0);
     overflow-y: auto;
+    /* iOS scroll fixes - critical for iPhone */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
   }
 
   .left-panel.collapsed {
@@ -1386,6 +1406,9 @@
     transition: margin-left 0.3s ease;
     height: calc(100vh - 70px);
     overflow-y: auto;
+    /* iOS scroll fixes */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 
   .left-panel.collapsed ~ .clipboard-container {

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import Account from './components/Account/Account';
-import PurchaseSuccess from './components/Account/PurchaseSuccess';
 import Feedback from './components/Feedback/Feedback';
 import Recording from './components/Recording/Recording';
 import Dictation from './components/Recording/Dictation';
@@ -29,7 +28,7 @@ import { Hub } from 'aws-amplify/utils';
 import { getCurrentUser, fetchUserAttributes } from 'aws-amplify/auth';
 import PriceTable from './components/Account/PriceTable';
 import ReactGA from 'react-ga4';
-import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted, trackMilestone } from './utils/analytics';
+import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trackRecordingCompleted, trackMilestone, captureGclid } from './utils/analytics';
 import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
@@ -38,8 +37,8 @@ import config from './amplifyconfiguration.json';
 
 // Code-split landing pages and blog for better mobile performance
 const ConversionLandingPage = lazy(() => import('./components/LandingPage/ConversionLandingPage'));
-const AwarenessLandingPage = lazy(() => import('./components/LandingPage/AwarenessLandingPage'));
 const ConsiderationLandingPage = lazy(() => import('./components/LandingPage/ConsiderationLandingPage'));
+const TutorialPage = lazy(() => import('./components/LandingPage/TutorialPage'));
 const BlogList = lazy(() => import('./components/Blog/BlogList'));
 const BlogPost = lazy(() => import('./components/Blog/BlogPost'));
 Amplify.configure(config);
@@ -51,6 +50,9 @@ function RouteTracker() {
   const location = useLocation();
 
   useEffect(() => {
+    // Capture GCLID if present in URL (for Google Ads tracking)
+    captureGclid();
+
     // Standard GA pageview based on path
     ReactGA.send({ hitType: "pageview", page: location.pathname + location.search });
 
@@ -1028,7 +1030,6 @@ function AuthenticatedApp({ signOut, user }) {
           </main>
         } />
         <Route path="/account" element={<Account />} />
-        <Route path="/account/success" element={<PurchaseSuccess />} />
         <Route path="/feedback" element={<Feedback />} />
         <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>
@@ -1091,8 +1092,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
           <Route path="/ai-chiropractic-soap-notes" element={<ConsiderationLandingPage />} />
-          <Route path="/welcome" element={<AwarenessLandingPage />} />
           <Route path="/learn-more" element={<ConversionLandingPage />} />
+          <Route path="/tutorial" element={<TutorialPage />} />
           <Route path="/blog" element={<BlogList />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/app/*" element={<ProtectedApp />} />

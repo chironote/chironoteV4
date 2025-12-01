@@ -1,10 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
-import { trackViewedCart } from '../../utils/analytics';
+import { trackViewedCart, getGclid } from '../../utils/analytics';
 import './PriceTable.css';
 
 const StripePricingTable = () => {
   const [userEmail, setUserEmail] = useState('');
+  const [clientReferenceId, setClientReferenceId] = useState('');
+  const [isGclidLoaded, setIsGclidLoaded] = useState(false);
+
+  useEffect(() => {
+    // Get GCLID for accurate ads tracking
+    const gclid = getGclid();
+    if (gclid) {
+      setClientReferenceId(gclid);
+      console.log('[Stripe] Setting client-reference-id to GCLID:', gclid);
+    }
+    setIsGclidLoaded(true);
+  }, []);
 
   useEffect(() => {
     // Add Stripe Pricing Table script
@@ -37,11 +49,14 @@ const StripePricingTable = () => {
 
   return (
     <div className="pricing-table-container">
-      <stripe-pricing-table
-        pricing-table-id="prctbl_1Q9wgoFLOk2JuI9KM1oFMtc8"
-        publishable-key="pk_live_51Q9vo5FLOk2JuI9K9y0ckzpjY5OZkBbXaB8QJtS4vUw2W1qYtXs6xCjjrYmi0gjg0VbWgohyT25kC5ReKnB9dRSY006LfWlZ7N"
-        customer-email={userEmail}
-      />
+      {isGclidLoaded && (
+        <stripe-pricing-table
+          pricing-table-id="prctbl_1Q9wgoFLOk2JuI9KM1oFMtc8"
+          publishable-key="pk_live_51Q9vo5FLOk2JuI9K9y0ckzpjY5OZkBbXaB8QJtS4vUw2W1qYtXs6xCjjrYmi0gjg0VbWgohyT25kC5ReKnB9dRSY006LfWlZ7N"
+          customer-email={userEmail}
+          client-reference-id={clientReferenceId}
+        />
+      )}
     </div>
   );
 };

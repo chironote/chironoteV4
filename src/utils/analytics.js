@@ -162,6 +162,46 @@ const hashEmail = async (email) => {
   return hashHex;
 };
 
+// Capture GCLID from URL and store in localStorage
+// This ensures the ad click token is preserved even if user navigates around before signing up/purchasing
+export const captureGclid = () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const gclid = params.get('gclid');
+    
+    if (gclid) {
+      localStorage.setItem('gclid', gclid);
+      // Also update expiration (Google Ads attribution window is usually 30-90 days)
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 90); 
+      localStorage.setItem('gclid_expiry', expiryDate.toISOString());
+      console.log('[Analytics] GCLID captured:', gclid);
+    }
+  } catch (error) {
+    console.error('[Analytics] Error capturing GCLID:', error);
+  }
+};
+
+// Retrieve valid GCLID from storage
+export const getGclid = () => {
+  try {
+    const gclid = localStorage.getItem('gclid');
+    const expiry = localStorage.getItem('gclid_expiry');
+    
+    if (!gclid || !expiry) return null;
+    
+    if (new Date() > new Date(expiry)) {
+      localStorage.removeItem('gclid');
+      localStorage.removeItem('gclid_expiry');
+      return null;
+    }
+    
+    return gclid;
+  } catch (error) {
+    return null;
+  }
+};
+
 // Set user properties for enhanced tracking
 export const setUserProperties = async (userId, email) => {
   const hasConsent = localStorage.getItem('cookieConsent') === 'true';
@@ -220,80 +260,6 @@ export const trackBeginCheckout = async (email, userId) => {
       }]
     });
   }
-};
-
-// Track purchase completion (for future webhook integration)
-export const trackPurchase = async (email, userId, planName, value) => {
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-  
-  if (hasConsent) {
-    // Standard GA4 purchase event
-    ReactGA.event('purchase', {
-      transaction_id: `${userId}_${Date.now()}`,
-      value: value,
-      currency: 'USD',
-      user_email: email,
-      user_id: userId,
-      items: [{
-        item_id: planName.toLowerCase(),
-        item_name: `ChiroNote ${planName} Plan`,
-        item_category: 'subscription',
-        price: value,
-        quantity: 1
-      }]
-    });
-    
-    // Also track with Meta Pixel if available
-    if (typeof window.fbq === 'function') {
-      window.fbq('track', 'Purchase', {
-        value: value,
-        currency: 'USD',
-        content_name: `${planName} Plan`
-      });
-    }
-  }
-};
-
-// Track Standard plan purchase conversion
-// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
-export const trackPurchasedStandard = () => {
-  ReactGA.event('purchasedStandard', {
-    plan: 'standard',
-    value: 19,
-    currency: 'USD'
-  });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    window.fbq('track', 'Purchase', {
-      value: 19,
-      currency: 'USD',
-      content_name: 'Standard Plan'
-    });
-  }
-  
-  console.log('[GA4] Standard plan purchase tracked (no consent required)');
-};
-
-// Track Professional plan purchase conversion
-// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
-export const trackPurchasedProfessional = () => {
-  ReactGA.event('purchasedProfessional', {
-    plan: 'professional',
-    value: 75,
-    currency: 'USD'
-  });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    window.fbq('track', 'Purchase', {
-      value: 75,
-      currency: 'USD',
-      content_name: 'Professional Plan'
-    });
-  }
-  
-  console.log('[GA4] Professional plan purchase tracked (no consent required)');
 };
 
 // Track when user views the pricing table (cart view)

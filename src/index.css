@@ -19,6 +19,12 @@
 }
 
 /* Global styles */
+html {
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+}
+
 body {
   font-size: 16px;
   line-height: 1.6;
@@ -26,6 +32,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
   color: var(--dark-green);
   background-color: var(--off-white);
+  height: 100%;
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  height: 100%;
+  /* iOS scroll containment */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Heading styles */

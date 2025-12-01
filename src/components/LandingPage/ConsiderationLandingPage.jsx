@@ -115,6 +115,8 @@ export default function LandingPage(props) {
   const [email, setEmail] = useState('');
   const videoRef = useRef(null);
   const [video75Tracked, setVideo75Tracked] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   
   // Load Hotjar script
   useEffect(() => {
@@ -220,7 +222,9 @@ export default function LandingPage(props) {
               Cut down your charting time by <span className="landing-page__title-highlight">45%</span> today
               </div>
               <div className="landing-page__subtitle">
-              Our HIPAA-compliant, browser-based tool creates chiropractic SOAP notes while you talk. Works with any EHR.
+              Save time on charting by creating SOAP notes while you talk.
+              <br />
+              The most simple way to add AI to your clinical practice.
               </div>
             </div>
             <div className="landing-page__action">
@@ -345,7 +349,13 @@ export default function LandingPage(props) {
       <div id="how-it-works" className="landing-page__video-section">
         <div className="landing-page__video-container">
           <div className="landing-page__video-content">
-            <div className="landing-page__feature-tag">How we create chiropractic SOAP notes</div>
+            <div className="landing-page__feature-tag">See it at Work</div>
+            <div className="landing-page__feature-title">
+              Experience the Speed of AI Charting
+            </div>
+            <div className="landing-page__subtitle" style={{maxWidth: '700px', margin: '0 auto 40px'}}>
+              Watch how ChiroNote transforms a real patient encounter into a complete SOAP note in seconds.
+            </div>
           </div>
           
           <div className="landing-page__video-wrapper">
@@ -357,18 +367,37 @@ export default function LandingPage(props) {
               playsInline
               poster={whiteboardThumbnail}
               onTimeUpdate={handleVideoTimeUpdate}
+              onWaiting={() => setIsVideoLoading(true)}
+              onCanPlay={() => setIsVideoLoading(false)}
+              onLoadedData={() => setIsVideoLoading(false)}
+              onPlay={() => setIsVideoPlaying(true)}
+              onPlaying={() => { setIsVideoPlaying(true); setIsVideoLoading(false); }}
+              onPause={() => { setIsVideoPlaying(false); setIsVideoLoading(false); }}
+              onEnded={() => { setIsVideoPlaying(false); setIsVideoLoading(false); }}
             >
               <source src={whiteboardAnimation} type="video/mp4" />
               Your browser does not support the video tag.
             </video>
             
             {/* Video overlay for enhanced UX */}
-            <div className="landing-page__video-overlay">
-              <div className="landing-page__video-play-button">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                  <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
-                  <path d="M32 25L55 40L32 55V25Z" fill="white" />
-                </svg>
+            <div 
+              className={`landing-page__video-overlay ${isVideoLoading ? 'loading' : ''} ${isVideoPlaying ? 'hidden' : ''}`}
+              onClick={() => {
+                if (videoRef.current && !isVideoPlaying) {
+                  setIsVideoLoading(true);
+                  videoRef.current.play();
+                }
+              }}
+            >
+              <div className={`landing-page__video-play-button ${isVideoLoading ? 'loading' : ''}`}>
+                {isVideoLoading ? (
+                  <div className="landing-page__video-spinner"></div>
+                ) : (
+                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
+                    <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
+                    <path d="M32 25L55 40L32 55V25Z" fill="white" />
+                  </svg>
+                )}
               </div>
             </div>
           </div>
