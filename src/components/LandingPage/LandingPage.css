@@ -11,53 +11,6 @@ html {
   width: 100%;
 }
 
-/* Header Styles */
-.landing-page__header {
-  padding: 20px;
-  position: sticky;
-  top: 0;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  z-index: 1000;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.landing-page__header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 90vw;
-  margin: 0 auto;
-  position: relative;
-}
-
-/* Text logo on the left */
-.landing-page__textlogo-left {
-  height: 40px;
-  display: block;
-}
-
-/* Desktop logo - colored version */
-.landing-page__textlogo-desktop {
-  display: block;
-}
-
-/* Mobile logo - white version */
-.landing-page__textlogo-mobile {
-  display: none;
-}
-
-/* Mobile responsive styles */
-@media (max-width: 768px) {
-  .landing-page__textlogo-desktop {
-    display: none;
-  }
-  
-  .landing-page__textlogo-mobile {
-    display: block;
-  }
-}
-
 /* Video Demo Section */
 .landing-page__video-section {
   padding: 40px 20px 80px;
@@ -93,24 +46,6 @@ html {
 
 .landing-page__video-content .landing-page__feature-tag {
   display: inline-block;
-}
-
-.landing-page__video-title {
-  font-size: clamp(2rem, 4vw, 3rem);
-  font-weight: 700;
-  color: #1a1a1a;
-  margin: 20px auto 24px;
-  line-height: 1.2;
-  max-width: 800px;
-}
-
-.landing-page__video-subtitle {
-  font-size: clamp(1.1rem, 2vw, 1.3rem);
-  color: #666;
-  margin: 0 auto;
-  max-width: 600px;
-  line-height: 1.6;
-  font-weight: 400;
 }
 
 .landing-page__video-wrapper {
@@ -297,143 +232,6 @@ html {
   }
 }
 
-/* Mobile menu button (hamburger) */
-.landing-page__mobile-menu-button {
-  display: none;
-  flex-direction: column;
-  justify-content: space-between;
-  width: 24px;
-  height: 18px;
-  cursor: pointer;
-  z-index: 101;
-}
-
-.landing-page__mobile-menu-button span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background-color: #fff;
-  transition: all 0.3s ease;
-}
-
-/* Mobile navigation */
-.landing-page__mobile-nav {
-  position: fixed;
-  top: 60px;
-  left: -100%;
-  width: 100%;
-  height: auto;
-  background-color: white;
-  z-index: 100;
-  transition: left 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.landing-page__mobile-nav.open {
-  left: 0;
-}
-
-.landing-page__mobile-nav-items {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-}
-
-.landing-page__mobile-nav-item {
-  font-size: 1.1rem;
-  padding: 12px 0;
-  border-bottom: 1px solid #eee;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.landing-page__mobile-nav-item:last-child {
-  border-bottom: none;
-}
-
-.landing-page__mobile-nav-button {
-  margin-top: 20px;
-  padding: 12px;
-  background-color: transparent;
-  color: #075715;
-  text-align: center;
-  border-radius: 5px;
-  border: 2px solid #075715;
-  font-weight: 500;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.landing-page__mobile-nav-button:hover {
-  background-color: #075715;
-  color: white;
-}
-
-.landing-page__nav-container {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.landing-page__nav {
-  display: flex;
-  gap: 20px;
-}
-
-.landing-page__nav-item {
-  padding: 10px 20px;
-  background-color: transparent;
-  color: #075715;
-  border: none;
-  border-radius: 5px;
-  text-decoration: none;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: inherit;
-  font-family: inherit;
-  transition: all 0.2s ease;
-}
-
-.landing-page__nav-item:hover {
-  background-color: rgba(7, 87, 21, 0.1);
-  color: #075715;
-}
-
-/* Button Styles */
-.landing-page__get-started-button {
-  padding: 10px 20px;
-  background-color: transparent;
-  color: #075715;
-  border: 2px solid #075715;
-  border-radius: 5px;
-  text-decoration: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  margin-left: 10px;
-}
-
-.landing-page__get-started-button:hover {
-  background-color: #075715;
-  color: white;
-}
-
-.landing-page__action-button,
-.landing-page__cta-button {
-  padding: 10px 20px;
-  background-color: #075715;
-  color: #fff;
-  border-radius: 5px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.landing-page__action-button:hover,
-.landing-page__cta-button:hover {
-  background-color: #053d0f;
-}
-
 /* Hero Section */
 .landing-page__hero-section {
   position: relative;
@@ -458,7 +256,7 @@ html {
 .landing-page__hero-container {
   position: relative;
   z-index: 2;
-  padding: 80px 0 40px;
+  padding: 40px 0 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -536,6 +334,7 @@ html {
   position: relative;
   z-index: 1;
   margin-top: 40px;
+  margin-bottom: 40px;
 }
 
 /* New Demo Button Styles - Professional, refined appearance */
@@ -586,112 +385,6 @@ html {
   letter-spacing: 0.1px;
 }
 
-/* Demo Info Section */
-.landing-page__demo-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 20px;
-  opacity: 0;
-  animation: fadeIn 0.6s ease-out 0.6s forwards;
-}
-
-.landing-page__demo-duration,
-.landing-page__demo-live,
-.landing-page__demo-instant {
-  font-size: 0.9rem;
-  color: #555;
-  font-weight: 500;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 5px 10px;
-  border-radius: 20px;
-  border: 1px solid rgba(7, 87, 21, 0.1);
-}
-
-.landing-page__demo-separator {
-  color: #ccc;
-  font-size: 0.8rem;
-}
-
-/* Action buttons container */
-.landing-page__action-buttons {
-  display: flex;
-  gap: 16px;
-  justify-content: center;
-  align-items: stretch;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-  position: relative;
-  z-index: 10; /* Higher z-index to ensure buttons are clickable */
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* Email input field for awareness landing page */
-.landing-page__email-input {
-  padding: 20px 28px;
-  font-size: 1.15rem;
-  border: 3px solid #075715;
-  border-radius: 12px;
-  background: white;
-  color: #1a1a1a;
-  min-width: 320px;
-  transition: all 0.3s ease;
-  box-shadow: 0 6px 20px rgba(7, 87, 21, 0.15),
-              0 2px 8px rgba(0, 0, 0, 0.1);
-  opacity: 0;
-  animation: fadeIn 0.6s ease-out 0.2s forwards;
-  font-weight: 500;
-}
-
-.landing-page__email-input::placeholder {
-  color: rgba(0, 0, 0, 0.5);
-  font-weight: 400;
-}
-
-.landing-page__email-input:focus {
-  outline: none;
-  border-color: #0a8822;
-  box-shadow: 0 8px 30px rgba(7, 87, 21, 0.3),
-              0 4px 12px rgba(0, 0, 0, 0.15);
-  background: white;
-  transform: translateY(-2px);
-}
-
-/* Try Free Button - Minimal design */
-.landing-page__try-free-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 24px;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #075715;
-  background-color: white;
-  border: 2px solid #075715;
-  border-radius: 8px;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  white-space: nowrap;
-  min-height: 48px; /* Ensures accessibility guidelines */
-}
-
-.landing-page__try-free-button:hover {
-  background-color: #075715;
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(7, 87, 21, 0.2);
-}
-
-/* Sign Up button */
-.landing-page__signup-button {
-  background-color: #075715;
-}
-
-
 @keyframes pulse {
   0% {
     box-shadow: 0 4px 12px rgba(7, 87, 21, 0.3);
@@ -727,15 +420,6 @@ html {
   text-align: center;
   max-width: 800px;
   margin: 0 auto;
-}
-
-.landing-page__pricing-table-container {
-  width: 100%;
-  max-width: 1000px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .landing-page__pricing-button {
@@ -851,101 +535,6 @@ html {
 
 /* Styles for .landing-page__pricing-card-button removed as individual card buttons are no longer used. */
 
-/* Device Mockups Showcase */
-.landing-page__mockup-showcase {
-  width: 100%;
-  padding: 20px 0 60px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: transparent;
-  position: relative;
-  margin: -130px 0 -100px;
-}
-
-.landing-page__mockup-container {
-  position: relative;
-  max-width: 800px;
-  width: 90%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 0 auto;
-}
-
-.landing-page__mockup-laptop {
-  width: 70%;
-  max-width: 800px;
-  z-index: 1;
-  transform: perspective(1000px) rotateY(-5deg);
-  transition: transform 0.5s ease;
-}
-
-.landing-page__mockup-laptop-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 8px;
-}
-
-.landing-page__mockup-mobile {
-  position: absolute;
-  width: 22%;
-  max-width: 250px;
-  right: 10%;
-  bottom: 15%;
-  z-index: 2;
-  transform: perspective(1000px) rotate(-8deg);
-  transition: transform 0.5s ease;
-}
-
-.landing-page__mockup-mobile-img {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 12px;
-}
-
-/* Responsive Mockup Showcase */
-@media (max-width: 992px) {
-  .landing-page__mockup-showcase {
-    padding: 10px 0 40px;
-  }
-  
-  .landing-page__mockup-laptop {
-    width: 80%;
-    transform: perspective(1000px) rotateY(-3deg);
-  }
-  
-  .landing-page__mockup-mobile {
-    width: 25%;
-    right: 5%;
-    bottom: 12%;
-  }
-}
-
-
-
-@media (max-width: 480px) {
-  .landing-page__mockup-showcase {
-    padding: 0 0 20px;
-  }
-  
-  .landing-page__mockup-container {
-    width: 100%;
-  }
-  
-  .landing-page__mockup-laptop {
-    width: 100%;
-  }
-  
-  .landing-page__mockup-mobile {
-    width: 35%;
-    right: 0%;
-    bottom: 8%;
-  }
-}
-
 /* Responsive styles for pricing cards */
 @media (max-width: 1024px) {
   .landing-page__pricing-cards-container {
@@ -971,86 +560,7 @@ html {
   }
 }
 
-.landing-page__pricing-section {
-    padding-left: 2vw !important;
-    padding-right: 2vw !important;
-  }
-
-  /* Hide the categories column */
-  .plan-comparison-table .row-label {
-    display: none;
-  }
-  
-  /* Make plan columns take full width */
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    width: 33.33%;
-  }
-  
-  /* Add data labels before content on mobile */
-  .plan-comparison-table td:nth-child(2):before,
-  .plan-comparison-table td:nth-child(3):before,
-  .plan-comparison-table td:nth-child(4):before {
-    content: attr(data-category);
-    display: block;
-    font-weight: 500;
-    font-size: 0.8rem;
-    color: #666;
-    margin-bottom: 4px;
-  }
-  
-  /* First column header also hidden */
-  .plan-comparison-table th:first-child {
-    display: none;
-  }
-  
-  /* Adjust font size and padding */
-  .plan-comparison-table table, .plan-comparison-table th, .plan-comparison-table td {
-    font-size: 0.9rem;
-    padding: 10px 4px;
-  }
-  
-  /* Make plan descriptions more visible */
-  .plan-desc {
-    font-size: 0.8rem;
-    opacity: 0.9;
-  }
-  
-  /* Increase vertical spacing between rows */
-  .plan-comparison-table tr {
-    margin-bottom: 8px;
-  }
-
-
 @media (max-width: 480px) {
-  .landing-page__pricing-section {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-  .landing-pricing-table {
-    margin: 0 -4vw;
-    width: calc(100% + 8vw);
-  }
-  
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    padding: 8px 2px;
-    font-size: 0.85rem;
-  }
-  
-  /* Reduce font size for plan names in header */
-  .plan-comparison-table th {
-    font-size: 0.8rem;
-  }
-  
-  /* Smaller checkmark */
-  .plan-check {
-    margin-left: 3px;
-    font-size: 0.8rem;
-  }
-  
   .landing-page__pricing-button {
     max-width: 100%;
     width: auto;
@@ -1062,29 +572,6 @@ html {
 
 /* Extra small screens */
 @media (max-width: 360px) {
-  .landing-page__pricing-section {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
-  .landing-pricing-table {
-    margin: 0 -6vw;
-    width: calc(100% + 12vw);
-  }
-  
-  .plan-comparison-table th,
-  .plan-comparison-table td {
-    padding: 6px 1px;
-    font-size: 0.8rem;
-  }
-  
-  /* Smaller category labels */
-  .plan-comparison-table td:before {
-    font-size: 0.7rem !important;
-    margin-bottom: 2px !important;
-  }
-  
   .landing-page__pricing-button {
     padding: 10px 16px;
     font-size: 0.85rem;
@@ -1148,135 +635,6 @@ html {
 .landing-page__feature-description {
   color: #666;
   line-height: 1.6;
-}
-
-/* Comparison Section */
-.landing-page__comparison-section {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.landing-page__comparison-section .landing-page__feature-tag {
-  display: inline-block;
-  margin-bottom: 40px;
-}
-
-.landing-page__comparison-table-container {
-  margin: 40px 0;
-  overflow-x: auto;
-}
-
-.landing-page__comparison-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.landing-page__comparison-table thead {
-  background: linear-gradient(135deg, #075715 0%, #2e6930 100%);
-  color: white;
-}
-
-.landing-page__comparison-table th {
-  padding: 20px;
-  font-size: 1.1rem;
-  font-weight: 600;
-  text-align: center;
-}
-
-.landing-page__comparison-table th:first-child {
-  text-align: left;
-  width: 40%;
-}
-
-.landing-page__comparison-chironote {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.landing-page__comparison-table tbody tr {
-  border-bottom: 1px solid #e8e8e8;
-  transition: background-color 0.2s ease;
-}
-
-.landing-page__comparison-table tbody tr:hover {
-  background-color: #f9fbfa;
-}
-
-.landing-page__comparison-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-.landing-page__comparison-table td {
-  padding: 18px 20px;
-  font-size: 1rem;
-  text-align: center;
-}
-
-.landing-page__comparison-category {
-  text-align: left !important;
-  font-weight: 500;
-  color: #333;
-}
-
-.landing-page__comparison-check {
-  color: #075715;
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.landing-page__comparison-cross {
-  color: #999;
-  font-size: 1rem;
-}
-
-.landing-page__comparison-note {
-  margin-top: 30px;
-  padding: 20px;
-  background: #f0f8f1;
-  border-left: 4px solid #075715;
-  border-radius: 8px;
-  text-align: left;
-  font-size: 0.95rem;
-  line-height: 1.6;
-  color: #333;
-}
-
-.landing-page__comparison-note strong {
-  color: #075715;
-}
-
-/* Mobile responsive for comparison */
-@media (max-width: 768px) {
-  .landing-page__comparison-section {
-    padding: 40px 15px;
-  }
-  
-  .landing-page__comparison-table {
-    font-size: 0.9rem;
-  }
-  
-  .landing-page__comparison-table th,
-  .landing-page__comparison-table td {
-    padding: 12px 10px;
-  }
-  
-  .landing-page__comparison-table th:first-child {
-    width: 35%;
-  }
-  
-  .landing-page__comparison-category {
-    font-size: 0.85rem;
-  }
-  
-  .landing-page__comparison-note {
-    font-size: 0.85rem;
-    padding: 15px;
-  }
 }
 
 /* Secure Charting Section */
@@ -1532,48 +890,6 @@ html {
   opacity: 0.6;
 }
 
-/* Call to Action Section */
-.landing-page__cta {
-  position: relative;
-  padding: 50px 20px;
-  background-color: #f8f9fa;
-  overflow: hidden;
-  opacity: 0;
-  animation: fadeIn 0.8s ease-out forwards;
-}
-
-.landing-page__cta-content {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
-  position: relative;
-  z-index: 1;
-}
-
-.landing-page__cta-input {
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 20px;
-}
-
-.landing-page__cta-image {
-  position: absolute;
-  right: 0;
-  bottom: -10px;
-  width: 500px;
-}
-
-.landing-page__cta-circle {
-  position: absolute;
-  left: -100px;
-  top: -100px;
-  width: 200px;
-  height: 200px;
-  background-color: #007bff;
-  border-radius: 50%;
-  opacity: 0.1;
-}
-
 /* FAQ Section */
 .landing-page__faq {
   padding: 70px 20px;
@@ -1696,24 +1012,14 @@ html {
   
   /* Testimonials responsive adjustments for tablet */
   .landing-page__testimonials {
-    margin-top: 40px;
+
     padding: 60px 20px 30px;
   }
 }
 
 
 @media only screen and (max-width: 600px) {
-  /* Hide colored text logo on mobile */
-  .landing-page__textlogo-clr {
-    display: none;
-  }
-  
   .landing-page__features {
-    padding: 20px 20px;
-  }
-
-
-  .landing-page__cta {
     padding: 20px 20px;
   }
 
@@ -1721,9 +1027,6 @@ html {
     padding: 20px 20px;
   }
 
-  .landing-page__footer {
-    padding: 20px 20px;
-  }
   /* Testimonial Carousel for Mobile */
   .landing-page__testimonials {
     padding: 40px 0 50px;
@@ -1925,61 +1228,9 @@ html {
     font-size: 0.95rem;
   }
 
-  .landing-page__mockup-showcase {
-    margin: -75px 0 -30px;
-  }
-  
   /* Adjust scroll padding for section links */
   html {
     scroll-padding-top: 100px; /* Fixed header height + 40px offset */
-  }
-  
-  /* Green header bar for mobile */
-  .landing-page__header {
-    background-color: #075715;
-    padding: 10px 15px;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
-  }
-  
-  .landing-page__header-content {
-    justify-content: flex-start;
-    align-items: center;
-    gap: 20px;
-  }
-  
-  /* Logo display for mobile */
-  .landing-page__desktop-logo {
-    display: none;
-  }
-  
-  .landing-page__mobile-logo {
-    display: block;
-    height: 30px;
-    margin: 0;
-    position: relative;
-  }
-  
-  /* Show hamburger menu on right */
-  .landing-page__mobile-menu-button {
-    display: flex;
-    margin-left: auto;
-  }
-
-  .landing-page__get-started-button,
-  .landing-page__nav {
-    display: none;
-  }
-
-  .landing-page__header {
-    padding: 15px 20px;
-  }
-
-  .landing-page__header-content {
-    justify-content: flex-start;
   }
 
   .landing-page__hero-container {
@@ -2019,63 +1270,10 @@ html {
     z-index: 5; /* Ensure buttons stay above the SVG */
   }
 
-  /* Mobile responsive styles for action buttons */
-  .landing-page__action-buttons {
-    flex-direction: column;
-    gap: 15px;
-    align-items: center;
-  }
-
-  .landing-page__email-input {
-    min-width: 280px;
-    width: 90%;
-    max-width: 350px;
-    font-size: 1rem;
-    padding: 16px 20px;
-  }
-
-  .landing-page__try-free-button {
-    font-size: 0.95rem;
-    padding: 10px 20px;
-    min-height: 44px;
-    max-width: 200px;
-    width: 100%;
-    order: 2; /* This puts the try-free button below the demo button on mobile */
-  }
-
-  .landing-page__demo-button {
-    order: 1; /* This keeps the demo button above the try-free button on mobile */
-  }
-
   .landing-page__feature:nth-child(even) {
     flex-direction: column-reverse;
   }
 
-  .landing-page__action-button {
-    font-size: 1.1rem;
-    padding: 16px 24px;
-    display: block;
-    margin: 10px auto 0;
-    max-width: 260px;
-    line-height: 1.2;
-    content: "Start charting now";
-    box-shadow: 0 4px 10px rgba(7, 87, 21, 0.35);
-    border-radius: 6px;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-  }
-
-  .landing-page__cta-image {
-    display: none;
-  }
-
-  .landing-page__no-payment-text {
-    display: none; /* Hide on mobile */
-    margin-top: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-  
   /* Mobile hero background adjustments */
   .landing-page__hero-background {
     background-position: center bottom;
@@ -2084,47 +1282,22 @@ html {
     top: -35%;
   }
   
-  .landing-page__hero-reflection {
-    height: 120px;
-    bottom: -20px;
-    width: 120%;
-    left: -10%;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(249, 251, 250, 0.9) 50%, #f9fbfa 100%);
-    z-index: 2;
-  }
-  
-  /* Hero SVG mobile adjustments */
-  .landing-page__hero-svg {
-    bottom: 100px;
-    min-width: 800px; /* Ensure it's still large enough on mobile */
-  }
 }
 
 /* Phone screens up to 400px (iPhone SE, iPhone 12/13/14, etc.) */
 @media only screen and (max-width: 400px) {
-  /* Further adjustments for very small screens */
-  .landing-page__hero-svg {
-    bottom: 100px;
-    min-width: 500px; /* Still large enough but slightly smaller */
-  }
-  
-  .landing-page__hero-container::after {
-    top: 160px;
-    background-size: 200%;
-    height: 280px;
-    background-position: top center;
-    opacity: 0;
-    animation: fadeIn 2.2s ease-out 0.4s forwards;
-  }
-  
   /* Reduce hero section height to bring content closer to hero.svg */
   .landing-page__hero-section {
-    height: calc(90vh - 60px);
-    min-height: calc(90vh - 60px);
+    height: 90vh;
+    min-height: 90vh;
   }
   
+  .landing-page__hero-background {
+    background-size: 250% auto;
+  }
+
   .landing-page__main {
-    padding-top: 50px;
+    padding-top: 30px;
   }
   
   .landing-page__title {
@@ -2157,32 +1330,9 @@ html {
     font-size: 0.85rem;
   }
   
-  .landing-page__demo-info {
-    flex-direction: column;
-    gap: 5px;
-    margin-top: 15px;
-  }
-  
-  .landing-page__demo-separator {
-    display: none;
-  }
-  
-  .landing-page__demo-duration,
-  .landing-page__demo-live,
-  .landing-page__demo-instant {
-    font-size: 0.85rem;
-    padding: 4px 12px;
-    width: 180px;
-    text-align: center;
-  }
-  
-  .landing-page__hero-reflection {
-    height: 110px;
-  }
-  
   /* Fix testimonials reflection to match hero proportions on mobile */
   .landing-page__testimonials::before {
-    background-size: 160% auto;
+    background-size: 250% auto;
     background-position: center bottom;
   }
 }

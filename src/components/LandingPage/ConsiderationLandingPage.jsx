@@ -245,13 +245,11 @@ export default function LandingPage(props) {
       <div id="testimonials" className="landing-page__testimonials">
         {/* Trust tags above testimonials */}
         <div className="landing-page__trust-tags">
-          <span className="landing-page__trust-tag">Trusted by busy chiropractic clinics</span>
-          <span className="landing-page__trust-separator">·</span>
           <span className="landing-page__trust-tag">HIPAA-compliant</span>
           <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">Quick setup</span>
+          <span className="landing-page__trust-tag">Quick and simple setup</span>
           <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">No install</span>
+          <span className="landing-page__trust-tag">Works with most EHRs</span>
         </div>
         
         {/* Regular testimonial cards for desktop/tablet */}
