@@ -38,6 +38,7 @@ function IntroTour() {
         const email = userAttributes.email;
         
         // Fetch user's subscription record to check isActivated status
+        // This is the ONLY source of truth for whether to show the tutorial
         const subscriptionData = await client.graphql({
           query: queries.getUserSubscription,
           variables: { owner: userId }
@@ -45,36 +46,39 @@ function IntroTour() {
         
         const subscription = subscriptionData.data.getUserSubscription;
         
+        console.log('[Tutorial] Subscription data:', { 
+          hasSubscription: !!subscription, 
+          isActivated: subscription?.isActivated 
+        });
+        
         // Check if user has already been activated
+        // CRITICAL: Only skip if isActivated is explicitly true
         if (subscription?.isActivated === true) {
           console.log('[Tutorial] User already activated, skipping tutorial');
           return; // Don't show tutorial
         }
         
-        // User is new - fire sign_up GA4 event ONCE
-        if (subscription?.isActivated !== true) {
-          await trackSignUp(email, userId);
-          console.log('[GA4] Sign-up conversion tracked on first tutorial load');
-        }
+        // User is new (isActivated is false, null, or undefined) - fire sign_up GA4 event ONCE
+        await trackSignUp(email, userId);
+        console.log('[GA4] Sign-up conversion tracked on first tutorial load');
         
         // Continue with existing tutorial logic
         startTour();
         
       } catch (error) {
         console.error('[Tutorial] Initialization error:', error);
-        // If there's an error checking subscription, fall back to localStorage
-        const tourShown = localStorage.getItem('hasSeenAppTour');
-        if (!tourShown) {
-          startTour();
-        }
+        // CRITICAL: On error, do NOT show the tutorial
+        // We cannot verify the activation state, so we must assume the user may already be activated
+        // This prevents duplicate tutorials on network errors or new devices with cache issues
+        console.log('[Tutorial] Skipping tutorial due to initialization error - cannot verify activation state');
+        // Do NOT fall back to localStorage - database is the only source of truth
       }
     };
     
     // Function to start the tour (extracted from existing code)
+    // NOTE: This function should ONLY be called after database check confirms user is NOT activated
+    // The localStorage check has been removed - database isActivated is the source of truth
     const startTour = () => {
-      const tourShown = localStorage.getItem('hasSeenAppTour');
-
-    if (!tourShown) {
       // Add custom CSS for better spacing and tour overlay
       const addCustomStyles = () => {
         if (document.getElementById('shepherd-custom-spacing')) return;
@@ -911,7 +915,6 @@ function IntroTour() {
           // Optionally try again or handle the case where the button never appears
         }
       }, 500); // Adjust delay as needed
-    } // End of if (!tourShown) block
     }; // End of startTour function
     
     // Initialize the tutorial (checks database and fires sign_up event if needed)

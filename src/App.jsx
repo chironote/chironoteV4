@@ -117,7 +117,7 @@ const components = {
             value="yes"
             label={
               <>
-                I agree with the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html" target="_blank" rel="noopener noreferrer">Terms, Conditions and Privacy Policy</a>
+                I agree to the <a href="https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html" target="_blank" rel="noopener noreferrer">Terms & Privacy Policy</a>
               </>
             }
             required={true}
@@ -286,6 +286,7 @@ function AuthenticatedApp({ signOut, user }) {
 
   const clipboardTextareaRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
+  const mobileOverlayRef = useRef(null);
 
   const handleTextStreamUpdate = useCallback(async (newText) => {
     // Strip markdown formatting from streamed text before setting to clipboard
@@ -838,6 +839,31 @@ function AuthenticatedApp({ signOut, user }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // iOS touch event blocking for mobile overlay when history panel is open
+  useEffect(() => {
+    const overlay = mobileOverlayRef.current;
+    if (!overlay) return;
+
+    const preventTouchMove = (e) => {
+      // Only block when panel is open (not collapsed)
+      if (!isCollapsed) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Use passive: false to allow preventDefault on iOS
+    overlay.addEventListener('touchstart', preventTouchMove, { passive: false });
+    overlay.addEventListener('touchmove', preventTouchMove, { passive: false });
+    overlay.addEventListener('touchend', preventTouchMove, { passive: false });
+
+    return () => {
+      overlay.removeEventListener('touchstart', preventTouchMove);
+      overlay.removeEventListener('touchmove', preventTouchMove);
+      overlay.removeEventListener('touchend', preventTouchMove);
+    };
+  }, [isCollapsed]);
+
   const removeHighlight = (timestamp) => {
     setNewItems(prevNewItems => {
       const updatedNewItems = new Set(prevNewItems);
@@ -928,7 +954,7 @@ function AuthenticatedApp({ signOut, user }) {
                 </div>
               </div>
             </section>
-            <div className="mobile-toggle-overlay"></div>
+            <div ref={mobileOverlayRef} className="mobile-toggle-overlay" onClick={() => !isCollapsed && setIsCollapsed(true)}></div>
             <div 
               className={`mobile-toggle-button ${showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary ? 'disabled' : ''}`} 
               onClick={(showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary) ? undefined : togglePanel}

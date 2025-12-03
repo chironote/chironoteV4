@@ -349,13 +349,7 @@ export default function LandingPage(props) {
       <div id="how-it-works" className="landing-page__video-section">
         <div className="landing-page__video-container">
           <div className="landing-page__video-content">
-            <div className="landing-page__feature-tag">See it at Work</div>
-            <div className="landing-page__feature-title">
-              Experience the Speed of AI Charting
-            </div>
-            <div className="landing-page__subtitle" style={{maxWidth: '700px', margin: '0 auto 40px'}}>
-              Watch how ChiroNote transforms a real patient encounter into a complete SOAP note in seconds.
-            </div>
+            <div className="landing-page__feature-tag">How do Clinical AI scribes work?</div>
           </div>
           
           <div className="landing-page__video-wrapper">
@@ -410,9 +404,6 @@ export default function LandingPage(props) {
             >
               Try Now for Free
             </a>
-            <p className="landing-page__video-cta-text">
-              See how easy it is? Start creating your own chiropractic SOAP notes in under 60 seconds. No credit card required - get 1 hour free to test it in your clinic.
-            </p>
           </div>
         </div>
       </div>

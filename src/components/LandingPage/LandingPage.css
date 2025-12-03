@@ -60,7 +60,7 @@ html {
 
 /* Video Demo Section */
 .landing-page__video-section {
-  padding: 60px 20px 100px;
+  padding: 40px 20px 80px;
   background: linear-gradient(135deg, #f8f9fa 0%, #e8f5e8 100%);
   text-align: center;
   position: relative;
@@ -87,7 +87,7 @@ html {
 }
 
 .landing-page__video-content {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
   animation: fadeInUp 0.8s ease-out forwards;
 }
 
@@ -1050,6 +1050,14 @@ html {
     margin-left: 3px;
     font-size: 0.8rem;
   }
+  
+  .landing-page__pricing-button {
+    max-width: 100%;
+    width: auto;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
 }
 
 /* Extra small screens */
@@ -1075,6 +1083,11 @@ html {
   .plan-comparison-table td:before {
     font-size: 0.7rem !important;
     margin-bottom: 2px !important;
+  }
+  
+  .landing-page__pricing-button {
+    padding: 10px 16px;
+    font-size: 0.85rem;
   }
 }
 

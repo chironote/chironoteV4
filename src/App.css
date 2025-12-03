@@ -48,6 +48,8 @@
   /* iOS scroll fixes */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  border: 1px solid #b8c5b8;
+  border-radius: 4px;
 }
 
 /* Add styles to fix cut-off content */
@@ -182,6 +184,8 @@
   transition: margin-left 0.3s ease, flex 0.3s;
   height: calc(100vh - 110px);
   overflow-y: hidden;
+  border: 1px solid #b8c5b8;
+  border-radius: 4px;
 }
 
 @media (min-width: 769px) {
@@ -208,6 +212,7 @@
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.1s, flex 0.3s, width 0.3s;
+  border: 1px solid #b8c5b8;
 }
 
 .edit-panel.visible {
@@ -921,10 +926,10 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 0;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: 100vh;
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 999;
     opacity: 0;
@@ -971,12 +976,18 @@
 
   .left-panel:not(.collapsed) ~ .clipboard-container {
     pointer-events: none;
+    /* iOS: Block all touch interactions including scroll */
+    touch-action: none;
+    overflow: hidden;
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
     display: block;
     opacity: 1;
-    width: 15%;
+    width: 100%;
+    /* iOS: Enable touch events on overlay to block underlying content */
+    pointer-events: auto;
+    touch-action: none;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {
@@ -1155,13 +1166,36 @@
   border-radius: 8px;
   padding: 4px;
   position: relative;
-  margin: 8px 0;
+  margin: 20px 0 8px 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   font-weight: 600;
 }
 
-.toggle-option {
+.toggle-option-wrapper {
   flex: 1;
+  position: relative;
+}
+
+.switch-to-label {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #888;
+  font-weight: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-option-wrapper:hover .switch-to-label {
+  opacity: 1;
+}
+
+.toggle-option {
+  width: 100%;
   padding: 8px 12px;
   text-align: center;
   cursor: pointer;
@@ -1182,7 +1216,8 @@
   color: #ffffff;
 }
 
-.toggle-option:hover {
+.toggle-option:not(.active):hover {
+  background-color: var(--pale-green);
   font-weight: 450;
 }
 
@@ -1382,12 +1417,12 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 0;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: 100vh;
     background-color: rgba(128, 128, 128, 0.5);
-    z-index: 99;
+    z-index: 999;
     opacity: 0;
     transition: opacity 0.3s ease, width 0.3s ease;
     pointer-events: none;
@@ -1435,12 +1470,18 @@
 
   .left-panel:not(.collapsed) ~ .clipboard-container {
     pointer-events: none;
+    /* iOS: Block all touch interactions including scroll */
+    touch-action: none;
+    overflow: hidden;
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
     display: block;
     opacity: 1;
-    width: 15%;
+    width: 100%;
+    /* iOS: Enable touch events on overlay to block underlying content */
+    pointer-events: auto;
+    touch-action: none;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {

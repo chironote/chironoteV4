@@ -45,10 +45,15 @@
 
 .blog-list__title {
   font-size: clamp(2.5rem, 5vw, 3.5rem);
-  font-weight: 700;
-  color: #1a1a1a;
+  font-weight: 800;
+  color: #075715;
   margin: 0 0 16px 0;
   line-height: 1.2;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #075715 0%, #0a9a22 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .blog-list__subtitle {
