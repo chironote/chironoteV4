@@ -222,9 +222,9 @@ export default function LandingPage(props) {
               Cut down your charting time by <span className="landing-page__title-highlight">45%</span> today
               </div>
               <div className="landing-page__subtitle">
-              Save time on charting by creating SOAP notes while you talk.
+              ChiroNote saves you time by assisting with SOAP note creation.
               <br />
-              The most simple way to add AI to your clinical practice.
+              Record through your browser, then transfer it to your EHR.
               </div>
             </div>
             <div className="landing-page__action">
@@ -245,11 +245,20 @@ export default function LandingPage(props) {
       <div id="testimonials" className="landing-page__testimonials">
         {/* Trust tags above testimonials */}
         <div className="landing-page__trust-tags">
-          <span className="landing-page__trust-tag">HIPAA-compliant</span>
+          <span className="landing-page__trust-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+            <img
+              src={hipaaLogo}
+              alt="HIPAA Compliant"
+              style={{ width: '20px', height: 'auto' }}
+              loading="lazy"
+              decoding="async"
+            />
+            HIPAA-compliant
+          </span>
           <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">Quick and simple setup</span>
+          <span className="landing-page__trust-tag">Intuitive design</span>
           <span className="landing-page__trust-separator">·</span>
-          <span className="landing-page__trust-tag">Works with most EHRs</span>
+          <span className="landing-page__trust-tag">Works alongside most EHRs</span>
         </div>
         
         {/* Regular testimonial cards for desktop/tablet */}
@@ -410,7 +419,6 @@ export default function LandingPage(props) {
       <div id="features" className="landing-page__features">
         {/* Secure Charting Section */}
         <div id="note-creation" className="landing-page__secure-charting-section">
-          <div className="landing-page__feature-tag">Secure Charting</div>
           
           <div className="landing-page__secure-charting-content">
             <img
@@ -421,19 +429,9 @@ export default function LandingPage(props) {
               decoding="async"
             />
             <div className="landing-page__secure-charting-text">
-              <div className="landing-page__feature-title">
-                On our HIPAA compliant, medical grade platform
-              </div>
-              <div className="landing-page__feature-description">
-                ChiroNote automatically converts your patient conversations into detailed notes by recording and summarizing your clinical encounters.
-              </div>
-              <img
-                src={hipaaLogo}
-                alt="HIPAA Compliant"
-                className="landing-page__hipaa-logo"
-                loading="lazy"
-                decoding="async"
-              />
+              <h3 className="landing_h3">Hit record then have your appointment as usual.</h3>
+              <h3 className="landing_h3">Once done, hit stop and you will see the note generated as a document.</h3>
+              <h3 className="landing_h3">Secure, quick and simple. Just like a tool should be.</h3>
             </div>
           </div>
         </div>

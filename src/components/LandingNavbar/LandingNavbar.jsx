@@ -82,12 +82,6 @@ export default function LandingNavbar({ onNavClick, handleButtonClick, videoLabe
               <>
                 <button 
                   className="landing-navbar__nav-item"
-                  onClick={() => handleNavItemClick('how-it-works')}
-                >
-                  {videoLabel}
-                </button>
-                <button 
-                  className="landing-navbar__nav-item"
                   onClick={() => handleNavItemClick('faq')}
                 >
                   FAQ
@@ -122,7 +116,6 @@ export default function LandingNavbar({ onNavClick, handleButtonClick, videoLabe
             {onNavClick && (
               <>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('testimonials')}>Testimonials</div>
-                <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('how-it-works')}>{videoLabel}</div>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('prices')}>Pricing</div>
                 <div className="landing-navbar__mobile-nav-item" onClick={() => handleNavItemClick('faq')}>FAQ</div>
               </>

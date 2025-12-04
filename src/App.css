@@ -990,6 +990,13 @@
     touch-action: none;
   }
 
+  /* Drag-over visual feedback for mobile drag-drop */
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay.drag-over {
+    background-color: rgba(7, 87, 21, 0.35);
+    border: 3px dashed var(--dark-green);
+    box-sizing: border-box;
+  }
+
   .left-panel.collapsed ~ .mobile-toggle-overlay {
     display: none;
     width: 0;
@@ -1482,6 +1489,13 @@
     /* iOS: Enable touch events on overlay to block underlying content */
     pointer-events: auto;
     touch-action: none;
+  }
+
+  /* Drag-over visual feedback for mobile drag-drop */
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay.drag-over {
+    background-color: rgba(7, 87, 21, 0.35);
+    border: 3px dashed var(--dark-green);
+    box-sizing: border-box;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {

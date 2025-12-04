@@ -279,6 +279,7 @@ function AuthenticatedApp({ signOut, user }) {
   const [isWebSocketConnecting, setIsWebSocketConnecting] = useState(false);
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
   const [showErrorBanner, setShowErrorBanner] = useState(false); // Control ErrorBanner visibility
+  const [isMobileOverlayDragOver, setIsMobileOverlayDragOver] = useState(false); // Mobile drag-drop state
   
   // Dictation specific states
   const [isDictationLoading, setIsDictationLoading] = useState(false);
@@ -872,6 +873,27 @@ function AuthenticatedApp({ signOut, user }) {
     });
   };
 
+  // Mobile drag-drop handlers for mobile-toggle-overlay
+  const handleMobileOverlayDragOver = (e) => {
+    e.preventDefault();
+    setIsMobileOverlayDragOver(true);
+  };
+
+  const handleMobileOverlayDragLeave = (e) => {
+    e.preventDefault();
+    setIsMobileOverlayDragOver(false);
+  };
+
+  const handleMobileOverlayDrop = (e) => {
+    e.preventDefault();
+    setIsMobileOverlayDragOver(false);
+    const droppedText = e.dataTransfer.getData('text/plain');
+    if (droppedText) {
+      setClipboardContent(droppedText);
+      setIsCollapsed(true); // Close the history panel
+    }
+  };
+
   const toggleWeekCollapse = (weekStart) => {
     setCollapsedWeeks(prev => {
       const newSet = new Set(prev);
@@ -954,7 +976,14 @@ function AuthenticatedApp({ signOut, user }) {
                 </div>
               </div>
             </section>
-            <div ref={mobileOverlayRef} className="mobile-toggle-overlay" onClick={() => !isCollapsed && setIsCollapsed(true)}></div>
+            <div 
+              ref={mobileOverlayRef} 
+              className={`mobile-toggle-overlay ${isMobileOverlayDragOver ? 'drag-over' : ''}`}
+              onClick={() => !isCollapsed && setIsCollapsed(true)}
+              onDragOver={handleMobileOverlayDragOver}
+              onDragLeave={handleMobileOverlayDragLeave}
+              onDrop={handleMobileOverlayDrop}
+            ></div>
             <div 
               className={`mobile-toggle-button ${showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary ? 'disabled' : ''}`} 
               onClick={(showRecordingPopup || recordingManager.isRecording || recordingManager.isPreparingTranscript || recordingManager.isGeneratingSummary) ? undefined : togglePanel}
