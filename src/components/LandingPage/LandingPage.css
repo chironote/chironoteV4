@@ -349,7 +349,7 @@ html {
   animation-delay: 0.3s;
 }
 
-.landing_h3:nth-child(3) {
+.landing_h3:nth-child(4) {
   animation-delay: 0.5s;
   margin-bottom: 0; /* Remove bottom margin from last item */
   color: #333; /* Slightly darker for emphasis */
