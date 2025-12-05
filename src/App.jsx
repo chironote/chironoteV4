@@ -32,6 +32,7 @@ import { trackPageView, setUserProperties, trackSignUp, trackBeginCheckout, trac
 import { stripMarkdown } from './utils/markdownStripper';
 import NoSleep from 'nosleep.js';
 import { withAuthenticator, Authenticator, CheckboxField } from '@aws-amplify/ui-react';
+import { Helmet } from 'react-helmet-async';
 import '@aws-amplify/ui-react/styles.css';
 import config from './amplifyconfiguration.json';
 
@@ -958,6 +959,13 @@ function AuthenticatedApp({ signOut, user }) {
 
   return (
     <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
+      <Helmet>
+        <title>ChiroNote | AI-Powered Clinical Documentation</title>
+        <meta name="description" content="Your AI-powered clinical documentation workspace. Create SOAP notes in minutes with voice recording and intelligent transcription." />
+        <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="ChiroNote | Clinical Documentation App" />
+        <meta property="og:description" content="AI-powered clinical documentation workspace for healthcare professionals." />
+      </Helmet>
       <IntroTour />
       <Navbar 
         username={user.username}

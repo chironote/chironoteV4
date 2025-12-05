@@ -430,7 +430,8 @@ export default function LandingPage(props) {
             />
             <div className="landing-page__secure-charting-text">
               <h3 className="landing_h3">Hit record then have your appointment as usual.</h3>
-              <h3 className="landing_h3">Once done, hit stop and you will see the note generated as a document.</h3>
+              <h3 className="landing_h3">Once done, hit stop and you will see the note generated in your 'Clipboard'.</h3>
+              <h3 className="landing_h3">From there transfer to an EHR or your choice.</h3>
               <h3 className="landing_h3">Secure, quick and simple. Just like a tool should be.</h3>
             </div>
           </div>
