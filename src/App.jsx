@@ -20,7 +20,7 @@ import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Clipboard } from '@capacitor/clipboard';
+import { Clipboard as CapacitorClipboard } from '@capacitor/clipboard';
 import * as subscriptions from './graphql/subscriptions';
 import * as queries from './graphql/queries';
 import * as mutations from './graphql/mutations';
@@ -63,7 +63,7 @@ const copyToClipboard = async (text) => {
   try {
     if (Capacitor.isNativePlatform()) {
       // Use Capacitor Clipboard for native platforms (iOS/Android)
-      await Clipboard.write({ string: text });
+      await CapacitorClipboard.write({ string: text });
     } else {
       // Use web clipboard API for browsers
       await navigator.clipboard.writeText(text);

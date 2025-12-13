@@ -13,6 +13,7 @@ const client = generateClient();
 function Account({ setCurrentPage }) {
   const [remainingHours, setRemainingHours] = useState(0);
   const [notesLeft, setNotesLeft] = useState(0);
+  const [tier, setTier] = useState('free');
   const [isQueryLoading, setIsQueryLoading] = useState(true);
 
   useEffect(() => {
@@ -37,9 +38,11 @@ function Account({ setCurrentPage }) {
       });
       const hoursLeft = data.data.getUserSubscription.hoursleft;
       const notesLeftValue = data.data.getUserSubscription.notesleft;
+      const userTier = data.data.getUserSubscription.tier || 'free';
       
       setRemainingHours(hoursLeft || 0);
       setNotesLeft(notesLeftValue || 0);
+      setTier(userTier.toLowerCase());
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     } finally {
@@ -62,27 +65,42 @@ function Account({ setCurrentPage }) {
         <h2>Usage Summary</h2>
         
         <div className="usage-container">
-          <div className="usage-card">
-            <div className="usage-header">
-              <span className="material-symbols-rounded">schedule</span>
-              <h3>Dictation Hours</h3>
+          {/* Dictation Hours - visible on Standard and Pro only */}
+          {(tier === 'standard' || tier === 'professional' || tier === 'pro') && (
+            <div className="usage-card">
+              <div className="usage-header">
+                <span className="material-symbols-rounded">schedule</span>
+                <h3>Dictation Hours</h3>
+              </div>
+              <div className="usage-value">
+                {(tier === 'professional' || tier === 'pro') ? (
+                  <>
+                    <span className="hours-number">∞</span>
+                    <span className="hours-unit">unlimited</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="hours-number">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
+                    <span className="hours-unit">hours remaining</span>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="usage-value">
-              <span className="hours-number">{remainingHours < 0 ? '0' : remainingHours.toFixed(1)}</span>
-              <span className="hours-unit">hours remaining</span>
-            </div>
-          </div>
+          )}
           
-          <div className="usage-card">
-            <div className="usage-header">
-              <span className="material-symbols-rounded">edit_note</span>
-              <h3>Smart Edits</h3>
+          {/* Smart Edits - visible on Free tier only */}
+          {tier === 'free' && (
+            <div className="usage-card">
+              <div className="usage-header">
+                <span className="material-symbols-rounded">edit_note</span>
+                <h3>Smart Edits</h3>
+              </div>
+              <div className="usage-value">
+                <span className="notes-number">{notesLeft < 0 ? '0' : notesLeft}</span>
+                <span className="notes-unit">edits remaining</span>
+              </div>
             </div>
-            <div className="usage-value">
-              <span className="notes-number">{notesLeft < 0 ? '0' : notesLeft}</span>
-              <span className="notes-unit">edits remaining</span>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 

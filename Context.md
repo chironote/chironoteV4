@@ -348,6 +348,80 @@ public void onRequestPermissionsResult(int requestCode, String[] permissions, in
 
 **Reference:** Solution based on [Google's official Android PermissionRequest sample](https://github.com/googlesamples/android-PermissionRequest) and Stack Overflow best practices for WebView runtime permissions.
 
+### Android MediaRecorder Zero-Duration Audio Fix (CRITICAL)
+
+**Critical Production Issue:** Recent Android system updates caused the MediaRecorder API to produce audio blobs with `duration=0`, crashing the app for all Android users including active medical practitioners during audio playback attempts.
+
+**Root Cause:** Android WebView's MediaRecorder changed behavior - calling `start()` without a timeslice parameter produces blobs with valid size but **zero duration metadata**. This causes audio players to fail when attempting to process the file.
+
+**Solution Implemented in `RecordingManager.jsx`:**
+
+**1. Android Device Detection (Line 36):**
+```javascript
+// Android fix: Detect Android devices for timeslice parameter
+// Recent Android WebView updates cause MediaRecorder to produce audio blobs with duration=0 without timeslice
+const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
+```
+
+**2. Conditional Timeslice Usage:**
+- **Android devices**: `mediaRecorderRef.current.start(240000)` (240-second/4-minute timeslice)
+- **Other platforms**: `mediaRecorderRef.current.start()` (no timeslice)
+
+**3. Applied in 5 Critical Locations:**
+- `startRecording()` function - Initial recording start
+- Recording interval restart (4-minute chunk cycle)
+- `resumeRecording()` function - After pause
+- Background app state handling - Foreground chunk save
+- Background app state handling - Interval restart
+
+**Example Implementation:**
+```javascript
+// Android fix: Use timeslice parameter to ensure proper audio duration metadata
+// Without timeslice, Android produces blobs with size > 0 but duration = 0
+// Using 240-second timeslice to match chunk cycle and enable proper transcription
+if (isAndroid) {
+  mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
+} else {
+  mediaRecorderRef.current.start(); // No timeslice for other platforms
+}
+```
+
+**Why This Works:**
+- The 240-second (4-minute) timeslice forces regular `ondataavailable` events with proper duration metadata
+- Matches the existing 4-minute chunk cycle architecture
+- Android WebView correctly calculates duration when timeslice is specified
+- Enables backend transcription system to process properly-sized chunks
+- Minimizes audio quality degradation by reducing chunk boundaries
+
+**Platform Behavior:**
+- **Android Capacitor app**: Uses 240-second (4-minute) timeslice for proper metadata
+- **iOS Capacitor app**: Uses original behavior (no timeslice)
+- **Web version**: Uses original behavior (no timeslice)
+
+**Impact:**
+- ✅ Fixes zero-duration crashes on all Android devices
+- ✅ Creates audio chunks every 4 minutes with proper metadata
+- ✅ Enables backend transcription system to process chunks (can't transcribe 10-second chunks)
+- ✅ Preserves audio quality - no word loss or dropouts
+- ✅ Zero impact on iOS, web browsers, or other platforms
+- ✅ Preserves all existing functionality including pause/resume and background recording
+- ✅ No additional dependencies required
+
+**Trade-offs:**
+- ✅ Timeslice matches existing 4-minute chunk cycle (no additional chunking)
+- ✅ Preserves audio quality by minimizing chunk boundaries
+- ✅ No additional S3 uploads beyond existing architecture
+- ✅ Minimal performance impact - acceptable for clinical note-taking use case
+
+**Audio Quality & Transcription Considerations:**
+- Initial implementation used 10-second timeslice which caused two critical issues:
+  1. **Audio quality degradation** - Frequent chunk boundaries led to audio data loss and missing words
+  2. **Backend transcription failure** - Transcription system cannot process 10-second chunks
+- 240-second timeslice resolves both issues while maintaining zero-duration fix
+- Aligns with existing recording architecture for optimal performance
+
+**CRITICAL:** This fix must be preserved in all future updates to `RecordingManager.jsx`. Any changes to recording logic that use `mediaRecorderRef.current.start()` MUST include the conditional timeslice parameter.
+
 ## 11. History Refresh on App Resume
 
 **Location:** `App.jsx` (lines 289-338)

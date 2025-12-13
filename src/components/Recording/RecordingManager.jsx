@@ -33,6 +33,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const isAppInBackgroundRef = useRef(false); // Track if app is in background
+  // Android fix: Detect Android devices for timeslice parameter
+  // Recent Android WebView updates cause MediaRecorder to produce audio blobs with duration=0 without timeslice
+  // Using 240-second (4-minute) timeslice to match chunk cycle and enable proper transcription
+  const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -83,14 +87,24 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             console.log('[RecordingManager] Saving background recording chunk...');
             mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.start();
+            // Android fix: Apply conditional timeslice (240 seconds)
+            if (isAndroid) {
+              mediaRecorderRef.current.start(240000);
+            } else {
+              mediaRecorderRef.current.start();
+            }
           }
           
           // Restart the chunking interval
           recordingIntervalRef.current = setInterval(() => {
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
               mediaRecorderRef.current.stop();
-              mediaRecorderRef.current.start();
+              // Android fix: Apply conditional timeslice (240 seconds)
+              if (isAndroid) {
+                mediaRecorderRef.current.start(240000);
+              } else {
+                mediaRecorderRef.current.start();
+              }
             }
           }, 240000); // 4 minutes
           
@@ -599,7 +613,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         setIsPaused(false);
         isPausedRef.current = false;
         
-        mediaRecorderRef.current.start();
+        // Android fix: Use timeslice parameter to ensure proper audio duration metadata
+        // Without timeslice, Android produces blobs with size > 0 but duration = 0
+        // Using 240-second timeslice to match chunk cycle and enable proper transcription
+        if (isAndroid) {
+          mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
+        } else {
+          mediaRecorderRef.current.start(); // No timeslice for other platforms
+        }
         
         if (noSleepRef.current) {
           noSleepRef.current.enable();
@@ -608,7 +629,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         recordingIntervalRef.current = setInterval(() => {
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
-            mediaRecorderRef.current.start();
+            // Android fix: Apply same conditional timeslice when restarting (240 seconds)
+            if (isAndroid) {
+              mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
+            } else {
+              mediaRecorderRef.current.start(); // No timeslice for other platforms
+            }
           }
         }, 240000); // 240 seconds
       }
@@ -641,7 +667,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
           mediaRecorderRef.current.stop();
-          mediaRecorderRef.current.start();
+          // Android fix: Apply conditional timeslice when resuming (240 seconds)
+          if (isAndroid) {
+            mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
+          } else {
+            mediaRecorderRef.current.start(); // No timeslice for other platforms
+          }
         }
       }, 240000);
     }
