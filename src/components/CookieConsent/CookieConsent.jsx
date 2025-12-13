@@ -31,10 +31,22 @@ const CookieConsent = () => {
   const initializeGAWithConsent = () => {
     // Reinitialize Google Analytics with cookies enabled
     try {
-      ReactGA.initialize("G-02117DNZDH", {
-        client_storage: 'localStorage', // Enable cookies
-        anonymize_ip: false // Don't anonymize IP
-      });
+      ReactGA.initialize([
+        {
+          trackingId: "G-02117DNZDH",
+          gaOptions: {
+            client_storage: 'localStorage', // Enable cookies
+            anonymize_ip: false // Don't anonymize IP
+          }
+        },
+        {
+          trackingId: "AW-16869907009",
+          gaOptions: {
+            client_storage: 'localStorage', // Enable cookies
+            anonymize_ip: false // Don't anonymize IP
+          }
+        }
+      ]);
       // Send pageview
       ReactGA.send({ hitType: "pageview", page: window.location.pathname });
     } catch (error) {

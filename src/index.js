@@ -16,10 +16,22 @@ const client = generateClient();
 window.addEventListener('load', function() {
   setTimeout(function() {
     try {
-      ReactGA.initialize("G-02117DNZDH", {
-        client_storage: 'none', // Default to cookies disabled
-        anonymize_ip: true // Default to anonymize IP
-      });
+      ReactGA.initialize([
+        {
+          trackingId: "G-02117DNZDH",
+          gaOptions: {
+            client_storage: 'none', // Default to cookies disabled
+            anonymize_ip: true // Default to anonymize IP
+          }
+        },
+        {
+          trackingId: "AW-16869907009",
+          gaOptions: {
+            client_storage: 'localStorage', // Always enable storage for Ads
+            anonymize_ip: false
+          }
+        }
+      ]);
       // Initial pageview will be sent after consent check
     } catch (error) {
       console.error("Error initializing Google Analytics:", error);
