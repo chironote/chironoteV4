@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>ChiroNote</string>
+	<string>ChiroNote</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -20,8 +20,23 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<false/>
+	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ChiroNote needs microphone access to record clinical notes and provide real-time dictation for your documentation.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>ChiroNote uses speech recognition to provide accurate transcription of your clinical notes.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -45,30 +60,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	
-	<!-- Microphone Permission - REQUIRED for recording and dictation -->
-	<key>NSMicrophoneUsageDescription</key>
-	<string>ChiroNote needs microphone access to record clinical notes and provide real-time dictation for your documentation.</string>
-	
-	<!-- Speech Recognition Permission - OPTIONAL but recommended for better iOS dictation -->
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>ChiroNote uses speech recognition to provide accurate transcription of your clinical notes.</string>
-	
-	<!-- App Transport Security - Allow HTTPS connections -->
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsArbitraryLoads</key>
-		<false/>
-	</dict>
-	
-	<!-- Encryption Declaration for App Store -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	
-	<!-- Background Modes - for audio processing -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
 </dict>
 </plist>

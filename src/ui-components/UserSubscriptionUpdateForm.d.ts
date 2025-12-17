@@ -5,7 +5,7 @@
  **************************************************************************/
 
 import * as React from "react";
-import { GridProps, TextFieldProps } from "@aws-amplify/ui-react";
+import { GridProps, SwitchFieldProps, TextFieldProps } from "@aws-amplify/ui-react";
 export declare type EscapeHatchProps = {
     [elementHierarchy: string]: Record<string, unknown>;
 } | null;
@@ -26,12 +26,22 @@ export declare type UserSubscriptionUpdateFormInputValues = {
     tier?: string;
     hoursleft?: number;
     notesleft?: number;
+    hoursSaved?: number;
+    hoursSavedLifetime?: number;
+    isActivated?: boolean;
+    has3Notes?: boolean;
+    has5Notes?: boolean;
 };
 export declare type UserSubscriptionUpdateFormValidationValues = {
     owner?: ValidationFunction<string>;
     tier?: ValidationFunction<string>;
     hoursleft?: ValidationFunction<number>;
     notesleft?: ValidationFunction<number>;
+    hoursSaved?: ValidationFunction<number>;
+    hoursSavedLifetime?: ValidationFunction<number>;
+    isActivated?: ValidationFunction<boolean>;
+    has3Notes?: ValidationFunction<boolean>;
+    has5Notes?: ValidationFunction<boolean>;
 };
 export declare type PrimitiveOverrideProps<T> = Partial<T> & React.DOMAttributes<HTMLDivElement>;
 export declare type UserSubscriptionUpdateFormOverridesProps = {
@@ -40,6 +50,11 @@ export declare type UserSubscriptionUpdateFormOverridesProps = {
     tier?: PrimitiveOverrideProps<TextFieldProps>;
     hoursleft?: PrimitiveOverrideProps<TextFieldProps>;
     notesleft?: PrimitiveOverrideProps<TextFieldProps>;
+    hoursSaved?: PrimitiveOverrideProps<TextFieldProps>;
+    hoursSavedLifetime?: PrimitiveOverrideProps<TextFieldProps>;
+    isActivated?: PrimitiveOverrideProps<SwitchFieldProps>;
+    has3Notes?: PrimitiveOverrideProps<SwitchFieldProps>;
+    has5Notes?: PrimitiveOverrideProps<SwitchFieldProps>;
 } & EscapeHatchProps;
 export declare type UserSubscriptionUpdateFormProps = React.PropsWithChildren<{
     overrides?: UserSubscriptionUpdateFormOverridesProps | undefined | null;
