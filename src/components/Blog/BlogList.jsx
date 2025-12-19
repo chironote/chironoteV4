@@ -10,6 +10,7 @@ import Post1 from './Post 1';
 import Post2 from './Post 2';
 import Post3 from './Post 3';
 import Post4 from './Post 4';
+import Post5 from './Post 5';
 
 // Array of all blog posts - add new posts here
 const BLOG_POSTS = [
@@ -17,6 +18,7 @@ const BLOG_POSTS = [
   Post2,
   Post3,
   Post4,
+  Post5,
   // Add more posts here as you create them:
 ];
 

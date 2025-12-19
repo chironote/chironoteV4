@@ -9,6 +9,7 @@ import Post1 from './Post 1';
 import Post2 from './Post 2';
 import Post3 from './Post 3';
 import Post4 from './Post 4';
+import Post5 from './Post 5';
 
 // Map slugs to post components
 const POST_MAP = {
@@ -16,6 +17,7 @@ const POST_MAP = {
   [Post2.slug]: Post2,
   [Post3.slug]: Post3,
   [Post4.slug]: Post4,
+  [Post5.slug]: Post5,
   // Add more posts here as you create them
 };
 
