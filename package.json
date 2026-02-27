@@ -8,9 +8,6 @@
     "@aws-amplify/cli": "^12.12.6",
     "@aws-amplify/ui-react": "^6.2.0",
     "@aws-sdk/client-sqs": "^3.777.0",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "amplify": "^0.0.11",
     "assemblyai": "^4.19.0",
     "aws-amplify": "^6.13.1",
@@ -29,22 +26,11 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && node defer-css.js",
-    "test": "react-scripts test",
-    "test:coverage": "react-scripts test --coverage --watchAll=false",
-    "test:critical": "react-scripts test --testNamePattern=\"Billing|NoSleep\" --watchAll=false",
-    "test:watch": "react-scripts test --watch",
-    "test:integration": "react-scripts test Integration --watchAll=false",
-    "test:dictation": "react-scripts test Dictation --watchAll=false",
-    "test:recording": "react-scripts test RecordingManager --watchAll=false",
-    "test:settings": "react-scripts test NoteSettings --watchAll=false",
-    "test:edge": "react-scripts test EdgeCases --watchAll=false",
-    "test:all": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ]
   },
   "browserslist": {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
@@ -29,6 +29,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const finalChunkRef = useRef(null); // Reference to store the final chunk
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
+  const isFinalizingRecordingRef = useRef(false);
+  const transcriptFallbackTimeoutRef = useRef(null);
+  const hasStartedStreamingRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const streamRef = useRef(null); // Persist media stream for Safari permission
 
@@ -202,7 +205,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
     // Set up timeout to automatically move on after 80 seconds
     const timeoutId = setTimeout(() => {
-      console.log('Subscription wait timeout (40 seconds) - moving on automatically');
+      console.log('Subscription wait timeout (80 seconds) - moving on automatically');
       // Make sure to unsubscribe before moving on
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
@@ -253,6 +256,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const streamResponse = async () => {
+    if (hasStartedStreamingRef.current) {
+      console.log('streamResponse already started, skipping duplicate trigger');
+      return;
+    }
+
+    hasStartedStreamingRef.current = true;
+    if (transcriptFallbackTimeoutRef.current) {
+      clearTimeout(transcriptFallbackTimeoutRef.current);
+      transcriptFallbackTimeoutRef.current = null;
+    }
+
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
     
@@ -260,7 +274,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     // This prevents old notes from briefly appearing when popup closes
     onTextStreamUpdate('');
     
-    // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
+    // Safety timeout: auto-exit "Generating Note" after 2 minutes if generation stalls
     generateTimeoutRef.current = setTimeout(() => {
       console.warn('Generating Note timeout (2 minutes) - closing spinner and returning to main app');
       setIsGeneratingSummary(false);
@@ -296,16 +310,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         return;
       }
 
+      if (!response.body) {
+        console.error('Streaming response body is unavailable');
+        return;
+      }
+
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
       let chunk;
       let isFirstChunk = true;
       
       // Hide the "Generating Note" window as soon as streaming starts
-      if (generateTimeoutRef.current) {
-        clearTimeout(generateTimeoutRef.current);
-        generateTimeoutRef.current = null;
-      }
       setIsGeneratingSummary(false);
       
       // Close the recording popup so user can see the streaming text
@@ -324,12 +339,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }); 
 
         if (chunk.done) {
+          if (generateTimeoutRef.current) {
+            clearTimeout(generateTimeoutRef.current);
+            generateTimeoutRef.current = null;
+          }
           break;
         } 
       }
     } catch (error) {
       console.error("Streaming error:", error);
     } finally {
+      setIsGeneratingSummary(false);
       setIsPreparingTranscript(false);
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current);
@@ -343,19 +363,27 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
+      isFinalizingRecordingRef.current = true;
       setIsRecording(false);
-      isRecordingRef.current = false;
       setIsPaused(false);
       isPausedRef.current = false;
       mediaRecorderRef.current.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
       }
-      // Don't stop stream tracks - keep alive for Safari permission persistence
-      // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
       setIsPreparingTranscript(true);
       setIsTranscriptCompleted(false);
+
+      if (transcriptFallbackTimeoutRef.current) {
+        clearTimeout(transcriptFallbackTimeoutRef.current);
+      }
+      transcriptFallbackTimeoutRef.current = setTimeout(() => {
+        if (!hasStartedStreamingRef.current) {
+          console.warn('Transcript fallback timeout reached - starting summary generation directly');
+          streamResponse();
+        }
+      }, 80000);
     }
   };
 
@@ -365,8 +393,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     
     // Immediately stop recording and clean up without processing
     if (mediaRecorderRef.current) {
+      isFinalizingRecordingRef.current = true;
       setIsRecording(false);
-      isRecordingRef.current = false;
       setIsPaused(false);
       isPausedRef.current = false;
       
@@ -378,10 +406,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
-      
-      // Don't stop stream tracks - keep alive for Safari permission persistence
-      // mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
     }
     
     // Clear all upload queues and processing flags
@@ -400,10 +424,20 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     pathStampRef.current = null;
     filePathRef.current = null;
     lastUploadedChunkRef.current = 0;
+    hasStartedStreamingRef.current = false;
     
     // Disable NoSleep
     if (noSleepRef.current) {
       noSleepRef.current.disable();
+    }
+
+    if (transcriptFallbackTimeoutRef.current) {
+      clearTimeout(transcriptFallbackTimeoutRef.current);
+      transcriptFallbackTimeoutRef.current = null;
+    }
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current);
+      generateTimeoutRef.current = null;
     }
     
     // Cancel any active subscriptions
@@ -462,7 +496,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           return;
         }
         
-        if (event.data.size > 0 && !isRecordingRef.current) {
+        const isRecorderInactive = event.target?.state === 'inactive';
+        if (event.data.size > 0 && isFinalizingRecordingRef.current && isRecorderInactive) {
           // This is the final chunk when recording stops
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
@@ -482,6 +517,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           queueUpload(event.data, chunkPath);
         }
       };
+
+      mediaRecorderRef.current.onstop = () => {
+        if (isFinalizingRecordingRef.current) {
+          isRecordingRef.current = false;
+          isFinalizingRecordingRef.current = false;
+          mediaRecorderRef.current = null;
+        }
+      };
     } catch (error) {
       console.error('Error accessing microphone', error);
     }
@@ -490,6 +533,16 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const startRecording = async () => {
     // Reset the chunk counter when starting a new recording
     lastUploadedChunkRef.current = 0;
+    isFinalizingRecordingRef.current = false;
+    hasStartedStreamingRef.current = false;
+    if (transcriptFallbackTimeoutRef.current) {
+      clearTimeout(transcriptFallbackTimeoutRef.current);
+      transcriptFallbackTimeoutRef.current = null;
+    }
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current);
+      generateTimeoutRef.current = null;
+    }
     
     // Set the conversation timestamp (identifies the conversation)
     timeStampRef.current = Date.now();
@@ -584,6 +637,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   useEffect(() => {
     return () => {
       stopRecording();
+      if (transcriptFallbackTimeoutRef.current) {
+        clearTimeout(transcriptFallbackTimeoutRef.current);
+        transcriptFallbackTimeoutRef.current = null;
+      }
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
       // Clean up subscription when component unmounts
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
