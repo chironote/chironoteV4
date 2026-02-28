@@ -26,9 +26,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const noSleepRef = useRef(null);
   const subscriptionRef = useRef(null);
   const generateTimeoutRef = useRef(null);
+  const transcriptFallbackTimeoutRef = useRef(null);
+  const streamResponseStartedRef = useRef(false);
   const uploadQueueRef = useRef([]); // Queue for audio uploads
   const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
   const finalChunkRef = useRef(null); // Reference to store the final chunk
+  const chunkStopReasonQueueRef = useRef([]);
+  const stopEventReasonQueueRef = useRef([]);
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
@@ -86,24 +90,26 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           // First, trigger a chunk save for the background recording period
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             console.log('[RecordingManager] Saving background recording chunk...');
-            mediaRecorderRef.current.stop();
-            // Android fix: Apply conditional timeslice (240 seconds)
-            if (isAndroid) {
-              mediaRecorderRef.current.start(240000);
-            } else {
-              mediaRecorderRef.current.start();
+            if (stopRecorderWithReason('chunk')) {
+              // Android fix: Apply conditional timeslice (240 seconds)
+              if (isAndroid) {
+                mediaRecorderRef.current.start(240000);
+              } else {
+                mediaRecorderRef.current.start();
+              }
             }
           }
           
           // Restart the chunking interval
           recordingIntervalRef.current = setInterval(() => {
             if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-              mediaRecorderRef.current.stop();
-              // Android fix: Apply conditional timeslice (240 seconds)
-              if (isAndroid) {
-                mediaRecorderRef.current.start(240000);
-              } else {
-                mediaRecorderRef.current.start();
+              if (stopRecorderWithReason('chunk')) {
+                // Android fix: Apply conditional timeslice (240 seconds)
+                if (isAndroid) {
+                  mediaRecorderRef.current.start(240000);
+                } else {
+                  mediaRecorderRef.current.start();
+                }
               }
             }
           }, 240000); // 4 minutes
@@ -165,6 +171,38 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const queueUpload = (audioBlob, filePath) => {
     uploadQueueRef.current.push({ audioBlob, filePath });
     processUploadQueue();
+  };
+
+  const clearTranscriptFallbackTimeout = () => {
+    if (transcriptFallbackTimeoutRef.current) {
+      clearTimeout(transcriptFallbackTimeoutRef.current);
+      transcriptFallbackTimeoutRef.current = null;
+    }
+  };
+
+  const stopRecorderWithReason = useCallback((reason) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state === "inactive") {
+      return false;
+    }
+
+    // Chunk rotations should only happen when actively recording.
+    if (reason === 'chunk' && recorder.state !== "recording") {
+      return false;
+    }
+
+    chunkStopReasonQueueRef.current.push(reason);
+    stopEventReasonQueueRef.current.push(reason);
+    recorder.stop();
+    return true;
+  }, []);
+
+  const startTranscriptFallbackTimeout = () => {
+    clearTranscriptFallbackTimeout();
+    transcriptFallbackTimeoutRef.current = setTimeout(() => {
+      console.warn('[RecordingManager] Transcript fallback timer reached - starting summary generation');
+      streamResponse();
+    }, 90000);
   };
 
   const uploadS3 = async (audioBlob, filePath) => {
@@ -322,18 +360,34 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const streamResponse = async () => {
+    if (streamResponseStartedRef.current) {
+      return;
+    }
+    streamResponseStartedRef.current = true;
+    clearTranscriptFallbackTimeout();
+
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
-    // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
-    generateTimeoutRef.current = setTimeout(() => {
-      console.warn('Generating Note timeout (4 minutes) - closing spinner and returning to main app');
-      setIsGeneratingSummary(false);
-      setIsPreparingTranscript(false);
-      onTransitionToMainApp();
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
+    const abortController = new AbortController();
+    const resetGenerateWatchdog = (timeoutMs) => {
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
       }
-    }, 240000);
+      generateTimeoutRef.current = setTimeout(() => {
+        console.warn('Generating Note timeout - closing spinner and returning to main app');
+        abortController.abort();
+        setIsGeneratingSummary(false);
+        setIsPreparingTranscript(false);
+        onTransitionToMainApp();
+        if (noSleepRef.current) {
+          noSleepRef.current.disable();
+        }
+      }, timeoutMs);
+    };
+
+    // Initial watchdog for cases where streaming never starts.
+    resetGenerateWatchdog(240000);
+
     try {
       const userId = await getUserId();
       if (!userId) {
@@ -347,6 +401,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         headers: {
           "Content-Type": "application/json",
         },
+        signal: abortController.signal,
         body: JSON.stringify({
           userId: userId,
           timeStamp: timeStampRef.current,
@@ -359,41 +414,57 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         console.error(`HTTP error! status: ${response.status}`);
         return;
       }
+      if (!response.body) {
+        console.error('Streaming error: response body is missing');
+        return;
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder("utf-8");
-      let chunk;
       let isFirstChunk = true;
       
-      // Hide the "Generating Note" window as soon as streaming starts
-      if (generateTimeoutRef.current) {
-        clearTimeout(generateTimeoutRef.current);
-        generateTimeoutRef.current = null;
-      }
-      setIsGeneratingSummary(false);
-      
-      // Close the recording popup so user can see the streaming text
-      onTransitionToMainApp();
-      
       while (true) {
-        chunk = await reader.read();
-        const text = decoder.decode(chunk.value, { stream: !chunk.done });
-        setTextStream((prev) => {
-          const newText = prev + text;
-          onTextStreamUpdate(newText);
-          if (isFirstChunk) {
-            isFirstChunk = false;
-          }
-          return newText;
-        }); 
-
+        const chunk = await reader.read();
         if (chunk.done) {
           break;
-        } 
+        }
+
+        // Once streaming has started, use a shorter stall watchdog.
+        resetGenerateWatchdog(30000);
+
+        if (isFirstChunk) {
+          isFirstChunk = false;
+          setIsGeneratingSummary(false);
+          onTransitionToMainApp();
+        }
+
+        const text = decoder.decode(chunk.value, { stream: true });
+        if (text) {
+          setTextStream((prev) => {
+            const newText = prev + text;
+            onTextStreamUpdate(newText);
+            return newText;
+          });
+        }
+      }
+
+      // Flush any buffered decoder output after completion.
+      const trailingText = decoder.decode();
+      if (trailingText) {
+        setTextStream((prev) => {
+          const newText = prev + trailingText;
+          onTextStreamUpdate(newText);
+          return newText;
+        });
       }
     } catch (error) {
-      console.error("Streaming error:", error);
+      if (error.name === 'AbortError') {
+        console.warn('Streaming aborted due to watchdog timeout');
+      } else {
+        console.error("Streaming error:", error);
+      }
     } finally {
+      setIsGeneratingSummary(false);
       setIsPreparingTranscript(false);
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current);
@@ -405,20 +476,27 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }
   };
 
-  const stopRecording = () => {
+  const stopRecording = (options = {}) => {
+    const { startFallback = true } = options;
     if (mediaRecorderRef.current) {
+      const recorder = mediaRecorderRef.current;
       setIsRecording(false);
-      isRecordingRef.current = false;
       setIsPaused(false);
       isPausedRef.current = false;
-      mediaRecorderRef.current.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
       }
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
+      if (!stopRecorderWithReason('final')) {
+        isRecordingRef.current = false;
+        recorder.stream.getTracks().forEach(track => track.stop());
+        mediaRecorderRef.current = null;
+      }
       setIsPreparingTranscript(true);
       setIsTranscriptCompleted(false);
+      if (startFallback) {
+        startTranscriptFallbackTimeout();
+      }
     }
   };
 
@@ -434,7 +512,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       isPausedRef.current = false;
       
       // Stop the media recorder
-      mediaRecorderRef.current.stop();
+      stopRecorderWithReason('discard');
       
       // Clear the recording interval
       if (recordingIntervalRef.current) {
@@ -451,6 +529,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     uploadQueueRef.current = [];
     isProcessingUploadsRef.current = false;
     finalChunkRef.current = null;
+    chunkStopReasonQueueRef.current = [];
+    stopEventReasonQueueRef.current = [];
+    streamResponseStartedRef.current = false;
+    clearTranscriptFallbackTimeout();
+    if (generateTimeoutRef.current) {
+      clearTimeout(generateTimeoutRef.current);
+      generateTimeoutRef.current = null;
+    }
     
     // Reset all states immediately
     setIsPreparingTranscript(false);
@@ -552,25 +638,30 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         if (isDiscardingRef.current) {
           return;
         }
-        
-        if (event.data.size > 0 && !isRecordingRef.current) {
-          // This is the final chunk when recording stops
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const finalPath = `protected/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Queue the final chunk instead of uploading directly
-          queueUpload(event.data, finalPath);
-        } else if (event.data.size > 0) {
-          // This is an intermediate chunk during recording
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const chunkPath = `protected/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Queue the chunk instead of uploading directly
-          queueUpload(event.data, chunkPath);
+        if (event.data.size <= 0) {
+          return;
+        }
+
+        const stopReason = chunkStopReasonQueueRef.current.shift() || 'chunk';
+        const userId = await getUserId();
+        const timestamp = timeStampRef.current; // Conversation identifier
+        const pathstamp = pathStampRef.current; // Unique path identifier
+        const isFinalChunk = stopReason === 'final';
+        const chunkType = isFinalChunk ? 'final' : 'chunk';
+        const filePath = `protected/${userId}/${timestamp}_recording_${chunkType}_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+
+        // Queue the chunk instead of uploading directly
+        queueUpload(event.data, filePath);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const stopReason = stopEventReasonQueueRef.current.shift() || 'chunk';
+        if (stopReason === 'final' || stopReason === 'discard') {
+          isRecordingRef.current = false;
+          if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            mediaRecorderRef.current = null;
+          }
         }
       };
     } catch (error) {
@@ -599,6 +690,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     try {
       // Reset the chunk counter when starting a new recording
       lastUploadedChunkRef.current = 0;
+      streamResponseStartedRef.current = false;
+      clearTranscriptFallbackTimeout();
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
+      chunkStopReasonQueueRef.current = [];
+      stopEventReasonQueueRef.current = [];
       
       // Set the conversation timestamp (identifies the conversation)
       timeStampRef.current = Date.now();
@@ -626,9 +725,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           noSleepRef.current.enable();
         }
 
-        recordingIntervalRef.current = setInterval(() => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.stop();
+      recordingIntervalRef.current = setInterval(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          if (stopRecorderWithReason('chunk')) {
             // Android fix: Apply same conditional timeslice when restarting (240 seconds)
             if (isAndroid) {
               mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
@@ -636,7 +735,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
               mediaRecorderRef.current.start(); // No timeslice for other platforms
             }
           }
-        }, 240000); // 240 seconds
+        }
+      }, 240000); // 240 seconds
       }
     } catch (error) {
       // Error already handled in setupRecorder with user-friendly message
@@ -666,12 +766,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          // Android fix: Apply conditional timeslice when resuming (240 seconds)
-          if (isAndroid) {
-            mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
-          } else {
-            mediaRecorderRef.current.start(); // No timeslice for other platforms
+          if (stopRecorderWithReason('chunk')) {
+            // Android fix: Apply conditional timeslice when resuming (240 seconds)
+            if (isAndroid) {
+              mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
+            } else {
+              mediaRecorderRef.current.start(); // No timeslice for other platforms
+            }
           }
         }
       }, 240000);
@@ -698,7 +799,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   useEffect(() => {
     return () => {
-      stopRecording();
+      stopRecording({ startFallback: false });
+      clearTranscriptFallbackTimeout();
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
       // Clean up subscription when component unmounts
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
