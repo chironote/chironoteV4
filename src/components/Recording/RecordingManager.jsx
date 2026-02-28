@@ -7,6 +7,59 @@ import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from '../../graphql/subscriptions';
 
 const client = generateClient();
+const NOTE_GENERATION_RETRY_MESSAGE = 'Your note could not be generated, the system will retry in 5 min. Sorry for the inconvenience';
+const TRANSCRIPT_WAIT_TIMEOUT_MS = 30000;
+const NOTE_GENERATION_TIMEOUT_MS = 120000;
+const NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS = 45000;
+const NOTE_GENERATION_STREAM_ERROR_SENTINEL = '\u0000ERROR:';
+
+const parseLambdaErrorPayload = (payload) => {
+  if (typeof payload !== 'string') {
+    return null;
+  }
+
+  const sentinelIndex = payload.indexOf(NOTE_GENERATION_STREAM_ERROR_SENTINEL);
+  if (sentinelIndex >= 0) {
+    const sentinelPayload = payload
+      .slice(sentinelIndex + NOTE_GENERATION_STREAM_ERROR_SENTINEL.length)
+      .trim();
+    if (!sentinelPayload) {
+      return { message: 'Unknown note generation error' };
+    }
+    try {
+      const parsedSentinelPayload = JSON.parse(sentinelPayload);
+      if (parsedSentinelPayload && typeof parsedSentinelPayload === 'object') {
+        return parsedSentinelPayload;
+      }
+      return { message: sentinelPayload };
+    } catch (error) {
+      return { message: sentinelPayload };
+    }
+  }
+
+  const trimmedPayload = payload.trim();
+  if (!trimmedPayload.startsWith('{') || !trimmedPayload.endsWith('}')) {
+    return null;
+  }
+  try {
+    const parsedPayload = JSON.parse(trimmedPayload);
+    if (
+      parsedPayload &&
+      typeof parsedPayload === 'object' &&
+      (
+        typeof parsedPayload.errorType === 'string' ||
+        typeof parsedPayload.errorMessage === 'string' ||
+        typeof parsedPayload.message === 'string'
+      )
+    ) {
+      return parsedPayload;
+    }
+  } catch (error) {
+    return null;
+  }
+
+  return null;
+};
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -32,6 +85,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isFinalizingRecordingRef = useRef(false);
   const transcriptFallbackTimeoutRef = useRef(null);
   const hasStartedStreamingRef = useRef(false);
+  const hasHandledNoteGenerationFailureRef = useRef(false);
+  const generateAbortControllerRef = useRef(null);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const streamRef = useRef(null); // Persist media stream for Safari permission
 
@@ -203,17 +258,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       subscriptionRef.current.unsubscribe();
     }
 
-    // Set up timeout to automatically move on after 80 seconds
+    // Set up timeout to automatically move on after the transcript wait window
     const timeoutId = setTimeout(() => {
-      console.log('Subscription wait timeout (80 seconds) - moving on automatically');
+      console.log(`Subscription wait timeout (${TRANSCRIPT_WAIT_TIMEOUT_MS / 1000} seconds) - moving on automatically`);
       // Make sure to unsubscribe before moving on
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
       setIsTranscriptCompleted(true);
-      streamResponse();
-    }, 80000); // 80 seconds
+      streamResponse({ fromTranscriptFallback: true });
+    }, TRANSCRIPT_WAIT_TIMEOUT_MS);
 
     // Set up new subscription
     subscriptionRef.current = client.graphql({
@@ -228,6 +283,19 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
           console.log('Found matching note:', updatedNote);
           
+          const transcriptError = parseLambdaErrorPayload(updatedNote.transcript || '');
+          if (transcriptError) {
+            console.warn('Transcript update contains backend error payload, moving on to note generation fallback path');
+            clearTimeout(timeoutId);
+            setIsTranscriptCompleted(true);
+            if (subscriptionRef.current) {
+              subscriptionRef.current.unsubscribe();
+              subscriptionRef.current = null;
+            }
+            streamResponse({ fromTranscriptFallback: true });
+            return;
+          }
+
           // Check if the note processing is completed
           if (updatedNote.isCompleted === true) {
             console.log('Transcript processing completed!');
@@ -250,18 +318,44 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         clearTimeout(timeoutId);
         // If there's an error with subscription, proceed anyway to avoid blocking
         setIsTranscriptCompleted(true);
-        streamResponse();
+        streamResponse({ fromTranscriptFallback: true });
       }
     });
   };
 
-  const streamResponse = async () => {
+  const streamResponse = async ({ fromTranscriptFallback = false } = {}) => {
     if (hasStartedStreamingRef.current) {
       console.log('streamResponse already started, skipping duplicate trigger');
       return;
     }
 
+    const handleNoteGenerationFailure = (reason, error = null) => {
+      if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
+        return;
+      }
+
+      hasHandledNoteGenerationFailureRef.current = true;
+      console.error(`Note generation failed: ${reason}`, error);
+      if (generateAbortControllerRef.current) {
+        generateAbortControllerRef.current.abort();
+        generateAbortControllerRef.current = null;
+      }
+      setTextStream(NOTE_GENERATION_RETRY_MESSAGE);
+      onTextStreamUpdate(NOTE_GENERATION_RETRY_MESSAGE);
+      setIsGeneratingSummary(false);
+      setIsPreparingTranscript(false);
+      onTransitionToMainApp();
+      if (generateTimeoutRef.current) {
+        clearTimeout(generateTimeoutRef.current);
+        generateTimeoutRef.current = null;
+      }
+      if (noSleepRef.current) {
+        noSleepRef.current.disable();
+      }
+    };
+
     hasStartedStreamingRef.current = true;
+    hasHandledNoteGenerationFailureRef.current = false;
     if (transcriptFallbackTimeoutRef.current) {
       clearTimeout(transcriptFallbackTimeoutRef.current);
       transcriptFallbackTimeoutRef.current = null;
@@ -273,21 +367,26 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     // Clear any existing clipboard content before streaming new note
     // This prevents old notes from briefly appearing when popup closes
     onTextStreamUpdate('');
+
+    if (generateAbortControllerRef.current) {
+      generateAbortControllerRef.current.abort();
+    }
+    const abortController = new AbortController();
+    generateAbortControllerRef.current = abortController;
+
+    const generationTimeoutMs = fromTranscriptFallback
+      ? NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS
+      : NOTE_GENERATION_TIMEOUT_MS;
     
     // Safety timeout: auto-exit "Generating Note" after 2 minutes if generation stalls
     generateTimeoutRef.current = setTimeout(() => {
-      console.warn('Generating Note timeout (2 minutes) - closing spinner and returning to main app');
-      setIsGeneratingSummary(false);
-      setIsPreparingTranscript(false);
-      onTransitionToMainApp();
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
-    }, 120000);
+      console.warn(`Generating Note timeout (${generationTimeoutMs / 1000} seconds) - closing spinner and returning to main app`);
+      handleNoteGenerationFailure('timeout');
+    }, generationTimeoutMs);
     try {
       const userId = await getUserId();
       if (!userId) {
-        console.error('User not authenticated');
+        handleNoteGenerationFailure('user_not_authenticated');
         return;
       }
       const accessToken = await generateToken();
@@ -303,15 +402,26 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           accessToken: accessToken,
           noteSettings: localStorage.getItem('noteSettings'),
         }),
+        signal: abortController.signal,
       });
       
       if (!response.ok) {
-        console.error(`HTTP error! status: ${response.status}`);
+        handleNoteGenerationFailure(`http_${response.status}`);
         return;
       }
 
+      const contentType = (response.headers.get('content-type') || '').toLowerCase();
+      if (contentType.includes('application/json')) {
+        const responseBody = await response.text();
+        const lambdaError = parseLambdaErrorPayload(responseBody);
+        if (lambdaError) {
+          handleNoteGenerationFailure('lambda_json_error_response', lambdaError);
+          return;
+        }
+      }
+
       if (!response.body) {
-        console.error('Streaming response body is unavailable');
+        handleNoteGenerationFailure('missing_stream_body');
         return;
       }
 
@@ -319,6 +429,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       const decoder = new TextDecoder("utf-8");
       let chunk;
       let isFirstChunk = true;
+      let streamControlBuffer = '';
       
       // Hide the "Generating Note" window as soon as streaming starts
       setIsGeneratingSummary(false);
@@ -327,8 +438,45 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       onTransitionToMainApp();
       
       while (true) {
+        if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
+          try {
+            await reader.cancel();
+          } catch (cancelError) {
+            console.warn('Error cancelling note generation stream reader:', cancelError);
+          }
+          break;
+        }
+
         chunk = await reader.read();
+        if (chunk.done) {
+          if (generateTimeoutRef.current) {
+            clearTimeout(generateTimeoutRef.current);
+            generateTimeoutRef.current = null;
+          }
+          break;
+        }
+
         const text = decoder.decode(chunk.value, { stream: !chunk.done });
+        const chunkForErrorDetection = streamControlBuffer + text;
+        const lambdaChunkError = parseLambdaErrorPayload(chunkForErrorDetection);
+        if (lambdaChunkError) {
+          handleNoteGenerationFailure('lambda_stream_chunk_error', lambdaChunkError);
+          try {
+            await reader.cancel();
+          } catch (cancelError) {
+            console.warn('Error cancelling note generation stream reader after chunk error:', cancelError);
+          }
+          break;
+        }
+
+        // Keep a small tail so sentinel-based errors split across chunks are still detected.
+        const sentinelTailLength = NOTE_GENERATION_STREAM_ERROR_SENTINEL.length - 1;
+        streamControlBuffer = chunkForErrorDetection.slice(-sentinelTailLength);
+
+        if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
+          break;
+        }
+
         setTextStream((prev) => {
           const newText = prev + text;
           onTextStreamUpdate(newText);
@@ -337,23 +485,20 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           }
           return newText;
         }); 
-
-        if (chunk.done) {
-          if (generateTimeoutRef.current) {
-            clearTimeout(generateTimeoutRef.current);
-            generateTimeoutRef.current = null;
-          }
-          break;
-        } 
       }
     } catch (error) {
-      console.error("Streaming error:", error);
+      if (error?.name !== 'AbortError') {
+        handleNoteGenerationFailure('streaming_exception', error);
+      }
     } finally {
       setIsGeneratingSummary(false);
       setIsPreparingTranscript(false);
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current);
         generateTimeoutRef.current = null;
+      }
+      if (generateAbortControllerRef.current === abortController) {
+        generateAbortControllerRef.current = null;
       }
       if (noSleepRef.current) {
         noSleepRef.current.disable();
@@ -381,9 +526,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       transcriptFallbackTimeoutRef.current = setTimeout(() => {
         if (!hasStartedStreamingRef.current) {
           console.warn('Transcript fallback timeout reached - starting summary generation directly');
-          streamResponse();
+          streamResponse({ fromTranscriptFallback: true });
         }
-      }, 80000);
+      }, TRANSCRIPT_WAIT_TIMEOUT_MS);
     }
   };
 
@@ -425,6 +570,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     filePathRef.current = null;
     lastUploadedChunkRef.current = 0;
     hasStartedStreamingRef.current = false;
+    hasHandledNoteGenerationFailureRef.current = false;
     
     // Disable NoSleep
     if (noSleepRef.current) {
@@ -438,6 +584,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     if (generateTimeoutRef.current) {
       clearTimeout(generateTimeoutRef.current);
       generateTimeoutRef.current = null;
+    }
+    if (generateAbortControllerRef.current) {
+      generateAbortControllerRef.current.abort();
+      generateAbortControllerRef.current = null;
     }
     
     // Cancel any active subscriptions
@@ -535,6 +685,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     lastUploadedChunkRef.current = 0;
     isFinalizingRecordingRef.current = false;
     hasStartedStreamingRef.current = false;
+    hasHandledNoteGenerationFailureRef.current = false;
     if (transcriptFallbackTimeoutRef.current) {
       clearTimeout(transcriptFallbackTimeoutRef.current);
       transcriptFallbackTimeoutRef.current = null;
@@ -542,6 +693,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     if (generateTimeoutRef.current) {
       clearTimeout(generateTimeoutRef.current);
       generateTimeoutRef.current = null;
+    }
+    if (generateAbortControllerRef.current) {
+      generateAbortControllerRef.current.abort();
+      generateAbortControllerRef.current = null;
     }
     
     // Set the conversation timestamp (identifies the conversation)
@@ -644,6 +799,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       if (generateTimeoutRef.current) {
         clearTimeout(generateTimeoutRef.current);
         generateTimeoutRef.current = null;
+      }
+      if (generateAbortControllerRef.current) {
+        generateAbortControllerRef.current.abort();
+        generateAbortControllerRef.current = null;
       }
       // Clean up subscription when component unmounts
       if (subscriptionRef.current) {
