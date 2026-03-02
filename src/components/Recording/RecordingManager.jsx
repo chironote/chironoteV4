@@ -92,6 +92,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   // Android device detection for audio duration fix
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
+  // Safari detection - keep stream alive on Safari to preserve mic permission
+  const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)).current;
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -513,6 +515,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       setIsPaused(false);
       isPausedRef.current = false;
       mediaRecorderRef.current.stop();
+      // Release the microphone on non-Safari browsers to turn off mic indicator
+      // Safari keeps the stream alive to avoid re-prompting for permission
+      if (!isSafari && streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
@@ -545,6 +553,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       
       // Stop the media recorder
       mediaRecorderRef.current.stop();
+      // Release the microphone on non-Safari browsers to turn off mic indicator
+      if (!isSafari && streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       
       // Clear the recording interval
       if (recordingIntervalRef.current) {

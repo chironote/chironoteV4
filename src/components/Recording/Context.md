@@ -33,18 +33,21 @@ The hook returns the following functions to manipulate the recording state:
 
 To function correctly, the hook relies on several external libraries and browser APIs. When testing, **these must be mocked** to isolate the hook's logic.
 
--   **`recordrtc`**: The core library used to capture and process audio from the microphone.
+-   **`MediaRecorder` (native browser API)**: Used to capture and process audio from the microphone. No third-party recording library is used.
 -   **`nosleep.js`**: A utility to prevent the device's screen from turning off during an active recording, which is critical for long sessions.
 -   **`navigator.mediaDevices.getUserMedia`**: The standard browser API for requesting microphone permissions and accessing the audio stream.
+-   **`@aws-sdk/client-sqs`**: Used to send messages to the SQS queue after uploading audio chunks.
+-   **`aws-amplify/storage`**: Used for uploading audio blobs to S3.
+-   **`aws-amplify/api`**: Used for GraphQL subscriptions to monitor transcript completion.
 
 ## 4. Testing Strategy
 
 Testing this hook requires a specific approach due to its nature as a headless component and its external dependencies.
 
 1.  **Use `renderHook`**: The hook should be tested in isolation using the `renderHook` utility from `@testing-library/react`.
-2.  **Mock All Dependencies**: Use `jest.mock()` to create mock implementations for `recordrtc`, `nosleep.js`, and `navigator.mediaDevices`. This allows you to control their behavior and assert that they are called correctly.
+2.  **Mock All Dependencies**: Use `jest.mock()` to create mock implementations for `MediaRecorder`, `nosleep.js`, and `navigator.mediaDevices`. This allows you to control their behavior and assert that they are called correctly.
 3.  **Test State Transitions**: For each control function (e.g., `startRecording`), use `act()` to wrap the function call and then assert that the hook's state variables (`isRecording`, `isPaused`, etc.) have been updated as expected.
-4.  **Verify Side Effects**: Assert that the methods on your mocked dependencies are called. For example, after calling `startRecording`, check that `RecordRTC.startRecording` and `NoSleep.enable` were called.
+4.  **Verify Side Effects**: Assert that the methods on your mocked dependencies are called. For example, after calling `startRecording`, check that `MediaRecorder.start` and `NoSleep.enable` were called.
 
 This document provides a detailed explanation of the recording feature in the application, which is primarily controlled by the components within `src/components/Recording/`. The core logic resides in `RecordingManager.jsx`, which operates as a headless component, while `Recording.jsx` provides the user interface.
 
@@ -75,7 +78,7 @@ The component's behavior is driven by several key state variables:
 
 The process follows a specific sequence of events:
 
-1.  **Initialization (`setupRecorder`)**: When a recording is initiated, this function requests microphone access using `navigator.mediaDevices.getUserMedia`. It creates a `MediaRecorder` instance to handle audio capture.
+1.  **Initialization (`setupRecorder`)**: When a recording is initiated, this function requests microphone access using `navigator.mediaDevices.getUserMedia`. It creates a `MediaRecorder` instance to handle audio capture. The media stream is cached in `streamRef` so it can be reused on Safari (see Platform-Specific Behavior below).
 
 2.  **Starting (`startRecording`)**: 
     -   Sets `isRecording` to `true`.
@@ -96,11 +99,13 @@ The process follows a specific sequence of events:
 5.  **Stopping (`stopRecording`)**:
     -   When the user clicks "Stop", this function is called.
     -   It stops the `mediaRecorder`, which triggers one final `ondataavailable` event for the remaining audio.
+    -   **Microphone release**: On non-Safari browsers, the media stream tracks are immediately stopped and `streamRef` is set to `null`. This turns off the browser's mic indicator. On Safari, the stream is kept alive to avoid re-prompting for microphone permission on the next recording.
     -   The state is updated to `setIsPreparingTranscript(true)`, changing the UI to a loading state.
     -   Crucially, it ensures the final audio chunk is marked with `_final_` in its filename, signaling to the backend that the recording session is complete.
 
 6.  **Discarding (`discardRecording`)**:
     -   If the user cancels, this function immediately stops the recorder, clears the `uploadQueueRef`, and resets all state variables. It sets a flag `isDiscardingRef.current` to prevent any in-flight processing from continuing. It also disables `NoSleep.js` and unsubscribes from any active GraphQL subscriptions.
+    -   **Microphone release**: Same conditional behavior as `stopRecording` — non-Safari browsers release the mic immediately, Safari keeps the stream alive.
 
 ### Backend Processing & Note Generation
 
@@ -122,23 +127,24 @@ After the final audio chunk is uploaded, the frontend waits for the backend to c
 
 There are two safety timeouts to prevent the UI from hanging:
 
-1.  **Transcript Wait Fallback (80s)**
+1.  **Transcript Wait Fallback (30s)**
     -   Implemented in `subscribeToNoteCompletion(userId, timestamp)`.
-    -   If the AppSync subscription does not receive a matching `isCompleted: true` update within 80 seconds, the client:
+    -   If the AppSync subscription does not receive a matching `isCompleted: true` update within 30 seconds (`TRANSCRIPT_WAIT_TIMEOUT_MS`), the client:
         -   Unsubscribes from the subscription
         -   Sets an internal flag to proceed
         -   Calls `streamResponse()` to begin note generation
     -   Logging: Console logs indicate the fallback was triggered.
 
-2.  **Generating Note Safety Timeout (4 minutes)**
+2.  **Generating Note Safety Timeout (2 minutes / 45 seconds)**
     -   Implemented in `streamResponse()`.
+    -   Duration depends on how `streamResponse` was triggered: **2 minutes** (`NOTE_GENERATION_TIMEOUT_MS`) for normal flow, **45 seconds** (`NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS`) if triggered via the transcript fallback path.
     -   Purpose: Ensure the "Generating Note" spinner cannot hang indefinitely if the streaming endpoint is slow or fails before the first chunk arrives.
-    -   Behavior if no stream chunk arrives within 4 minutes:
+    -   Behavior if no stream chunk arrives within the timeout:
         -   Hides the "Generating Note" state (`isGeneratingSummary = false`)
         -   Ensures `isPreparingTranscript = false`
         -   Invokes the parent callback `onTransitionToMainApp()` so the user returns to the main screen
         -   Disables `NoSleep` as part of cleanup
-    -   When the first stream chunk arrives, this 4-minute timer is cleared immediately to avoid interfering with normal flow.
+    -   When the stream completes successfully, the timer is cleared.
 
 Parent contract and parameters:
 
@@ -165,3 +171,32 @@ Parent contract and parameters:
     -   If `isPreparingTranscript` or `isGeneratingSummary`, it shows a loading spinner with the corresponding message.
 
 -   **Settings Persistence**: The language and note layout settings chosen by the user are saved to `localStorage` using `useEffect` hooks, so they persist across sessions.
+
+---
+
+## Platform-Specific Behavior
+
+The component includes platform detection refs that adjust behavior for specific browsers and devices.
+
+### Android Audio Duration Fix
+
+-   **Detection**: `const isAndroid = useRef(/android/i.test(navigator.userAgent)).current`
+-   **Problem**: Recent Android system updates cause `MediaRecorder` to produce audio blobs with `duration = 0` when `start()` is called without a timeslice parameter.
+-   **Fix**: On Android, `MediaRecorder.start(240000)` is called with a 240-second (4-minute) timeslice. Other platforms use `start()` with no timeslice.
+-   **Applied in**: `startRecording()`, the `onstop` handler (interval-triggered restart), and `resumeRecording()`.
+
+### Safari Microphone Permission Persistence
+
+-   **Detection**: `const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)).current`
+-   **Problem**: Safari requires the user to re-grant microphone permission each time `getUserMedia()` is called on a new stream. Stopping the media stream tracks between recordings means the user gets a permission prompt every time they start a new recording.
+-   **Fix**: On Safari, the media stream (`streamRef.current`) is **kept alive** after recording stops. The next recording reuses the existing stream instead of requesting a new one. On all other browsers (Chrome, Firefox, Edge), the stream tracks are stopped immediately in `stopRecording()` and `discardRecording()` to turn off the browser's microphone indicator.
+-   **Final cleanup**: On component unmount (user logs out or navigates away), the stream is stopped on **all** browsers, including Safari, as a safety net.
+
+### Microphone Lifecycle Summary
+
+| Event | Non-Safari | Safari |
+|---|---|---|
+| `startRecording()` | New stream via `getUserMedia()` | Reuses existing `streamRef` if active, otherwise new stream |
+| `stopRecording()` | Tracks stopped, `streamRef = null` | Stream kept alive |
+| `discardRecording()` | Tracks stopped, `streamRef = null` | Stream kept alive |
+| Component unmount | Tracks stopped | Tracks stopped |
