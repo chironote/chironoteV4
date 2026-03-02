@@ -641,13 +641,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
   
+      // Minimum blob size to filter out header-only blobs that contain no audio frames.
+      // A WebM container header alone is ~200-500 bytes; real audio chunks are much larger.
+      const MIN_AUDIO_BLOB_SIZE = 1000;
+
       mediaRecorderRef.current.ondataavailable = async (event) => {
         if (isDiscardingRef.current) {
           return;
         }
         
         const isRecorderInactive = event.target?.state === 'inactive';
-        if (event.data.size > 0 && isFinalizingRecordingRef.current && isRecorderInactive) {
+        if (event.data.size >= MIN_AUDIO_BLOB_SIZE && isFinalizingRecordingRef.current && isRecorderInactive) {
           // This is the final chunk when recording stops
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
@@ -656,7 +660,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           
           // Queue the final chunk instead of uploading directly
           queueUpload(event.data, finalPath);
-        } else if (event.data.size > 0) {
+        } else if (event.data.size >= MIN_AUDIO_BLOB_SIZE) {
           // This is an intermediate chunk during recording
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
@@ -665,14 +669,33 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           
           // Queue the chunk instead of uploading directly
           queueUpload(event.data, chunkPath);
+        } else if (event.data.size > 0) {
+          console.warn(`[RecordingManager] Skipping small audio blob (${event.data.size} bytes) - likely header-only, no audio frames`);
         }
       };
 
       mediaRecorderRef.current.onstop = () => {
         if (isFinalizingRecordingRef.current) {
+          // Final stop (user pressed Stop Recording) — clean up
           isRecordingRef.current = false;
           isFinalizingRecordingRef.current = false;
           mediaRecorderRef.current = null;
+        } else if (
+          isRecordingRef.current &&
+          mediaRecorderRef.current &&
+          mediaRecorderRef.current.state === 'inactive' &&
+          !isPausedRef.current &&
+          !isDiscardingRef.current
+        ) {
+          // Interval-triggered stop completed — safe to restart recording now.
+          // This avoids the race condition of calling .start() immediately after .stop()
+          // in the setInterval callback, which could produce header-only blobs.
+          // Guards: check recorder is truly inactive, not finalizing, not paused, not discarding.
+          if (isAndroid) {
+            mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
+          } else {
+            mediaRecorderRef.current.start(); // No timeslice for other platforms
+          }
         }
       };
     } catch (error) {
@@ -728,13 +751,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          // Only stop here — the onstop handler will call .start() once the recorder
+          // has fully flushed its data, preventing header-only blob race conditions.
           mediaRecorderRef.current.stop();
-          // CRITICAL ANDROID FIX: Apply timeslice on restart for Android
-          if (isAndroid) {
-            mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
-          } else {
-            mediaRecorderRef.current.start(); // No timeslice for other platforms
-          }
         }
       }, 240000); // 240 seconds
     }
@@ -759,13 +778,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       recordingIntervalRef.current = setInterval(() => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          // Only stop here — the onstop handler will call .start() once the recorder
+          // has fully flushed its data, preventing header-only blob race conditions.
           mediaRecorderRef.current.stop();
-          // CRITICAL ANDROID FIX: Apply timeslice on restart after resume for Android
-          if (isAndroid) {
-            mediaRecorderRef.current.start(240000); // 4 minute timeslice for Android
-          } else {
-            mediaRecorderRef.current.start(); // No timeslice for other platforms
-          }
         }
       }, 240000);
     }
