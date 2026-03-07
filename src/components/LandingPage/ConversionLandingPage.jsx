@@ -1,11 +1,11 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import './ConversionLandingPage.css';
 import textLogoBlk from '../../assets/textlogo-blk.svg';
 import heroImage from '../../assets/HeroImage.png';
 import mattAvatar from '../../assets/Matt.png';
 import jessAvatar from '../../assets/Jess.png';
 import samAvatar from '../../assets/Sam.png';
-import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
+import whiteboardThumbnail from '../../assets/VideoThumbnail.png';
 import whiteboardVideo from '../../assets/WhiteboardAnimation.mp4';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
 
@@ -50,8 +50,32 @@ const faqData = [
 
 export default function Landing17() {
   const videoRef = useRef(null);
+  const carouselRef = useRef(null);
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  const handleScroll = useCallback(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const scrollLeft = el.scrollLeft;
+    const cardWidth = el.firstElementChild?.offsetWidth || 1;
+    setActiveSlide(Math.round(scrollLeft / cardWidth));
+  }, []);
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [handleScroll]);
+
+  function scrollToSlide(index) {
+    const el = carouselRef.current;
+    if (!el) return;
+    const cardWidth = el.firstElementChild?.offsetWidth || 1;
+    el.scrollTo({ left: index * cardWidth, behavior: 'smooth' });
+  }
 
   function playVideo() {
     const video = videoRef.current;
@@ -91,6 +115,7 @@ export default function Landing17() {
           <a href="#features">Features</a>
           <a href="#prices">Pricing</a>
           <a href="#faq">FAQ</a>
+          <a href="/blog" className="blog-link">Blog</a>
           <a href="#" className="login-btn">Log In</a>
         </div>
       </nav>
@@ -101,9 +126,9 @@ export default function Landing17() {
           <div className="hero-text-inner">
             <h1>
               <strong>You became a chiropractor to help people — </strong>
-              <span className="highlight">not to write about it all night.</span>
+              <span className="highlight">not to write about it.</span>
             </h1>
-            <p>Talk to your patient like you always do. ChiroNote quietly turns your visit into a complete, compliant note — ready before you walk out.</p>
+            <p>ChiroNote quietly turns your visit into a complete, compliant note — right from the same browser as your EHR.</p>
             <a href="#" className="cta-btn">
               Try Now for Free
               <span className="cta-sub">No Credit Card Required</span>
@@ -114,7 +139,7 @@ export default function Landing17() {
           <img src={heroImage} alt="Chiropractor treating patient" className="hero-img" />
           <div className="diag-float diag-badge">
             <div className="db-num">45%</div>
-            <div className="db-label">less charting time</div>
+            <div className="db-label">less time on charting</div>
           </div>
         </div>
       </section>
@@ -141,7 +166,7 @@ export default function Landing17() {
           <div className="section-tag">Testimonials</div>
           <h2 className="section-title">Trusted by chiropractors everywhere</h2>
         </div>
-        <div className="test-grid">
+        <div className="test-grid" ref={carouselRef}>
           <div className="test-card">
             <div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
             <p>"I highly recommend this app for high volume practices"</p>
@@ -166,6 +191,11 @@ export default function Landing17() {
               <span><strong>Sam Battochio</strong></span>
             </div>
           </div>
+        </div>
+        <div className="carousel-dots">
+          {[0, 1, 2].map((i) => (
+            <button key={i} className={`carousel-dot${activeSlide === i ? ' active' : ''}`} onClick={() => scrollToSlide(i)} aria-label={`Slide ${i + 1}`} />
+          ))}
         </div>
       </section>
 
@@ -287,6 +317,7 @@ export default function Landing17() {
           </div>
           <div className="pricing-demo">
             <a href="#">Schedule Personal Walkthrough</a>
+            <p className="pricing-demo-text">Charting and how it combines with various software can feel confusing at times. We are more than happy to answer your questions and help you understand our software.</p>
           </div>
         </div>
       </section>
