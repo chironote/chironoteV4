@@ -6,7 +6,6 @@ import Feedback from './components/Feedback/Feedback';
 import Recording from './components/Recording/Recording';
 import Dictation from './components/Recording/Dictation';
 import Navbar from './components/Navbar/Navbar';
-import TogglePanel from './components/TogglePanel';
 import ClipboardButtons from './components/ClipboardButtons';
 import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
@@ -603,7 +602,8 @@ function AuthenticatedApp({ signOut, user }) {
 
   const toggleContentPopup = (item) => {
     setSelectedItem(item);
-    setSelectedContent(showNotes ? item.note : item.transcript);
+    setShowNotes(true);
+    setSelectedContent(item.note || '');
     // Store the timestamp for use in the ContentPopup
     setSelectedTimestamp(item.timestamp);
     setShowContentPopup(prev => !prev);
@@ -613,6 +613,15 @@ function AuthenticatedApp({ signOut, user }) {
   const togglePopupMenu = (e) => {
     e.stopPropagation();
     setShowPopupMenu(prev => !prev);
+  };
+
+  const handlePopupViewModeChange = (viewMode) => {
+    if (!selectedItem) return;
+
+    const isNoteView = viewMode === 'note';
+    setShowNotes(isNoteView);
+    setSelectedContent(isNoteView ? (selectedItem.note || '') : (selectedItem.transcript || ''));
+    setShowPopupMenu(false);
   };
 
   const togglePanel = () => {
@@ -908,7 +917,7 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const renderItems = () => {
-    const items = showNotes ? notes : transcripts;
+    const items = notes;
     
     if (isLoading) {
       return <div className="loading-message">Loading recent history</div>;
@@ -917,7 +926,7 @@ function AuthenticatedApp({ signOut, user }) {
     if (items.length === 0) {
       return (
         <div className="empty-list-message">
-          Start recording to generate your first {showNotes ? 'note' : 'transcript'}
+          Start recording to generate your first note
         </div>
       );
     }
@@ -942,7 +951,7 @@ function AuthenticatedApp({ signOut, user }) {
               key={item.timestamp}
               item={item}
               onClick={toggleContentPopup}
-              isNote={showNotes}
+              isNote={true}
               onDragStart={setDraggedContent}
               isNew={newItems.has(item.timestamp)}
               onMouseEnter={() => removeHighlight(item.timestamp)}
@@ -978,7 +987,7 @@ function AuthenticatedApp({ signOut, user }) {
           <main className="app-main">
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
               <div className="fade-content">
-                <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
+                <h2 className="panel-header left-panel-title">Recent Notes</h2>
                 <div className="list-container">
                   {renderItems()}
                 </div>
@@ -1088,6 +1097,8 @@ function AuthenticatedApp({ signOut, user }) {
                 timestamp={selectedTimestamp}
                 noteLabel={selectedItem?.noteLabel}
                 onLabelUpdate={handleLabelUpdate}
+                onViewModeChange={handlePopupViewModeChange}
+                hasTranscript={Boolean(selectedItem?.transcript && selectedItem.transcript.trim() !== '')}
               />
             )}
           </main>

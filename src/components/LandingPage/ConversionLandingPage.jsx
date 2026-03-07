@@ -1,418 +1,324 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import './ConversionLandingPage.css';
-import LandingNavbar from '../LandingNavbar/LandingNavbar';
-import { trackLandingPageButtonClick } from '../../utils/analytics';
-
-// Only import critical above-the-fold assets
-import stars from '../../assets/stars.svg';
-
-// Import below-the-fold assets (webpack processes them, but they load lazily via loading="lazy")
-import tutorialVideo from '../../assets/Tutorial.mp4';
+import textLogoBlk from '../../assets/textlogo-blk.svg';
+import heroImage from '../../assets/HeroImage.png';
+import mattAvatar from '../../assets/Matt.png';
+import jessAvatar from '../../assets/Jess.png';
+import samAvatar from '../../assets/Sam.png';
 import whiteboardThumbnail from '../../assets/whiteboardThumbnail.jpeg';
+import whiteboardVideo from '../../assets/WhiteboardAnimation.mp4';
+import mockupLaptop from '../../assets/mockup-laptop-final.png';
 
-// Data constants
-
-const WORKFLOW_TIPS = [
-  {
-    id: 1,
-    title: "Start Strong",
-    text: "Speak the patient's name and subjective complaints before starting treatment.",
-    detail: "Saying 'John Doe is here for lower back pain' primes the AI to expect specific clinical context, ensuring 99% accuracy on the first try.",
-    tag: "PRO TIP"
-  },
-  {
-    id: 2,
-    title: "Focus on Care",
-    text: "Place your phone on the desk and forget about it while you treat.",
-    detail: "Our microphone technology filters background noise so you can move freely around the table. Just treat naturally—we'll catch every word.",
-    tag: "HANDS FREE"
-  },
-  {
-    id: 3,
-    title: "Finish Fast",
-    text: "Monologue your objective findings and plan as the patient gets up.",
-    detail: "Take 15 seconds to rattle off 'positive Kemp's right, adjustment to L4-L5, ice at home.' By the time they reach the front desk, your note is done.",
-    tag: "SPEED CHARTING"
-  }
-];
-
-const FAQ_ITEMS = [
+const faqData = [
   {
     question: 'How does ChiroNote work?',
-    answer: 'ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device\'s microphone, then uses advanced AI to quickly generate structured chiropractic SOAP notes that you can review, edit, and copy into your EHR system.'
+    answer: "ChiroNote is a web-based tool you can access from any device with a browser - including your EHR computer where you do notes. It records patient conversations through your device's microphone, then uses advanced AI to quickly generate structured chiropractic SOAP notes that you can review, edit, and copy into your EHR system.",
   },
   {
-    question: 'What if I don\'t want to use my phone for recording?',
-    answer: 'You can use any recording device with a microphone! Many practitioners prefer using a dedicated recording device or their computer\'s built-in microphone, especially when seeing patients in the same room where they do their charting. This setup allows for quick, seamless recording and immediate note generation without switching between devices.'
+    question: "What if I don't want to use my phone for recording?",
+    answer: "You can use any recording device with a microphone! Many practitioners prefer using a dedicated recording device or their computer's built-in microphone, especially when seeing patients in the same room where they do their charting. This setup allows for quick, seamless recording and immediate note generation without switching between devices.",
   },
   {
     question: 'Can I use ChiroNote on my work computer?',
-    answer: 'Absolutely! ChiroNote is designed to work perfectly on your work computer and integrates seamlessly with your existing workflow. Patient notes are handled according to strict HIPAA compliance standards with enterprise-grade encryption, while your personal data remains completely separate and secure. This makes it ideal for use in professional healthcare environments.'
+    answer: "Absolutely! ChiroNote is designed to work perfectly on your work computer and integrates seamlessly with your existing workflow. Patient notes are handled according to strict HIPAA compliance standards with enterprise-grade encryption, while your personal data remains completely separate and secure. This makes it ideal for use in professional healthcare environments.",
   },
   {
     question: 'Is ChiroNote HIPAA compliant?',
-    answer: 'Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.'
+    answer: 'Yes, ChiroNote is fully HIPAA compliant. We use enterprise-grade encryption for all patient data, maintain strict access controls, and regularly conduct security audits to ensure all protected health information remains secure and private.',
   },
   {
-    question: 'Can I edit the chiropractic SOAP notes after they\'re created?',
-    answer: 'Absolutely! While ChiroNote generates highly accurate chiropractic SOAP notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient\'s shoulder pain" - and the system intelligently updates your note. The free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.'
+    question: "Can I edit the chiropractic SOAP notes after they're created?",
+    answer: 'Absolutely! While ChiroNote generates highly accurate chiropractic SOAP notes, you always have full control to review and edit any part of the note before finalizing it. Our Smart Editor feature lets you make changes by simply typing what you want fixed - like asking "make this section more concise" or "add more detail about the patient\'s shoulder pain" - and the system intelligently updates your note. The free plan allows up to 15 note edits per month, while Standard and Professional plans offer unlimited edits.',
   },
   {
     question: 'How do I integrate ChiroNote with my current EHR system?',
-    answer: 'ChiroNote works with any EHR system through a simple copy-paste process. Once your chiropractic SOAP note is finalized, it appears on the ChiroNote website across all your devices, so open up a browser on the computer that contains your EHR and just copy the note into your existing EHR\'s note section. No complex integration, installation or technical setup is required.'
+    answer: "ChiroNote works with any EHR system through a simple copy-paste process. Once your chiropractic SOAP note is finalized, it appears on the ChiroNote website across all your devices, so open up a browser on the computer that contains your EHR and just copy the note into your existing EHR's note section. No complex integration, installation or technical setup is required.",
   },
   {
     question: 'What if my dictation hours run out?',
-    answer: 'If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.'
+    answer: 'If you reach your monthly dictation limit, you can easily upgrade to a higher plan at any time. The Standard plan includes 15 hours per month, while the Professional plan offers unlimited dictation hours, perfect for busy practices.',
   },
   {
     question: 'Can I try ChiroNote before purchasing?',
-    answer: 'Yes! Our free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.'
+    answer: 'Yes! Our free plan allows you to use ChiroNote with 1 hour of dictation time per month and up to 15 note edits. This gives you a great opportunity to experience the benefits of ChiroNote before committing to a paid plan.',
   },
   {
     question: 'Is using AI for medical note generation legally acceptable?',
-    answer: 'Yes. AI-assisted medical documentation is becoming standard practice in the healthcare field. Insurance companies typically welcome more accurate and detailed clinical notes, even when they contain more technical language. As with any documentation tool, the provider remains responsible for reviewing and approving all notes for accuracy before finalizing them.'
-  }
-];
-
-const PLANS_DATA = [
-  {
-    name: 'Free',
-    description: 'Essential Care',
-    price: 'No Charge',
-    features: [
-      '1 hour/month dictation',
-      'Up to 15 note edits',
-      'Unlimited devices',
-    ],
-    highlight: false,
-  },
-  {
-    name: 'Standard',
-    description: 'Enhanced Practice',
-    price: '$19/mo',
-    features: [
-      '15 hours/month dictation',
-      'Unlimited note edits',
-      'Unlimited devices'
-    ],
-    highlight: true,
-  },
-  {
-    name: 'Professional',
-    description: 'Complete Automation',
-    price: '$75/mo',
-    features: [
-      'Unlimited dictation',
-      'Unlimited note edits',
-      'Unlimited devices'
-    ],
-    highlight: false,
+    answer: 'Yes. AI-assisted medical documentation is becoming standard practice in the healthcare field. Insurance companies typically welcome more accurate and detailed clinical notes, even when they contain more technical language. As with any documentation tool, the provider remains responsible for reviewing and approving all notes for accuracy before finalizing them.',
   },
 ];
 
-export default function LandingPage(props) {
-  const [activeFaqItem, setActiveFaqItem] = useState(null);
-  const [activeTip, setActiveTip] = useState(1); // Default to middle tip or first tip
-  const [isVideoLoading, setIsVideoLoading] = useState(false);
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+export default function Landing17() {
   const videoRef = useRef(null);
-  
-  // Defer Hotjar script - load after page is interactive
-  useEffect(() => {
-    const loadHotjar = () => {
-      setTimeout(() => {
-        const script = document.createElement('script');
-        script.src = 'https://t.contentsquare.net/uxa/205ff61755493.js';
-        script.async = true;
-        document.head.appendChild(script);
-      }, 4000); // Load 4 seconds after page load
+  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [activeFaq, setActiveFaq] = useState(null);
+
+  function playVideo() {
+    const video = videoRef.current;
+    if (!video) return;
+    video.controls = true;
+    video.play();
+    setVideoPlaying(true);
+
+    const onPause = () => {
+      if (!video.ended) setVideoPlaying(false);
     };
-    
-    window.addEventListener('load', loadHotjar);
-    return () => window.removeEventListener('load', loadHotjar);
-  }, []);
-  
-  // Meta Pixel tracking handled in index.html - no need for duplicate tracking here
-  
-  const handleButtonClick = (actionName) => {
-    trackLandingPageButtonClick(actionName); // Google Analytics tracking
+    const onEnded = () => {
+      setVideoPlaying(false);
+      video.controls = false;
+    };
+    video.addEventListener('pause', onPause);
+    video.addEventListener('ended', onEnded);
+  }
 
-    // Meta Pixel Tracking
-    if (typeof window.fbq === 'function') {
-      if (actionName === 'Click_Landing_Hero_SignUp' || actionName === 'Click_Landing_Pricing_SignUp' || actionName === 'Click_Landing_Video_SignUp') {
-        window.fbq('track', 'StartTrial');
-      } else if (actionName === 'Click_Landing_Hero_BookDemo') {
-        window.fbq('track', 'Contact');
-      }
-    }
-  };
+  function toggleFaq(index) {
+    setActiveFaq(activeFaq === index ? null : index);
+  }
 
-  const handleNavClick = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      // TODO: Track section navigation for engagement metrics
-      // Potential tracking: trackEvent('LandingPage', `View_Landing_${sectionId}`)
-      // This helps identify which sections drive the most engagement
-      
-      // Scroll offset adjusted for proper positioning
-      const scrollOffset = sectionId === 'scheduler' ? 50 : -20;
-      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + scrollOffset;
-      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-    }
-  };
-  
-  const toggleFaqItem = (index) => {
-    // TODO: Track FAQ engagement to understand user concerns
-    // Potential tracking: trackEvent('LandingPage', 'Expand_FAQ_Item', FAQ_ITEMS[index].question)
-    // This helps identify which questions are most important to prospects
-    
-    setActiveFaqItem(activeFaqItem === index ? null : index);
-  };
+  function handleImageError(e) {
+    e.target.style.display = 'none';
+    e.target.parentElement.innerHTML = '<div class="fi-placeholder">ChiroNote in action</div>';
+  }
 
   return (
-    <div className="landing-page">
-      {/* Header Section */}
-      <LandingNavbar onNavClick={handleNavClick} handleButtonClick={handleButtonClick} videoLabel="See It Now" />
-
-      {/* Main Section with Hero Background */}
-      <div className="landing-page__hero-section">
-        <div className="landing-page__hero-background"></div>
-        <div className="landing-page__hero-container">
-          <div className="landing-page__main">
-            <div className="landing-page__main-content">
-              <div className="landing-page__title">
-              Stop Taking Notes Home. Finish Charting Before Your Patients Leave.
-              </div>
-              <div className="landing-page__subtitle">
-              Simple, reliable software that writes your SOAP notes for you. No complex setup, no typing—just speak naturally and get back to adjusting.
-              </div>
-            </div>
-            <div className="landing-page__action">
-              <div className="landing-page__action-buttons">
-                <button 
-                  className="landing-page__demo-button"
-                  onClick={() => {
-                    handleButtonClick('Click_Landing_Hero_BookDemo');
-                    handleNavClick('scheduler');
-                  }}
-                >
-                  <span className="landing-page__demo-button-main">Book my Tour</span>
-                  <span className="landing-page__demo-button-sub">15 Minutes - no sales pitch!</span>
-                </button>
-                <a 
-                  href="/app?initialState=signUp" 
-                  className="landing-page__try-free-button"
-                  onClick={() => handleButtonClick('Click_Landing_Hero_TryFree')}
-                >
-                  Try Now for Free
-                </a>
-              </div>
-            </div>
-          </div>
+    <>
+      <nav>
+        <div className="logo">
+          <img src={textLogoBlk} alt="ChiroNote" />
         </div>
-      </div>
+        <div className="nav-links">
+          <a href="#how-it-works">How It Works</a>
+          <a href="#features">Features</a>
+          <a href="#prices">Pricing</a>
+          <a href="#faq">FAQ</a>
+          <a href="#" className="login-btn">Log In</a>
+        </div>
+      </nav>
 
-      {/* Video Demo Section */}
-      <div id="how-it-works" className="landing-page__video-section">
-        <div className="landing-page__video-container">
-          <div className="landing-page__video-content">
-            <div className="landing-page__feature-tag">How do Clinical AI scribes work?</div>
-          </div>
-          
-          <div className="landing-page__video-wrapper">
-            {/* TODO: Add video event listeners for engagement tracking */}
-            {/* Video engagement is a strong conversion indicator */}
-            <video 
-              ref={videoRef}
-              className="landing-page__video-player"
-              controls
-              preload="none"
-              playsInline
-              poster={whiteboardThumbnail}
-              loading="lazy"
-              onWaiting={() => setIsVideoLoading(true)}
-              onCanPlay={() => setIsVideoLoading(false)}
-              onLoadedData={() => setIsVideoLoading(false)}
-              onPlay={() => setIsVideoPlaying(true)}
-              onPlaying={() => { setIsVideoPlaying(true); setIsVideoLoading(false); }}
-              onPause={() => { setIsVideoPlaying(false); setIsVideoLoading(false); }}
-              onEnded={() => { setIsVideoPlaying(false); setIsVideoLoading(false); }}
-            >
-              <source src={tutorialVideo} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            
-            {/* Video overlay for enhanced UX */}
-            <div 
-              className={`landing-page__video-overlay ${isVideoLoading ? 'loading' : ''} ${isVideoPlaying ? 'hidden' : ''}`}
-              onClick={() => {
-                if (videoRef.current && !isVideoPlaying) {
-                  setIsVideoLoading(true);
-                  videoRef.current.play();
-                }
-              }}
-            >
-              <div className={`landing-page__video-play-button ${isVideoLoading ? 'loading' : ''}`}>
-                {isVideoLoading ? (
-                  <div className="landing-page__video-spinner"></div>
-                ) : (
-                  <svg width="80" height="80" viewBox="0 0 80 80" fill="none">
-                    <circle cx="40" cy="40" r="40" fill="rgba(7, 87, 21, 0.9)" />
-                    <path d="M32 25L55 40L32 55V25Z" fill="white" />
-                  </svg>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="landing-page__video-cta">
-            <a 
-              href="/app?initialState=signUp" 
-              className="landing-page__video-cta-button"
-              onClick={() => handleButtonClick('Click_Landing_Video_SignUp')}
-            >
+      {/* HERO */}
+      <section className="hero">
+        <div className="hero-text-side">
+          <div className="hero-text-inner">
+            <h1>
+              <strong>You became a chiropractor to help people — </strong>
+              <span className="highlight">not to write about it all night.</span>
+            </h1>
+            <p>Talk to your patient like you always do. ChiroNote quietly turns your visit into a complete, compliant note — ready before you walk out.</p>
+            <a href="#" className="cta-btn">
               Try Now for Free
+              <span className="cta-sub">No Credit Card Required</span>
             </a>
           </div>
         </div>
+        <div className="hero-photo-side">
+          <img src={heroImage} alt="Chiropractor treating patient" className="hero-img" />
+          <div className="diag-float diag-badge">
+            <div className="db-num">45%</div>
+            <div className="db-label">less charting time</div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRUST BAR */}
+      <div className="trust-bar">
+        <div className="trust-inner">
+          <span className="trust-tag">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            HIPAA-compliant
+          </span>
+          <span className="trust-sep">&middot;</span>
+          <span className="trust-tag">Intuitive design</span>
+          <span className="trust-sep">&middot;</span>
+          <span className="trust-tag">Works alongside most EHRs</span>
+        </div>
       </div>
 
-      {/* Interactive Workflow Section (Replaces Comparison) */}
-      <div id="how-it-works-tips" className="landing-page__tips-section">
-        <div className="landing-page__feature-tag">Master the Workflow</div>
-        <div className="landing-page__feature-title">
-          A Workflow That Gives You Your Evenings Back
+      {/* TESTIMONIALS */}
+      <section className="testimonials">
+        <div className="section-header">
+          <div className="section-tag">Testimonials</div>
+          <h2 className="section-title">Trusted by chiropractors everywhere</h2>
         </div>
-        <div className="landing-page__subtitle" style={{maxWidth: '700px'}}>
-          You don't need to change how you treat. Just small adjustments to let the software handle the paperwork.
+        <div className="test-grid">
+          <div className="test-card">
+            <div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p>"I highly recommend this app for high volume practices"</p>
+            <div className="author">
+              <div className="avatar"><img src={mattAvatar} alt="Dr. Matt Fryauf" /></div>
+              <span><strong>Dr. Matt Fryauf</strong></span>
+            </div>
+          </div>
+          <div className="test-card">
+            <div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p>"Enables me to concentrate my time on patient care instead of paperwork"</p>
+            <div className="author">
+              <div className="avatar"><img src={jessAvatar} alt="Dr. Jessica Yeung" /></div>
+              <span><strong>Dr. Jessica Yeung</strong></span>
+            </div>
+          </div>
+          <div className="test-card">
+            <div className="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p>"Its speed and accuracy make it an invaluable tool"</p>
+            <div className="author">
+              <div className="avatar"><img src={samAvatar} alt="Sam Battochio" /></div>
+              <span><strong>Sam Battochio</strong></span>
+            </div>
+          </div>
         </div>
-        
-        <div className="landing-page__tips-container">
-          {WORKFLOW_TIPS.map((tip, index) => (
-            <div 
-              key={tip.id}
-              className={`landing-page__tip-card ${activeTip === tip.id ? 'active' : ''}`}
-              onClick={() => setActiveTip(tip.id)}
+      </section>
+
+      {/* VIDEO / HOW IT WORKS */}
+      <section id="how-it-works" className="video-section">
+        <div className="video-inner">
+          <div className="section-tag">How It Works</div>
+          <h2 className="section-title">How do Clinical AI scribes work?</h2>
+          <div className="video-frame">
+            <video ref={videoRef} id="demoVideo" preload="metadata" playsInline poster={whiteboardThumbnail}>
+              <source src={whiteboardVideo} type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+            <div
+              className={`video-overlay${videoPlaying ? ' hidden' : ''}`}
+              id="videoOverlay"
+              onClick={playVideo}
             >
-              <div className="landing-page__tip-number">{tip.id}</div>
-              <div className="landing-page__tip-content">
-                <span className="landing-page__tip-pro-label">{tip.tag}</span>
-                <div className="landing-page__tip-title">{tip.title}</div>
-                <div className="landing-page__tip-text">{tip.text}</div>
-                <div className="landing-page__tip-detail">
-                  {tip.detail}
-                </div>
+              <div className="play-circle"></div>
+            </div>
+          </div>
+          <div className="video-cta">
+            <a href="#" className="cta-btn">Try Now for Free</a>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES / SECURE CHARTING */}
+      <section id="features" className="features">
+        <div className="section-header">
+          <div className="section-tag">How ChiroNote Works</div>
+          <h2 className="section-title">Secure, quick and simple. Just like a tool should be.</h2>
+        </div>
+        <div className="feature-content">
+          <div className="feature-image">
+            <img
+              src={mockupLaptop}
+              alt="Quick demo creating chiropractic SOAP notes"
+              onError={handleImageError}
+            />
+          </div>
+          <div className="feature-steps">
+            <div className="feature-step">
+              <div className="step-num">1</div>
+              <div className="step-text">
+                <h3>Hit record then have your appointment as usual.</h3>
+                <p>ChiroNote listens through your device's microphone while you focus entirely on your patient.</p>
+              </div>
+            </div>
+            <div className="feature-step">
+              <div className="step-num">2</div>
+              <div className="step-text">
+                <h3>Once done, hit stop and see the note in your Clipboard.</h3>
+                <p>Advanced AI generates a structured chiropractic SOAP note you can review and edit.</p>
+              </div>
+            </div>
+            <div className="feature-step">
+              <div className="step-num">3</div>
+              <div className="step-text">
+                <h3>Transfer to an EHR of your choice.</h3>
+                <p>Works with any EHR system through a simple copy-paste process. No complex integration required.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="prices" className="pricing">
+        <div className="pricing-inner">
+          <div className="section-header">
+            <div className="section-tag">Pricing</div>
+            <h2 className="section-title">Simple, transparent pricing for practices of all sizes</h2>
+          </div>
+          <div className="price-grid">
+            <div className="p-card">
+              <div className="plan-name">Free</div>
+              <div className="plan-desc">Essential Care</div>
+              <div className="price">No Charge</div>
+              <div className="per">&nbsp;</div>
+              <div className="divider"></div>
+              <ul>
+                <li>1 hour/month dictation</li>
+                <li>Up to 15 note edits</li>
+                <li>Unlimited devices</li>
+              </ul>
+              <a href="#" className="p-btn">Get Started</a>
+            </div>
+            <div className="p-card pop">
+              <div className="plan-name">Standard</div>
+              <div className="plan-desc">Enhanced Practice</div>
+              <div className="price">
+                $19<span style={{ fontSize: '1rem', fontWeight: 400, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>/mo</span>
+              </div>
+              <div className="per">&nbsp;</div>
+              <div className="divider"></div>
+              <ul>
+                <li>15 hours/month dictation</li>
+                <li>Unlimited note edits</li>
+                <li>Unlimited devices</li>
+              </ul>
+              <a href="#" className="p-btn">Get Started</a>
+            </div>
+            <div className="p-card">
+              <div className="plan-name">Professional</div>
+              <div className="plan-desc">Complete Automation</div>
+              <div className="price">
+                $75<span style={{ fontSize: '1rem', fontWeight: 400, fontFamily: "'Plus Jakarta Sans', sans-serif" }}>/mo</span>
+              </div>
+              <div className="per">&nbsp;</div>
+              <div className="divider"></div>
+              <ul>
+                <li>Unlimited dictation</li>
+                <li>Unlimited note edits</li>
+                <li>Unlimited devices</li>
+              </ul>
+              <a href="#" className="p-btn">Get Started</a>
+            </div>
+          </div>
+          <div className="pricing-demo">
+            <a href="#">Schedule Personal Walkthrough</a>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="faq">
+        <div className="section-header">
+          <div className="section-tag">FAQ</div>
+          <h2 className="section-title">Frequently Asked Questions</h2>
+        </div>
+        <div className="faq-list">
+          {faqData.map((item, index) => (
+            <div key={index} className={`faq-item${activeFaq === index ? ' active' : ''}`}>
+              <div className="faq-question" onClick={() => toggleFaq(index)}>
+                {item.question}
+                <span className="faq-icon">
+                  <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
+              <div className="faq-answer">
+                <p>{item.answer}</p>
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-
-      {/* Pricing Section */}
-      <div className="landing-page__features">
-        <div id="prices" className="landing-page__feature landing-page__pricing-section">
-          <div className="landing-page__feature-content">
-            <div className="landing-page__feature-tag">Pricing</div>
-            <div className="landing-page__feature-title">
-              Honest Pricing. No Hidden Fees. No Long-Term Contracts.
-            </div>
-          </div>
-          
-          {/* Pricing Cards */}
-          <div className="landing-page__pricing-cards-container">
-            {PLANS_DATA.map((plan, index) => (
-              <div key={index} className={`landing-page__pricing-card ${plan.highlight ? 'highlight' : ''}`}>
-                <div className="landing-page__pricing-card-header">
-                  <h3 className="landing-page__pricing-card-name">{plan.name}</h3>
-                  <p className="landing-page__pricing-card-description">{plan.description}</p>
-                </div>
-                <div className="landing-page__pricing-card-price">{plan.price}</div>
-                <ul className="landing-page__pricing-card-features">
-                  {plan.features.map((feature, idx) => (
-                    <li key={idx}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <button 
-            className="landing-page__pricing-button"
-            onClick={() => {
-              handleButtonClick('Click_Landing_Pricing_BookDemo');
-              handleNavClick('scheduler');
-            }}
-          >
-            Book Demo
-          </button>
-        </div>
-      </div>
-
-      {/* Scheduler Section */}
-      <div id="scheduler" className="landing-page__scheduler-section">
-        <div className="landing-page__feature-tag">Schedule a Friendly Walkthrough</div>
-        
-        {/* Scheduler info tags */}
-        <div className="landing-page__scheduler-info">
-          <span className="landing-page__scheduler-info-tag">15 minutes</span>
-          <span className="landing-page__scheduler-info-tag">Clinic-friendly hours</span>
-          <span className="landing-page__scheduler-info-tag">Zero-pressure Q&A</span>
-        </div>
-        
-        <div className="landing-page__scheduler-container">
-          <div className="landing-page__scheduler-widget">
-            <iframe
-              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
-              title="Schedule a Demo with ChiroNote"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* FAQ Section */}
-      <div id="faq" className="landing-page__faq">
-        <div className="landing-page__faq-container">
-          <div className="landing-page__feature-tag">FAQ</div>
-          <div className="landing-page__feature-title">
-            Frequently Asked Questions
-          </div>
-          
-          <div className="landing-page__faq-list" itemScope itemType="https://schema.org/FAQPage">
-            {FAQ_ITEMS.map((faq, index) => (
-              <div 
-                key={index}
-                className={`landing-page__faq-item ${activeFaqItem === index ? 'active' : ''}`} 
-                itemScope 
-                itemProp="mainEntity" 
-                itemType="https://schema.org/Question"
-              >
-                <div 
-                  className="landing-page__faq-question" 
-                  itemProp="name" 
-                  onClick={() => toggleFaqItem(index)}
-                >
-                  {faq.question}
-                </div>
-                <div 
-                  className="landing-page__faq-answer" 
-                  itemScope 
-                  itemProp="acceptedAnswer" 
-                  itemType="https://schema.org/Answer" 
-                  style={{display: activeFaqItem === index ? 'block' : 'none'}}
-                >
-                  <div itemProp="text">
-                    {faq.answer}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      {/* Footer Divider */}
-      <div className="landing-page__footer-divider"></div>
-    </div>
+      <footer>
+        <p>&copy; 2026 ChiroNote. All rights reserved.</p>
+      </footer>
+    </>
   );
 }

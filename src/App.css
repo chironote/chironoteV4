@@ -58,7 +58,6 @@
   height: auto;
   /* iOS scroll fixes */
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
 }
 
 .list-item {
@@ -169,8 +168,8 @@
 .left-panel .panel-header {
   background-color: white;
   color: var(--dark-green);
-  text-align: center;
-  margin-top: -55px;
+  text-align: left;
+  margin-top: -8px;
 }
 
 /* Clipboard container */
@@ -754,12 +753,13 @@
   background-color: var(--off-white);
   border: 1px solid var(--light-green);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
 }
 
 .popup-menu button {
   display: block;
   width: 100%;
-  padding: 8px 16px;
+  padding: 8px 18px;
   text-align: left;
   background: none;
   border: none;
@@ -767,6 +767,7 @@
   font-size: 14px;
   color: var(--dark-green);
   font-family: 'Roboto', sans-serif;
+  white-space: nowrap;
 }
 
 .popup-menu button:hover {

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import menuIcon from '../assets/menu.svg'; // Assuming menuIcon is still used elsewhere or can be removed if not.
 import { stripMarkdown } from '../utils/markdownStripper';
 import './ContentPopup.css'; // Import component-specific styles
 
@@ -28,17 +27,18 @@ const formatPopupDate = (timestamp) => {
 
 const ContentPopup = ({ 
   setShowContentPopup, 
-  setShowPopupMenu, // Retained as it's part of the original signature
+  setShowPopupMenu,
   showNotes, 
-  // showPopupMenu, // Not directly used by the new logic but retained
-  // togglePopupMenu, // Not directly used by the new logic but retained
+  showPopupMenu,
+  togglePopupMenu,
   handleCopy, // For the main copy button
-  // handleSendToClipboard, // Not directly used by the new logic but retained
   selectedContent, 
   showPopupCopyMessage, // For the main copy button feedback
   timestamp,
   noteLabel, // Add noteLabel prop
-  onLabelUpdate // Add callback for label updates
+  onLabelUpdate, // Add callback for label updates
+  onViewModeChange,
+  hasTranscript
 }) => {
   const [copiedSectionHeader, setCopiedSectionHeader] = useState(''); // e.g., "Subjective:" or "Subjective: Copied!"
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -106,7 +106,7 @@ const ContentPopup = ({
 
     const headers = ["Subjective:", "Objective:", "Assessment:", "Plan:"];
     // Escape headers for regex, though not strictly needed for these specific strings
-    const headerRegex = new RegExp(`(${headers.map(h => h.replace(/[.*+?^${}()|\[\]]/g, '\\\\$&')).join('|')})`, 'g');
+    const headerRegex = new RegExp(`(${headers.map(h => h.replace(/[.*+?^${}()|\[\]]/g, '\\$&')).join('|')})`, 'g');
 
     const matches = [];
     let match;
@@ -175,6 +175,8 @@ const ContentPopup = ({
     }
     return parts;
   };
+
+  const hasViewModeMenu = Boolean(hasTranscript) || !showNotes;
 
   return (
     <div
@@ -252,6 +254,43 @@ const ContentPopup = ({
                 {showPopupCopyMessage ? 'check' : 'content_copy'}
               </span>
             </button>
+            {hasViewModeMenu && (
+              <div className="popup-menu-container">
+                <button
+                  className="popup-menu-button"
+                  onClick={(e) => {
+                    if (togglePopupMenu) {
+                      togglePopupMenu(e);
+                    }
+                  }}
+                  aria-label="More options"
+                  title="More options"
+                >
+                  <span className="material-symbols-rounded">more_vert</span>
+                </button>
+
+                {showPopupMenu && (
+                  <div className="popup-menu" onClick={(e) => e.stopPropagation()}>
+                    {showNotes && hasTranscript && (
+                      <button
+                        type="button"
+                        onClick={() => onViewModeChange && onViewModeChange('transcript')}
+                      >
+                        View Transcript
+                      </button>
+                    )}
+                    {!showNotes && (
+                      <button
+                        type="button"
+                        onClick={() => onViewModeChange && onViewModeChange('note')}
+                      >
+                        View Note
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <button 
               className="popup-close-button"
               onClick={() => setShowContentPopup(false)}

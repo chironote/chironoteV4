@@ -8,7 +8,7 @@ import * as subscriptions from '../../graphql/subscriptions';
 
 const client = generateClient();
 const NOTE_GENERATION_RETRY_MESSAGE = 'Your note could not be generated, the system will retry in 5 min. Sorry for the inconvenience';
-const TRANSCRIPT_WAIT_TIMEOUT_MS = 30000;
+const TRANSCRIPT_WAIT_TIMEOUT_MS = 40000;
 const NOTE_GENERATION_TIMEOUT_MS = 120000;
 const NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS = 45000;
 const NOTE_GENERATION_STREAM_ERROR_SENTINEL = '\u0000ERROR:';
@@ -527,16 +527,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
       setIsPreparingTranscript(true);
       setIsTranscriptCompleted(false);
-
-      if (transcriptFallbackTimeoutRef.current) {
-        clearTimeout(transcriptFallbackTimeoutRef.current);
-      }
-      transcriptFallbackTimeoutRef.current = setTimeout(() => {
-        if (!hasStartedStreamingRef.current) {
-          console.warn('Transcript fallback timeout reached - starting summary generation directly');
-          streamResponse({ fromTranscriptFallback: true });
-        }
-      }, TRANSCRIPT_WAIT_TIMEOUT_MS);
     }
   };
 

@@ -127,9 +127,10 @@ After the final audio chunk is uploaded, the frontend waits for the backend to c
 
 There are two safety timeouts to prevent the UI from hanging:
 
-1.  **Transcript Wait Fallback (30s)**
-    -   Implemented in `subscribeToNoteCompletion(userId, timestamp)`.
-    -   If the AppSync subscription does not receive a matching `isCompleted: true` update within 30 seconds (`TRANSCRIPT_WAIT_TIMEOUT_MS`), the client:
+1.  **Transcript Wait Fallback (40s)**
+    -   Implemented in `subscribeToNoteCompletion(userId, timestamp)`. This is the **sole** fallback timer; `stopRecording()` does not start its own.
+    -   The timer begins only after the final audio chunk has been uploaded and the SQS message sent, ensuring the backend has received the audio before the countdown starts.
+    -   If the AppSync subscription does not receive a matching `isCompleted: true` update within 40 seconds (`TRANSCRIPT_WAIT_TIMEOUT_MS`), the client:
         -   Unsubscribes from the subscription
         -   Sets an internal flag to proceed
         -   Calls `streamResponse()` to begin note generation
