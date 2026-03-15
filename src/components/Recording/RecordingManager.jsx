@@ -393,7 +393,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
       const accessToken = await generateToken();
 
-      const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
+      const response = await fetch("https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -517,6 +517,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       mediaRecorderRef.current.stop();
       // Release the microphone on non-Safari browsers to turn off mic indicator
       // Safari keeps the stream alive to avoid re-prompting for permission
+      // Unfortunately I suspect that this messes up the ondataavailable event sometimes
       if (!isSafari && streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -683,6 +684,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           isRecordingRef.current = false;
           isFinalizingRecordingRef.current = false;
           mediaRecorderRef.current = null;
+          // NOW safe to release the microphone — MediaRecorder has fully flushed its
+          // buffer and ondataavailable has already fired with the complete final chunk.
+          // Doing this earlier (in stopRecording) was causing ~2 min of audio loss.
+          if (!isSafari && streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+          }
         } else if (
           isRecordingRef.current &&
           mediaRecorderRef.current &&
