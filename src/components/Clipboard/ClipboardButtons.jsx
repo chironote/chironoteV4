@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import captureIcon from '../assets/conversation.svg';
-import { trackDictationStart } from '../utils/analytics';
+import captureIcon from '../../assets/conversation.svg';
+import { trackDictationStart } from '../../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
 const ClipboardButtons = ({ 

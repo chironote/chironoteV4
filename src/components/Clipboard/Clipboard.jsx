@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { stripMarkdown } from '../utils/markdownStripper';
+import { stripMarkdown } from '../../utils/markdownStripper';
 
 const Clipboard = ({
   clipboardTextareaRef,

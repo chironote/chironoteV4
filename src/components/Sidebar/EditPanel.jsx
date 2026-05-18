@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import arrowLeftIcon from '../assets/arrow-left.svg';
+import arrowLeftIcon from '../../assets/arrow-left.svg';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser } from 'aws-amplify/auth';
-import * as queries from '../graphql/queries';
-import * as mutations from '../graphql/mutations';
-import CreditPopup from './Recording/CreditLimit';
-import './Recording/CreditLimit.css';
-import { trackApplyChanges } from '../utils/analytics';
+import * as queries from '../../graphql/queries';
+import * as mutations from '../../graphql/mutations';
+import CreditPopup from '../Recording/CreditLimit';
+import '../Recording/CreditLimit.css';
+import { trackApplyChanges } from '../../utils/analytics';
 
 const LAMBDA_URL = "https://yulmp44ybg3ig5ph4nh2hfbibm0ztfin.lambda-url.us-east-2.on.aws";
 const client = generateClient();
@@ -14,6 +14,7 @@ const client = generateClient();
 const EditPanel = ({ 
   showEditPanel, 
   editContent, 
+  textareaRef,
   setEditContent, 
   clipboardContent, 
   setClipboardContent, 
@@ -30,7 +31,8 @@ const EditPanel = ({
   const [isDragging, setIsDragging] = useState(false);
   const [userSubscription, setUserSubscription] = useState(null);
   const [showCreditPopup, setShowCreditPopup] = useState(false);
-  const textareaRef = useRef(null);
+  const localTextareaRef = useRef(null);
+  const editorTextareaRef = textareaRef || localTextareaRef;
 
   const fetchUserSubscription = async () => {
     try {
@@ -144,7 +146,7 @@ const EditPanel = ({
   };
 
   useEffect(() => {
-    const textarea = textareaRef.current;
+    const textarea = editorTextareaRef.current;
     if (textarea) {
       textarea.addEventListener('keydown', handleKeyDown);
     }
@@ -262,7 +264,7 @@ const EditPanel = ({
           }
         `}</style>
         <textarea
-          ref={textareaRef}
+          ref={editorTextareaRef}
           className="edit-textarea"
           placeholder="Enter any changes you wish applied to the note on the left here..."
           value={editContent}

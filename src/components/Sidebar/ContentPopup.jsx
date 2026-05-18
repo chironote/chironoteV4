@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { stripMarkdown } from '../utils/markdownStripper';
+import { stripMarkdown } from '../../utils/markdownStripper';
 import './ContentPopup.css'; // Import component-specific styles
 
 // Helper function to format timestamp for display in popup

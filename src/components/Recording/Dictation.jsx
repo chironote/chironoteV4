@@ -106,7 +106,15 @@ class AudioProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-processor', AudioProcessor);
 `;
 
-const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instanceName = 'Main' }) => {
+const Dictation = ({
+  onTextStreamUpdate,
+  setClipboardContent,
+  onDictationStart,
+  onDictationTextUpdate,
+  onDictationStop,
+  username,
+  instanceName = 'Main'
+}) => {
   // Status state object
   const [status, setStatus] = useState({
     isLoading: false,
@@ -501,7 +509,11 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
           const newText = sortedTurns.join(' ');
           
           setTranscription(newText);
-          setClipboardContent(newText);
+          if (onDictationTextUpdate) {
+            onDictationTextUpdate(newText);
+          } else {
+            setClipboardContent(newText);
+          }
         });
         
         console.log('[Dictation] Attempting to connect StreamingTranscriber');
@@ -674,9 +686,11 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
     try {
       setStatus(prev => ({ ...prev, isLoading: true, isQueued: false }));
       setTranscription('');
-      setClipboardContent('');
       turnsRef.current = {};
       currentTurnOrderRef.current = -1;
+      if (onDictationStart) {
+        onDictationStart();
+      }
       
       // Always fetch fresh subscription data before checking credits
       console.log('[Dictation] Fetching fresh subscription data before starting...');
@@ -727,7 +741,6 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
         isQueued: false
       }));
       
-      setClipboardContent(' ');
     } catch (error) {
       console.error('[Dictation] Start error:', error);
       setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
@@ -741,8 +754,6 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
     
     console.log('[Dictation] Stopping dictation');
     setStatus(prev => ({ ...prev, isStopping: true }));
-    
-    const finalTranscription = transcription;
     
     // Capture current timer value before stopping it
     const currentTimerValue = timer;
@@ -761,9 +772,10 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, instance
     console.log(`[Dictation] Recording duration: ${currentTimerValue} seconds (${hoursUsed.toFixed(4)} hours)`);
     updateUserSubscriptionHours(hoursUsed);
     
-    // Send final transcription to parent
-    if (finalTranscription) {
-      onTextStreamUpdate(finalTranscription);
+    if (onDictationStop) {
+      onDictationStop(transcription);
+    } else if (transcription && onTextStreamUpdate) {
+      onTextStreamUpdate(transcription);
     }
     
     setStatus(prev => ({ 
