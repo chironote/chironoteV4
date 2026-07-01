@@ -34,6 +34,12 @@ const EditPanel = ({
   const localTextareaRef = useRef(null);
   const editorTextareaRef = textareaRef || localTextareaRef;
 
+  useEffect(() => {
+    if (!isEditTranscribing || !editorTextareaRef.current) return;
+
+    editorTextareaRef.current.focus({ preventScroll: true });
+  }, [editorTextareaRef, isEditTranscribing]);
+
   const fetchUserSubscription = async () => {
     try {
       const user = await getCurrentUser();
@@ -265,10 +271,15 @@ const EditPanel = ({
         `}</style>
         <textarea
           ref={editorTextareaRef}
-          className="edit-textarea"
+          className={`edit-textarea ${isEditTranscribing ? 'dictation-caret' : ''}`}
           placeholder="Enter any changes you wish applied to the note on the left here..."
           value={editContent}
-          onChange={(e) => setEditContent(e.target.value)}
+          onChange={(e) => {
+            if (!isEditTranscribing) {
+              setEditContent(e.target.value);
+            }
+          }}
+          aria-readonly={isEditTranscribing}
           onDragOver={(e) => e.preventDefault()}
           onDragLeave={(e) => e.preventDefault()}
           onDrop={(e) => e.preventDefault()}

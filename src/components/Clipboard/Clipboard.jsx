@@ -158,6 +158,12 @@ const Clipboard = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!isTranscribing || !clipboardTextareaRef.current) return;
+
+    clipboardTextareaRef.current.focus({ preventScroll: true });
+  }, [clipboardTextareaRef, isTranscribing]);
+
   // Update positions when window resizes or on scroll
   useEffect(() => {
     const resizeObserver = new ResizeObserver(() => {
@@ -201,15 +207,18 @@ const Clipboard = ({
       <div className="clipboard-content">
         <textarea
           ref={clipboardTextareaRef}
-          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isTranscribing || isWebSocketConnecting ? 'dictation-active' : ''}`}
+          className={`clipboard-textarea ${isDraggingOver ? 'dragging-over' : ''} ${isTranscribing || isWebSocketConnecting ? 'dictation-active' : ''} ${isTranscribing ? 'dictation-caret' : ''}`}
           placeholder={getPlaceholderText()}
           value={clipboardContent}
-          onChange={(e) => setClipboardContent(e.target.value)}
+          onChange={(e) => {
+            if (!isTranscribing && !isWebSocketConnecting) {
+              setClipboardContent(e.target.value);
+            }
+          }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          disabled={isTranscribing || isWebSocketConnecting}
-          readOnly={isTranscribing || isWebSocketConnecting}
+          aria-readonly={isTranscribing || isWebSocketConnecting}
         />
       </div>
       <style jsx>{`

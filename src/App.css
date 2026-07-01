@@ -257,6 +257,10 @@
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
+.dictation-caret {
+  caret-color: #2e6930;
+}
+
 .edit-panel-buttons {
   display: flex;
   justify-content: space-between;

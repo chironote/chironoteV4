@@ -50,5 +50,5 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 ## Maintenance Notes
 
 - This folder shares styling with the main app CSS, not just `ContentPopup.css`.
-- `EditPanel` has its own dictation controls passed in from `AuthenticatedApp`; its textarea ref is also passed up so dictation can insert at the editor cursor.
+- `EditPanel` has its own dictation controls passed in from `AuthenticatedApp`; its textarea ref is also passed up so dictation can insert at the editor cursor and show the green live insertion caret.
 - `EditPanel` currently contains a direct Lambda URL and GraphQL subscription accounting logic; coordinate backend changes carefully.

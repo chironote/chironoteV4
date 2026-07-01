@@ -16,6 +16,7 @@ import useUserAnalytics from './useUserAnalytics';
 import * as mutations from '../../graphql/mutations';
 import { getAmplifyClient } from '../../services/amplifyClient';
 import { trackRecordingCompleted } from '../../utils/analytics';
+import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 
@@ -80,55 +81,32 @@ function AuthenticatedApp({ signOut, user }) {
 
   const captureDictationInsertion = useCallback((textareaRef, insertionRef, content) => {
     const textarea = textareaRef.current;
-    const start = typeof textarea?.selectionStart === 'number'
-      ? textarea.selectionStart
-      : content.length;
-    const end = typeof textarea?.selectionEnd === 'number'
-      ? textarea.selectionEnd
-      : content.length;
+    const currentText = textarea?.value ?? content;
 
-    insertionRef.current = {
-      start,
-      end,
-      text: ''
-    };
+    insertionRef.current = createDictationInsertion(
+      currentText,
+      textarea?.selectionStart,
+      textarea?.selectionEnd
+    );
   }, []);
 
   const insertDictationText = useCallback((textareaRef, insertionRef, setText, dictatedText) => {
-    setText(prevText => {
-      const range = insertionRef.current || {
-        start: prevText.length,
-        end: prevText.length,
-        text: ''
-      };
-      let safeStart = Math.max(0, Math.min(range.start, prevText.length));
-      let safeEnd = Math.max(safeStart, Math.min(range.end, prevText.length));
+    const textarea = textareaRef.current;
+    const insertion = insertionRef.current || createDictationInsertion(
+      textarea?.value || '',
+      textarea?.value.length,
+      textarea?.value.length
+    );
+    const update = applyDictationText(insertion, dictatedText);
 
-      if (range.text && prevText.slice(safeStart, safeEnd) !== range.text) {
-        const movedRangeStart = prevText.indexOf(range.text);
-        if (movedRangeStart !== -1) {
-          safeStart = movedRangeStart;
-          safeEnd = movedRangeStart + range.text.length;
-        }
-      }
+    setText(update.text);
 
-      const nextText = `${prevText.slice(0, safeStart)}${dictatedText}${prevText.slice(safeEnd)}`;
-      const nextCursor = safeStart + dictatedText.length;
-
-      insertionRef.current = {
-        start: safeStart,
-        end: nextCursor,
-        text: dictatedText
-      };
-
-      requestAnimationFrame(() => {
-        const textarea = textareaRef.current;
-        if (!textarea) return;
-        textarea.selectionStart = nextCursor;
-        textarea.selectionEnd = nextCursor;
-      });
-
-      return nextText;
+    requestAnimationFrame(() => {
+      const currentTextarea = textareaRef.current;
+      if (!currentTextarea) return;
+      currentTextarea.focus({ preventScroll: true });
+      currentTextarea.selectionStart = update.cursor;
+      currentTextarea.selectionEnd = update.cursor;
     });
   }, []);
 

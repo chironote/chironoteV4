@@ -31,7 +31,7 @@ const dictation = Dictation({
 });
 ```
 
-Clipboard and Smart Editor dictation insert into the target textarea instead of replacing the full field. `AuthenticatedApp` captures the textarea selection when dictation starts, then replaces only the dictated range as AssemblyAI updates revise the transcript.
+Clipboard and Smart Editor dictation insert into the target textarea instead of replacing the full field. `AuthenticatedApp` captures immutable text before and after the textarea selection when dictation starts. Each revised AssemblyAI transcript is placed between those snapshots, so interim results cannot consume neighboring note text or jump to an identical phrase elsewhere in the note. The pure snapshot helpers live in `src/utils/dictationInsertion.js`.
 
 `MainWorkspace` is intentionally mostly presentational. It receives structured prop groups such as `sidebar`, `clipboard`, `editPanel`, `recording`, `dictation`, and `contentPopup`.
 

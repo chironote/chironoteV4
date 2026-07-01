@@ -8,7 +8,9 @@ Each immediate feature folder under `src/components/` has its own `README.md` th
 
 ## Recording Core Architecture
 
-The recording workflow is the heart of the app. `src/components/Recording/RecordingManager.jsx` is the public hook-style API consumed by `Recording.jsx`; keep it as orchestration, not implementation bulk. Responsibilities are split into `useMediaRecorderController.js` for microphone/MediaRecorder lifecycle, `useAudioUploadQueue.js` for S3 uploads and SQS dispatch, `useNoteGeneration.js` for transcript subscription and Lambda streaming, plus helpers like `recordingConstants.js`, `recordingAuth.js`, and `noteGenerationErrors.js`.
+The recording workflow is the heart of the app. `src/components/Recording/RecordingManager.jsx` is the public hook-style API instantiated by `AuthenticatedApp`; keep it as orchestration, not implementation bulk. Responsibilities are split into `useMediaRecorderController.js` for microphone/MediaRecorder lifecycle, `useAudioUploadQueue.js` for S3 uploads and SQS dispatch, `useNoteGeneration.js` for transcript subscription and Lambda streaming, plus helpers like `recordingConstants.js`, `recordingAuth.js`, and `noteGenerationErrors.js`.
+
+Realtime dictation is a separate AssemblyAI streaming path in `src/components/Recording/Dictation.jsx`. `AuthenticatedApp` captures an immutable before/after snapshot of the target textarea selection and applies revised partial transcripts with `src/utils/dictationInsertion.js`. Keep that insertion logic pure: React Strict Mode may invoke state updater callbacks more than once. Clipboard and Smart Editor textareas remain focusable but reject manual changes while dictation is active so the green insertion caret stays visible.
 
 ## Build, Test, and Development Commands
 
@@ -16,10 +18,9 @@ Use npm with the checked-in `package-lock.json`.
 
 - `npm install`: install dependencies.
 - `npm start`: run the local React dev server at `http://localhost:3000`.
+- `npm test -- --watchAll=false`: run the CRA/Jest suite once.
 - `npm run build`: create the production build in `build/`, then run `defer-css.js`.
 - `npm run eject`: eject CRA configuration. Treat this as irreversible and avoid it unless explicitly agreed.
-
-There is currently no `npm test` script in `package.json`.
 
 ## Coding Style & Naming Conventions
 
@@ -27,7 +28,7 @@ Use JavaScript and JSX with ES module imports. Existing code uses 2-space indent
 
 ## Testing Guidelines
 
-No active test framework or test directory is present. When adding tests, follow CRA/Jest conventions: place files next to the unit as `ComponentName.test.jsx` or `helper.test.js`, and add a `test` script before relying on automation. Prioritize recording flows, auth state, GraphQL interactions, and clinical note text utilities.
+CRA/Jest is available through the `test` script. Place tests next to the unit as `ComponentName.test.jsx` or `helper.test.js`. `src/utils/dictationInsertion.test.js` covers cursor insertion and preservation of surrounding note text. Continue prioritizing recording flows, auth state, GraphQL interactions, and clinical note text utilities.
 
 ## Commit & Pull Request Guidelines
 
