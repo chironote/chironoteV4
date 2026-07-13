@@ -6,6 +6,8 @@ This is a Create React App front end backed by AWS Amplify. Source lives in `src
 
 Each immediate feature folder under `src/components/` has its own `README.md` that documents the folder contents, ownership, important code paths, and maintenance notes. These README files are part of the project structure: when an agent changes, adds, removes, or materially reorganizes component code in one of these folders, it is responsible for keeping that folder's `README.md` accurate in the same change.
 
+Repository knowledge uses the Healtech simplified Open Knowledge System under `knowledge/`, organized by topic one folder deep (`knowledge/<category>/<concept>.md`). Knowledge files describe concepts rather than mirror source documents. When a code or documentation change invalidates a concept, update that concept and `knowledge/index.md` in the same change; record relevant sources as provenance and summarize the knowledge change in `knowledge/log.md` under the current ISO date.
+
 ## Recording Core Architecture
 
 The recording workflow is the heart of the app. `src/components/Recording/RecordingManager.jsx` is the public hook-style API instantiated by `AuthenticatedApp`; keep it as orchestration, not implementation bulk. Responsibilities are split into `useMediaRecorderController.js` for microphone/MediaRecorder lifecycle, `useAudioUploadQueue.js` for S3 uploads and SQS dispatch, `useNoteGeneration.js` for transcript subscription and Lambda streaming, plus helpers like `recordingConstants.js`, `recordingAuth.js`, and `noteGenerationErrors.js`.
