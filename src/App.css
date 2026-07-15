@@ -14,6 +14,9 @@
   text-align: center;
   flex-direction: column;
   background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 /* General panel styles */
@@ -42,12 +45,19 @@
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--off-white);
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  border: 1px solid #b8c5b8;
+  border-radius: 4px;
 }
 
 /* Add styles to fix cut-off content */
 .list-container {
   overflow-y: auto;
   height: auto;
+  /* iOS scroll fixes */
+  -webkit-overflow-scrolling: touch;
 }
 
 .list-item {
@@ -158,8 +168,8 @@
 .left-panel .panel-header {
   background-color: white;
   color: var(--dark-green);
-  text-align: center;
-  margin-top: -55px;
+  text-align: left;
+  margin-top: -8px;
 }
 
 /* Clipboard container */
@@ -173,6 +183,8 @@
   transition: margin-left 0.3s ease, flex 0.3s;
   height: calc(100vh - 110px);
   overflow-y: hidden;
+  border: 1px solid #b8c5b8;
+  border-radius: 4px;
 }
 
 @media (min-width: 769px) {
@@ -199,6 +211,7 @@
   border-radius: 4px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: opacity 0.1s, flex 0.3s, width 0.3s;
+  border: 1px solid #b8c5b8;
 }
 
 .edit-panel.visible {
@@ -242,6 +255,10 @@
   outline: none;
   border-color: #c0c0c0;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.dictation-caret {
+  caret-color: #2e6930;
 }
 
 .edit-panel-buttons {
@@ -740,12 +757,13 @@
   background-color: var(--off-white);
   border: 1px solid var(--light-green);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
 }
 
 .popup-menu button {
   display: block;
   width: 100%;
-  padding: 8px 16px;
+  padding: 8px 18px;
   text-align: left;
   background: none;
   border: none;
@@ -753,6 +771,7 @@
   font-size: 14px;
   color: var(--dark-green);
   font-family: 'Roboto', sans-serif;
+  white-space: nowrap;
 }
 
 .popup-menu button:hover {
@@ -859,6 +878,8 @@
     height: calc(100vh - 70px);
     position: relative;
     overflow: hidden;
+    /* iOS: Prevent body scroll when panel is open */
+    overscroll-behavior: none;
   }
 
   .left-panel {
@@ -873,6 +894,11 @@
     transition: transform 0.3s ease;
     transform: translateX(0);
     overflow-y: auto;
+    /* iOS scroll fixes - critical for iPhone */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    /* Prevent iOS rubber-banding from affecting parent */
+    touch-action: pan-y;
   }
 
   .left-panel.collapsed {
@@ -905,10 +931,10 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 0;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: 100vh;
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 999;
     opacity: 0;
@@ -943,8 +969,8 @@
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
     transition: transform 0.3s ease;
-    transform: translateX(90.5vw);
-    background-color: white !important;
+    transform: translateX(86.5vw);
+    background-color: white;
     border-radius: 4px;
     padding: 3px;
   }
@@ -955,12 +981,25 @@
 
   .left-panel:not(.collapsed) ~ .clipboard-container {
     pointer-events: none;
+    /* iOS: Block all touch interactions including scroll */
+    touch-action: none;
+    overflow: hidden;
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
     display: block;
     opacity: 1;
-    width: 15%;
+    width: 100%;
+    /* iOS: Enable touch events on overlay to block underlying content */
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* Drag-over visual feedback for mobile drag-drop */
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay.drag-over {
+    background-color: rgba(7, 87, 21, 0.35);
+    border: 3px dashed var(--dark-green);
+    box-sizing: border-box;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {
@@ -1139,13 +1178,36 @@
   border-radius: 8px;
   padding: 4px;
   position: relative;
-  margin: 8px 0;
+  margin: 20px 0 8px 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   font-weight: 600;
 }
 
-.toggle-option {
+.toggle-option-wrapper {
   flex: 1;
+  position: relative;
+}
+
+.switch-to-label {
+  position: absolute;
+  top: -16px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 10px;
+  color: #888;
+  font-weight: 400;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-option-wrapper:hover .switch-to-label {
+  opacity: 1;
+}
+
+.toggle-option {
+  width: 100%;
   padding: 8px 12px;
   text-align: center;
   cursor: pointer;
@@ -1166,7 +1228,8 @@
   color: #ffffff;
 }
 
-.toggle-option:hover {
+.toggle-option:not(.active):hover {
+  background-color: var(--pale-green);
   font-weight: 450;
 }
 
@@ -1330,6 +1393,10 @@
     transition: transform 0.3s ease;
     transform: translateX(0);
     overflow-y: auto;
+    /* iOS scroll fixes - critical for iPhone */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
   }
 
   .left-panel.collapsed {
@@ -1362,12 +1429,12 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 0;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: 100vh;
     background-color: rgba(128, 128, 128, 0.5);
-    z-index: 99;
+    z-index: 999;
     opacity: 0;
     transition: opacity 0.3s ease, width 0.3s ease;
     pointer-events: none;
@@ -1386,6 +1453,9 @@
     transition: margin-left 0.3s ease;
     height: calc(100vh - 70px);
     overflow-y: auto;
+    /* iOS scroll fixes */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
   }
 
   .left-panel.collapsed ~ .clipboard-container {
@@ -1400,7 +1470,7 @@
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
     transition: transform 0.3s ease;
-    transform: translateX(94.5vw);
+    transform: translateX(86.5vw);
     background-color: white !important;
     border-radius: 4px;
     padding: 3px;
@@ -1412,12 +1482,25 @@
 
   .left-panel:not(.collapsed) ~ .clipboard-container {
     pointer-events: none;
+    /* iOS: Block all touch interactions including scroll */
+    touch-action: none;
+    overflow: hidden;
   }
 
   .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
     display: block;
     opacity: 1;
-    width: 15%;
+    width: 100%;
+    /* iOS: Enable touch events on overlay to block underlying content */
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* Drag-over visual feedback for mobile drag-drop */
+  .left-panel:not(.collapsed) ~ .mobile-toggle-overlay.drag-over {
+    background-color: rgba(7, 87, 21, 0.35);
+    border: 3px dashed var(--dark-green);
+    box-sizing: border-box;
   }
 
   .left-panel.collapsed ~ .mobile-toggle-overlay {
@@ -1458,24 +1541,5 @@
   .clipboard-textarea {
     height: 100%;
     margin: 10px 10px 10px 0;
-  }
-}
-
-/* Native mobile-only adjustments (Capacitor) */
-@media (max-width: 768px) {
-  body.native-mobile .left-panel {
-    /* Narrow the history panel slightly to give the toggle button more breathing room */
-    width: 82% !important;
-    max-width: 82% !important;
-  }
-
-  /* Reposition the toggle icon to stay just outside the panel edge */
-  body.native-mobile .left-panel:not(.collapsed) ~ .mobile-toggle-button .material-symbols-rounded {
-    transform: translateX(88.7vw) !important; /* was 86.5vw for web */
-  }
-
-  /* Keep the shaded overlay matching the remaining width */
-  body.native-mobile .left-panel:not(.collapsed) ~ .mobile-toggle-overlay {
-    width: 18% !important; /* complements 82% panel width */
   }
 }

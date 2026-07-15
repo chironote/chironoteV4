@@ -1,3 +1,6 @@
 # https://www.robotstxt.org/robotstxt.html
+# ChiroNote focuses on quick, free chiropractic SOAP notes.
 User-agent: *
-Disallow:
+Allow: /
+
+Sitemap: https://www.chironote.ai/sitemap.xml

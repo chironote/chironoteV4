@@ -1,0 +1,9 @@
+export const NOTE_GENERATION_RETRY_MESSAGE = 'Your note could not be generated, the system will retry in 5 min. Sorry for the inconvenience';
+export const TRANSCRIPT_WAIT_TIMEOUT_MS = 40000;
+export const NOTE_GENERATION_TIMEOUT_MS = 120000;
+export const NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS = 45000;
+export const NOTE_GENERATION_STREAM_ERROR_SENTINEL = '\u0000ERROR:';
+export const AUDIO_CHUNK_INTERVAL_MS = 240000;
+export const MIN_AUDIO_BLOB_SIZE = 1000;
+export const AUDIO_TRANSCRIPTION_QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/026090532772/AudioTranscriptionQueue.fifo';
+export const NOTE_GENERATION_URL = 'https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/';

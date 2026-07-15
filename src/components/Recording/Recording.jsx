@@ -56,9 +56,10 @@ function Recording({
   // Function for refreshing the auth session
   const currentSession = async () => {
     try {
-      await fetchAuthSession({ forceRefresh: true });
+      const { tokens } = await fetchAuthSession({ forceRefresh: true });
+      console.log(tokens);
     } catch (err) {
-      console.error('Error refreshing auth session', err);
+      console.log(err);
     }
   };
 
@@ -67,18 +68,24 @@ function Recording({
       // Track the start recording action
       trackRecordingStart();
       
-      // Check user subscription
+      // CRITICAL: Start recording FIRST (synchronously in user gesture)
+      // Safari blocks getUserMedia() if called after async operations
+      startRecording();
+      
+      // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
       
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
+        // Stop the recording we just started
+        stopRecording();
         setShowCreditPopup(true);
         return;
       }
-      
-      startRecording();
     } catch (error) {
       console.error("Error in handleStartRecording:", error);
+      // Stop recording on error
+      stopRecording();
     }
   };
 

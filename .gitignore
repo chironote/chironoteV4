@@ -8,7 +8,7 @@ amplify/mock-data
 amplify/mock-api-resources
 amplify/backend/amplify-meta.json
 amplify/backend/.temp
-amplify/
+build/
 dist/
 node_modules/
 aws-exports.js
@@ -20,16 +20,6 @@ amplify-gradle-config.json
 amplifytools.xcconfig
 .secret-*
 **.sample
-build/
-#android/*
-!android/app/
-!android/app/src/
-!android/app/src/main/
-!android/app/src/main/java/
-!android/app/src/main/java/com/
-!android/app/src/main/java/com/chironote/
-!android/app/src/main/java/com/chironote/app/
-!android/app/src/main/java/com/chironote/app/MainActivity.java
 #amplify-do-not-edit-end
 
 # Sensitive files

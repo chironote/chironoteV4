@@ -20,15 +20,14 @@
 .feedback-container form {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: center;
 }
 
 /* Form group */
 .form-group {
-  margin: 0 auto 20px;
+  margin-bottom: 20px;
   width: 100%;
   max-width: 350px;
-  min-width: 0; /* Allow flex item to shrink in WebView */
 }
 
 .form-group label {
@@ -42,7 +41,6 @@
 .feedback-select,
 .feedback-textarea {
   width: 100%;
-  max-width: 100%;
   padding: 12px;
   font-size: 1rem;
   border-radius: 6px;
@@ -51,7 +49,6 @@
   background-color: var(--pure-white);
   color: var(--dark-green);
   transition: all 0.3s ease;
-  box-sizing: border-box; /* Prevent padding/border from causing overflow */
 }
 
 .feedback-select:focus,
@@ -111,4 +108,20 @@
   font-weight: bold;
   width: 100%;
   max-width: 350px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .feedback-container {
+    padding: 10px;
+  }
+  
+  .form-group,
+  .feedback-select,
+  .feedback-textarea,
+  .submit-feedback-btn,
+  .success-message {
+    width: 100%;
+    max-width: none;
+  }
 }

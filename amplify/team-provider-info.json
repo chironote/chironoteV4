@@ -1,0 +1,47 @@
+{
+  "prod": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chironotev4-prod-4c026-authRole",
+      "UnauthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-prod-4c026-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-prod-4c026-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-chironotev4-prod-4c026-deployment",
+      "UnauthRoleName": "amplify-chironotev4-prod-4c026-unauthRole",
+      "StackName": "amplify-chironotev4-prod-4c026",
+      "StackId": "arn:aws:cloudformation:us-east-2:026090532772:stack/amplify-chironotev4-prod-4c026/e101dc50-9271-11ef-a699-0ab084452803",
+      "AmplifyAppId": "d13anom1bpohot"
+    },
+    "categories": {
+      "auth": {
+        "chironotev4167c865f": {}
+      },
+      "storage": {
+        "base64audiobucket": {}
+      },
+      "api": {
+        "chironotev4": {}
+      },
+      "hosting": {
+        "S3AndCloudFront": {}
+      }
+    }
+  },
+  "backup": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chironotev4-backup-bfb4d-authRole",
+      "UnauthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-backup-bfb4d-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::026090532772:role/amplify-chironotev4-backup-bfb4d-authRole",
+      "Region": "us-east-2",
+      "DeploymentBucketName": "amplify-chironotev4-backup-bfb4d-deployment",
+      "UnauthRoleName": "amplify-chironotev4-backup-bfb4d-unauthRole",
+      "StackName": "amplify-chironotev4-backup-bfb4d",
+      "StackId": "arn:aws:cloudformation:us-east-2:026090532772:stack/amplify-chironotev4-backup-bfb4d/14a909c0-aec8-11f0-910a-02f10e416343",
+      "AmplifyAppId": "d13anom1bpohot"
+    },
+    "categories": {
+      "auth": {
+        "chironotev4167c865f": {}
+      }
+    }
+  }
+}

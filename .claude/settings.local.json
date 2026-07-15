@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:localhost)",
+      "Bash(claude mcp:*)",
+      "Bash(npm search:*)",
+      "mcp__chrome-devtools__list_pages",
+      "mcp__chrome-devtools__navigate_page",
+      "mcp__chrome-devtools__resize_page",
+      "mcp__chrome-devtools__take_screenshot",
+      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__emulate"
+    ]
+  }
+}

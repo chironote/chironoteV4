@@ -1,0 +1,75 @@
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import './Blog.css';
+import LandingNavbar from '../LandingNavbar/LandingNavbar';
+
+// Import all blog posts here
+// Each post should export: { title, synopsis, slug, component }
+import Post1 from './Post 1';
+import Post2 from './Post 2';
+import Post3 from './Post 3';
+import Post4 from './Post 4';
+import Post5 from './Post 5';
+
+// Array of all blog posts - add new posts here
+const BLOG_POSTS = [
+  Post1,
+  Post2,
+  Post3,
+  Post4,
+  Post5,
+  // Add more posts here as you create them:
+];
+
+export default function BlogList() {
+  const navigate = useNavigate();
+
+  const handlePostClick = (slug) => {
+    navigate(`/blog/${slug}`);
+  };
+
+  return (
+    <div className="blog-list">
+      <Helmet>
+        <title>Blog | ChiroNote - AI Chiropractic SOAP Notes Software</title>
+        <meta name="description" content="Insights on AI, chiropractic practice management, and healthcare technology. Learn how AI is transforming chiropractic documentation." />
+        <link rel="canonical" href="https://chironote.com/blog" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://chironote.com/blog" />
+        <meta property="og:title" content="Blog | ChiroNote - AI Chiropractic SOAP Notes Software" />
+        <meta property="og:description" content="Insights on AI, chiropractic practice management, and healthcare technology." />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://chironote.com/blog" />
+        <meta name="twitter:title" content="Blog | ChiroNote - AI Chiropractic SOAP Notes Software" />
+        <meta name="twitter:description" content="Insights on AI, chiropractic practice management, and healthcare technology." />
+      </Helmet>
+      <LandingNavbar />
+      
+      <div className="blog-list__content">
+        <div className="blog-list__header">
+          <h1 className="blog-list__title">The ChiroNote Blog</h1>
+          <p className="blog-list__subtitle">Insights on AI, chiropractic practice management, and healthcare technology</p>
+        </div>
+
+        <div className="blog-list__posts">
+          {BLOG_POSTS.map((post, index) => (
+            <div 
+              key={index} 
+              className="blog-post-card"
+              onClick={() => handlePostClick(post.slug)}
+            >
+              <h2 className="blog-post-card__title">{post.title}</h2>
+              <p className="blog-post-card__synopsis">{post.synopsis}</p>
+              <span className="blog-post-card__read-more">Read More →</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -11,6 +11,11 @@ export const createUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }
@@ -25,6 +30,11 @@ export const updateUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }
@@ -39,6 +49,11 @@ export const deleteUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }

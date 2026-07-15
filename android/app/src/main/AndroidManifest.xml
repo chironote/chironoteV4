@@ -32,8 +32,8 @@
     <!-- Permissions -->
     <!--
       IMPORTANT: Audio recording in a Capacitor WebView requires these permissions.
-      Android WebView's getUserMedia/MediaRecorder requires RECORD_AUDIO, CAMERA,
-      and MODIFY_AUDIO_SETTINGS to access the microphone reliably in production builds.
+      Android WebView's getUserMedia/MediaRecorder requires RECORD_AUDIO and
+      MODIFY_AUDIO_SETTINGS to access the microphone reliably in production builds.
       See Context.md (Android section) for details and troubleshooting.
     -->
     <uses-permission android:name="android.permission.INTERNET" />

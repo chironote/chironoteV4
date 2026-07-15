@@ -2,19 +2,83 @@ import React, { useEffect, useState } from 'react';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { offset } from '@floating-ui/dom';
+import { fetchUserAttributes } from 'aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import * as queries from '../../graphql/queries';
+import * as mutations from '../../graphql/mutations';
+import { trackSignUp } from '../../utils/analytics';
 
 /**
  * IntroTour component - Manages the Shepherd.js tour for first-time users
  * Shows a guided tour highlighting key UI elements when a user first visits the app
+ * 
+ * CONVERSION TRACKING:
+ * - Checks UserSubscription.isActivated field to determine if user is new
+ * - Fires sign_up GA4 event on first tutorial load (PRIMARY CONVERSION)
+ * - Updates isActivated to true after tutorial completion to prevent duplicate events
  */
 function IntroTour() {
   // Track the current step to help with debugging
   const [currentStep, setCurrentStep] = useState(null);
 
   useEffect(() => {
-    const tourShown = localStorage.getItem('hasSeenAppTour');
+    // Declare variables at useEffect scope so cleanup can access them
+    let startTourTimeout;
+    let handleEscapeKey;
+    let tour;
+    let cleanupTourEffects;
 
-    if (!tourShown) {
+    const initializeTutorial = async () => {
+      try {
+        const client = generateClient();
+        
+        // Get user attributes
+        const userAttributes = await fetchUserAttributes();
+        const userId = userAttributes.sub;
+        const email = userAttributes.email;
+        
+        // Fetch user's subscription record to check isActivated status
+        // This is the ONLY source of truth for whether to show the tutorial
+        const subscriptionData = await client.graphql({
+          query: queries.getUserSubscription,
+          variables: { owner: userId }
+        });
+        
+        const subscription = subscriptionData.data.getUserSubscription;
+        
+        console.log('[Tutorial] Subscription data:', { 
+          hasSubscription: !!subscription, 
+          isActivated: subscription?.isActivated 
+        });
+        
+        // Check if user has already been activated
+        // CRITICAL: Only skip if isActivated is explicitly true
+        if (subscription?.isActivated === true) {
+          console.log('[Tutorial] User already activated, skipping tutorial');
+          return; // Don't show tutorial
+        }
+        
+        // User is new (isActivated is false, null, or undefined) - fire sign_up GA4 event ONCE
+        await trackSignUp(email, userId);
+        console.log('[GA4] Sign-up conversion tracked on first tutorial load');
+        
+        // Continue with existing tutorial logic
+        startTour();
+        
+      } catch (error) {
+        console.error('[Tutorial] Initialization error:', error);
+        // CRITICAL: On error, do NOT show the tutorial
+        // We cannot verify the activation state, so we must assume the user may already be activated
+        // This prevents duplicate tutorials on network errors or new devices with cache issues
+        console.log('[Tutorial] Skipping tutorial due to initialization error - cannot verify activation state');
+        // Do NOT fall back to localStorage - database is the only source of truth
+      }
+    };
+    
+    // Function to start the tour (extracted from existing code)
+    // NOTE: This function should ONLY be called after database check confirms user is NOT activated
+    // The localStorage check has been removed - database isActivated is the source of truth
+    const startTour = () => {
       // Add custom CSS for better spacing and tour overlay
       const addCustomStyles = () => {
         if (document.getElementById('shepherd-custom-spacing')) return;
@@ -133,9 +197,9 @@ function IntroTour() {
       // Add the custom styles
       addCustomStyles();
       
-      const tour = new Shepherd.Tour({
+      tour = new Shepherd.Tour({
         useModalOverlay: true,
-        exitOnEsc: false, // Prevent exiting with Escape key
+        exitOnEsc: true, // Allow exiting with Escape key
         keyboardNavigation: false, // Disable keyboard navigation
         defaultStepOptions: {
           classes: 'shepherd-theme-custom',
@@ -644,7 +708,7 @@ function IntroTour() {
       }
 
       // Function to clean up any remaining tour effects, especially for the dictation mic button
-      const cleanupTourEffects = () => {
+      cleanupTourEffects = () => {
         console.log('Cleaning up tour effects');
         
         // Clean up dictation mic button
@@ -745,17 +809,59 @@ function IntroTour() {
       };
       
       // Safe event handler for tour completion
-      tour.on('complete', () => {
+      tour.on('complete', async () => {
         console.log('Tour completed');
         localStorage.setItem('hasSeenAppTour', 'true');
         cleanupTourEffects();
+        
+        // Update isActivated in database to prevent future tutorial displays
+        try {
+          const client = generateClient();
+          const userAttributes = await fetchUserAttributes();
+          const userId = userAttributes.sub;
+          
+          await client.graphql({
+            query: mutations.updateUserSubscription,
+            variables: {
+              input: {
+                owner: userId,
+                isActivated: true
+              }
+            }
+          });
+          
+          console.log('[Tutorial] User activated, tutorial will not show again');
+        } catch (error) {
+          console.error('[Tutorial] Activation update error:', error);
+        }
       });
       
       // Safe event handler for tour cancellation
-      tour.on('cancel', () => {
+      tour.on('cancel', async () => {
         console.log('Tour cancelled');
         localStorage.setItem('hasSeenAppTour', 'true'); // Also set flag if user cancels
         cleanupTourEffects();
+        
+        // Update isActivated even if user cancels (they've seen the tutorial)
+        try {
+          const client = generateClient();
+          const userAttributes = await fetchUserAttributes();
+          const userId = userAttributes.sub;
+          
+          await client.graphql({
+            query: mutations.updateUserSubscription,
+            variables: {
+              input: {
+                owner: userId,
+                isActivated: true
+              }
+            }
+          });
+          
+          console.log('[Tutorial] User activated (cancelled), tutorial will not show again');
+        } catch (error) {
+          console.error('[Tutorial] Activation update error:', error);
+        }
       });
       
       // Add error handling for any tour errors
@@ -775,13 +881,20 @@ function IntroTour() {
         setTimeout(cleanupTourEffects, 50); // Small delay to let the step's hide handler run first
       });
       
-      // Ensure cleanup on Escape key
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          console.log('Escape key pressed - cleaning up tour');
-          cleanupTourEffects();
+      // Ensure cleanup on Escape key - cancel the tour completely
+      handleEscapeKey = (e) => {
+        if (e.key === 'Escape' && tour.isActive()) {
+          console.log('Escape key pressed - abandoning tour');
+          try {
+            tour.cancel(); // This will trigger the 'cancel' event which handles cleanup
+          } catch (error) {
+            console.error('Error cancelling tour:', error);
+            cleanupTourEffects();
+            localStorage.setItem('hasSeenAppTour', 'true');
+          }
         }
-      });
+      };
+      document.addEventListener('keydown', handleEscapeKey);
       
       // Ensure buttons in tour use clean exit
       document.addEventListener('click', (e) => {
@@ -794,7 +907,7 @@ function IntroTour() {
 
       // Ensure the button is rendered before starting the tour
       // Add a small delay to allow the DOM to update
-      const startTourTimeout = setTimeout(() => {
+      startTourTimeout = setTimeout(() => {
         if (document.querySelector('#new-note-btn')) {
           tour.start();
         } else {
@@ -802,19 +915,35 @@ function IntroTour() {
           // Optionally try again or handle the case where the button never appears
         }
       }, 500); // Adjust delay as needed
+    }; // End of startTour function
+    
+    // Initialize the tutorial (checks database and fires sign_up event if needed)
+    initializeTutorial();
 
-      return () => {
-        // Cleanup timeout on unmount
+    // Return cleanup function for useEffect
+    return () => {
+      // Cleanup timeout on unmount
+      if (startTourTimeout) {
         clearTimeout(startTourTimeout);
-        
-        // Make sure to clean up any tour effects when component unmounts
-        try {
-          cleanupTourEffects();
-        } catch (error) {
-          console.error('Error cleaning up tour effects:', error);
+      }
+      
+      // Remove event listener
+      if (handleEscapeKey) {
+        document.removeEventListener('keydown', handleEscapeKey);
+      }
+      
+      // Make sure to clean up any tour effects when component unmounts
+      try {
+        if (tour && tour.isActive()) {
+          tour.cancel();
         }
-      };
-    }
+        if (cleanupTourEffects) {
+          cleanupTourEffects();
+        }
+      } catch (error) {
+        console.error('Error cleaning up tour effects:', error);
+      }
+    };
   }, []); // Empty dependency array ensures this runs only once on mount
 
   // This component doesn't render anything visible

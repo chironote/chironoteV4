@@ -1,0 +1,244 @@
+/* src/components/ContentPopup.css */
+
+.content-popup .popup-header {
+  /* Ensure the header items are aligned nicely.
+     The title/date block on the left, actions on the right. */
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Align to top for potentially multi-line title/date */
+  margin-bottom: 12px; /* Add some space below the header */
+}
+
+.content-popup .popup-header-left {
+  flex: 1;
+  min-width: 0; /* Allow content to shrink */
+}
+
+.content-popup .popup-header h2,
+.content-popup .label-title {
+  margin-top: 8px; /* Add space above title to separate from buttons */
+  margin-bottom: 4px; /* Reduce bottom margin */
+  font-size: 1.1em; /* Reduced font size for friendlier appearance */
+  line-height: 1.3;
+  font-weight: 500; /* Slightly lighter weight */
+  color: var(--dark-green, #2d5a27); /* Ensure consistent color */
+}
+
+.content-popup .popup-date {
+  font-size: 0.8em;  /* Smaller font size, relative to parent */
+  color: #888;      /* Lighter grey color */
+  margin: 0;         /* Remove default paragraph margin */
+  line-height: 1.2;  /* Adjust line height if needed */
+}
+
+.content-popup .popup-actions {
+  display: flex; /* Align buttons in a row */
+  align-items: flex-start; /* Align to top to match rename button level */
+  gap: 4px; /* Small gap between copy and close buttons */
+}
+
+/* Styling for the copy and close buttons in far right corner */
+.content-popup .popup-copy-button,
+.content-popup .popup-menu-button,
+.content-popup .popup-close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px; /* Slightly smaller padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%; /* Circular shape for icon buttons */
+  transition: background-color 0.2s ease-in-out;
+  min-height: 28px; /* Match rename button height */
+  min-width: 28px;
+}
+
+.content-popup .popup-copy-button:hover,
+.content-popup .popup-menu-button:hover,
+.content-popup .popup-close-button:hover {
+  background-color: rgba(0, 0, 0, 0.1); /* Subtle hover effect */
+}
+
+.content-popup .popup-copy-button .material-symbols-rounded,
+.content-popup .popup-menu-button .material-symbols-rounded,
+.content-popup .popup-close-button .material-symbols-rounded {
+  font-size: 24px; /* Adjust icon size as needed */
+  color: var(--dark-green); /* Use app's dark green for icons */
+}
+
+/* New layout for header top section (rename button only) */
+.content-popup .popup-header-top {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px; /* Space between rename button and title */
+}
+
+/* Container for label/input positioned below buttons */
+.content-popup .label-container {
+  flex: 1;
+  min-height: 32px; /* Reduced height for smaller text */
+  display: flex;
+  align-items: flex-start; /* Align to top for better text positioning */
+}
+
+/* Edit button styling - text-based design */
+.content-popup .popup-edit-button {
+  background: white;
+  border: 1px solid var(--dark-green, #2d5a27);
+  cursor: pointer;
+  padding: 6px 10px; /* Slightly smaller padding */
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  color: var(--dark-green, #2d5a27);
+  min-height: 28px; /* Smaller height */
+  flex-shrink: 0;
+  font-family: inherit; /* Use app's font family */
+  font-size: 13px; /* Slightly smaller font */
+  font-weight: 500; /* Medium weight for clarity */
+  letter-spacing: 0.3px;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.content-popup .popup-edit-button:hover {
+  background-color: var(--light-green, #4caf50);
+  color: white;
+  border-color: var(--light-green, #4caf50);
+  transform: translateY(-1px); /* Subtle lift effect */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Active editing state for button */
+.content-popup .popup-edit-button.editing {
+  background-color: var(--dark-green, #2d5a27);
+  color: white;
+  border-color: var(--dark-green, #2d5a27);
+  font-weight: 600; /* Slightly bolder when active */
+}
+
+.content-popup .popup-edit-button.editing:hover {
+  background-color: #1e3d1a;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Text button styling */
+.content-popup .edit-button-text {
+  font-size: 0.9em; 
+  transition: opacity 0.2s ease-in-out;
+  line-height: 1;
+  position: relative;
+  top: 1.2px;
+  
+}
+
+/* Focus state for accessibility */
+.content-popup .popup-edit-button:focus {
+  outline: 2px solid var(--light-green, #4caf50);
+  outline-offset: 2px;
+}
+
+/* Active/pressed state */
+.content-popup .popup-edit-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Input field for editing labels */
+.content-popup .label-edit-input {
+  font-size: 1.1em; /* Match the reduced title font size */
+  font-weight: 500; /* Match title weight */
+  font-family: inherit;
+  border: 2px solid var(--light-green, #4caf50);
+  border-radius: 6px;
+  padding: 4px 8px; /* Smaller padding */
+  background: white;
+  width: 100%;
+  max-width: 100%;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+  line-height: 1.3;
+  margin: 0;
+  margin-top: 8px; /* Match title margin-top */
+}
+
+.content-popup .label-edit-input:focus {
+  border-color: var(--dark-green, #2d5a27);
+  box-shadow: 0 0 0 3px rgba(45, 90, 39, 0.1);
+}
+
+.content-popup .label-edit-input::placeholder {
+  color: #999;
+  font-weight: normal;
+}
+
+/* Styles for clickable SOAP headers and feedback messages */
+.clickable-header {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--dark-green);
+  margin-right: 8px; /* Space between header and feedback message */
+  display: inline-block; /* Allows margin and keeps it inline */
+  transition: filter 0.2s ease-in-out; /* Smooth transition for brightness */
+}
+
+.clickable-header:hover,
+.clickable-header:focus {
+  text-decoration: underline;
+  filter: brightness(0.8); /* Subtle darkening effect */
+}
+
+.section-copy-feedback {
+  font-size: 0.9em;
+  margin-left: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block; /* Keep it on the same line as header */
+}
+
+.section-copy-feedback.success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+}
+
+.section-copy-feedback.warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+}
+
+.section-copy-feedback.error {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive behavior - show Edit button on mobile */
+@media (max-width: 768px) {
+  .content-popup .popup-edit-button {
+    /* Ensure button remains visible and functional on mobile */
+    display: flex;
+    font-size: 14px; /* Maintain readability on smaller screens */
+    padding: 6px 10px; /* Slightly smaller padding for mobile */
+  }
+  
+  .content-popup .popup-header-content {
+    gap: 8px; /* Slightly reduce gap on mobile */
+  }
+}
+
+/* Ensure content within sections maintains line breaks */
+.content-popup-text span[style*="white-space: pre-wrap"] {
+  /* display: block; removed for inline flow */
+  margin-bottom: 0; /* Adjust if more space is needed between distinct blocks of text */
+}
+
+/* Adjust spacing if a section text block is directly after a header */
+.clickable-header + span[style*="white-space: pre-wrap"] {
+  /* margin-top: 0.25em; removed */
+  margin-left: 0.25em; /* Add a small space after the header if on the same line */
+}

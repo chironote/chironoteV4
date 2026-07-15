@@ -1,0 +1,48 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+This is a Create React App front end backed by AWS Amplify. Source lives in `src/`, with route wiring in `src/App.jsx` and entry in `src/index.js`. Reusable UI is under `src/components/`; generated Amplify UI forms are under `src/ui-components/`; shared helpers live in `src/constants/`, `src/services/`, and `src/utils/`. Static assets are in `src/assets/` and `public/`. Amplify configuration is in `amplify/`; generated GraphQL code is in `src/graphql/` and `src/models/`.
+
+This branch also owns the Capacitor wrapper. `capacitor.config.json`, `android/`, `ios/`, and `resources/` are native packaging assets; keep shared web code aligned with `prod` and isolate runtime differences in `src/services/nativePlatform.js` and documented native call sites.
+
+Each immediate feature folder under `src/components/` has its own `README.md` that documents the folder contents, ownership, important code paths, and maintenance notes. These README files are part of the project structure: when an agent changes, adds, removes, or materially reorganizes component code in one of these folders, it is responsible for keeping that folder's `README.md` accurate in the same change.
+
+Repository knowledge uses the Healtech simplified Open Knowledge System under `knowledge/`, organized by topic one folder deep (`knowledge/<category>/<concept>.md`). Knowledge files describe concepts rather than mirror source documents. When a code or documentation change invalidates a concept, update that concept and `knowledge/index.md` in the same change; record relevant sources as provenance and summarize the knowledge change in `knowledge/log.md` under the current ISO date.
+
+## Recording Core Architecture
+
+The recording workflow is the heart of the app. `src/components/Recording/RecordingManager.jsx` is the public hook-style API instantiated by `AuthenticatedApp`; keep it as orchestration, not implementation bulk. Responsibilities are split into `useMediaRecorderController.js` for microphone/MediaRecorder lifecycle, `useAudioUploadQueue.js` for S3 uploads and SQS dispatch, `useNoteGeneration.js` for transcript subscription and Lambda streaming, plus helpers like `recordingConstants.js`, `recordingAuth.js`, and `noteGenerationErrors.js`.
+
+Realtime dictation is a separate AssemblyAI streaming path in `src/components/Recording/Dictation.jsx`. `AuthenticatedApp` captures an immutable before/after snapshot of the target textarea selection and applies revised partial transcripts with `src/utils/dictationInsertion.js`. Keep that insertion logic pure: React Strict Mode may invoke state updater callbacks more than once. Clipboard and Smart Editor textareas remain focusable but reject manual changes while dictation is active so the green insertion caret stays visible.
+
+On Capacitor, preserve the established recording lifecycle: stop timed chunk rotation while the app is backgrounded, rotate once on foreground, then resume the interval. Android microphone permission bridging belongs in `MainActivity`; do not fold native lifecycle or permission bulk back into `RecordingManager.jsx`.
+
+## Build, Test, and Development Commands
+
+Use npm with the checked-in `package-lock.json`.
+
+- `npm install`: install dependencies.
+- `npm start`: run the local React dev server at `http://localhost:3000`.
+- `npm test -- --watchAll=false`: run the CRA/Jest suite once.
+- `npm run build`: create the production build in `build/`, then run `defer-css.js`.
+- `npx cap sync android`: copy the web build into the active Android project and regenerate its plugin declarations. Do not sync iOS as part of Android-only convergence work.
+- `npm run cap:open:android`: open the synchronized Android project for device work.
+- `cd android; .\gradlew.bat assembleDebug`: build a local Android debug package without publishing.
+- `npm run eject`: eject CRA configuration. Treat this as irreversible and avoid it unless explicitly agreed.
+
+## Coding Style & Naming Conventions
+
+Use JavaScript and JSX with ES module imports. Existing code uses 2-space indentation, single quotes, semicolons, and PascalCase component names such as `RecordingManager.jsx`. Keep feature files under `src/components/FeatureName/`. Prefer camelCase utilities, for example `markdownStripper.js`. CRA's `react-app` ESLint config is enabled; address lint warnings shown by `npm start` or build output.
+
+## Testing Guidelines
+
+CRA/Jest is available through the `test` script. Place tests next to the unit as `ComponentName.test.jsx` or `helper.test.js`. `src/utils/dictationInsertion.test.js` covers cursor insertion and preservation of surrounding note text. Continue prioritizing recording flows, auth state, GraphQL interactions, and clinical note text utilities.
+
+## Commit & Pull Request Guidelines
+
+Recent commits use short, descriptive subjects, for example `Recorder Updates` and `Fix octet stream error`. Keep commits focused. Pull requests should include a summary, user impact, validation such as `npm run build`, and screenshots or recordings for UI changes. Link deployment notes when Amplify resources, auth, storage, or GraphQL schema files change.
+
+## Security & Configuration Tips
+
+Do not commit secrets, local AWS credentials, or private patient data. Treat `src/amplifyconfiguration.json`, `src/aws-exports.js`, and `amplify/team-provider-info.json` as environment-sensitive. Avoid editing generated Amplify files manually unless part of a deliberate backend update.
