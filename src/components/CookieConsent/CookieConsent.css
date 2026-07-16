@@ -1,53 +1,117 @@
 .cookie-consent {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: rgba(0, 0, 0, 0.9);
-  color: white;
-  padding: 15px;
+  right: 18px;
+  bottom: 18px;
   z-index: 9999;
-  display: flex;
-  justify-content: center;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+  width: min(620px, calc(100vw - 36px));
+  padding: 18px 20px;
+  color: #323631;
+  border: 1px solid #deded6;
+  border-radius: 16px;
+  background: rgba(255, 254, 250, 0.98);
+  box-shadow: 0 18px 46px rgba(28, 44, 36, 0.2);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  backdrop-filter: blur(12px);
 }
 
 .cookie-content {
-  max-width: 1200px;
-  text-align: center;
-  padding: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.cookie-content h3 {
+  margin: 0;
+  color: #273f34;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.cookie-content p {
+  grid-column: 1;
+  margin: 0;
+  color: #646b65;
+  font-size: 0.8rem;
+  line-height: 1.5;
 }
 
 .cookie-buttons {
-  margin-top: 15px;
   display: flex;
-  justify-content: center;
-  gap: 10px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  gap: 8px;
 }
 
-.accept-button, .decline-button {
-  padding: 8px 20px;
-  border: none;
-  border-radius: 4px;
+.accept-button,
+.decline-button {
+  min-height: 40px;
+  padding: 9px 16px;
+  border: 1px solid #cdd2cc;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
 .accept-button {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.accept-button:hover {
-  background-color: #45a049;
+  color: #fff;
+  border-color: #273f34;
+  background: #273f34;
 }
 
 .decline-button {
-  background-color: #f44336;
-  color: white;
+  color: #425f51;
+  background: #fffefa;
+}
+
+.accept-button:hover,
+.decline-button:hover {
+  transform: translateY(-1px);
+}
+
+.accept-button:hover {
+  background: #345246;
 }
 
 .decline-button:hover {
-  background-color: #d32f2f;
+  border-color: #6f9382;
+  background: #f2ece2;
+}
+
+.accept-button:focus-visible,
+.decline-button:focus-visible {
+  outline: 3px solid #d8a93d;
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .cookie-consent {
+    right: 12px;
+    bottom: 12px;
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+
+  .cookie-content {
+    grid-template-columns: 1fr;
+  }
+
+  .cookie-content p,
+  .cookie-buttons {
+    grid-column: 1;
+  }
+
+  .cookie-buttons {
+    grid-row: auto;
+    justify-content: stretch;
+    margin-top: 6px;
+  }
+
+  .accept-button,
+  .decline-button {
+    flex: 1;
+  }
 }

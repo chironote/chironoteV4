@@ -1,5 +1,12 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-07-16
+
+- **Landing launch**: Replaced three competing landing implementations with one canonical, production-ready page at `/`, retained compatibility redirects, repaired public destinations and tutorial styling, and documented responsive and performance boundaries.
+- **Analytics correction**: Centralized GA4 and Google Ads behind Consent Mode, removed raw email collection and unconditional third-party landing scripts, and defined stable events for acquisition, funnel interaction, feature adoption, and Core Web Vitals.
+- **Performance update**: Documented responsive WebP assets, deferred video, scoped landing CSS, and lazy loading of Amplify, authenticated styles, and Material Symbols.
+- **Deprecation**: Removed the obsolete landing-page upgrade record after its useful requirements were incorporated into the maintained landing-page concept.
+
 ## 2026-07-12
 
 - **Preservation**: Added the validated 24-concept knowledge bundle and its maintenance guidance to the production history so the curated repository knowledge is retained with the application.

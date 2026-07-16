@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './ConversionLandingPage.css';
+import React, { useState, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
+import './TutorialPage.css';
 
 // Import video assets
 import tutorialVideo from '../../assets/Tutorial.mp4';
@@ -69,42 +70,6 @@ const FAQ_ITEMS = [
   }
 ];
 
-const PLANS_DATA = [
-  {
-    name: 'Free',
-    description: 'Essential Care',
-    price: 'No Charge',
-    features: [
-      '1 hour/month dictation',
-      'Up to 15 note edits',
-      'Unlimited devices',
-    ],
-    highlight: false,
-  },
-  {
-    name: 'Standard',
-    description: 'Enhanced Practice',
-    price: '$19/mo',
-    features: [
-      '15 hours/month dictation',
-      'Unlimited note edits',
-      'Unlimited devices'
-    ],
-    highlight: true,
-  },
-  {
-    name: 'Professional',
-    description: 'Complete Automation',
-    price: '$75/mo',
-    features: [
-      'Unlimited dictation',
-      'Unlimited note edits',
-      'Unlimited devices'
-    ],
-    highlight: false,
-  },
-];
-
 export default function TutorialPage() {
   const [activeFaqItem, setActiveFaqItem] = useState(null);
   const [activeTip, setActiveTip] = useState(1);
@@ -112,21 +77,17 @@ export default function TutorialPage() {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const videoRef = useRef(null);
   
-  const handleNavClick = (sectionId) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const scrollOffset = sectionId === 'scheduler' ? 50 : -20;
-      const offsetTop = element.getBoundingClientRect().top + window.pageYOffset + scrollOffset;
-      window.scrollTo({ top: offsetTop, behavior: 'smooth' });
-    }
-  };
-  
   const toggleFaqItem = (index) => {
     setActiveFaqItem(activeFaqItem === index ? null : index);
   };
 
   return (
     <div className="landing-page tutorial-page">
+      <Helmet>
+        <title>ChiroNote Tutorial | Faster Chiropractic SOAP Notes</title>
+        <meta name="description" content="See the ChiroNote workflow, practical recording tips, and answers to common chiropractic SOAP note questions." />
+        <link rel="canonical" href="https://www.chironote.ai/tutorial" />
+      </Helmet>
       {/* No Header/Navbar - starts directly with video */}
 
       {/* Video Demo Section - First thing visible */}

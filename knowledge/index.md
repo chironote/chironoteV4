@@ -38,7 +38,6 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
 | [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence and analytics initialization. |
-| [Landing Page Upgrade Record](./components/landing-page-upgrade.md) | Historical completed and pending responsive-design work. |
 
 ## Infrastructure
 

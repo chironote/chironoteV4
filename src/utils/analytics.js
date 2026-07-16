@@ -1,283 +1,352 @@
 import ReactGA from 'react-ga4';
 
-// Helper functions for tracking events in Google Analytics
-export const trackEvent = (category, action, label = null, value = null) => {
-  // Only track if cookies are accepted
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-  
-  if (hasConsent) {
-    ReactGA.event({
-      category,
-      action,
-      ...(label && { label }),
-      ...(value && { value }),
-    });
-  }
-};
+const DEFAULT_GA_MEASUREMENT_ID = 'G-02117DNZDH';
+const DEFAULT_GOOGLE_ADS_ID = 'AW-16869907009';
+const CONSENT_STORAGE_KEY = 'cookieConsent';
+const GCLID_STORAGE_KEY = 'gclid';
+const GCLID_EXPIRY_KEY = 'gclid_expiry';
+const GCLID_TTL_DAYS = 90;
 
-// Landing page button clicks
-export const trackLandingPageButtonClick = (actionName) => {
-  // actionName will be a descriptive string like 'Click_Header_SignIn'
-  trackEvent('LandingPage', actionName);
-};
+const measurementId = process.env.REACT_APP_GA_MEASUREMENT_ID || DEFAULT_GA_MEASUREMENT_ID;
+const googleAdsId = process.env.REACT_APP_GOOGLE_ADS_ID || DEFAULT_GOOGLE_ADS_ID;
 
-// Recording actions
-export const trackRecordingStart = () => {
-  trackEvent('Recording', 'Start_Recording');
-};
+let analyticsInitialized = false;
+let queuedEvents = [];
+let lastPageView = { path: '', timestamp: 0 };
 
-// Navigation 
-export const trackPageView = (pageName) => {
-  trackEvent('Navigation', 'Page_View', pageName);
-};
+const isBrowser = () => typeof window !== 'undefined';
 
-// Note editing
-export const trackApplyChanges = () => {
-  trackEvent('Editing', 'Apply_Changes');
-};
-
-// Dictation
-export const trackDictationStart = () => {
-  trackEvent('Dictation', 'Start_Dictation');
-};
-
-// Account page button clicks
-export const trackAccountPageButtonClick = (actionName) => {
-  // actionName will be a descriptive string like 'Click_BrowsePlans'
-  trackEvent('AccountPage', actionName);
-};
-
-// Video engagement tracking
-// KEY CONVERSION EVENT - Always track regardless of consent
-export const trackVideoProgress = (videoName, progressPercentage) => {
-  // Fire GA4 event (no consent required for critical conversion events)
-  ReactGA.event('VideoEngagement', {
-    action: `Video_${progressPercentage}%_Watched`,
-    label: videoName
-  });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    window.fbq('track', 'CustomEvent', {
-      event_name: `Video_${progressPercentage}_Percent_Watched`,
-      video_name: videoName
-    });
-  }
-  
-  console.log(`[GA4] Video engagement tracked (no consent required): ${progressPercentage}% of ${videoName}`);
-};
-
-// Track recording completion and check for 5-recording milestone
-export const trackRecordingCompleted = async (userId) => {
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-  
-  if (userId) {
-    // Track individual recording completion (respects consent)
-    if (hasConsent) {
-      ReactGA.event('recording_completed', {
-        user_id: userId
-      });
-    }
-    
-    // Get current recording count from localStorage
-    let recordingCount = parseInt(localStorage.getItem('total_recordings') || '0');
-    recordingCount++;
-    localStorage.setItem('total_recordings', recordingCount);
-    
-    // Update user property with new count (respects consent)
-    if (hasConsent) {
-      ReactGA.set({ 
-        user_properties: {
-          total_recordings: recordingCount
-        }
-      });
-    }
-    
-    console.log(`[GA4] Recording completed. Total: ${recordingCount}`);
-    
-    // Fire milestone event when hitting exactly 5 recordings
-    // KEY CONVERSION EVENT - Always track regardless of consent
-    if (recordingCount === 5) {
-      ReactGA.event('user_activated_5times', {
-        user_id: userId,
-        milestone: '5_recordings',
-        activation_type: 'power_user'
-      });
-      
-      // Also track with Meta Pixel
-      if (typeof window.fbq === 'function') {
-        window.fbq('track', 'CustomEvent', {
-          event_name: 'User_Activated_5_Recordings',
-          milestone: '5_recordings'
-        });
-      }
-      
-      console.log('[GA4] 🎉 User activated! 5 recordings milestone reached');
-    }
-  }
-};
-
-// Track milestone events (3 notes, 5 notes)
-// KEY CONVERSION EVENTS - Always track regardless of consent
-export const trackMilestone = async (eventName, userId, params = {}) => {
-  // Fire GA4 event (no consent required for critical conversion events)
-  ReactGA.event(eventName, {
-    user_id: userId,
-    ...params
-  });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    const metaEventName = eventName === 'user_activated_3notes' 
-      ? 'User_Activated_3_Notes' 
-      : 'User_Activated_5_Notes';
-    
-    window.fbq('track', 'CustomEvent', {
-      event_name: metaEventName,
-      milestone: params.milestone
-    });
-  }
-  
-  console.log(`[GA4] Milestone event tracked (no consent required): ${eventName}`, params);
-};
-
-// ============================================
-// CONVERSION TRACKING FOR GOOGLE ADS
-// ============================================
-
-// Helper function to hash email for enhanced conversions (privacy-safe)
-const hashEmail = async (email) => {
-  if (!email) return null;
-  
-  // Normalize email: lowercase and trim
-  const normalizedEmail = email.toLowerCase().trim();
-  
-  // Use Web Crypto API to create SHA-256 hash
-  const encoder = new TextEncoder();
-  const data = encoder.encode(normalizedEmail);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
-  return hashHex;
-};
-
-// Capture GCLID from URL and store in localStorage
-// This ensures the ad click token is preserved even if user navigates around before signing up/purchasing
-export const captureGclid = () => {
+const safeStorageGet = (storage, key) => {
   try {
-    const params = new URLSearchParams(window.location.search);
-    const gclid = params.get('gclid');
-    
-    if (gclid) {
-      localStorage.setItem('gclid', gclid);
-      // Also update expiration (Google Ads attribution window is usually 30-90 days)
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 90); 
-      localStorage.setItem('gclid_expiry', expiryDate.toISOString());
-      console.log('[Analytics] GCLID captured:', gclid);
-    }
-  } catch (error) {
-    console.error('[Analytics] Error capturing GCLID:', error);
-  }
-};
-
-// Retrieve valid GCLID from storage
-export const getGclid = () => {
-  try {
-    const gclid = localStorage.getItem('gclid');
-    const expiry = localStorage.getItem('gclid_expiry');
-    
-    if (!gclid || !expiry) return null;
-    
-    if (new Date() > new Date(expiry)) {
-      localStorage.removeItem('gclid');
-      localStorage.removeItem('gclid_expiry');
-      return null;
-    }
-    
-    return gclid;
+    return storage?.getItem(key) || null;
   } catch (error) {
     return null;
   }
 };
 
-// Set user properties for enhanced tracking
-export const setUserProperties = async (userId, email) => {
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-  
-  if (hasConsent && userId) {
-    // Set user_id for cross-session tracking
-    ReactGA.set({ user_id: userId });
-    
-    // Set user properties including hashed email for enhanced conversions
-    if (email) {
-      const hashedEmail = await hashEmail(email);
-      ReactGA.set({ 
-        user_properties: {
-          user_email_hash: hashedEmail,
-          user_email: email // Store actual email for Make.com matching
-        }
-      });
+const safeStorageSet = (storage, key, value) => {
+  try {
+    storage?.setItem(key, value);
+  } catch (error) {
+    // Analytics storage should never interrupt the product experience.
+  }
+};
+
+const safeStorageRemove = (storage, key) => {
+  try {
+    storage?.removeItem(key);
+  } catch (error) {
+    // Analytics storage should never interrupt the product experience.
+  }
+};
+
+const toEventToken = (value, fallback = 'unknown') => {
+  const token = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 100);
+
+  return token || fallback;
+};
+
+const compactParams = (params = {}) => Object.fromEntries(
+  Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== '')
+);
+
+const consentState = (granted) => ({
+  analytics_storage: granted ? 'granted' : 'denied',
+  ad_storage: granted ? 'granted' : 'denied',
+  ad_user_data: granted ? 'granted' : 'denied',
+  ad_personalization: granted ? 'granted' : 'denied',
+});
+
+const consentedUserId = (userId) => (
+  userId && getAnalyticsConsent() === true ? userId : undefined
+);
+
+const queueConsentCommand = (command, granted) => {
+  if (!isBrowser()) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag() {
+    window.dataLayer.push(arguments);
+  };
+  window.gtag('consent', command, consentState(granted));
+};
+
+const flushQueuedEvents = () => {
+  const pendingEvents = queuedEvents;
+  queuedEvents = [];
+  pendingEvents.forEach(({ eventName, params }) => ReactGA.event(eventName, params));
+};
+
+export const getAnalyticsConsent = () => {
+  if (!isBrowser()) return null;
+
+  const storedConsent = safeStorageGet(window.localStorage, CONSENT_STORAGE_KEY);
+  if (storedConsent === 'true') return true;
+  if (storedConsent === 'false') return false;
+  return null;
+};
+
+export const initializeAnalytics = () => {
+  if (!isBrowser() || analyticsInitialized) return;
+
+  const hasConsent = getAnalyticsConsent() === true;
+  queueConsentCommand('default', hasConsent);
+
+  ReactGA.initialize([
+    {
+      trackingId: measurementId,
+      gaOptions: {
+        anonymizeIp: true,
+        allowAdFeatures: hasConsent,
+        allowAdPersonalizationSignals: hasConsent,
+      },
+      gtagOptions: { send_page_view: false },
+    },
+    {
+      trackingId: googleAdsId,
+      gaOptions: {
+        anonymizeIp: true,
+        allowAdFeatures: hasConsent,
+        allowAdPersonalizationSignals: hasConsent,
+      },
+      gtagOptions: { send_page_view: false },
+    },
+  ]);
+
+  analyticsInitialized = true;
+  flushQueuedEvents();
+};
+
+export const updateAnalyticsConsent = (granted) => {
+  if (!isBrowser()) return;
+
+  safeStorageSet(window.localStorage, CONSENT_STORAGE_KEY, String(Boolean(granted)));
+  initializeAnalytics();
+  ReactGA.gtag('consent', 'update', consentState(Boolean(granted)));
+
+  if (granted) {
+    const sessionGclid = safeStorageGet(window.sessionStorage, GCLID_STORAGE_KEY);
+    const sessionExpiry = safeStorageGet(window.sessionStorage, GCLID_EXPIRY_KEY);
+    if (sessionGclid && sessionExpiry) {
+      safeStorageSet(window.localStorage, GCLID_STORAGE_KEY, sessionGclid);
+      safeStorageSet(window.localStorage, GCLID_EXPIRY_KEY, sessionExpiry);
     }
   }
 };
 
-// Track successful account creation (PRIMARY CONVERSION)
-// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
+export const trackAnalyticsEvent = (eventName, params = {}) => {
+  if (!isBrowser()) return;
+
+  const normalizedEventName = toEventToken(eventName, 'feature_interaction').slice(0, 40);
+  const compactedParams = compactParams(params);
+
+  if (!analyticsInitialized) {
+    queuedEvents.push({ eventName: normalizedEventName, params: compactedParams });
+    return;
+  }
+
+  ReactGA.event(normalizedEventName, compactedParams);
+};
+
+export const trackRoutePageView = ({ path, title, pageType }) => {
+  if (!isBrowser()) return;
+
+  const now = Date.now();
+  if (lastPageView.path === path && now - lastPageView.timestamp < 1000) return;
+  lastPageView = { path, timestamp: now };
+
+  trackAnalyticsEvent('page_view', {
+    page_path: path,
+    page_location: `${window.location.origin}${path}`,
+    page_title: title || document.title,
+    page_type: pageType,
+  });
+};
+
+export const trackPageView = (pageName) => {
+  trackAnalyticsEvent('page_view_detail', {
+    page_name: toEventToken(pageName),
+  });
+};
+
+export const trackLandingCta = ({ location, label, destination, plan }) => {
+  trackAnalyticsEvent('landing_cta_click', {
+    cta_location: toEventToken(location),
+    cta_label: label,
+    destination,
+    plan: plan ? toEventToken(plan) : undefined,
+  });
+};
+
+export const trackLandingNavigation = (section) => {
+  trackAnalyticsEvent('landing_navigation', {
+    destination_section: toEventToken(section),
+  });
+};
+
+export const trackLandingSectionView = (section) => {
+  trackAnalyticsEvent('landing_section_view', {
+    section_name: toEventToken(section),
+  });
+};
+
+export const trackLandingEngagement = ({ engagementSeconds, maxScrollDepth }) => {
+  trackAnalyticsEvent('landing_engagement', {
+    engagement_time_seconds: Math.max(0, Math.round(engagementSeconds || 0)),
+    max_scroll_depth: Math.max(0, Math.min(100, Math.round(maxScrollDepth || 0))),
+    transport_type: 'beacon',
+  });
+};
+
+export const trackFaqOpen = (question, index) => {
+  trackAnalyticsEvent('landing_faq_open', {
+    faq_index: index + 1,
+    faq_question: question,
+  });
+};
+
+export const trackVideoProgress = (videoName, progressPercentage) => {
+  trackAnalyticsEvent('video_progress', {
+    video_title: videoName,
+    video_percent: Math.round(progressPercentage),
+  });
+};
+
+export const trackWebVital = ({ name, value, id, rating }) => {
+  trackAnalyticsEvent('web_vital', {
+    metric_name: name,
+    metric_id: id,
+    metric_value: name === 'CLS' ? Math.round(value * 1000) : Math.round(value),
+    metric_rating: rating,
+    non_interaction: true,
+  });
+};
+
+export const trackRecordingStart = () => {
+  trackAnalyticsEvent('recording_start', { feature_area: 'recording' });
+};
+
+export const trackApplyChanges = () => {
+  trackAnalyticsEvent('note_edit_apply', { feature_area: 'smart_editor' });
+};
+
+export const trackDictationStart = () => {
+  trackAnalyticsEvent('dictation_start', { feature_area: 'dictation' });
+};
+
+export const trackAccountPageButtonClick = (actionName) => {
+  trackAnalyticsEvent('account_interaction', {
+    interaction_name: toEventToken(actionName),
+  });
+};
+
+export const trackRecordingCompleted = async (userId) => {
+  const currentCount = Number.parseInt(safeStorageGet(window.localStorage, 'total_recordings') || '0', 10);
+  const recordingCount = Number.isFinite(currentCount) ? currentCount + 1 : 1;
+  safeStorageSet(window.localStorage, 'total_recordings', String(recordingCount));
+
+  trackAnalyticsEvent('recording_complete', {
+    user_id: consentedUserId(userId),
+    recording_count: recordingCount,
+  });
+
+  if (recordingCount === 5) {
+    trackAnalyticsEvent('user_activated', {
+      user_id: consentedUserId(userId),
+      milestone: '5_recordings',
+    });
+  }
+};
+
+export const trackMilestone = async (eventName, userId, params = {}) => {
+  trackAnalyticsEvent('user_milestone', {
+    milestone_name: toEventToken(eventName),
+    user_id: consentedUserId(userId),
+    ...params,
+  });
+};
+
+export const captureGclid = () => {
+  if (!isBrowser()) return;
+
+  try {
+    const gclid = new URLSearchParams(window.location.search).get('gclid');
+    if (!gclid) return;
+
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + GCLID_TTL_DAYS);
+    const expiry = expiryDate.toISOString();
+
+    safeStorageSet(window.sessionStorage, GCLID_STORAGE_KEY, gclid);
+    safeStorageSet(window.sessionStorage, GCLID_EXPIRY_KEY, expiry);
+
+    if (getAnalyticsConsent() === true) {
+      safeStorageSet(window.localStorage, GCLID_STORAGE_KEY, gclid);
+      safeStorageSet(window.localStorage, GCLID_EXPIRY_KEY, expiry);
+    }
+  } catch (error) {
+    // Ignore malformed URLs or unavailable storage.
+  }
+};
+
+export const getGclid = () => {
+  if (!isBrowser()) return null;
+
+  const storageOptions = [window.localStorage, window.sessionStorage];
+  for (const storage of storageOptions) {
+    const gclid = safeStorageGet(storage, GCLID_STORAGE_KEY);
+    const expiry = safeStorageGet(storage, GCLID_EXPIRY_KEY);
+    if (!gclid || !expiry) continue;
+
+    if (new Date() <= new Date(expiry)) return gclid;
+    safeStorageRemove(storage, GCLID_STORAGE_KEY);
+    safeStorageRemove(storage, GCLID_EXPIRY_KEY);
+  }
+
+  return null;
+};
+
+export const setUserProperties = async (userId) => {
+  if (!userId || getAnalyticsConsent() !== true) return;
+  initializeAnalytics();
+  ReactGA.set({ user_id: userId });
+};
+
 export const trackSignUp = async (email, userId) => {
-  // Standard GA4 sign_up event (recommended event)
-  // This is a critical business conversion that should always be tracked
-  ReactGA.event('sign_up', {
-    method: 'email',
-    user_email: email,
-    user_id: userId
+  trackAnalyticsEvent('sign_up', {
+    method: email ? 'email' : 'unknown',
+    user_id: consentedUserId(userId),
   });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    window.fbq('track', 'CompleteRegistration', {
-      content_name: 'Account Creation',
-      status: 'completed'
-    });
-  }
-  
-  console.log('[GA4] Sign-up conversion tracked (no consent required):', { email, userId });
 };
 
-// Track when user begins checkout process (views pricing table)
 export const trackBeginCheckout = async (email, userId) => {
-  const hasConsent = localStorage.getItem('cookieConsent') === 'true';
-  
-  if (hasConsent) {
-    // Standard GA4 begin_checkout event
-    ReactGA.event('begin_checkout', {
-      user_email: email,
-      user_id: userId,
-      items: [{
-        item_name: 'ChiroNote Subscription',
-        item_category: 'subscription'
-      }]
-    });
-  }
+  trackAnalyticsEvent('begin_checkout', {
+    user_id: consentedUserId(userId),
+    user_state: email ? 'identified' : 'anonymous',
+    currency: 'USD',
+    items: [{
+      item_id: 'chironote_subscription',
+      item_name: 'ChiroNote Subscription',
+      item_category: 'subscription',
+    }],
+  });
 };
 
-// Track when user views the pricing table (cart view)
-// KEY CONVERSION EVENT - Always tracks regardless of cookie consent
 export const trackViewedCart = (email, userId) => {
-  ReactGA.event('viewedCart', {
-    user_email: email,
-    user_id: userId,
-    content_type: 'pricing_table'
+  trackAnalyticsEvent('view_item_list', {
+    user_id: consentedUserId(userId),
+    user_state: email ? 'identified' : 'anonymous',
+    item_list_id: 'subscription_pricing',
+    item_list_name: 'Subscription pricing',
+    items: [{
+      item_id: 'chironote_subscription',
+      item_name: 'ChiroNote Subscription',
+      item_category: 'subscription',
+    }],
   });
-  
-  // Also track with Meta Pixel if available
-  if (typeof window.fbq === 'function') {
-    window.fbq('track', 'ViewContent', {
-      content_name: 'Pricing Table',
-      content_category: 'Pricing'
-    });
-  }
-  
-  console.log('[GA4] Cart viewed (pricing table) tracked (no consent required):', { email, userId });
 };

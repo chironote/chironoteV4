@@ -37,6 +37,6 @@ if (currentPlan === 'free') {
 
 ## Maintenance Notes
 
-- `PLANS` is currently local to `Account.jsx`; update both this file and any Stripe setup if plans change.
-- The code configures Amplify in this folder with `Amplify.configure(config)`. Check app-wide configuration before adding more local configuration calls.
+- Keep the displayed plan cards aligned with the Stripe pricing table when plans change.
+- `AuthWrapper` configures Amplify before authenticated account routes load; do not add duplicate local configuration.
 - `Account.jsx` tracks page views and account-button clicks through `../../utils/analytics`.

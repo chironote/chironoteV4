@@ -1,8 +1,14 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import { Amplify } from 'aws-amplify';
 import { Authenticator, CheckboxField, withAuthenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css';
+import '../../App.css';
 import Header from '../AuthUI/SignIn';
 import AuthenticatedApp from './AuthenticatedApp';
+import config from '../../amplifyconfiguration.json';
+
+Amplify.configure(config);
 
 const components = {
   Header: () => <Header />,
@@ -62,6 +68,17 @@ function AuthWrapper() {
     initialState: initialAuthState === 'signUp' ? 'signUp' : 'signIn',
     ...(formFields && { formFields })
   };
+
+  useEffect(() => {
+    const stylesheetId = 'material-symbols-stylesheet';
+    if (document.getElementById(stylesheetId)) return;
+
+    const stylesheet = document.createElement('link');
+    stylesheet.id = stylesheetId;
+    stylesheet.rel = 'stylesheet';
+    stylesheet.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0&display=block';
+    document.head.appendChild(stylesheet);
+  }, []);
 
   useEffect(() => {
     if (initialAuthState || prefillEmail) {

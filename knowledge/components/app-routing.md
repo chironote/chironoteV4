@@ -1,56 +1,34 @@
 ---
 type: component-readme
-title: "AppRouting Components"
-description: "Public and authenticated route ownership, redirects, and maintenance guidance."
+title: "Application Routing"
+description: "Public and authenticated route ownership, compatibility redirects, PWA behavior, and page measurement."
 resource: "../../src/components/AppRouting/README.md"
 tags: [chironote, component, app-routing]
 ---
 
+# Application Routing
 
-> Source: [`README.md`](../../src/components/AppRouting/README.md)
-
-# AppRouting Components
-
-This folder owns top-level route selection and cross-route side effects. It sits above the authenticated app shell and public marketing pages.
-
-## Files
-
-- `AppRoutes.jsx` defines the public and app route table.
-- `RouteTracker.jsx` sends GA4 pageviews, captures `gclid`, and records descriptive page-view analytics events.
-- `PWARedirect.jsx` redirects standalone PWA launches from `/` to `/app`.
+`AppRoutes.jsx` owns the React Router route table. Public pages are code-split, and `AuthWrapper` is lazy-loaded so Amplify and authenticated application code do not inflate the initial landing-page route.
 
 ## Route Table
 
-`AppRoutes` lazy-loads public pages and routes authenticated app traffic to `AuthWrapper`:
+| Route | Owner | Behavior |
+| --- | --- | --- |
+| `/` | `LandingPage` | Canonical public landing page. |
+| `/ai-chiropractic-soap-notes` | redirect | Compatibility redirect to `/`. |
+| `/learn-more` | redirect | Compatibility redirect to `/`. |
+| `/tutorial` | `TutorialPage` | Standalone tutorial workflow. |
+| `/blog` | `BlogList` | Public post index. |
+| `/blog/:slug` | `BlogPost` | Registered public post or a no-index not-found state. |
+| `/app/*` | `AuthWrapper` | Amplify authentication and signed-in application. |
+| unmatched | redirect | Returns visitors to `/`. |
 
-```jsx
-<Route path="/" element={<Navigate to="/ai-chiropractic-soap-notes" replace />} />
-<Route path="/ai-chiropractic-soap-notes" element={<ConsiderationLandingPage />} />
-<Route path="/learn-more" element={<ConversionLandingPage />} />
-<Route path="/tutorial" element={<TutorialPage />} />
-<Route path="/blog" element={<BlogList />} />
-<Route path="/blog/:slug" element={<BlogPost />} />
-<Route path="/app/*" element={<AuthWrapper />} />
-```
+`PWARedirect` sends standalone PWA launches from `/` to `/app`, including the iOS and Android standalone detection paths.
 
-## Side Effects
+## Cross-route Measurement
 
-`RouteTracker` intentionally renders `null`; its job is analytics:
-
-```js
-ReactGA.send({ hitType: 'pageview', page: location.pathname + location.search });
-captureGclid();
-```
-
-`PWARedirect` detects standalone mode with `matchMedia('(display-mode: standalone)')`, iOS `window.navigator.standalone`, and Android app referrers.
-
-## Maintenance Notes
-
-- Add new public routes here, not in `AuthenticatedApp`.
-- Add authenticated subroutes inside `AppShell/AuthenticatedApp.jsx`.
-- Keep route names in `RouteTracker` aligned with analytics reporting.
+`Analytics/GoogleAnalytics.jsx` initializes Consent Mode, captures `gclid`, emits a `page_view` for each pathname and query change, classifies the route type, and starts Core Web Vitals reporting. Do not add duplicate page-view effects inside route components.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AppRouting/README.md).
-
+Derived from [`src/components/AppRouting/README.md`](../../src/components/AppRouting/README.md), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), [`PWARedirect.jsx`](../../src/components/AppRouting/PWARedirect.jsx), and [`GoogleAnalytics.jsx`](../../src/components/Analytics/GoogleAnalytics.jsx).

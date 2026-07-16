@@ -22,6 +22,8 @@ This folder owns the authenticated application shell: authentication wrapping, m
 - `useUserAnalytics.js` attaches user-level analytics context.
 - `ErrorBanner.jsx` renders a global error banner when enabled.
 
+`AuthWrapper` configures Amplify and loads Amplify UI styles, authenticated-app styles, and Material Symbols only after `/app` is requested. Public routes therefore avoid the authenticated bundle and its blocking icon font.
+
 ## Main Ownership
 
 `AuthenticatedApp` keeps the high-level UI state for the app, including side panels, selected history item, clipboard text, dictation state, and recording state. It instantiates the recording and dictation controller APIs like hook-style functions:

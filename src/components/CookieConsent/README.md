@@ -4,7 +4,7 @@ This folder owns the cookie consent banner shown to public visitors.
 
 ## Files
 
-- `CookieConsent.jsx` renders the accept/decline banner and initializes Google Analytics after consent.
+- `CookieConsent.jsx` renders the accept/decline banner and updates the shared analytics consent state.
 - `CookieConsent.css` styles the fixed consent panel and action buttons.
 
 ## Important Code
@@ -15,19 +15,16 @@ Consent is stored in local storage:
 const hasConsent = localStorage.getItem('cookieConsent');
 ```
 
-Accepting stores `true`, hides the banner, and initializes GA4 and Google Ads tracking:
+Accepting stores `true`, hides the banner, and grants GA4 and Google Ads Consent Mode storage:
 
 ```js
-ReactGA.initialize([
-  { trackingId: 'G-02117DNZDH', gaOptions: { client_storage: 'localStorage' } },
-  { trackingId: 'AW-16869907009', gaOptions: { client_storage: 'localStorage' } }
-]);
+updateAnalyticsConsent(true);
 ```
 
-Declining stores `false` and does not initialize analytics from this component.
+Declining stores `false` and keeps analytics, ad storage, ad user data, and ad personalization denied. `Analytics/GoogleAnalytics.jsx` owns initialization and cookieless Consent Mode measurement.
 
 ## Maintenance Notes
 
-- This component assumes analytics can use local storage once accepted.
-- If analytics initialization moves elsewhere, keep the consent storage contract compatible.
+- Keep the `cookieConsent` local-storage contract compatible with `utils/analytics.js`.
+- Never add email addresses, clinical content, or other identifying data to analytics events.
 - Review privacy copy with any future tracking changes.

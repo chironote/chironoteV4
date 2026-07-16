@@ -34,19 +34,20 @@ export default function BlogList() {
       <Helmet>
         <title>Blog | ChiroNote - AI Chiropractic SOAP Notes Software</title>
         <meta name="description" content="Insights on AI, chiropractic practice management, and healthcare technology. Learn how AI is transforming chiropractic documentation." />
-        <link rel="canonical" href="https://chironote.com/blog" />
+        <link rel="canonical" href="https://www.chironote.ai/blog" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://chironote.com/blog" />
+        <meta property="og:url" content="https://www.chironote.ai/blog" />
         <meta property="og:title" content="Blog | ChiroNote - AI Chiropractic SOAP Notes Software" />
         <meta property="og:description" content="Insights on AI, chiropractic practice management, and healthcare technology." />
         
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://chironote.com/blog" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:url" content="https://www.chironote.ai/blog" />
         <meta name="twitter:title" content="Blog | ChiroNote - AI Chiropractic SOAP Notes Software" />
         <meta name="twitter:description" content="Insights on AI, chiropractic practice management, and healthcare technology." />
+        <meta name="twitter:image" content="https://www.chironote.ai/logo512.png" />
       </Helmet>
       <LandingNavbar />
       

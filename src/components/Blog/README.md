@@ -48,6 +48,8 @@ const POST_MAP = {
 
 ## Maintenance Notes
 
+- Use `https://www.chironote.ai` for canonical and social URLs; the public sitemap lists every registered post slug.
+
 - When adding a post, update both `BLOG_POSTS` in `BlogList.jsx` and `POST_MAP` in `BlogPost.jsx`.
 - Each route uses `Helmet` for canonical URLs, description metadata, Open Graph tags, and Twitter tags.
 - The file names currently include spaces. Follow the existing import style unless you are doing a deliberate cleanup.

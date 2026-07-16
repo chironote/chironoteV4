@@ -1,25 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Account.css';
-import config from '../../amplifyconfiguration.json';
 import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
 import { generateClient } from 'aws-amplify/api';
 import { getUserSubscription } from '../../graphql/queries';
-import { Amplify } from 'aws-amplify';
 import { trackPageView, trackAccountPageButtonClick } from '../../utils/analytics';
-// Plan constants moved here from constants.js
-const PLANS = ['free', 'standard', 'pro'];
-
-Amplify.configure(config);
 
 const client = generateClient();
 
 function Account({ setCurrentPage }) {
-  const [name, setName] = useState('');
   const [currentPlan, setCurrentPlan] = useState('');
   const [remainingHours, setRemainingHours] = useState(0);
   const [notesLeft, setNotesLeft] = useState(0);
-  const [hoursSaved, setHoursSaved] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isQueryLoading, setIsQueryLoading] = useState(true);
   const navigate = useNavigate();
@@ -27,12 +19,7 @@ function Account({ setCurrentPage }) {
   useEffect(() => {
     // Track page view when the Account component mounts
     trackPageView('Account_Page');
-    
-    // TODO: Track price table view for conversion funnel analysis
-    // This indicates user is considering upgrade/plan change
-    // trackEvent('AccountPage', 'View_Price_Tables');
-    // Meta Pixel: window.fbq('track', 'ViewContent', { content_name: 'Pricing Tables', content_category: 'Account Page' });
-    
+
     // Set the current page in the parent component
     if (setCurrentPage) {
       setCurrentPage('account');
@@ -55,12 +42,10 @@ function Account({ setCurrentPage }) {
       const currentTier = data.data.getUserSubscription.tier.toLowerCase();
       const hoursLeft = data.data.getUserSubscription.hoursleft;
       const notesLeftValue = data.data.getUserSubscription.notesleft;
-      const hoursSavedValue = data.data.getUserSubscription.hoursSaved;
       
       setCurrentPlan(currentTier);
       setRemainingHours(hoursLeft || 0);
       setNotesLeft(notesLeftValue || 0);
-      setHoursSaved(hoursSavedValue || 0);
     } catch (err) {
       console.error('Error fetching user subscription:', err);
     } finally {

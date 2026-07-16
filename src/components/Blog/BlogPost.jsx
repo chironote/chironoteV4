@@ -54,7 +54,7 @@ export default function BlogPost() {
   }
 
   const PostComponent = post.component;
-  const postUrl = `https://chironote.com/blog/${slug}`;
+  const postUrl = `https://www.chironote.ai/blog/${slug}`;
 
   return (
     <div className="blog-post">
@@ -70,10 +70,11 @@ export default function BlogPost() {
         <meta property="og:description" content={post.synopsis} />
         
         {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary" />
         <meta name="twitter:url" content={postUrl} />
         <meta name="twitter:title" content={post.title} />
         <meta name="twitter:description" content={post.synopsis} />
+        <meta name="twitter:image" content="https://www.chironote.ai/logo512.png" />
         
         {/* Article Metadata */}
         <meta property="article:site_name" content="ChiroNote" />

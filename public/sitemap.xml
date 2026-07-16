@@ -6,23 +6,38 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://www.chironote.ai/app</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://www.chironote.ai/app/account</loc>
+    <loc>https://www.chironote.ai/blog</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://www.chironote.ai/app/feedback</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://www.chironote.ai/#chiropractic-soap-notes</loc>
-    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/tutorial</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/blog/chiropractor-guide-understanding-ai</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/blog/top-3-automations-chiropractic-practice</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/blog/top-3-ai-soap-note-tools-chiropractors</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/blog/testing-latest-ai-models-chiro-soap-notes</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.chironote.ai/blog/why-ai-wont-replace-chiropractors</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
   </url>
 </urlset>

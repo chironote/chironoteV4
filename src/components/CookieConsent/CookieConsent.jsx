@@ -1,75 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import './CookieConsent.css';
-import ReactGA from 'react-ga4';
+import { getAnalyticsConsent, updateAnalyticsConsent } from '../../utils/analytics';
 
 const CookieConsent = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Check if consent has been given
-    const hasConsent = localStorage.getItem('cookieConsent');
-    if (!hasConsent) {
-      setVisible(true);
-    } else {
-      // If consent was previously given, initialize GA with cookies
-      initializeGAWithConsent();
-    }
+    setVisible(getAnalyticsConsent() === null);
   }, []);
 
   const acceptCookies = () => {
-    localStorage.setItem('cookieConsent', 'true');
+    updateAnalyticsConsent(true);
     setVisible(false);
-    initializeGAWithConsent();
   };
 
   const declineCookies = () => {
-    localStorage.setItem('cookieConsent', 'false');
+    updateAnalyticsConsent(false);
     setVisible(false);
-    // Keep GA initialized with cookies disabled
-  };
-
-  const initializeGAWithConsent = () => {
-    // Reinitialize Google Analytics with cookies enabled
-    try {
-      ReactGA.initialize([
-        {
-          trackingId: "G-02117DNZDH",
-          gaOptions: {
-            client_storage: 'localStorage', // Enable cookies
-            anonymize_ip: false // Don't anonymize IP
-          }
-        },
-        {
-          trackingId: "AW-16869907009",
-          gaOptions: {
-            client_storage: 'localStorage', // Enable cookies
-            anonymize_ip: false // Don't anonymize IP
-          }
-        }
-      ]);
-      // Send pageview
-      ReactGA.send({ hitType: "pageview", page: window.location.pathname });
-    } catch (error) {
-      console.error("Error initializing Google Analytics with consent:", error);
-    }
   };
 
   if (!visible) return null;
 
   return (
-    <div className="cookie-consent">
+    <section
+      className="cookie-consent"
+      role="dialog"
+      aria-labelledby="cookie-consent-title"
+      aria-describedby="cookie-consent-description"
+    >
       <div className="cookie-content">
-        <h3>Cookie Consent</h3>
-        <p>
-          This website uses cookies to enhance your experience and to analyze our traffic. 
-          By clicking "Accept", you consent to our use of cookies for analytics purposes.
+        <h3 id="cookie-consent-title">Your privacy choices</h3>
+        <p id="cookie-consent-description">
+          Optional analytics and advertising storage helps us understand which pages and features are useful. Declining keeps that storage disabled.
         </p>
         <div className="cookie-buttons">
-          <button onClick={acceptCookies} className="accept-button">Accept</button>
-          <button onClick={declineCookies} className="decline-button">Decline</button>
+          <button type="button" onClick={acceptCookies} className="accept-button">Accept</button>
+          <button type="button" onClick={declineCookies} className="decline-button">Decline</button>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

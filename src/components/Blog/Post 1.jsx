@@ -74,16 +74,18 @@ function Post1Content() {
       </p>
       
       <p>
-        Luckily ChiroNote is a completely HIPAA compliant SOAP note application that ensures PHI is encrypted, transferred and processed according to the rigorous standards of HIPAA. Our chiro AI handles your clinical summaries without compromising patient privacy. <a href="/ai-chiropractic-soap-notes">Learn more about us here</a>.
+        Luckily ChiroNote is a completely HIPAA compliant SOAP note application that ensures PHI is encrypted, transferred and processed according to the rigorous standards of HIPAA. Our chiro AI handles your clinical summaries without compromising patient privacy. <a href="/">Learn more about us here</a>.
       </p>
     </div>
   );
 }
 
 // Export with metadata and component
-export default {
+const post = {
   ...metadata,
   component: Post1Content,
 };
+
+export default post;
 
 
