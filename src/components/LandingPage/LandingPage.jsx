@@ -22,7 +22,6 @@ import mockupLaptop from '../../assets/mockup-laptop-final.png';
 
 const SIGN_UP_URL = '/app?initialState=signUp';
 const SIGN_IN_URL = '/app';
-const SCHEDULER_URL = 'https://scheduler.zoom.us/nikita-predtechensky/chironote-demo';
 const TERMS_URL = 'https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html';
 const VIDEO_TITLE = 'ChiroNote clinical AI scribe overview';
 const VIDEO_MILESTONES = [10, 25, 50, 75, 90];
@@ -491,10 +490,6 @@ export default function LandingPage() {
                 <a className="marketing-button marketing-button--plan" href={SIGN_UP_URL} onClick={() => handleCta('pricing', 'Get started', SIGN_UP_URL, plan.name)}>Get started</a>
               </article>
             ))}
-          </div>
-          <div className="marketing-pricing__walkthrough">
-            <a href={SCHEDULER_URL} target="_blank" rel="noopener noreferrer" onClick={() => handleCta('pricing', 'Schedule personal walkthrough', SCHEDULER_URL)}>Schedule a personal walkthrough</a>
-            <p>Have questions about your workflow or EHR? Book a short, no-pressure conversation with us.</p>
           </div>
         </section>
 

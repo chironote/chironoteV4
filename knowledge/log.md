@@ -2,6 +2,7 @@
 
 ## 2026-07-16
 
+- **Conversion experiment**: Removed the personal walkthrough option from landing-page pricing so the funnel emphasizes self-service sign-up and purchase.
 - **Landing launch**: Replaced three competing landing implementations with one canonical, production-ready page at `/`, retained compatibility redirects, repaired public destinations and tutorial styling, and documented responsive and performance boundaries.
 - **Analytics correction**: Centralized GA4 and Google Ads behind Consent Mode, removed raw email collection and unconditional third-party landing scripts, and defined stable events for acquisition, funnel interaction, feature adoption, and Core Web Vitals.
 - **Performance update**: Documented responsive WebP assets, deferred video, scoped landing CSS, and lazy loading of Amplify, authenticated styles, and Material Symbols.

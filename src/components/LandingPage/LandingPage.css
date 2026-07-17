@@ -696,32 +696,6 @@
   background: var(--marketing-green);
 }
 
-.marketing-pricing__walkthrough {
-  max-width: 580px;
-  margin: 42px auto 0;
-  text-align: center;
-}
-
-.marketing-pricing__walkthrough a {
-  display: inline-flex;
-  min-height: 50px;
-  align-items: center;
-  justify-content: center;
-  padding: 12px 28px;
-  color: #fff;
-  border-radius: 999px;
-  background: var(--marketing-sage-dark);
-  font-size: 0.94rem;
-  font-weight: 750;
-  text-decoration: none;
-}
-
-.marketing-pricing__walkthrough p {
-  margin-top: 14px;
-  color: var(--marketing-muted);
-  font-size: 0.9rem;
-}
-
 .marketing-faq {
   max-width: 900px;
   margin: 0 auto;

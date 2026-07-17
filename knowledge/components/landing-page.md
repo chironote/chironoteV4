@@ -19,7 +19,7 @@ The landing page exposes real destinations rather than placeholders:
 - Free-trial and plan calls to action open `/app?initialState=signUp`.
 - Login opens `/app`.
 - Blog opens `/blog`.
-- Personal walkthrough opens the ChiroNote Zoom scheduler in a new tab.
+- Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 

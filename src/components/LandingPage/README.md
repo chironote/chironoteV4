@@ -16,7 +16,7 @@ All calls to action are real destinations:
 
 - Sign-up links open `/app?initialState=signUp`.
 - Sign-in links open `/app`.
-- Personal walkthrough links open the Zoom scheduler in a new tab.
+- Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - Blog, Terms & Privacy, section navigation, video playback, testimonial controls, and FAQ controls are keyboard accessible.
 
 The page sends stable funnel events through `utils/analytics.js`, including section views, CTA locations and plan names, navigation, FAQ opens, video milestones, testimonial navigation, and ten-second engagement. The global analytics component records route page views and Core Web Vitals.
