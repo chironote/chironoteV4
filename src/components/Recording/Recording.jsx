@@ -56,8 +56,7 @@ function Recording({
   // Function for refreshing the auth session
   const currentSession = async () => {
     try {
-      const { tokens } = await fetchAuthSession({ forceRefresh: true });
-      console.log(tokens);
+      await fetchAuthSession({ forceRefresh: true });
     } catch (err) {
       console.log(err);
     }
@@ -77,15 +76,15 @@ function Recording({
       
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
-        // Stop the recording we just started
-        stopRecording();
+        // Cancel without uploading the recording we just started.
+        discardRecording();
         setShowCreditPopup(true);
         return;
       }
     } catch (error) {
       console.error("Error in handleStartRecording:", error);
-      // Stop recording on error
-      stopRecording();
+      // Cancel without uploading when subscription validation fails.
+      discardRecording();
     }
   };
 

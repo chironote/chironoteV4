@@ -138,6 +138,7 @@ const structuredData = {
 };
 
 export default function LandingPage() {
+  const pageRef = useRef(null);
   const videoRef = useRef(null);
   const carouselRef = useRef(null);
   const navRef = useRef(null);
@@ -146,6 +147,30 @@ export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    const page = pageRef.current;
+    const revealElements = page?.querySelectorAll('[data-marketing-reveal]');
+    if (!page || !revealElements?.length) return undefined;
+
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      revealElements.forEach((element) => element.classList.add('is-visible'));
+      return undefined;
+    }
+
+    page.classList.add('is-motion-ready');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.16 });
+
+    revealElements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const sections = document.querySelectorAll('[data-analytics-section]');
@@ -296,7 +321,7 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="marketing-page">
+    <div className="marketing-page" ref={pageRef}>
       <Helmet>
         <title>ChiroNote | AI Chiropractic SOAP Notes</title>
         <meta name="description" content="Finish chiropractic SOAP notes faster with a browser-based AI scribe. HIPAA-compliant workflow, no complex EHR integration, and a free plan." />
@@ -347,10 +372,10 @@ export default function LandingPage() {
           <div className="marketing-hero__copy">
             <p className="marketing-eyebrow">AI documentation built for chiropractors</p>
             <h1>
-              You became a chiropractor to help people—{' '}
-              <span>not to write about it.</span>
+              SOAP notes,{' '}
+              <span>written while you treat.</span>
             </h1>
-            <p className="marketing-hero__summary">ChiroNote turns your visit into a structured SOAP note in the same browser as your EHR, so you can finish charting while the day is still yours.</p>
+            <p className="marketing-hero__summary">ChiroNote listens to the visit and turns the conversation into a structured note—automatically.</p>
             <div className="marketing-hero__actions">
               <a className="marketing-button marketing-button--primary" href={SIGN_UP_URL} onClick={() => handleCta('hero', 'Try now for free')}>
                 <span>Try now for free</span>
@@ -361,7 +386,7 @@ export default function LandingPage() {
           </div>
           <div className="marketing-hero__visual">
             <picture>
-              <source srcSet={`${heroImageSmall} 720w, ${heroImageLarge} 1200w`} sizes="(max-width: 760px) calc(100vw - 32px), 52vw" type="image/webp" />
+              <source srcSet={`${heroImageSmall} 720w, ${heroImageLarge} 1200w`} sizes="(max-width: 880px) calc(100vw - 32px), 52vw" type="image/webp" />
               <img
                 src={heroImageLarge}
                 alt="Chiropractor speaking with a patient during an appointment"
@@ -371,10 +396,11 @@ export default function LandingPage() {
                 decoding="async"
               />
             </picture>
-            <div className="marketing-hero__stat" aria-label="45 percent less time on charting">
-              <strong>45%</strong>
-              <span>less time on charting</span>
-            </div>
+            <ul className="marketing-hero__mobile-assurances" aria-label="Product assurances" data-analytics-section="trust">
+              <li>HIPAA-compliant</li>
+              <li>Quick setup</li>
+              <li>Keep your workflow</li>
+            </ul>
           </div>
         </section>
 
@@ -385,19 +411,23 @@ export default function LandingPage() {
         </section>
 
         <section className="marketing-section marketing-testimonials" data-analytics-section="testimonials">
-          <div className="marketing-section__heading">
+          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">Testimonials</p>
             <h2>Trusted by chiropractors in busy practices</h2>
           </div>
-          <div className="marketing-testimonials__grid" ref={carouselRef} onScroll={handleCarouselScroll}>
+          <div className="marketing-testimonials__grid marketing-reveal" ref={carouselRef} onScroll={handleCarouselScroll} data-marketing-reveal>
             {testimonials.map((testimonial) => (
               <figure className="marketing-testimonial" key={testimonial.name}>
-                <div className="marketing-testimonial__stars" aria-label="Five out of five stars">★★★★★</div>
-                <blockquote>“{testimonial.quote}”</blockquote>
-                <figcaption>
-                  <img src={testimonial.avatar} alt="" width="48" height="48" loading="lazy" decoding="async" />
-                  <strong>{testimonial.name}</strong>
-                </figcaption>
+                <div className="marketing-testimonial__portrait" aria-hidden="true">
+                  <img src={testimonial.avatar} alt="" width="96" height="96" loading="lazy" decoding="async" />
+                </div>
+                <div className="marketing-testimonial__content">
+                  <div className="marketing-testimonial__stars" aria-label="Five out of five stars">★★★★★</div>
+                  <blockquote>“{testimonial.quote}”</blockquote>
+                  <figcaption>
+                    <strong>{testimonial.name}</strong>
+                  </figcaption>
+                </div>
               </figure>
             ))}
           </div>
@@ -416,12 +446,12 @@ export default function LandingPage() {
         </section>
 
         <section id="how-it-works" className="marketing-section marketing-video" data-analytics-section="video">
-          <div className="marketing-section__heading">
+          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How it works</p>
             <h2>See a clinical AI scribe in action</h2>
             <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>
           </div>
-          <div className="marketing-video__frame">
+          <div className="marketing-video__frame marketing-reveal" data-marketing-reveal>
             <video
               ref={videoRef}
               controls={videoPlaying}
@@ -480,16 +510,19 @@ export default function LandingPage() {
           <div className="marketing-pricing__grid">
             {plans.map((plan) => (
               <article className={`marketing-plan${plan.highlighted ? ' is-highlighted' : ''}`} key={plan.name}>
-                {plan.highlighted && <span className="marketing-plan__badge">Most popular</span>}
-                <p className="marketing-plan__name">{plan.name}</p>
-                <p className="marketing-plan__description">{plan.description}</p>
+                <div className="marketing-plan__heading">
+                  {plan.highlighted && <span className="marketing-plan__badge">Most popular</span>}
+                  <p className="marketing-plan__name">{plan.name}</p>
+                  <p className="marketing-plan__description">{plan.description}</p>
+                </div>
                 <p className="marketing-plan__price">{plan.price}{plan.cadence && <small>{plan.cadence}</small>}</p>
                 <ul>
                   {plan.features.map((feature) => <li key={feature}>{feature}</li>)}
                 </ul>
-                <a className="marketing-button marketing-button--plan" href={SIGN_UP_URL} onClick={() => handleCta('pricing', 'Get started', SIGN_UP_URL, plan.name)}>Get started</a>
+                <a className="marketing-button marketing-button--plan" href={SIGN_UP_URL} aria-label={`Get started with ${plan.name}`} onClick={() => handleCta('pricing', 'Get started', SIGN_UP_URL, plan.name)}>Get started</a>
               </article>
             ))}
+            <p className="marketing-pricing__shared-feature">All plans include unlimited devices.</p>
           </div>
         </section>
 

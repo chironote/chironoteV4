@@ -168,14 +168,15 @@ const EditPanel = ({
   };
 
   return (
-    <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`} style={{ alignItems: 'stretch' }}>
-      <h2 className="panel-header" style={{ width: '100%', alignSelf: 'stretch' }}>Smart Editor</h2>
-      <div className="edit-panel-content" style={{ padding: 0 }}>
+    <section className={`edit-panel ${showEditPanel ? 'visible' : ''}`} aria-label="Smart Editor">
+      <h2 className="panel-header">Smart Editor</h2>
+      <div className="edit-panel-content">
         <div className="editor-toolbar">
           <div className="toolbar-group">
             <button 
               className="toolbar-button primary-button"
               onClick={() => editStream(editContent)}
+              aria-label="Apply editing instructions"
             >
               <span className="material-symbols-rounded toolbar-icon">edit</span>
               <span className="button-text">Apply Changes</span>
@@ -190,6 +191,7 @@ const EditPanel = ({
               } ${isEditTranscribing ? 'button-recording' : ''}`}
               onClick={editDictationToggle}
               title="Dictate into editor"
+              aria-label="Dictate editing instructions"
             >
               <span className="material-symbols-rounded toolbar-icon">mic</span>
               {isEditTranscribing && <span className="recording-indicator"></span>}
@@ -201,6 +203,7 @@ const EditPanel = ({
               className="toolbar-button delete-button"
               onClick={() => setEditContent('')}
               title="Clear text"
+              aria-label="Clear editing instructions"
             >
               <span className="material-symbols-rounded toolbar-icon">delete</span>
             </button>
@@ -280,6 +283,7 @@ const EditPanel = ({
             }
           }}
           aria-readonly={isEditTranscribing}
+          aria-label="Editing instructions"
           onDragOver={(e) => e.preventDefault()}
           onDragLeave={(e) => e.preventDefault()}
           onDrop={(e) => e.preventDefault()}
@@ -293,7 +297,7 @@ const EditPanel = ({
       )}
       {/* Dictation credit popup (Edit Panel dictation) */}
       {editCreditPopupElement}
-    </div>
+    </section>
   )
 }
 

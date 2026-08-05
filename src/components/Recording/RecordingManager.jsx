@@ -3,6 +3,7 @@ import NoSleep from 'nosleep.js';
 import useAudioUploadQueue from './useAudioUploadQueue';
 import useMediaRecorderController from './useMediaRecorderController';
 import useNoteGeneration from './useNoteGeneration';
+import { AUDIO_UPLOAD_FAILURE_MESSAGE } from './recordingConstants';
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -19,11 +20,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isDiscardingRef = useRef(false);
   const cleanupRef = useRef({
     cleanupRecorder: () => {},
+    cancelRecordingForFailure: () => {},
     cleanupNoteGeneration: () => {}
   });
 
   const {
     subscribeToNoteCompletion,
+    failNoteGeneration,
     resetNoteGenerationState,
     cleanupNoteGeneration
   } = useNoteGeneration({
@@ -40,13 +43,21 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const {
     queueUpload,
-    clearUploadQueue
+    startUploadSession,
+    cancelUploadSession
   } = useAudioUploadQueue({
-    timeStampRef,
     filePathRef,
     onFinalAudioQueued: (userId, timestamp) => {
       setIsTranscriptCompleted(false);
       subscribeToNoteCompletion(userId, timestamp);
+    },
+    onUploadError: (error) => {
+      failNoteGeneration(
+        'audio_submission_failed',
+        error,
+        AUDIO_UPLOAD_FAILURE_MESSAGE
+      );
+      cleanupRef.current.cancelRecordingForFailure();
     }
   });
 
@@ -57,6 +68,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     pauseRecording,
     resumeRecording,
     cleanupRecorder,
+    cancelRecordingForFailure,
     isRecordingRef,
     isPausedRef
   } = useMediaRecorderController({
@@ -66,7 +78,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     noSleepRef,
     isDiscardingRef,
     queueUpload,
-    clearUploadQueue,
+    startUploadSession,
+    cancelUploadSession,
     cleanupNoteGeneration,
     resetNoteGenerationState,
     setIsRecording,
@@ -80,6 +93,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   useEffect(() => {
     cleanupRef.current = {
       cleanupRecorder,
+      cancelRecordingForFailure,
       cleanupNoteGeneration
     };
   });

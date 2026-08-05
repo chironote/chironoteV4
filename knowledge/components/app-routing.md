@@ -23,6 +23,8 @@ tags: [chironote, component, app-routing]
 | `/app/*` | `AuthWrapper` | Amplify authentication and signed-in application. |
 | unmatched | redirect | Returns visitors to `/`. |
 
+Inside `/app/*`, `AuthenticatedApp` owns the dashboard plus `/billing`, `/settings`, and `/pricingplans`. Legacy `/account` replaces to `/app/billing`. Legacy `/feedback` replaces to the dashboard and opens the Feedback modal so old bookmarks remain useful.
+
 `PWARedirect` sends standalone PWA launches from `/` to `/app`, including the iOS and Android standalone detection paths.
 
 ## Cross-route Measurement

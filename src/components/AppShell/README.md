@@ -1,6 +1,6 @@
 # AppShell Components
 
-This folder owns the authenticated application shell: authentication wrapping, main workspace composition, note history state, and app-wide authenticated analytics.
+This folder owns the authenticated application shell: authentication wrapping, main workspace composition, authenticated routing, feedback-modal state, note history state, and app-wide authenticated analytics.
 
 ## Files
 
@@ -37,6 +37,8 @@ Clipboard and Smart Editor dictation insert into the target textarea instead of 
 
 `MainWorkspace` is intentionally mostly presentational. It receives structured prop groups such as `sidebar`, `clipboard`, `editPanel`, `recording`, `dictation`, and `contentPopup`.
 
+Authenticated routes include `/billing`, `/settings`, and `/pricingplans`. `/account` redirects with replacement to `/app/billing`. `/feedback` is a compatibility deep link that redirects to the dashboard and opens the controlled Feedback modal. The modal lives outside the route switch so opening it from navigation keeps the current page mounted.
+
 ## Notes History
 
 `useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`:
@@ -59,4 +61,5 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 
 - Keep business orchestration in `AuthenticatedApp` and rendering layout in `MainWorkspace`.
 - Be careful with keyboard shortcuts in `AuthenticatedApp`: `Ctrl+B`, `Ctrl+Backspace`, `Ctrl+\``, and `Escape` are handled globally.
+- Keep Feedback as shell state rather than a routed page so it overlays the current authenticated destination.
 - `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners.

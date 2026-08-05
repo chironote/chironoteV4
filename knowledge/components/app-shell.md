@@ -48,6 +48,8 @@ Clipboard and Smart Editor dictation insert into the target textarea instead of 
 
 `MainWorkspace` is intentionally mostly presentational. It receives structured prop groups such as `sidebar`, `clipboard`, `editPanel`, `recording`, `dictation`, and `contentPopup`.
 
+`AuthenticatedApp` also owns the controlled Feedback modal above its route switch. Navigation opens it without changing the current route or unmounting the underlying page. A legacy `/feedback` child route redirects to the dashboard and opens the same modal. Billing, Settings, pricing, and compatibility redirects remain child routes below the authenticated shell.
+
 ## Notes History
 
 `useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`:

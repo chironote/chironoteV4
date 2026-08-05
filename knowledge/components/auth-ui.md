@@ -40,6 +40,10 @@ const Header = () => {
 - Keep assets imported from `src/assets` so CRA processes them correctly.
 - If changing copy here, verify it still fits inside the Amplify Authenticator layout on mobile.
 
+## Visual Style Reference
+
+Follow [Third-party and Amplify UI](../development/STYLE.md#third-party-and-amplify-ui) and the product [Forms](../development/STYLE.md#forms) rules when changing Amplify tokens, branding, focus, field, or button presentation.
+
 ## Provenance
 
 Derived from [`README.md`](../../src/components/AuthUI/README.md).

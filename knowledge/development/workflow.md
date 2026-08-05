@@ -30,6 +30,8 @@ Use npm with the checked-in `package-lock.json`.
 
 Prioritize tests around recording, authentication, GraphQL interactions, and clinical-note text transformations. `src/utils/dictationInsertion.test.js` is the regression suite for dictation cursor insertion and preservation of surrounding note text.
 
+Commit `62f4ec8` removed the former recording test harness. The 2026-07-15 safety pass rebuilt focused coverage for media metadata, emitted-chunk ordering, session cancellation, late upload callbacks, SQS failure, and unmount cleanup. Together with dictation insertion, the active suite now has 13 tests across four files. It still does not validate real browser chunk rotation, AppSync transcript fallback, or the complete Lambda stream, so use the recording test matrix rather than treating a green Jest run as complete release evidence.
+
 ## Change Responsibilities
 
 - Keep orchestration and implementation boundaries described by the relevant knowledge concept.
@@ -38,6 +40,7 @@ Prioritize tests around recording, authentication, GraphQL interactions, and cli
 - Add a concise entry to `knowledge/log.md` for every meaningful concept, index, split, merge, deprecation, or correction; group entries by ISO date with newest dates first.
 - Keep commits focused and use short descriptive subjects.
 - Pull requests should state the user impact and validation performed; include visual evidence for UI changes and deployment notes for Amplify changes.
+- Only the repository owner publishes the website. Keep release evidence and the deployed commit current in [Website Publish State and Release Checklist](../operations/website-release.md).
 
 ## Sensitive and Generated Files
 
@@ -47,4 +50,4 @@ Prioritize tests around recording, authentication, GraphQL interactions, and cli
 
 ## Provenance
 
-Synthesized from [`AGENTS.md`](../../AGENTS.md), [`README.md`](../../README.md), and [`package.json`](../../package.json).
+Synthesized from [`AGENTS.md`](../../AGENTS.md), [`README.md`](../../README.md), [`package.json`](../../package.json), the active Jest inventory, commit `62f4ec8`, and the 2026-07-15 recording safety tests.

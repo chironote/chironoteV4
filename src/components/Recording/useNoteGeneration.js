@@ -56,7 +56,11 @@ function useNoteGeneration({
     }
   };
 
-  const handleNoteGenerationFailure = (reason, error = null) => {
+  const handleNoteGenerationFailure = (
+    reason,
+    error = null,
+    userMessage = NOTE_GENERATION_RETRY_MESSAGE
+  ) => {
     if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
       return;
     }
@@ -67,8 +71,8 @@ function useNoteGeneration({
       generateAbortControllerRef.current.abort();
       generateAbortControllerRef.current = null;
     }
-    setTextStream(NOTE_GENERATION_RETRY_MESSAGE);
-    onTextStreamUpdate(NOTE_GENERATION_RETRY_MESSAGE);
+    setTextStream(userMessage);
+    onTextStreamUpdate(userMessage);
     setIsGeneratingSummary(false);
     setIsPreparingTranscript(false);
     onTransitionToMainApp();
@@ -290,6 +294,7 @@ function useNoteGeneration({
   return {
     subscribeToNoteCompletion,
     streamResponse,
+    failNoteGeneration: handleNoteGenerationFailure,
     resetNoteGenerationState,
     cleanupNoteGeneration
   };

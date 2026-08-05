@@ -1,49 +1,19 @@
 ---
-type: component-readme
-title: "Feedback Components"
-description: "Authenticated feedback form behavior and backend submission details."
-resource: "../../src/components/Feedback/README.md"
-tags: [chironote, component, feedback]
+type: product-concept
+title: "User Feedback"
+description: "Authenticated feedback modal behavior, accessibility, and submission contract."
+resource: "../../src/components/Feedback/Feedback.jsx"
+tags: [chironote, component, feedback, dialog]
 ---
 
+# User Feedback
 
-> Source: [`README.md`](../../src/components/Feedback/README.md)
+Feedback is a controlled authenticated modal, not a visible page destination. Navbar renders a semantic button so opening Feedback preserves the current route and mounted page. The shared Product Dialog supplies modal semantics, focus containment/restoration, body scroll lock, Escape/scrim dismissal, and responsive viewport containment. Dismissal is blocked while submission is active.
 
-# Feedback Components
+The form loads the authenticated email through Amplify Auth, requires a visible Feedback textarea, prevents duplicate submission, and posts the existing endpoint payload `{ content, subject: "Feedback", userEmail }`. Subject selection has been removed. Failures appear inline and retain the message. Confirmed success clears the message and shows an accessible confirmation with an explicit Close action.
 
-This folder owns the authenticated feedback form.
-
-## Files
-
-- `Feedback.jsx` renders the form, loads the current user's email, and sends feedback to a Lambda URL.
-- `Feedback.css` styles the form layout, select, textarea, submit button, and success state.
-
-## Important Code
-
-The user's email is fetched from Amplify Auth attributes:
-
-```js
-const attributes = await fetchUserAttributes();
-setUserEmail(attributes.email);
-```
-
-Submissions are posted to the feedback Lambda:
-
-```js
-await fetch('https://xmryti2hkkvg5tosvv3p6lehsa0lysic.lambda-url.us-east-2.on.aws/', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ content: message, subject, userEmail }),
-});
-```
-
-## Maintenance Notes
-
-- `subject` is one of `Feedback`, `Report Problem`, or `Question`.
-- The component prevents duplicate submissions with `isSubmitting`.
-- Failed submissions currently use `alert`; consider a styled error state if expanding the form.
+Legacy `/app/feedback` redirects to `/app` and opens this modal.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Feedback/README.md).
-
+Derived from [`Feedback.jsx`](../../src/components/Feedback/Feedback.jsx), [`ProductDialog.jsx`](../../src/components/Dialog/ProductDialog.jsx), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx).

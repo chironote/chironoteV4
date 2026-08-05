@@ -56,6 +56,12 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - `Clipboard.jsx` creates a hidden measurement div with id `soap-measure-div`; keep cleanup intact if changing positioning.
 - Dictation locks textarea changes while transcription is active and shows a green caret at the live insertion point. The field remains focusable so browsers render the caret.
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
+- The Clipboard now matches the history panel's visual language: a `12px` shell, standard panel shadow, soft-green `52px` toolbar, and `10px` inset textarea with `20px` padding.
+- Icon actions have accessible names; the Smart Editor toggle also exposes pressed state.
+
+## Visual Style Reference
+
+Follow [Panels, editors, and long-form text](../development/STYLE.md#panels-editors-and-long-form-text), [Buttons and controls](../development/STYLE.md#buttons-and-controls), and [Forms](../development/STYLE.md#forms) when changing the clipboard, its toolbar, or Smart Editor handoff states.
 
 ## Provenance
 

@@ -17,7 +17,7 @@ This folder owns the note-history sidebar, mobile history toggle, content popup,
 
 - `HistorySidebar.jsx` groups recent notes by week and renders the history panel.
 - `HistoryListItem.jsx` renders an individual history item.
-- `MobileHistoryToggle.jsx` renders mobile controls and drag/drop overlay behavior for the history panel.
+- `MobileHistoryToggle.jsx` renders the labeled mobile open/close button and drag/drop overlay behavior for the history panel.
 - `ContentPopup.jsx` displays a selected note or transcript, copy/send actions, view switching, and label editing.
 - `ContentPopup.css` styles the content popup.
 - `EditPanel.jsx` renders the Smart Editor and streams AI edits back into the clipboard.
@@ -30,14 +30,14 @@ This folder owns the note-history sidebar, mobile history toggle, content popup,
 ```js
 return groupItemsByWeek(notes).map(week => (
   <div key={week.weekStart} className="week-group">
-    <div className="week-header" onClick={() => onToggleWeek(week.weekStart)}>
+    <button className="week-header" onClick={() => onToggleWeek(week.weekStart)}>
       <span className="week-label">Week of {week.weekLabel}</span>
-    </div>
+    </button>
   </div>
 ));
 ```
 
-It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse.
+It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel uses one bounded scroll region, a stable desktop width, and a viewport-bounded mobile drawer. A title, supporting label, and note-count badge establish the hierarchy. Notes are grouped into bordered weekly surfaces; each semantic button row shows the note label above `time · weekday · date`, while notes from the current local calendar day use `time · Today`.
 
 ## Smart Editor
 
@@ -63,6 +63,12 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 - This folder shares styling with the main app CSS, not just `ContentPopup.css`.
 - `EditPanel` has its own dictation controls passed in from `AuthenticatedApp`; its textarea ref is also passed up so dictation can insert at the editor cursor and show the green live insertion caret.
 - `EditPanel` currently contains a direct Lambda URL and GraphQL subscription accounting logic; coordinate backend changes carefully.
+- Smart Editor is Clipboard's visual sibling and retains a `280px` constrained-desktop minimum so its primary action and instruction surface remain usable.
+- Its controls and textarea expose accessible names while preserving streaming, credit, and dictation behavior.
+
+## Visual Style Reference
+
+Follow [Recent Notes and dense navigation](../development/STYLE.md#recent-notes-and-dense-navigation) for the panel's exact sizing, spacing, grouping, row, metadata, responsive-drawer, and interaction rules. Shared editor and popup work also follows [Panels, editors, and long-form text](../development/STYLE.md#panels-editors-and-long-form-text) and [Dialogs, drawers, menus, and overlays](../development/STYLE.md#dialogs-drawers-menus-and-overlays).
 
 ## Provenance
 

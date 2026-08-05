@@ -1,12 +1,47 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-07-22
+
+- **Mobile pricing condensation**: Documented the landing page's unified compact pricing comparison at 880 px and below, including preserved plan actions and the consolidated unlimited-devices benefit.
+- **Landing-page refinement**: Shortened the hero for a stronger mobile fold, replaced the unsupported percentage badge with a desktop-only qualitative note-status card, promoted real testimonial portraits, lightly polished the video, and bounded accessible motion to the hero/testimonial/video scope.
+- **Mobile assurance composition**: Moved the three compact trust messages into the hero image on compact layouts, reframed system compatibility as keeping the user's workflow, and retained the existing assurance strip only on desktop.
+- **Mobile hero-image refinement**: Normalized the clinical image to a filled portrait frame on phones, introduced a shallower compact ratio for tablet widths, and tightened the overlay panel while preserving clear space around the clinician's face.
+- **Desktop hero cleanup**: Removed the qualitative SOAP-note overlay from all laptop and desktop hero views so the clinical photo remains the sole visual focus; compact assurance treatment is unchanged.
+
+## 2026-07-20
+
+- **Authenticated account redesign**: Split Account into first-class Billing and Settings destinations, retained compatibility redirects, moved current-period usage to Billing, and limited Settings impact reporting to lifetime hours saved.
+- **Custom instructions boundary**: Documented the feature-flagged natural-language editor, server-confirmed state model, authenticated one-endpoint service adapter, timeout/error handling, safe reset, and deliberate exclusion of generated SOATP fields.
+- **Feedback modal**: Replaced the routed subject-select form with an accessible controlled dialog that preserves the current page and always submits the literal Feedback subject.
+- **Shared dialog foundation**: Added the reusable authenticated modal contract for focus containment/restoration, body scroll lock, safe dismissal blocking, mobile viewport containment, and reduced motion.
+- **Dashboard visual refinement**: Standardized Clipboard, authenticated navbar, and Smart Editor around the history panel's calm clinical surfaces, shared radii, restrained depth, toolbar hierarchy, accessible control states, and responsive editor sizing.
+- **Style authority update**: Recorded the implemented `64px` navigation, Clipboard/Smart Editor sibling contract, constrained-width composition, and mobile menu treatment.
+
+## 2026-07-17
+
+- **Creation**: Added the [ChiroNote Visual Style System](./development/STYLE.md) as the reproducible visual authority for authenticated product UI and the scoped public-marketing exception.
+- **Recent notes redesign**: Documented the responsive history panel structure, bounded desktop and mobile sizing, grouped weekly surfaces, note-count hierarchy, and semantic note rows.
+
 ## 2026-07-16
 
+- **History timestamps**: Standardized history metadata as `time | weekday | date`, using `time | Today` for notes from the current local calendar day across the website, Android app, and Chrome extension.
+- **History navigation**: Documented the compact flat history rows, visible per-note dates, and collapsible week separators shared by the website and Android UI.
 - **Conversion experiment**: Removed the personal walkthrough option from landing-page pricing so the funnel emphasizes self-service sign-up and purchase.
 - **Landing launch**: Replaced three competing landing implementations with one canonical, production-ready page at `/`, retained compatibility redirects, repaired public destinations and tutorial styling, and documented responsive and performance boundaries.
 - **Analytics correction**: Centralized GA4 and Google Ads behind Consent Mode, removed raw email collection and unconditional third-party landing scripts, and defined stable events for acquisition, funnel interaction, feature adoption, and Core Web Vitals.
 - **Performance update**: Documented responsive WebP assets, deferred video, scoped landing CSS, and lazy loading of Amplify, authenticated styles, and Material Symbols.
 - **Deprecation**: Removed the obsolete landing-page upgrade record after its useful requirements were incorporated into the maintained landing-page concept.
+
+## 2026-07-15
+
+- **Consolidation**: Replaced three overlapping and source-shaped recording documents with one implementation-checked [Recording, Dictation, and Note Generation](./components/recording.md) concept covering architecture, refactor history, browser behavior, failure risks, and the manual test matrix.
+- **Creation**: Added [Web, Android, and iPhone Codebase Divergence](./architecture/platform-divergence.md) from the available native branch history, including the real scope of the remembered manifest work and a contract-first convergence path.
+- **Creation**: Added [Website Publish State and Release Checklist](./operations/website-release.md) with the live asset fingerprint, unpublished delta, validation results, owner-only release procedure, blockers, and rollback evidence.
+- **Correction**: Recorded that production predates the 2026-03-15 note-generation Lambda switch and May-July recording/dictation work, while already containing the March 2 blob and Safari fixes.
+- **Update**: Clarified the [system architecture](./architecture/system-overview.md) platform boundary and documented the sharply reduced recording test coverage in the [development workflow](./development/workflow.md).
+- **Safety fix**: Updated [Recording, Dictation, and Note Generation](./components/recording.md) and [Website Publish State and Release Checklist](./operations/website-release.md) after removing token logging, adding session-scoped upload/SQS cancellation, surfacing fatal submission failures, matching audio extensions to MIME types, and making unmount cancellation-only.
+- **Correction**: Changed failed and zero-credit subscription checks to discard the newly opened recorder rather than submit a final audio chunk.
+- **Validation**: Recorded the rebuilt 13-test recording/dictation suite, including final-chunk ordering, and the new local production asset fingerprint.
 
 ## 2026-07-12
 

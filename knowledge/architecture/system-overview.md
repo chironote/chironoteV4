@@ -10,6 +10,8 @@ tags: [chironote, architecture, react, amplify]
 
 ChiroNote is a React single-page application for turning clinical encounter audio into transcripts and structured SOAP notes. It also supports realtime dictation, editing, saved-note history, accounts, feedback, and public marketing and blog pages.
 
+This repository's maintained `prod` line is the hosted website. Older Capacitor Android and iPhone branches share its ancestry but have diverged substantially; they are not current synchronized builds. See [Web, Android, and iPhone Codebase Divergence](./platform-divergence.md) before porting platform work.
+
 ## System Boundaries
 
 - The React frontend lives in `src/`; `src/index.js` is the entry point and `src/App.jsx` installs app-wide providers and routing.
@@ -45,11 +47,13 @@ Realtime dictation is a separate AssemblyAI streaming path. It captures an immut
 | Public and protected routes | [Application Routing](../components/app-routing.md) |
 | Authenticated state and workspace composition | [Authenticated Application Shell](../components/app-shell.md) |
 | Recording, uploads, transcripts, and note generation | [Audio Recording and Note Generation](../components/recording.md) |
-| Dictation lifecycle and insertion | [Recording and Dictation Architecture](../components/recording-context.md) |
+| Dictation lifecycle and insertion | [Recording, Dictation, and Note Generation](../components/recording.md) |
 | Clipboard and Markdown cleanup | [Clinical Clipboard](../components/clipboard.md) |
 | AWS backend layout | [AWS Amplify Backend](../infrastructure/amplify.md) |
 | Security constraints | [Company Security Policy](../security/security-policy.md) |
+| Platform lineage and synchronization | [Web, Android, and iPhone Codebase Divergence](./platform-divergence.md) |
+| Publish state and release decisions | [Website Publish State and Release Checklist](../operations/website-release.md) |
 
 ## Provenance
 
-Synthesized from [`Context.md`](../../Context.md), [`AGENTS.md`](../../AGENTS.md), and the feature documentation linked above. Feature concepts take precedence when an older general description conflicts with current component documentation.
+Synthesized from [`Context.md`](../../Context.md), [`AGENTS.md`](../../AGENTS.md), current `prod` implementation, Git branch history, and the feature documentation linked above. Feature concepts and current implementation take precedence when an older general description conflicts.

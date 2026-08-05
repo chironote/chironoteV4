@@ -3,7 +3,6 @@ import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 export async function getUserId() {
   try {
     const userId = (await getCurrentUser()).userId;
-    console.log('Current session ID:' + userId);
     return userId;
   } catch (err) {
     console.log(err);
@@ -14,7 +13,6 @@ export async function getUserId() {
 export async function generateToken() {
   const session = await fetchAuthSession();
   const accessToken = session.tokens.accessToken.toString();
-  console.log(accessToken);
   return accessToken;
 }
 

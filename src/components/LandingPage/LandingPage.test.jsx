@@ -34,10 +34,50 @@ describe('LandingPage', () => {
     expect(document.querySelector('a[href="/app"]')).not.toBeNull();
     expect(document.querySelector('a[href="/blog"]')).not.toBeNull();
 
-    const schedulerLink = document.querySelector('a[href^="https://scheduler.zoom.us/"]');
-    expect(schedulerLink).not.toBeNull();
-    expect(schedulerLink.getAttribute('target')).toBe('_blank');
-    expect(schedulerLink.getAttribute('rel')).toContain('noopener');
+    expect(document.querySelector('a[href^="https://scheduler.zoom.us/"]')).toBeNull();
+  });
+
+  test('uses concise hero copy without a desktop image overlay', () => {
+    renderLandingPage();
+
+    expect(document.querySelector('h1').textContent).toContain('SOAP notes');
+    expect(document.querySelector('h1').textContent).toContain('written while you treat');
+    expect(document.querySelector('.marketing-hero__summary').textContent).toBe(
+      'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'
+    );
+    expect(document.querySelector('.marketing-hero__note-card')).toBeNull();
+    expect(document.body.textContent).not.toContain('45%');
+  });
+
+  test('uses portrait-led testimonial cards and reveal hooks only in the refined sections', () => {
+    renderLandingPage();
+
+    expect(document.querySelectorAll('.marketing-testimonial__portrait img')).toHaveLength(3);
+    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(4);
+    expect(document.querySelector('.marketing-features [data-marketing-reveal]')).toBeNull();
+  });
+
+  test('provides compact mobile assurances inside the hero image', () => {
+    renderLandingPage();
+
+    const assurances = Array.from(document.querySelectorAll('.marketing-hero__mobile-assurances li'));
+    expect(assurances.map((item) => item.textContent.trim())).toEqual([
+      'HIPAA-compliant',
+      'Quick setup',
+      'Keep your workflow',
+    ]);
+    expect(document.querySelector('.marketing-hero__mobile-assurances').dataset.analyticsSection).toBe('trust');
+  });
+
+  test('groups pricing plans into one compact mobile comparison', () => {
+    renderLandingPage();
+
+    const pricing = document.querySelector('.marketing-pricing__grid');
+    expect(pricing.querySelectorAll('.marketing-plan')).toHaveLength(3);
+    expect(pricing.querySelectorAll('.marketing-button--plan')).toHaveLength(3);
+    expect(pricing.querySelector('.marketing-pricing__shared-feature').textContent).toBe(
+      'All plans include unlimited devices.'
+    );
   });
 
   test('defers heavy media and exposes accessible controls', () => {

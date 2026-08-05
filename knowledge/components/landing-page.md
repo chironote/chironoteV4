@@ -43,6 +43,12 @@ The hero uses 720 px and 1200 px WebP variants rather than the former 3.2 MB PNG
 
 Landing CSS is scoped below `.marketing-page`, so navigating between the marketing page and authenticated app cannot leak generic `nav`, `footer`, `body`, or root-variable styles. Amplify UI, authenticated-app CSS, and Material Symbols are lazy-loaded with `/app` instead of blocking the landing route.
 
+## Visual Style Reference
+
+The landing page intentionally follows the [Public marketing exception](../development/STYLE.md#public-marketing-exception). Keep its warm tokens, Inter/Georgia typography, responsive section rhythm, editorial radii, and scoped selectors separate from the authenticated clinical workspace.
+
+The conversion-critical top of the page is mobile-first: concise hero copy brings the primary action and clinical image into the first screen sooner, laptop and desktop views leave that image unobstructed, and the hero/navigation stack at 880 px. Compact layouts place the short `HIPAA-compliant`, `Quick setup`, and `Keep your workflow` assurances in an unbulleted, narrow portrait panel over unused image space and hide the separate desktop assurance strip. The clinical image fills a portrait frame through 460 px, then uses a shallower compact ratio through 880 px to preserve the subject and avoid an oversized tablet-height image. Testimonials use the real practitioner portraits as prominent visual proof, with three cards on desktop and a swipeable carousel on compact layouts. At the same 880 px breakpoint, the three desktop pricing cards become one bordered comparison card: each plan is a compact row, the repeated unlimited-devices benefit is consolidated into one shared footer, and every plan retains a 44 px-high sign-up action. The video keeps deferred loading and receives only presentation polish. Motion is restricted to short opacity/transform entrances for the hero, testimonials, and video, with a reduced-motion fallback; features, pricing, FAQ, and final CTA are intentionally outside this refinement boundary.
+
 ## Provenance
 
 Derived from [`src/components/LandingPage/README.md`](../../src/components/LandingPage/README.md), [`LandingPage.jsx`](../../src/components/LandingPage/LandingPage.jsx), [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), and [`utils/analytics.js`](../../src/utils/analytics.js).

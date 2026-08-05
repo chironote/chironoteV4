@@ -45,3 +45,5 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - `Clipboard.jsx` creates a hidden measurement div with id `soap-measure-div`; keep cleanup intact if changing positioning.
 - Dictation locks textarea changes while transcription is active and shows a green caret at the live insertion point. The field remains focusable so browsers render the caret.
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
+- The Clipboard uses the shared dashboard panel contract: `12px` shell radius, soft-green `52px` toolbar, `40px` desktop actions, and a `10px` inset clinical-text surface with a green focus ring.
+- Preserve explicit accessible names on icon actions and `aria-pressed` on the Smart Editor toggle.

@@ -47,7 +47,7 @@ const CreditPopup = ({ onClose }) => {
     // Redirect after countdown reaches 0
     const redirectTimer = setTimeout(() => {
       onClose();
-      navigate('/app/account');
+      navigate('/app/billing');
     }, 10000); // Redirect after 10 seconds
 
     return () => {
@@ -56,10 +56,10 @@ const CreditPopup = ({ onClose }) => {
     }; // Clean up timers on unmount
   }, [navigate, onClose, isOffline]);
 
-  const handleGoToAccount = () => {
+  const handleGoToBilling = () => {
     onClose();
     if (!isOffline) {
-      navigate('/app/account');
+      navigate('/app/billing');
     }
   };
 
@@ -73,11 +73,11 @@ const CreditPopup = ({ onClose }) => {
       </p>
       {!isOffline && (
         <p className="credit-popup-redirect">
-          Redirecting to Account page in {countdown} seconds...
+          Redirecting to Billing in {countdown} seconds...
         </p>
       )}
-      <button className="credit-popup-button" onClick={handleGoToAccount}>
-        {isOffline ? "Close" : "Go to Account Menu"}
+      <button className="credit-popup-button" onClick={handleGoToBilling}>
+        {isOffline ? "Close" : "Go to Billing"}
       </button>
     </div>
   );

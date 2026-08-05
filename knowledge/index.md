@@ -11,12 +11,14 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [ChiroNote System Architecture](./architecture/system-overview.md) | Product purpose, system boundaries, major data flows, and ownership across frontend and backend. |
+| [Web, Android, and iPhone Codebase Divergence](./architecture/platform-divergence.md) | Branch lineage, platform-specific ownership, manifest history, and a path toward synchronizing the three application lines. |
 
 ## Development
 
 | Concept | Use it to understand |
 | --- | --- |
 | [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, code conventions, testing, documentation duties, and sensitive files. |
+| [ChiroNote Visual Style System](./development/STYLE.md) | Exact colors, typography, spacing, components, responsive rules, interaction states, accessibility, and visual QA for the entire app. |
 
 ## Application Components
 
@@ -24,17 +26,15 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
-| [Audio Recording and Note Generation](./components/recording.md) | Media capture, upload queues, transcription completion, and generated-note streaming. |
-| [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
-| [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
-| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
-| [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the editing panel. |
-| [Account and Subscription](./components/account.md) | Subscription records, billing links, cancellation, and account deletion. |
+| [Recording, Dictation, and Note Generation](./components/recording.md) | Current recording architecture, its 2026 history, browser behavior, failure risks, and required release matrix. |
+| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
+| [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, content popup behavior, and the visually paired Smart Editor workspace. |
+| [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the feature-flagged custom-instructions boundary. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
-| [Authenticated Navigation](./components/navbar.md) | In-app navigation behavior and route links. |
-| [User Feedback](./components/feedback.md) | Feedback form behavior and backend submission. |
+| [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
+| [User Feedback](./components/feedback.md) | Accessible authenticated feedback modal behavior and fixed submission contract. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
-| [Public Landing Pages](./components/landing-page.md) | Marketing/tutorial page structure and analytics. |
+| [Public Landing Pages](./components/landing-page.md) | Marketing/tutorial structure, mobile-first hero and social-proof treatment, motion boundaries, and analytics. |
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
 | [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence and analytics initialization. |
@@ -46,6 +46,12 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [AWS Amplify Backend](./infrastructure/amplify.md) | Amplify-managed backend directory and generated resources. |
 | [Amplify Command Hooks](./infrastructure/hooks.md) | Hook lifecycle, naming, parameters, and execution behavior. |
 | [Custom AppSync Resolvers](./infrastructure/appsync-resolvers.md) | Resolver override location and deployment behavior. |
+
+## Operations
+
+| Concept | Use it to understand |
+| --- | --- |
+| [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
 
 ## Security
 

@@ -28,15 +28,17 @@ function HistorySidebar({
 
     return groupItemsByWeek(notes).map(week => (
       <div key={week.weekStart} className="week-group">
-        <div
+        <button
+          type="button"
           className="week-header"
           onClick={() => onToggleWeek(week.weekStart)}
+          aria-expanded={!collapsedWeeks.has(week.weekStart)}
         >
           <span className="week-label">Week of {week.weekLabel}</span>
-          <span className="collapse-icon">
-            {collapsedWeeks.has(week.weekStart) ? '▶' : '▼'}
+          <span className="material-symbols-rounded collapse-icon" aria-hidden="true">
+            {collapsedWeeks.has(week.weekStart) ? 'keyboard_arrow_right' : 'keyboard_arrow_down'}
           </span>
-        </div>
+        </button>
 
         <div className={`week-items ${collapsedWeeks.has(week.weekStart) ? 'collapsed' : ''}`}>
           {week.items.map(item => (
@@ -55,9 +57,22 @@ function HistorySidebar({
   };
 
   return (
-    <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
+    <section
+      className={`left-panel recent-notes-panel ${isCollapsed ? 'collapsed' : ''}`}
+      aria-labelledby="recent-notes-title"
+    >
       <div className="fade-content">
-        <h2 className="panel-header left-panel-title">Recent Notes</h2>
+        <div className="recent-notes-header">
+          <div>
+            <h2 id="recent-notes-title" className="left-panel-title">Recent Notes</h2>
+            <p className="recent-notes-subtitle">Your latest generated notes</p>
+          </div>
+          {!isLoading && notes.length > 0 && (
+            <span className="recent-notes-count" aria-label={`${notes.length} recent notes`}>
+              {notes.length}
+            </span>
+          )}
+        </div>
         <div className="list-container">
           {renderItems()}
         </div>

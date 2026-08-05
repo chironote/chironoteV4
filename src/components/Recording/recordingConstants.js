@@ -1,4 +1,5 @@
 export const NOTE_GENERATION_RETRY_MESSAGE = 'Your note could not be generated, the system will retry in 5 min. Sorry for the inconvenience';
+export const AUDIO_UPLOAD_FAILURE_MESSAGE = 'Your recording could not be submitted. Please check your connection and try recording again.';
 export const TRANSCRIPT_WAIT_TIMEOUT_MS = 40000;
 export const NOTE_GENERATION_TIMEOUT_MS = 120000;
 export const NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS = 45000;

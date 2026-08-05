@@ -79,7 +79,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
       }
 
       const data = await response.json();
-      console.log('This is token:', data);
       
       return data.token;
     } catch (error) {
@@ -90,7 +89,6 @@ function Dictation({ toggleDictationPopup, onTextStreamUpdate }) {
 
   const setupTranscription = (token) => {
     return new Promise((resolve, reject) => {
-      console.log('This is token in the setupTranscription:', token);
       rtRef.current = new StreamingTranscriber({
         token: token,
         sampleRate: 16000,

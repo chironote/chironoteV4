@@ -1,87 +1,114 @@
 ---
-type: component-readme
-title: "Recording Components"
-description: "Recording, upload, transcript, note-generation, and dictation component ownership and maintenance guidance."
-resource: "../../src/components/Recording/README.md"
-tags: [chironote, component, recording]
+type: feature-architecture
+title: "Recording, Dictation, and Note Generation"
+description: "Current recording architecture, the 2026 refactor history, browser-specific behavior, failure modes, and maintenance boundaries."
+resource: "../../src/components/Recording/RecordingManager.jsx"
+tags: [recording, dictation, media-recorder, transcription, note-generation, release-risk]
 ---
 
+# Recording, Dictation, and Note Generation
 
-> Source: [`README.md`](../../src/components/Recording/README.md)
+Recording is the highest-risk workflow in the web application. It contains two independent microphone systems:
 
-# Recording Components
+1. **Conversation recording** captures an encounter, uploads ordered chunks, waits for transcription, and streams a generated note.
+2. **Realtime dictation** sends 16 kHz mono PCM directly to AssemblyAI and inserts revised partial text into either the Clipboard or Smart Editor.
 
-This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.
+They share authenticated UI state but do not share audio capture, transport, or lifecycle code.
 
-## Files
+## Current Conversation-Recording Boundary
 
-- `RecordingManager.jsx` is the public hook-style orchestration API consumed by `AuthenticatedApp`.
-- `useMediaRecorderController.js` owns microphone access, `MediaRecorder`, chunking, pause/resume, discard, and cleanup.
-- `useAudioUploadQueue.js` owns ordered S3 upload and SQS dispatch for audio chunks.
-- `useNoteGeneration.js` waits for transcript completion and streams generated note text from Lambda.
-- `Recording.jsx` renders the new-note popup, recording settings, language/options persistence, and active recording controls.
-- `Dictation.jsx` owns AssemblyAI realtime dictation into clipboard/editor text.
-- `DictationPopup.jsx`, `ConfirmationPopup.jsx`, `CreditLimit.jsx`, and `TextStream.jsx` are support UI.
-- `recordingConstants.js`, `recordingAuth.js`, and `noteGenerationErrors.js` hold shared constants/auth/error helpers.
-- `DictationBackup.jsx`, `Context.md`, and `Dictation.md` are older/reference files.
+`RecordingManager.jsx` is a hook-style public controller instantiated by `AuthenticatedApp`. It should remain orchestration-only.
 
-## Recording Flow
+| Unit | Ownership |
+| --- | --- |
+| `RecordingManager.jsx` | Shared refs, top-level recording state, hook composition, and the public controller API. |
+| `useMediaRecorderController.js` | Microphone access, `MediaRecorder`, four-minute chunk rotation, pause/resume, finalization, discard, stream cleanup, and browser format selection. |
+| `useAudioUploadQueue.js` | Ordered Amplify Storage uploads and SQS FIFO dispatch. |
+| `useNoteGeneration.js` | AppSync transcript-completion subscription, fallback timeouts, Lambda response streaming, aborts, and user-visible generation failure handling. |
+| `recordingConstants.js` | Backend endpoints, queue URL, retry text, chunk interval, blob threshold, and timeout values. |
+| `recordingAuth.js` | Cognito user id, access token, and temporary AWS credential access. |
+| `noteGenerationErrors.js` | Recognition of Lambda JSON and streamed sentinel errors. |
 
-`RecordingManager` composes three focused hooks:
+The controller exposes `startRecording`, `stopRecording`, `discardRecording`, `pauseRecording`, and `resumeRecording` plus UI state such as `isRecording`, `isPreparingTranscript`, and `isGeneratingSummary`.
 
-```js
-const {
-  subscribeToNoteCompletion,
-  resetNoteGenerationState,
-  cleanupNoteGeneration
-} = useNoteGeneration({ timeStampRef, isDiscardingRef, noSleepRef });
+## Conversation Lifecycle
 
-const { queueUpload, clearUploadQueue } = useAudioUploadQueue({
-  timeStampRef,
-  filePathRef,
-  onFinalAudioQueued
-});
-```
+1. A user gesture starts `getUserMedia()` and creates a conversation timestamp and unique path stamp.
+2. `MediaRecorder` emits chunks. Desktop browsers are rotated by stopping and restarting the recorder every four minutes; Android also receives a four-minute `timeslice` to avoid zero-duration WebM blobs.
+3. Blobs smaller than 1,000 bytes are rejected as header-only containers.
+4. The upload queue writes chunks to `protected/<userId>/...` in order, then sends one FIFO SQS message per uploaded object. Every item belongs to an immutable recording session id.
+5. The final SQS message starts an owner-scoped AppSync subscription for the matching timestamp.
+6. Completion, subscription error, or a 40-second wait fallback starts the note-generation Lambda.
+7. The Lambda response is streamed into the clinical workspace. Generation has a 120-second normal timeout and a 45-second timeout after transcript fallback.
+8. Completion, failure, discard, and unmount release media tracks, intervals, subscriptions, abort controllers, timers, and NoSleep. Discard and unmount invalidate the session, cancel active Amplify/SQS work, and suppress late callbacks.
 
-The recorder creates timestamp/path refs, records audio, and queues each blob. The upload queue writes each blob to Amplify Storage and notifies SQS. The final audio chunk triggers transcript waiting:
+### Browser-specific behavior
 
-```js
-onFinalAudioQueued: (userId, timestamp) => {
-  setIsTranscriptCompleted(false);
-  subscribeToNoteCompletion(userId, timestamp);
-}
-```
+- iPhone and iPad request `video/mp4` from `MediaRecorder`.
+- Firefox requests `audio/webm`.
+- Other capable browsers prefer `audio/webm; codecs="pcm"`.
+- Android uses `MediaRecorder.start(240000)` because native/WebView recordings were observed with invalid duration metadata without a timeslice.
+- Safari intentionally keeps the microphone stream alive between recordings to avoid a repeated permission prompt; it is released on component cleanup.
+- Non-Safari streams are released only after the recorder's final `ondataavailable`/`onstop` sequence, because stopping tracks earlier previously truncated substantial audio.
 
-Once transcript completion is observed, note generation streams text from `NOTE_GENERATION_URL` and forwards partial text through `onTextStreamUpdate`.
+Do not reorder final media cleanup without testing real Chrome, Safari/iOS, Firefox, and Android behavior.
 
-## MediaRecorder Details
+## Why RecordingManager Changed So Much
 
-`useMediaRecorderController` is browser-sensitive:
+The current structure is the result of a sequence of production-oriented fixes, not a cosmetic refactor:
 
-```js
-if (/iphone|ipad/i.test(uaString)) {
-  options = { mimeType: 'video/mp4' };
-} else if (/firefox/i.test(uaString)) {
-  options = { mimeType: 'audio/webm' };
-} else if (MediaRecorder.isTypeSupported('audio/webm; codecs="pcm"')) {
-  options = { mimeType: 'audio/webm; codecs="pcm"' };
-}
-```
+| Date | Commit | Durable result |
+| --- | --- | --- |
+| 2026-02-27 | `62f4ec8` | Removed the former recording test harness and began replacing the earlier manager implementation. This is why current automated coverage is unusually small. |
+| 2026-02-28 | `a46b6d7` | Added the main MediaRecorder/upload/fallback update on the web line. |
+| 2026-03-02 | `344f224` | Fixed the stop/start race that produced header-only blobs by restarting from `onstop` and rejecting blobs under 1,000 bytes. |
+| 2026-03-02 | `7200096` | Delayed track shutdown until media flush and retained Safari streams to preserve microphone permission. |
+| 2026-03-15 | `8d6e8b9` | Switched the web app to the current note-generation Lambda URL. |
+| 2026-05-18 | `2f02843` | Split the 800-plus-line manager into focused hooks and moved the app shell into feature folders; added cursor-targeted dictation. |
+| 2026-07-01 | `7761d93` | Made dictation insertion snapshot-based and pure under React Strict Mode, added the green live caret, and introduced the five current insertion tests. |
 
-Chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blobs.
+The key architectural decision is the May split: platform and failure behavior now belongs in focused hooks, while `RecordingManager` only connects them.
 
-## Dictation Flow
+## Realtime Dictation
 
-`Dictation.jsx` uses AssemblyAI `StreamingTranscriber`, an `AudioWorkletProcessor`, 16 kHz mono audio, and a token fetched from Lambda. It is instantiated twice by `AuthenticatedApp`: once for the clipboard and once for the smart editor. The controller streams transcript updates through optional insertion callbacks so parent components can insert dictation at the captured cursor/selection without clearing the existing text.
+`Dictation.jsx` creates an AssemblyAI `StreamingTranscriber`, an `AudioWorkletProcessor`, and a `ReadableStream` carrying 16 kHz mono Int16 PCM. `AuthenticatedApp` creates separate controllers for Clipboard and Smart Editor dictation.
 
-## Maintenance Notes
+When dictation begins, `createDictationInsertion()` captures immutable text before and after the textarea selection. Every revised partial transcript is applied with `applyDictationText()` against that same snapshot. This preserves text after the cursor, intentionally replaces selected text, and prevents identical phrases elsewhere from attracting the insertion point.
 
-- Keep `RecordingManager.jsx` orchestration-only; implementation belongs in the focused hooks.
-- Be careful with Safari: `Recording.jsx` starts recording before async subscription checks because `getUserMedia()` must happen inside the user gesture.
-- `recordingConstants.js` contains backend URLs, queue URL, timeouts, and retry text. Update dependent backend code together.
-- Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder.
+The target textarea stays focusable so the browser paints the green live caret, but its change handler rejects manual edits while dictation is active. Never mutate insertion refs from a React state updater; Strict Mode can call updater functions more than once.
+
+## Recording Safety Fixes on 2026-07-15
+
+The pre-publish review found five lifecycle and submission risks. The same review cycle resolved them as follows:
+
+1. `recordingAuth.generateToken()` no longer logs Cognito access tokens.
+2. Uploads are session-scoped. Discard, fatal failure, a new recording, and unmount invalidate the old session, cancel the active Amplify upload, abort an active SQS request, and reject late callbacks. Media events are serialized so asynchronous identity lookup cannot let a final chunk overtake an earlier chunk.
+3. S3/auth/SQS failures are propagated once to `RecordingManager`, stop the recording, clear the preparation state, and show a specific retry message rather than silently looping or hanging.
+4. `recordingMedia.js` derives extension and content type together. Safari MP4 blobs upload as `.mp4` with their emitted MP4 MIME type; WebM, Ogg, and WAV use matching metadata.
+5. `cleanupRecorder()` now takes a cancellation path with no final chunk and no React state updates.
+6. Failed or zero-credit subscription checks discard the just-started Safari-compatible recorder instead of finalizing and submitting it.
+
+The suite now contains 13 tests across dictation insertion, media mapping, emitted-chunk ordering, upload cancellation, late-callback suppression, SQS failure, MP4 upload metadata, and unmount cleanup. It still does not simulate real four-minute browser rotation, AppSync subscription fallback, or the complete Lambda stream, so the manual platform matrix remains required.
+
+## Minimum Manual Recording Matrix
+
+Before publishing a build with recording changes, verify:
+
+- Chrome desktop: start, pause/resume, stop, note stream, discard during an upload, and a recording longer than four minutes.
+- Safari on iPhone/iPad: permission prompt behavior, second recording without a broken stream, final audio completeness, and successful MP4-path transcription.
+- Android browser or WebView as applicable: recording longer than four minutes and valid audio duration after every rotation.
+- Firefox desktop: WebM capture and note generation.
+- Network interruption: S3 failure, SQS failure, transcript timeout, generation timeout, and user recovery.
+- Dictation in both textareas: cursor insertion, selection replacement, repeated phrases, stop/restart, and locked manual editing during the live caret.
+
+## Maintenance Rules
+
+- Preserve the manager/hook ownership table above.
+- Update backend constants together with the corresponding Lambda and queue deployments.
+- Make upload cancellation/session identity explicit before allowing callbacks to mutate UI state.
+- Keep `src/components/Recording/README.md` synchronized with file ownership.
+- Add focused tests whenever a recording race or platform bug is fixed; do not rely on the full browser matrix for every regression.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Recording/README.md).
-
+Synthesized from [`RecordingManager.jsx`](../../src/components/Recording/RecordingManager.jsx), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`useAudioUploadQueue.js`](../../src/components/Recording/useAudioUploadQueue.js), [`useNoteGeneration.js`](../../src/components/Recording/useNoteGeneration.js), [`recordingMedia.js`](../../src/components/Recording/recordingMedia.js), the adjacent recording tests, [`Dictation.jsx`](../../src/components/Recording/Dictation.jsx), [`dictationInsertion.js`](../../src/utils/dictationInsertion.js), [`Context.md`](../../src/components/Recording/Context.md), [`README.md`](../../src/components/Recording/README.md), and Git commits `62f4ec8`, `a46b6d7`, `344f224`, `7200096`, `8d6e8b9`, `2f02843`, and `7761d93`. Current implementation takes precedence over older recording reference documents.

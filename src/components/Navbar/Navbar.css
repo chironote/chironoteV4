@@ -1,11 +1,14 @@
 /* Navbar styling */
 .navbar {
   background-color: var(--dark-green);
-  padding: .5rem 1rem;
+  padding: 8px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 60px; /* Ensures consistent height */
+  min-height: 64px;
+  box-sizing: border-box;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 18px rgba(12, 32, 14, 0.14);
 }
 
 /* Brand section with logos */
@@ -13,8 +16,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 40px;
+  height: 44px;
+}
+
+.navbar-brand-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  border-radius: 8px;
 }
 
 .navbar-logo {
@@ -22,7 +31,7 @@
 }
 
 .navbar-text-logo {
-  height: 30px;
+  height: 31px;
   width: auto;
   display: flex; /* Better for alignment */
   margin: auto 0; /* Centers vertically */
@@ -32,12 +41,12 @@
 .navbar-nav {
   display: flex;
   align-items: center;
-  height: 40px; /* Match the height of navbar-brand */
+  height: 44px;
 }
 
 .nav-list {
   display: flex;
-  gap: 20px;
+  gap: 4px;
   list-style-type: none;
   margin: 0;
   padding: 0;
@@ -46,28 +55,48 @@
 .nav-item .nav-link {
   color: var(--off-white);
   text-decoration: none;
-  font-size: 1rem;
-  padding: 8px 12px;
-  border-radius: 4px;
+  min-height: 44px;
+  box-sizing: border-box;
+  font-size: 0.94rem;
+  font-weight: 500;
+  padding: 10px 12px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
-  transition: all 0.3s ease;
+  transition: background-color var(--motion-fast) ease, color var(--motion-fast) ease;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .nav-item .nav-link span {
-  font-size: 1.5rem;
+  font-size: 21px;
 }
 
 .nav-item .nav-link:hover {
-  color: var(--pale-green);
-  background-color: rgba(0, 0, 0, 0.3);
+  color: white;
+  background-color: rgba(255, 255, 255, 0.11);
+}
+
+.nav-item .nav-link:active,
+.nav-item .nav-link[aria-current='page'] {
+  color: white;
+  background-color: rgba(255, 255, 255, 0.16);
+}
+
+.navbar-brand-link:focus-visible,
+.nav-item .nav-link:focus-visible,
+.menu-button:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
 }
 
 /* Logout link */
 .nav-item .logout-link:hover {
-  color: #000000;
-  background-color: #ff4757;
+  color: white;
+  background-color: rgba(255, 255, 255, 0.11);
 }
 
 /* Mobile Navigation */
@@ -80,10 +109,11 @@
   border: none;
   background: none;
   cursor: pointer;
-  transform: translateY(3px);
-  padding: 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background-color var(--motion-fast) ease;
   -webkit-tap-highlight-color: transparent;
   outline: none;
   touch-action: manipulation;
@@ -94,7 +124,6 @@
 
 .menu-button:focus {
   background-color: transparent;
-  outline: none;
 }
 
 .menu-button:active {
@@ -114,13 +143,14 @@
 
 .mobile-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  background-color: var(--dark-green);
-  padding: 1rem;
-  border-radius: 0 0 4px 4px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-  width: 200px;
+  background-color: var(--pure-white);
+  padding: 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  box-shadow: 0 18px 42px rgba(23, 55, 25, 0.16);
+  width: 216px;
   z-index: 1004;
   animation: expandMenu 0.1s ease-out forwards;
   transform-origin: top right;
@@ -167,7 +197,7 @@
 
   .mobile-menu .nav-list {
     flex-direction: column;
-    gap: 10px;
+    gap: 4px;
   }
 
   .navbar-text-logo {
@@ -177,7 +207,7 @@
   .mobile-menu .nav-item .nav-link {
     width: 100%;
     box-sizing: border-box;
-    color: white;
+    color: var(--color-text);
     font-weight: 500;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
@@ -186,6 +216,16 @@
   }
 
   .mobile-menu .nav-item .nav-link:hover {
-    background-color: rgba(0, 0, 0, 0.25);
+    color: var(--color-text);
+    background-color: var(--color-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item .nav-link,
+  .menu-button,
+  .mobile-menu {
+    animation: none;
+    transition-duration: 0.01ms;
   }
 }
