@@ -13,6 +13,12 @@ type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) 
 type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
   owner: String! @primaryKey(sortKeyFields: ["timestamp"])
   timestamp: String!
+  recordingJobId: ID
+  recordingStatus: String
+  recordingErrorCode: String
+  transcriptionProvider: String
+  transcriptionRequestId: String
+  transcriptionAttempt: Int
   transcript: String
   note: String
   isCompleted: Boolean
@@ -25,4 +31,65 @@ type Subscription {
   
   onUpdateNotesByOwner(owner: String!): Notes
     @aws_subscribe(mutations: ["updateNotes"])
+}
+
+type RecordingTelemetryEvent
+  @model(timestamps: null)
+  @auth(rules: [
+    { allow: private, provider: userPools, operations: [create] }
+    { allow: private, provider: iam, operations: [create] }
+    { allow: groups, groups: ["Support"], operations: [read] }
+  ]) {
+  id: ID! @primaryKey
+  recordingJobId: ID!
+    @index(
+      name: "recordingTelemetryEventsByRecordingJobId"
+      sortKeyFields: ["timelineKey"]
+      queryField: "recordingTelemetryEventsByRecordingJobId"
+    )
+  timelineKey: String!
+  occurredAt: AWSDateTime!
+  expiresAt: AWSTimestamp!
+  sequence: Int!
+  schemaVersion: String!
+  appBuild: String!
+  source: String!
+  platform: String!
+  browser: String!
+  eventName: String!
+  attempt: Int
+  awsRequestId: String
+  s3RequestId: String
+  sqsMessageId: String
+  providerRequestId: String
+  chunkBytes: Int
+  chunkOrder: Int
+  deliveryAttempt: Int
+  droppedEventCount: Int
+  durationMs: Int
+  httpStatus: Int
+  observedDurationMs: Int
+  queueDepth: Int
+  retryDelayMs: Int
+  sampleCount: Int
+  signalDurationMs: Int
+  peak: Float
+  rmsAverage: Float
+  isFinalChunk: Boolean
+  noSpeech: Boolean
+  transcriptFallback: Boolean
+  alertCode: String
+  container: String
+  errorCode: String
+  notificationChannel: String
+  outcome: String
+  provider: String
+  reasonCode: String
+  transcriptMatchedBy: String
+  deviceHash: String
+  deviceType: String
+  mimeType: String
+  producerVersion: String
+  requestedTrackSettings: AWSJSON
+  appliedTrackSettings: AWSJSON
 }

@@ -1,5 +1,11 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-12
+
+- **Recording correlation**: Documented the opaque `recordingJobId` contract from browser capture through S3, SQS, AppSync status, and note generation, including the migration-only timestamp fallback.
+- **Telemetry operations**: Added the versioned PHI-safe event dictionary, authenticated delivery behavior, bounded retry/buffer semantics, 30-day TTL/access model, and exact Support-group timeline query.
+- **Privacy and rollout gates**: Recorded the executable allowlist/redaction boundary, independent delivery-alarm requirement, external Lambda repository work, deployment order, and explicit distinction between source-ready and operationally deployed behavior.
+
 ## 2026-07-22
 
 - **Mobile pricing condensation**: Documented the landing page's unified compact pricing comparison at 880 px and below, including preserved plan actions and the consolidated unlimited-devices benefit.

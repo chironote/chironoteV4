@@ -11,13 +11,34 @@ import {
 } from './recordingConstants';
 import { generateToken, getUserId } from './recordingAuth';
 import { parseLambdaErrorPayload } from './noteGenerationErrors';
+import {
+  addRecordingSupportReference,
+  toSafeErrorCode
+} from './recordingTelemetrySchema';
+import {
+  ON_UPDATE_NOTES_BY_OWNER_WITH_RECORDING_STATUS,
+  createNoteGenerationRequest,
+  getRecordingUpdateMatch,
+  isRecordingStatusSchemaCompatibilityError
+} from './recordingBackendContract';
 
 const client = generateClient();
+const SAFE_EXTERNAL_ID_PATTERN = /^[a-z0-9][a-z0-9._:/=+-]{0,255}$/i;
+
+const getSafeExternalId = (value) => (
+  typeof value === 'string' && SAFE_EXTERNAL_ID_PATTERN.test(value)
+    ? value
+    : undefined
+);
 
 function useNoteGeneration({
   timeStampRef,
+  recordingJobIdRef = { current: null },
   isDiscardingRef,
+  terminalOutcomeRef = { current: null },
   noSleepRef,
+  emitTelemetry = () => {},
+  telemetryContext = {},
   setTextStream,
   setIsPreparingTranscript,
   setIsGeneratingSummary,
@@ -31,10 +52,20 @@ function useNoteGeneration({
   const hasStartedStreamingRef = useRef(false);
   const hasHandledNoteGenerationFailureRef = useRef(false);
   const generateAbortControllerRef = useRef(null);
+  const noteGenerationStartedAtRef = useRef(null);
+
+  const emitTerminalOutcome = (eventName, payload = {}) => {
+    if (terminalOutcomeRef.current) {
+      return;
+    }
+    terminalOutcomeRef.current = eventName;
+    emitTelemetry(eventName, payload);
+  };
 
   const resetNoteGenerationState = () => {
     hasStartedStreamingRef.current = false;
     hasHandledNoteGenerationFailureRef.current = false;
+    noteGenerationStartedAtRef.current = null;
   };
 
   const cleanupNoteGeneration = () => {
@@ -66,13 +97,33 @@ function useNoteGeneration({
     }
 
     hasHandledNoteGenerationFailureRef.current = true;
-    console.error(`Note generation failed: ${reason}`, error);
+    console.error(`Note generation failed: ${reason} (${toSafeErrorCode(error, reason)})`);
+    const isNoteGenerationFailure = reason !== 'audio_submission_failed';
+    const errorCode = toSafeErrorCode(error, reason);
+    if (isNoteGenerationFailure) {
+      emitTelemetry('note_generation.failed', {
+        attempt: 1,
+        durationMs: Math.max(0, Date.now() - (noteGenerationStartedAtRef.current || Date.now())),
+        errorCode,
+        provider: 'lambda',
+        reasonCode: reason
+      });
+    }
+    emitTerminalOutcome('recording.failed', {
+      errorCode,
+      outcome: 'failed',
+      reasonCode: reason
+    });
     if (generateAbortControllerRef.current) {
       generateAbortControllerRef.current.abort();
       generateAbortControllerRef.current = null;
     }
-    setTextStream(userMessage);
-    onTextStreamUpdate(userMessage);
+    const messageWithReference = addRecordingSupportReference(
+      userMessage,
+      recordingJobIdRef.current
+    );
+    setTextStream(messageWithReference);
+    onTextStreamUpdate(messageWithReference);
     setIsGeneratingSummary(false);
     setIsPreparingTranscript(false);
     onTransitionToMainApp();
@@ -101,6 +152,12 @@ function useNoteGeneration({
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
     onTextStreamUpdate('');
+    noteGenerationStartedAtRef.current = Date.now();
+    emitTelemetry('note_generation.started', {
+      attempt: 1,
+      provider: 'lambda',
+      transcriptFallback: fromTranscriptFallback
+    });
 
     if (generateAbortControllerRef.current) {
       generateAbortControllerRef.current.abort();
@@ -130,12 +187,14 @@ function useNoteGeneration({
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          userId,
-          timeStamp: timeStampRef.current,
+        body: JSON.stringify(createNoteGenerationRequest({
           accessToken,
-          noteSettings: localStorage.getItem('noteSettings')
-        }),
+          noteSettings: localStorage.getItem('noteSettings'),
+          recordingJobId: recordingJobIdRef.current,
+          telemetryContext,
+          timeStamp: timeStampRef.current,
+          userId
+        })),
         signal: abortController.signal
       });
 
@@ -162,6 +221,10 @@ function useNoteGeneration({
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let streamControlBuffer = '';
+      const awsRequestId = response.headers.get('x-amzn-requestid') ||
+        response.headers.get('x-amz-request-id') ||
+        response.headers.get('x-request-id') ||
+        undefined;
 
       setIsGeneratingSummary(false);
       onTransitionToMainApp();
@@ -171,7 +234,7 @@ function useNoteGeneration({
           try {
             await reader.cancel();
           } catch (cancelError) {
-            console.warn('Error cancelling note generation stream reader:', cancelError);
+            console.warn(`Unable to cancel note generation stream (${toSafeErrorCode(cancelError, 'cancel_failed')})`);
           }
           break;
         }
@@ -181,6 +244,18 @@ function useNoteGeneration({
           if (generateTimeoutRef.current) {
             clearTimeout(generateTimeoutRef.current);
             generateTimeoutRef.current = null;
+          }
+          if (!hasHandledNoteGenerationFailureRef.current && !isDiscardingRef.current) {
+            emitTelemetry('note_generation.succeeded', {
+              attempt: 1,
+              awsRequestId,
+              durationMs: Math.max(0, Date.now() - noteGenerationStartedAtRef.current),
+              provider: 'lambda',
+              transcriptFallback: fromTranscriptFallback
+            });
+            emitTerminalOutcome('recording.completed', {
+              outcome: 'completed'
+            });
           }
           break;
         }
@@ -193,7 +268,7 @@ function useNoteGeneration({
           try {
             await reader.cancel();
           } catch (cancelError) {
-            console.warn('Error cancelling note generation stream reader after chunk error:', cancelError);
+            console.warn(`Unable to cancel failed note stream (${toSafeErrorCode(cancelError, 'cancel_failed')})`);
           }
           break;
         }
@@ -231,63 +306,210 @@ function useNoteGeneration({
     }
   };
 
-  const subscribeToNoteCompletion = async (userId, timestamp) => {
+  const subscribeToNoteCompletion = async (
+    userId,
+    timestamp,
+    recordingJobId = recordingJobIdRef.current
+  ) => {
+    const isCurrentRecording = () => (
+      !isDiscardingRef.current &&
+      recordingJobIdRef.current === recordingJobId
+    );
+    if (!isCurrentRecording()) {
+      return;
+    }
     if (subscriptionRef.current) {
       subscriptionRef.current.unsubscribe();
     }
+    if (transcriptFallbackTimeoutRef.current) {
+      clearTimeout(transcriptFallbackTimeoutRef.current);
+      transcriptFallbackTimeoutRef.current = null;
+    }
 
-    const timeoutId = setTimeout(() => {
+    const transcriptWaitStartedAt = Date.now();
+    emitTelemetry('transcription.wait_started', {
+      attempt: 1,
+      provider: 'appsync'
+    }, recordingJobId);
+
+    const clearTranscriptWaitTimeout = () => {
+      if (transcriptFallbackTimeoutRef.current) {
+        clearTimeout(transcriptFallbackTimeoutRef.current);
+        transcriptFallbackTimeoutRef.current = null;
+      }
+    };
+
+    transcriptFallbackTimeoutRef.current = setTimeout(() => {
+      transcriptFallbackTimeoutRef.current = null;
+      if (!isCurrentRecording()) {
+        return;
+      }
       console.log(`Subscription wait timeout (${TRANSCRIPT_WAIT_TIMEOUT_MS / 1000} seconds) - moving on automatically`);
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+      emitTelemetry('transcription.failed', {
+        attempt: 1,
+        durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+        errorCode: 'timeout',
+        provider: 'appsync',
+        reasonCode: 'transcript_wait_timeout'
+      }, recordingJobId);
+      setIsTranscriptCompleted(true);
+      streamResponse({ fromTranscriptFallback: true });
+    }, TRANSCRIPT_WAIT_TIMEOUT_MS);
+
+    let isUsingLegacySubscription = false;
+
+    const handleSubscriptionData = ({ data }) => {
+      if (!isCurrentRecording()) {
+        return;
+      }
+      const updatedNote = data?.onUpdateNotesByOwner;
+
+      const transcriptMatchedBy = getRecordingUpdateMatch(updatedNote, {
+        recordingJobId,
+        timestamp
+      });
+
+      if (transcriptMatchedBy) {
+        const transcriptionAttempt = Number.isInteger(updatedNote.transcriptionAttempt) &&
+          updatedNote.transcriptionAttempt > 0
+          ? updatedNote.transcriptionAttempt
+          : 1;
+        const transcriptionProvider = toSafeErrorCode(
+          null,
+          updatedNote.transcriptionProvider || 'transcription_backend'
+        );
+        const transcriptionRequestId = getSafeExternalId(updatedNote.transcriptionRequestId);
+
+        const transcriptError = parseLambdaErrorPayload(updatedNote.transcript || '');
+        if (transcriptError) {
+          console.warn('Transcript update contains backend error payload, moving on to note generation fallback path');
+          emitTelemetry('transcription.failed', {
+            attempt: transcriptionAttempt,
+            durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+            errorCode: toSafeErrorCode(null, updatedNote.recordingErrorCode || 'backend_error_payload'),
+            provider: transcriptionProvider,
+            providerRequestId: transcriptionRequestId,
+            transcriptMatchedBy
+          }, recordingJobId);
+          clearTranscriptWaitTimeout();
+          setIsTranscriptCompleted(true);
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
+          streamResponse({ fromTranscriptFallback: true });
+          return;
+        }
+
+        if (updatedNote.recordingStatus === 'transcription_failed') {
+          emitTelemetry('transcription.failed', {
+            attempt: transcriptionAttempt,
+            durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+            errorCode: toSafeErrorCode(null, updatedNote.recordingErrorCode || 'transcription_failed'),
+            provider: transcriptionProvider,
+            providerRequestId: transcriptionRequestId,
+            transcriptMatchedBy
+          }, recordingJobId);
+          clearTranscriptWaitTimeout();
+          setIsTranscriptCompleted(true);
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
+          streamResponse({ fromTranscriptFallback: true });
+          return;
+        }
+
+        if (updatedNote.recordingStatus === 'no_speech') {
+          emitTelemetry('transcription.no_speech', {
+            attempt: transcriptionAttempt,
+            durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+            noSpeech: true,
+            provider: transcriptionProvider,
+            providerRequestId: transcriptionRequestId,
+            transcriptMatchedBy
+          }, recordingJobId);
+          clearTranscriptWaitTimeout();
+          setIsTranscriptCompleted(true);
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
+          streamResponse({ fromTranscriptFallback: true });
+          return;
+        }
+
+        if (updatedNote.isCompleted === true) {
+          emitTelemetry('transcription.completed', {
+            attempt: transcriptionAttempt,
+            durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+            provider: transcriptionProvider,
+            providerRequestId: transcriptionRequestId,
+            transcriptMatchedBy
+          }, recordingJobId);
+          clearTranscriptWaitTimeout();
+          setIsTranscriptCompleted(true);
+          if (subscriptionRef.current) {
+            subscriptionRef.current.unsubscribe();
+            subscriptionRef.current = null;
+          }
+          streamResponse();
+        }
+      }
+    };
+
+    const handleSubscriptionError = (error) => {
+      if (!isCurrentRecording()) {
+        return;
+      }
+      if (
+        !isUsingLegacySubscription &&
+        isRecordingStatusSchemaCompatibilityError(error)
+      ) {
+        isUsingLegacySubscription = true;
+        console.warn('Recording-status fields are unavailable; using legacy timestamp correlation');
+        emitTelemetry('transcription.wait_started', {
+          attempt: 2,
+          provider: 'appsync',
+          reasonCode: 'legacy_schema_fallback'
+        }, recordingJobId);
+        subscriptionRef.current = client.graphql({
+          query: subscriptions.onUpdateNotesByOwner,
+          variables: { owner: userId }
+        }).subscribe({
+          error: handleSubscriptionError,
+          next: handleSubscriptionData
+        });
+        return;
+      }
+
+      console.error(`Recording subscription failed (${toSafeErrorCode(error, 'subscription_error')})`);
+      clearTranscriptWaitTimeout();
+      emitTelemetry('transcription.failed', {
+        attempt: isUsingLegacySubscription ? 2 : 1,
+        durationMs: Math.max(0, Date.now() - transcriptWaitStartedAt),
+        errorCode: toSafeErrorCode(error, 'subscription_error'),
+        provider: 'appsync',
+        reasonCode: 'subscription_error'
+      }, recordingJobId);
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
       }
       setIsTranscriptCompleted(true);
       streamResponse({ fromTranscriptFallback: true });
-    }, TRANSCRIPT_WAIT_TIMEOUT_MS);
+    };
 
     subscriptionRef.current = client.graphql({
-      query: subscriptions.onUpdateNotesByOwner,
+      query: ON_UPDATE_NOTES_BY_OWNER_WITH_RECORDING_STATUS,
       variables: { owner: userId }
     }).subscribe({
-      next: ({ data }) => {
-        console.log('Received data from notes subscription:', data);
-        const updatedNote = data.onUpdateNotesByOwner;
-
-        if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
-          console.log('Found matching note:', updatedNote);
-
-          const transcriptError = parseLambdaErrorPayload(updatedNote.transcript || '');
-          if (transcriptError) {
-            console.warn('Transcript update contains backend error payload, moving on to note generation fallback path');
-            clearTimeout(timeoutId);
-            setIsTranscriptCompleted(true);
-            if (subscriptionRef.current) {
-              subscriptionRef.current.unsubscribe();
-              subscriptionRef.current = null;
-            }
-            streamResponse({ fromTranscriptFallback: true });
-            return;
-          }
-
-          if (updatedNote.isCompleted === true) {
-            console.log('Transcript processing completed!');
-            clearTimeout(timeoutId);
-            setIsTranscriptCompleted(true);
-            if (subscriptionRef.current) {
-              subscriptionRef.current.unsubscribe();
-              subscriptionRef.current = null;
-            }
-            streamResponse();
-          }
-        }
-      },
-      error: (error) => {
-        console.error('Subscription error:', error);
-        clearTimeout(timeoutId);
-        setIsTranscriptCompleted(true);
-        streamResponse({ fromTranscriptFallback: true });
-      }
+      error: handleSubscriptionError,
+      next: handleSubscriptionData
     });
   };
 
