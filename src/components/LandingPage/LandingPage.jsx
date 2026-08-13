@@ -415,7 +415,7 @@ export default function LandingPage() {
             <p className="marketing-eyebrow">Testimonials</p>
             <h2>Trusted by chiropractors in busy practices</h2>
           </div>
-          <div className="marketing-testimonials__grid marketing-reveal" ref={carouselRef} onScroll={handleCarouselScroll} data-marketing-reveal>
+          <div className="marketing-testimonials__grid marketing-reveal marketing-reveal--delay-1" ref={carouselRef} onScroll={handleCarouselScroll} data-marketing-reveal>
             {testimonials.map((testimonial) => (
               <figure className="marketing-testimonial" key={testimonial.name}>
                 <div className="marketing-testimonial__portrait" aria-hidden="true">
@@ -451,7 +451,7 @@ export default function LandingPage() {
             <h2>See a clinical AI scribe in action</h2>
             <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>
           </div>
-          <div className="marketing-video__frame marketing-reveal" data-marketing-reveal>
+          <div className="marketing-video__frame marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
             <video
               ref={videoRef}
               controls={videoPlaying}
@@ -476,24 +476,24 @@ export default function LandingPage() {
         </section>
 
         <section id="features" className="marketing-section marketing-features" data-analytics-section="features">
-          <div className="marketing-section__heading">
+          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How ChiroNote works</p>
             <h2>Secure, quick, and simple. Just like a tool should be.</h2>
           </div>
           <div className="marketing-features__content">
-            <div className="marketing-features__image">
+            <div className="marketing-features__image marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
               <img src={mockupLaptop} alt="ChiroNote displaying a generated chiropractic SOAP note" width="990" height="733" loading="lazy" decoding="async" />
             </div>
             <ol className="marketing-features__steps">
-              <li>
+              <li className="marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
                 <span>1</span>
                 <div><h3>Start recording and hold the appointment as usual.</h3><p>Focus on the patient while ChiroNote listens through your device microphone.</p></div>
               </li>
-              <li>
+              <li className="marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
                 <span>2</span>
                 <div><h3>Stop recording and review the generated note.</h3><p>Edit the structured note yourself or ask Smart Editor for a targeted revision.</p></div>
               </li>
-              <li>
+              <li className="marketing-reveal marketing-reveal--delay-3" data-marketing-reveal>
                 <span>3</span>
                 <div><h3>Transfer the finished note into your EHR.</h3><p>Copy and paste into the system you already use—no complex integration required.</p></div>
               </li>
@@ -502,14 +502,14 @@ export default function LandingPage() {
         </section>
 
         <section id="prices" className="marketing-section marketing-pricing" data-analytics-section="pricing">
-          <div className="marketing-section__heading">
+          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">Pricing</p>
             <h2>Simple plans for practices of every size</h2>
             <p>Start free, then choose more monthly dictation when you need it.</p>
           </div>
           <div className="marketing-pricing__grid">
-            {plans.map((plan) => (
-              <article className={`marketing-plan${plan.highlighted ? ' is-highlighted' : ''}`} key={plan.name}>
+            {plans.map((plan, index) => (
+              <article className={`marketing-plan marketing-reveal marketing-reveal--delay-${index + 1}${plan.highlighted ? ' is-highlighted' : ''}`} key={plan.name} data-marketing-reveal>
                 <div className="marketing-plan__heading">
                   {plan.highlighted && <span className="marketing-plan__badge">Most popular</span>}
                   <p className="marketing-plan__name">{plan.name}</p>
@@ -527,11 +527,11 @@ export default function LandingPage() {
         </section>
 
         <section id="faq" className="marketing-section marketing-faq" data-analytics-section="faq">
-          <div className="marketing-section__heading">
+          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">FAQ</p>
             <h2>Frequently asked questions</h2>
           </div>
-          <div className="marketing-faq__list">
+          <div className="marketing-faq__list marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
             {faqItems.map((item, index) => {
               const isOpen = activeFaq === index;
               return (
@@ -551,7 +551,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="marketing-final-cta" data-analytics-section="final_cta">
+        <section className="marketing-final-cta marketing-reveal" data-analytics-section="final_cta" data-marketing-reveal>
           <div>
             <p className="marketing-eyebrow">Chart less. Treat more.</p>
             <h2>Try your first ChiroNote today.</h2>

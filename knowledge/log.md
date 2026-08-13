@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-13
+
+- **Landing-page scroll motion**: Extended the existing dependency-free reveal treatment across features, pricing, FAQ, and the final CTA using one-time opacity/transform entrances, restrained card/step staggers, and the existing reduced-motion and browser fallbacks.
+
 ## 2026-07-22
 
 - **Mobile pricing condensation**: Documented the landing page's unified compact pricing comparison at 880 px and below, including preserved plan actions and the consolidated unlimited-devices benefit.

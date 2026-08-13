@@ -49,12 +49,14 @@ describe('LandingPage', () => {
     expect(document.body.textContent).not.toContain('45%');
   });
 
-  test('uses portrait-led testimonial cards and reveal hooks only in the refined sections', () => {
+  test('uses portrait-led testimonial cards and restrained reveal hooks across key sections', () => {
     renderLandingPage();
 
     expect(document.querySelectorAll('.marketing-testimonial__portrait img')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(4);
-    expect(document.querySelector('.marketing-features [data-marketing-reveal]')).toBeNull();
+    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(16);
+    expect(document.querySelectorAll('.marketing-features [data-marketing-reveal]')).toHaveLength(5);
+    expect(document.querySelectorAll('.marketing-plan[data-marketing-reveal]')).toHaveLength(3);
+    expect(document.querySelector('.marketing-final-cta[data-marketing-reveal]')).not.toBeNull();
   });
 
   test('provides compact mobile assurances inside the hero image', () => {
