@@ -29,7 +29,7 @@ The page sends stable funnel events through `utils/analytics.js`, including sect
 - Below-the-fold sections use `content-visibility`, fixed image dimensions, scoped CSS, and reduced-motion support.
 - The hero uses concise spacing copy and moves from split to stacked composition at 880 px. Laptop and desktop views keep the clinical image unobstructed; compact layouts move three unbulleted assurances into a narrow portrait panel over unused image space and hide the separate desktop assurance strip. The image frame uses a portrait crop through 460 px and a shallower compact crop from 461–880 px so the photo stays immersive without becoming excessively tall on tablets.
 - Testimonials use portrait-led cards with a swipeable mobile carousel; only the real practitioner images in `src/assets` may be associated with named quotes.
-- Hero, testimonial, and video motion is limited to opacity/transform entrances and is disabled by `prefers-reduced-motion`.
+- Hero motion runs on page entry. As visitors scroll, major section headings and content groups use a one-time 14px opacity/transform reveal, with short 70ms staggers for feature steps and pricing cards. Motion is disabled by `prefers-reduced-motion` and falls back to immediately visible content if `IntersectionObserver` is unavailable.
 - Mobile navigation uses an accessible menu at 880 px and below. Features collapse to one column, while pricing becomes one compact comparison card with three plan rows and a shared unlimited-devices note.
 
 ## Maintenance Notes
