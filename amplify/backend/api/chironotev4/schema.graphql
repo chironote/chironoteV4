@@ -49,6 +49,7 @@ type RecordingTelemetryEvent
     )
   timelineKey: String!
   occurredAt: AWSDateTime!
+  producerOccurredAt: AWSDateTime
   expiresAt: AWSTimestamp!
   sequence: Int!
   schemaVersion: String!
@@ -85,6 +86,7 @@ type RecordingTelemetryEvent
   outcome: String
   provider: String
   reasonCode: String
+  stage: String
   transcriptMatchedBy: String
   deviceHash: String
   deviceType: String

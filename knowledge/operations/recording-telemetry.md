@@ -17,16 +17,19 @@ This repository contains the web producer, GraphQL source schema, retention over
 - Schema version: `1.0`.
 - Retention target: 30 days from `occurredAt`.
 - Partition key: `recordingJobId`.
-- Ordered sort key: `occurredAt#zero-padded-sequence#event-id`, stored as `timelineKey`.
+- Ordered sort key: server ingestion/occurrence time plus producer source/sequence and the server-normalized id, stored as `timelineKey`.
+- `producerOccurredAt` preserves the producer-reported event time so support can recognize delayed reconnect batches. It is operational context, not an authoritative security timestamp; `occurredAt`, ordering keys, and expiry remain server-controlled.
 - Required producer context: `schemaVersion`, originating `appBuild`/`platform`/`browser`, and the current producer `source`; the originating context travels through S3, SQS, and note-generation requests.
 - `sequence` is monotonic within a producer's job stream. Cross-service order comes from `timelineKey` occurrence time plus stage causality; independent producers may reuse a sequence value.
 - Client identifier generation requires Web Crypto. There is no timestamp, user-id, or `Math.random()` fallback.
+- The ingestion resolver validates the entire input allowlist and the exact non-sensitive shape of generated client fields, replaces client `id`, `occurredAt`, `timelineKey`, and `expiresAt` with server-authoritative values, and uses a deterministic job/source/client-event id so an ambiguous retry is idempotent.
+- User-pool writes are restricted to the `client.*` source matching their declared Web/Android/iOS platform and to client-observable event names; IAM writes are restricted to `lambda.*` or `backend.*`. This prevents a browser principal from claiming backend-only alert, notification, quarantine, or deletion evidence.
 - Consumers must accept unknown schema-safe fields. Producers ignore unknown safe payload fields and reject unknown event names, invalid known-field values, and privacy-sensitive fields.
 - A producer adding an event name or persisted field must update the source schema, validator, event dictionary, and tests together. Increment the major schema version for an incompatible meaning or type change.
 
 The client sends authenticated AppSync mutations independently of recording. It buffers at most 100 events, normally batches 10 after 750 ms, retries after 250 ms, 1 second, and 3 seconds, then cools down for 30 seconds. `online`, terminal events, and `pagehide` force a keepalive flush. Delivery never awaits or blocks microphone capture, upload, SQS dispatch, or note generation.
 
-When the bounded buffer drops entries it records `telemetry.buffer_overflow` with the exact dropped count. Exhausted delivery records `telemetry.delivery_failed` in memory and invokes the local delivery-failure hook; that event is sent after connectivity returns. A permanently unavailable telemetry endpoint can therefore prevent its own event from arriving, which is why the independent alarm gate below remains required.
+When the bounded buffer drops entries it records `telemetry.buffer_overflow` with the cumulative dropped count even if an older marker is evicted. Partial GraphQL batches remove successful aliases, ambiguous committed writes recover through deterministic duplicate ids, non-retriable validation failures are discarded explicitly, and every request has a 10-second timeout. Exhausted delivery records `telemetry.delivery_failed` in memory and invokes the local delivery-failure hook; that event is sent after connectivity returns. Disposal aborts a regular active request/retry loop, preserves an already-active keepalive request, otherwise permits only one best-effort keepalive send, and never re-arms a timer. A permanently unavailable telemetry endpoint can still prevent its own event from arriving, which is why the independent alarm gate below remains required.
 
 ## Event Dictionary
 
@@ -68,9 +71,10 @@ The validator tests are the executable privacy authority. A new payload field is
 `RecordingTelemetryEvent` is an Amplify/AppSync model with no update or delete authorization:
 
 - signed-in Cognito users may create events but cannot read them;
-- IAM-authenticated backend producers may create events;
+- explicitly allowlisted IAM backend roles may create events after their role names are added to the Amplify Gen 1 `custom-roles.json` and their IAM policies are scoped to this mutation;
 - only members of the Cognito `Support` group may read events;
-- no owner, user id, patient id, transcript, note, or object path is stored;
+- no owner, user id, patient id, transcript, note, or object path is stored in the event or Support query;
+- the resolver stores a GraphQL-hidden, job-salted non-cryptographic producer fingerprint for coarse abuse attribution without making a direct principal identifier or cross-recording tracking key readable to Support; collisions are possible, so it is not an authentication or forensic identity;
 - the `expiresAt` DynamoDB TTL attribute is set to 30 days by `override.ts`.
 
 DynamoDB TTL deletion is asynchronous, so 30 days is the expiry target rather than an exact deletion instant. CloudWatch logs, exports, backups, or downstream metrics must receive their own retention and access review before rollout; this contract does not authorize copying event bodies elsewhere.
@@ -96,6 +100,7 @@ query RecordingTimeline(
     items {
       timelineKey
       occurredAt
+      producerOccurredAt
       sequence
       schemaVersion
       appBuild
@@ -104,11 +109,14 @@ query RecordingTimeline(
       browser
       eventName
       attempt
+      deliveryAttempt
       durationMs
+      httpStatus
       alertCode
       errorCode
       reasonCode
       provider
+      producerVersion
       providerRequestId
       awsRequestId
       s3RequestId
@@ -130,6 +138,7 @@ query RecordingTimeline(
       noSpeech
       transcriptFallback
       retryDelayMs
+      stage
       notificationChannel
       outcome
       queueDepth
@@ -150,7 +159,7 @@ Variables:
 }
 ```
 
-Read the result in ascending `timelineKey` order:
+Read the result in ascending `timelineKey` order. If a reconnect batch arrives after downstream events, use `producerOccurredAt` together with that source's monotonic `sequence` to place its client events in their operational order; never treat the producer timestamp as authentication evidence:
 
 1. Confirm one schema major version and identify app/source versions.
 2. Confirm capture settings and `signal.summary`. Low/zero signal with healthy chunk/upload stages points to input/device conditions rather than transport.
@@ -181,7 +190,7 @@ The following changes belong to other repositories and must be completed before 
 1. `chironote/lambda-audio2transc`: retain `recordingJobId`, schema/app/platform/browser context, and chunk fields when normalizing SQS bodies; emit transcription, retry, no-speech, quarantine, deletion, and terminal-relevant events; populate the new `Notes` correlation/status/provider/request/attempt fields; remove direct identifiers/object paths from operational logs; preserve the context through DLQ/retry messages.
 2. `chironote/lambda-transcript2note`: accept and validate `recordingJobId`, schema version, and originating app/platform/browser; retain them in retry messages; emit note-generation, retry, persistence, and provider outcomes; update correlated note status without logging clinical text or direct identifiers.
 3. The alert/notification/quarantine owners: emit alert, notification, and quarantine results with the same id and safe request identifiers.
-4. Infrastructure owner: deploy the AppSync model/index/status fields and TTL, grant least-privilege backend create and Support read access, configure the independent delivery metric/alarm, and verify real TTL/access behavior.
+4. Infrastructure owner: add the exact backend producer role names to the Amplify Gen 1 `custom-roles.json`, deploy the AppSync model/index/status fields, validating ingestion resolver, and TTL; grant least-privilege mutation access and Support read access; attach per-principal AppSync/WAF throttling; configure the independent delivery metric/alarm; and verify real TTL/access/source-boundary/abuse-attribution behavior.
 5. Release owner: regenerate checked-in GraphQL clients after the deployed schema is authoritative, then release backend producers before a correlated frontend build and run the real Web/Android/iOS/backend matrix.
 6. Native owners: port the same schema/client contract to the currently maintained Android and iOS code lines. This repository's `prod` line covers the website plus browser/WebView detection; its older native branches are divergent and were not edited from this worktree.
 
@@ -191,4 +200,4 @@ No AWS, frontend, mobile, or Lambda deployment is implied by source merge. Recor
 
 ## Provenance
 
-Implemented by [`recordingTelemetrySchema.js`](../../src/components/Recording/recordingTelemetrySchema.js), [`recordingTelemetryClient.js`](../../src/components/Recording/recordingTelemetryClient.js), [`recordingTelemetryContext.js`](../../src/components/Recording/recordingTelemetryContext.js), [`recordingSignalHealth.js`](../../src/components/Recording/recordingSignalHealth.js), [`recordingBackendContract.js`](../../src/components/Recording/recordingBackendContract.js), the recording hooks, [`schema.graphql`](../../amplify/backend/api/chironotev4/schema.graphql), [`override.ts`](../../amplify/backend/api/chironotev4/override.ts), and their adjacent tests. External-repository findings were verified read-only against the current default branches of `chironote/lambda-audio2transc` and `chironote/lambda-transcript2note` on 2026-08-12.
+Implemented by [`recordingTelemetrySchema.js`](../../src/components/Recording/recordingTelemetrySchema.js), [`recordingTelemetryClient.js`](../../src/components/Recording/recordingTelemetryClient.js), [`recordingTelemetryContext.js`](../../src/components/Recording/recordingTelemetryContext.js), [`recordingSignalHealth.js`](../../src/components/Recording/recordingSignalHealth.js), [`recordingBackendContract.js`](../../src/components/Recording/recordingBackendContract.js), the recording hooks, [`schema.graphql`](../../amplify/backend/api/chironotev4/schema.graphql), [`Mutation.createRecordingTelemetryEvent.req.vtl`](../../amplify/backend/api/chironotev4/resolvers/Mutation.createRecordingTelemetryEvent.req.vtl), [`override.ts`](../../amplify/backend/api/chironotev4/override.ts), and their adjacent tests. External-repository findings were verified read-only against the current default branches of `chironote/lambda-audio2transc` and `chironote/lambda-transcript2note` on 2026-08-12.

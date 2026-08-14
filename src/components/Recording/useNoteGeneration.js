@@ -23,7 +23,7 @@ import {
 } from './recordingBackendContract';
 
 const client = generateClient();
-const SAFE_EXTERNAL_ID_PATTERN = /^[a-z0-9][a-z0-9._:/=+-]{0,255}$/i;
+const SAFE_EXTERNAL_ID_PATTERN = /^[a-z0-9][a-z0-9._:=+-]{0,255}$/i;
 
 const getSafeExternalId = (value) => (
   typeof value === 'string' && SAFE_EXTERNAL_ID_PATTERN.test(value)
@@ -56,10 +56,16 @@ function useNoteGeneration({
 
   const emitTerminalOutcome = (eventName, payload = {}) => {
     if (terminalOutcomeRef.current) {
-      return;
+      return false;
     }
-    terminalOutcomeRef.current = eventName;
-    emitTelemetry(eventName, payload);
+    const emittedEvent = emitTelemetry(eventName, payload) || emitTelemetry(eventName, {
+      outcome: payload.outcome || eventName.split('.')[1]
+    });
+    if (emittedEvent) {
+      terminalOutcomeRef.current = eventName;
+      return true;
+    }
+    return false;
   };
 
   const resetNoteGenerationState = () => {
@@ -477,6 +483,7 @@ function useNoteGeneration({
           provider: 'appsync',
           reasonCode: 'legacy_schema_fallback'
         }, recordingJobId);
+        subscriptionRef.current?.unsubscribe();
         subscriptionRef.current = client.graphql({
           query: subscriptions.onUpdateNotesByOwner,
           variables: { owner: userId }

@@ -1,18 +1,12 @@
-interface GraphQlModelResource {
-  modelDDBTable: {
-    timeToLiveSpecification?: {
-      attributeName: string;
-      enabled: boolean;
-    };
-  };
-}
+import { AmplifyApiGraphQlResourceStackTemplate } from '@aws-amplify/cli-extensibility-helper';
 
-interface GraphQlResourceTemplate {
-  models: Record<string, GraphQlModelResource>;
-}
+export function override(resources: AmplifyApiGraphQlResourceStackTemplate) {
+  const telemetryTable = resources.models?.RecordingTelemetryEvent?.modelDDBTable;
+  if (!telemetryTable) {
+    throw new Error('RecordingTelemetryEvent table is required for telemetry TTL');
+  }
 
-export function override(resources: GraphQlResourceTemplate) {
-  resources.models['RecordingTelemetryEvent'].modelDDBTable.timeToLiveSpecification = {
+  telemetryTable.timeToLiveSpecification = {
     attributeName: 'expiresAt',
     enabled: true
   };

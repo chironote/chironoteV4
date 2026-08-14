@@ -2,7 +2,10 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { getUserId } from './recordingAuth';
 import useMediaRecorderController from './useMediaRecorderController';
-import { AUDIO_UPLOAD_FAILURE_MESSAGE } from './recordingConstants';
+import {
+  AUDIO_UPLOAD_FAILURE_MESSAGE,
+  RECORDING_CAPTURE_FAILURE_MESSAGE
+} from './recordingConstants';
 
 jest.mock('./recordingAuth', () => ({
   getUserId: jest.fn()
@@ -138,6 +141,7 @@ describe('useMediaRecorderController cleanup', () => {
     getUserId.mockResolvedValue('user-12345678');
 
     Object.values(callbacks).forEach(callback => callback.mockClear());
+    callbacks.emitTelemetry.mockImplementation((eventName) => ({ eventName }));
     refs.isDiscardingRef.current = false;
     refs.recordingJobIdRef.current = null;
     refs.terminalOutcomeRef.current = null;
@@ -311,6 +315,59 @@ describe('useMediaRecorderController cleanup', () => {
     });
     expect(track.stop).toHaveBeenCalledTimes(1);
     expect(callbacks.onTransitionToMainApp).toHaveBeenCalledTimes(1);
+    expect(refs.terminalOutcomeRef.current).toBe('recording.failed');
+  });
+
+  test('fails safely when secure correlation-id generation is unavailable', async () => {
+    const originalCrypto = window.crypto;
+    Object.defineProperty(window, 'crypto', {
+      configurable: true,
+      value: {}
+    });
+
+    try {
+      await act(async () => {
+        await controller.startRecording();
+      });
+
+      expect(navigator.mediaDevices.getUserMedia).not.toHaveBeenCalled();
+      expect(callbacks.startUploadSession).not.toHaveBeenCalled();
+      expect(callbacks.setTextStream).toHaveBeenCalledWith(
+        RECORDING_CAPTURE_FAILURE_MESSAGE
+      );
+      expect(refs.recordingJobIdRef.current).toBeNull();
+    } finally {
+      Object.defineProperty(window, 'crypto', {
+        configurable: true,
+        value: originalCrypto
+      });
+    }
+  });
+
+  test('falls back to a minimal terminal payload when rich telemetry is rejected', async () => {
+    callbacks.emitTelemetry.mockImplementation((eventName, payload) => (
+      eventName === 'recording.failed' && payload.reasonCode
+        ? null
+        : { eventName }
+    ));
+    getUserId.mockResolvedValue(null);
+
+    await act(async () => {
+      await controller.startRecording();
+    });
+    MockMediaRecorder.instances[0].emitData();
+    await act(async () => {
+      await flushPromises();
+    });
+
+    expect(callbacks.emitTelemetry).toHaveBeenCalledWith('recording.failed', {
+      errorCode: 'user_identity_unavailable',
+      outcome: 'failed',
+      reasonCode: 'authentication_failed'
+    });
+    expect(callbacks.emitTelemetry).toHaveBeenCalledWith('recording.failed', {
+      outcome: 'failed'
+    });
     expect(refs.terminalOutcomeRef.current).toBe('recording.failed');
   });
 });

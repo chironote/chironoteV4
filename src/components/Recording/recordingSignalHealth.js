@@ -15,8 +15,8 @@ export const calculateSignalFrame = (samples) => {
   }
 
   return {
-    peak,
-    rms: Math.sqrt(sumOfSquares / samples.length)
+    peak: Math.min(1, peak),
+    rms: Math.min(1, Math.sqrt(sumOfSquares / samples.length))
   };
 };
 
@@ -32,7 +32,7 @@ export const createSignalHealthAccumulator = ({
   return {
     addFrame(samples, durationMs = DEFAULT_SAMPLE_INTERVAL_MS) {
       const frame = calculateSignalFrame(samples);
-      peak = Math.max(peak, frame.peak);
+      peak = Math.min(1, Math.max(peak, frame.peak));
       rmsTotal += frame.rms;
       sampleCount += 1;
       observedDurationMs += Math.max(0, durationMs);

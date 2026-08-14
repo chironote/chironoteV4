@@ -2,6 +2,18 @@ import { sanitizeTrackSettings } from './recordingTelemetrySchema';
 
 const FALLBACK_APP_BUILD = '1.3.0';
 
+const normalizeAppBuild = (value) => {
+  if (typeof value !== 'string' || value.length === 0) {
+    return FALLBACK_APP_BUILD;
+  }
+  const normalized = value
+    .trim()
+    .replace(/[^a-z0-9._+-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  return /^[a-z0-9]/i.test(normalized) ? normalized : FALLBACK_APP_BUILD;
+};
+
 const detectPlatform = (userAgent) => {
   if (/android/i.test(userAgent)) {
     return 'android';
@@ -41,10 +53,10 @@ export const getRecordingClientContext = (
   const platform = detectPlatform(userAgent);
 
   return {
-    appBuild: process.env.REACT_APP_BUILD_VERSION ||
+    appBuild: normalizeAppBuild(process.env.REACT_APP_BUILD_VERSION ||
       process.env.REACT_APP_SOURCE_VERSION ||
       process.env.REACT_APP_VERSION ||
-      FALLBACK_APP_BUILD,
+      FALLBACK_APP_BUILD),
     browser: detectBrowser(userAgent),
     platform,
     source: `client.${platform}`

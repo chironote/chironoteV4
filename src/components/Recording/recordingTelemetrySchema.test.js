@@ -2,6 +2,7 @@ import {
   RECORDING_TELEMETRY_SCHEMA_VERSION,
   RECORDING_TELEMETRY_EVENT_NAMES,
   TelemetryPrivacyError,
+  TelemetryValidationError,
   addRecordingSupportReference,
   createRecordingJobId,
   createRecordingTelemetryEvent,
@@ -104,6 +105,16 @@ describe('recording telemetry schema', () => {
         sampleRate: 48000
       }
     });
+  });
+
+  test('clamps browser signal overshoot and rejects path-like request identifiers', () => {
+    expect(sanitizeTelemetryPayload({ peak: 1.25, rmsAverage: 1.000001 })).toEqual({
+      peak: 1,
+      rmsAverage: 1
+    });
+    expect(() => sanitizeTelemetryPayload({
+      providerRequestId: 'request/id'
+    })).toThrow(TelemetryValidationError);
   });
 
   test('generates opaque RFC 4122 version 4 job identifiers', () => {

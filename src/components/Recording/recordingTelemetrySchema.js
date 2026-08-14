@@ -49,7 +49,7 @@ export const RECORDING_TERMINAL_EVENT_NAMES = Object.freeze([
 const EVENT_NAME_SET = new Set(RECORDING_TELEMETRY_EVENT_NAMES);
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_CODE_PATTERN = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
-const SAFE_ID_PATTERN = /^[a-z0-9][a-z0-9._:/=+-]{0,255}$/i;
+const SAFE_ID_PATTERN = /^[a-z0-9][a-z0-9._:=+-]{0,255}$/i;
 const SAFE_BUILD_PATTERN = /^[a-z0-9][a-z0-9._+-]{0,63}$/i;
 const SAFE_MIME_PATTERN = /^(audio|video)\/[a-z0-9.+-]+(?:;\s*codecs="?[a-z0-9., _-]+"?)?$/i;
 const DEVICE_HASH_PATTERN = /^[a-f0-9]{16,64}$/i;
@@ -88,6 +88,7 @@ const CODE_FIELDS = new Set([
   'outcome',
   'provider',
   'reasonCode',
+  'stage',
   'transcriptMatchedBy'
 ]);
 
@@ -262,10 +263,10 @@ const sanitizeInteger = (value, field) => {
 };
 
 const sanitizeFloat = (value, field) => {
-  if (!Number.isFinite(value) || value < 0 || value > 1) {
+  if (!Number.isFinite(value) || value < 0) {
     throw new TelemetryValidationError(`invalid_${field}`);
   }
-  return Number(value.toFixed(6));
+  return Number(Math.min(1, value).toFixed(6));
 };
 
 const sanitizeString = (value, field, pattern, maxLength) => {

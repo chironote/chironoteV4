@@ -58,4 +58,20 @@ describe('recording telemetry context', () => {
       sampleRate: 48000
     });
   });
+
+  test('normalizes unsafe build metadata before it reaches the strict event schema', () => {
+    const previousBuild = process.env.REACT_APP_BUILD_VERSION;
+    process.env.REACT_APP_BUILD_VERSION = 'feature/PHI telemetry build';
+    try {
+      expect(getRecordingClientContext({ userAgent: '' }).appBuild).toBe(
+        'feature-PHI-telemetry-build'
+      );
+    } finally {
+      if (previousBuild === undefined) {
+        delete process.env.REACT_APP_BUILD_VERSION;
+      } else {
+        process.env.REACT_APP_BUILD_VERSION = previousBuild;
+      }
+    }
+  });
 });

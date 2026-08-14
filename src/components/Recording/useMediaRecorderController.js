@@ -66,10 +66,16 @@ function useMediaRecorderController({
 
   const emitTerminalOutcome = (eventName, payload = {}) => {
     if (terminalOutcomeRef.current) {
-      return;
+      return false;
     }
-    terminalOutcomeRef.current = eventName;
-    emitTelemetry(eventName, payload);
+    const emittedEvent = emitTelemetry(eventName, payload) || emitTelemetry(eventName, {
+      outcome: payload.outcome || eventName.split('.')[1]
+    });
+    if (emittedEvent) {
+      terminalOutcomeRef.current = eventName;
+      return true;
+    }
+    return false;
   };
 
   const showRecordingFailure = (message) => {
@@ -159,8 +165,6 @@ function useMediaRecorderController({
             requestedTrackSettings: RECORDING_AUDIO_CONSTRAINTS
           });
         });
-      signalHealthMonitorRef.current = createSignalHealthMonitor(stream);
-
       recorder.ondataavailable = (event) => {
         if (isDiscardingRef.current) {
           return;
@@ -302,7 +306,14 @@ function useMediaRecorderController({
 
     timeStampRef.current = Date.now();
     pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    recordingJobIdRef.current = createRecordingJobId();
+    try {
+      recordingJobIdRef.current = createRecordingJobId();
+    } catch (error) {
+      console.error(`Unable to create recording correlation id (${toSafeErrorCode(error, 'correlation_id_failed')})`);
+      cancelRecording({ clearContent: false });
+      showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
+      return;
+    }
     recordingSessionIdRef.current = recordingJobIdRef.current;
     const startedSessionId = recordingSessionIdRef.current;
     captureStartedAtRef.current = Date.now();
@@ -331,6 +342,10 @@ function useMediaRecorderController({
     if (mediaRecorderRef.current) {
       try {
         startRecorder();
+        const signalHealthMonitor = createSignalHealthMonitor(streamRef.current);
+        if (signalHealthMonitor) {
+          signalHealthMonitorRef.current = signalHealthMonitor;
+        }
         setIsRecording(true);
         isRecordingRef.current = true;
         setIsPaused(false);
@@ -351,19 +366,19 @@ function useMediaRecorderController({
           errorCode,
           provider: 'media_recorder'
         });
-        cancelRecording({ clearContent: false });
         emitTerminalOutcome('recording.failed', {
           errorCode,
           outcome: 'failed'
         });
+        cancelRecording({ clearContent: false });
         showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
       }
     } else {
-      cancelRecording({ clearContent: false });
       emitTerminalOutcome('recording.failed', {
         errorCode: 'capture_start_failed',
         outcome: 'failed'
       });
+      cancelRecording({ clearContent: false });
       showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
     }
   };
@@ -431,6 +446,12 @@ function useMediaRecorderController({
         outcome: 'discarded',
         reasonCode: discardReasonCode
       });
+    } else if (recordingJobIdRef.current && !terminalOutcomeRef.current) {
+      emitTerminalOutcome('recording.failed', {
+        errorCode: 'recording_cancelled_after_failure',
+        outcome: 'failed',
+        reasonCode: 'workflow_failure'
+      });
     }
 
     if (updateState) {
@@ -470,8 +491,12 @@ function useMediaRecorderController({
   };
 
   const discardRecording = (reasonCode = 'user_discarded') => {
+    const safeReasonCode = toSafeErrorCode(
+      null,
+      typeof reasonCode === 'string' ? reasonCode : 'user_discarded'
+    );
     cancelRecording({
-      discardReasonCode: reasonCode,
+      discardReasonCode: safeReasonCode,
       emitDiscarded: true
     });
   };
