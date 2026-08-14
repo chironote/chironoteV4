@@ -3,7 +3,7 @@
 ## 2026-08-13
 
 - **Recording telemetry review**: Rechecked the web producer, PHI allowlist, authenticated ingestion resolver, correlation propagation, bounded delivery, and disposal behavior; corrected the final keepalive flush result without changing recording execution.
-- **Validation and limits**: Recorded 80 passing Jest tests, clean focused ESLint, and successful GraphQL compilation. The source remains undeployed and the complete operational timeline still depends on Lambda, alarm, Android, and iOS follow-up work.
+- **Validation and limits**: Recorded 86 passing Jest tests after synchronizing with `prod`, clean focused ESLint, and successful GraphQL compilation. The source remains undeployed and the complete operational timeline still depends on Lambda, alarm, Android, and iOS follow-up work.
 - **Landing-page scroll motion**: Extended the existing dependency-free reveal treatment across features, pricing, FAQ, and the final CTA using one-time opacity/transform entrances, restrained card/step staggers, and the existing reduced-motion and browser fallbacks.
 
 ## 2026-08-12
