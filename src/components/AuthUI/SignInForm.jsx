@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getCurrentUser, signIn } from 'aws-amplify/auth';
 import textLogo from '../../assets/fulllogo.svg';
 import {
@@ -7,12 +7,58 @@ import {
 } from '../../plugins/CredentialManager';
 import './AuthUI.css';
 
+const SIGN_IN_ERROR_MESSAGES = {
+  LimitExceededException: 'Too many sign-in attempts. Please wait and try again.',
+  NotAuthorizedException: 'Incorrect email or password.',
+  PasswordResetRequiredException: 'A password reset is required. Please reset your password on our website.',
+  TooManyRequestsException: 'Too many sign-in attempts. Please wait and try again.',
+  UserNotConfirmedException: 'Please check your email and confirm your account.',
+  UserNotFoundException: 'No account found with this email address.',
+};
+
+const getNextStepMessage = (signInStep) => {
+  if (signInStep === 'CONFIRM_SIGN_UP') {
+    return 'Please check your email and confirm your account.';
+  }
+
+  if (
+    signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED'
+    || signInStep === 'RESET_PASSWORD'
+  ) {
+    return 'A password update is required. Please continue on our website.';
+  }
+
+  return 'Additional verification is required. Please complete sign-in on our website.';
+};
+
+const getSignInErrorMessage = (signInError) => {
+  const errorName = signInError?.name;
+
+  if (errorName && SIGN_IN_ERROR_MESSAGES[errorName]) {
+    return SIGN_IN_ERROR_MESSAGES[errorName];
+  }
+
+  if (
+    errorName === 'NetworkError'
+    || errorName === 'TimeoutError'
+    || (
+      typeof signInError?.message === 'string'
+      && signInError.message.toLowerCase().includes('network')
+    )
+  ) {
+    return 'Unable to reach ChiroNote. Check your connection and try again.';
+  }
+
+  return 'Sign in failed. Please try again.';
+};
+
 const SignInForm = ({ onSignInSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const credentialSourceRef = useRef('untouched');
 
   useEffect(() => {
     let isMounted = true;
@@ -23,10 +69,12 @@ const SignInForm = ({ onSignInSuccess }) => {
 
         if (
           isMounted
+          && credentialSourceRef.current === 'untouched'
           && credential?.available
           && typeof credential.username === 'string'
           && typeof credential.password === 'string'
         ) {
+          credentialSourceRef.current = 'provider';
           setEmail(credential.username);
           setPassword(credential.password);
         }
@@ -48,33 +96,35 @@ const SignInForm = ({ onSignInSuccess }) => {
     setError('');
 
     const username = email.trim();
+    const passwordCameFromProvider = credentialSourceRef.current === 'provider';
 
     try {
-      await signIn({ username, password });
+      const signInResult = await signIn({ username, password });
+
+      if (signInResult?.isSignedIn === false) {
+        const signInStep = signInResult.nextStep?.signInStep;
+        console.error('Sign-in requires an unsupported next step:', signInStep ?? 'unknown');
+        setError(getNextStepMessage(signInStep));
+        return;
+      }
 
       // Confirm Cognito established a session before offering the credential
       // to the user's selected Android password provider.
       const currentUser = await getCurrentUser();
 
-      try {
-        await savePasswordCredential({ username, password });
-      } catch {
-        // A dismissed or unavailable save prompt must not undo a valid sign-in.
+      if (!passwordCameFromProvider) {
+        try {
+          await savePasswordCredential({ username, password });
+        } catch {
+          // A dismissed or unavailable save prompt must not undo a valid sign-in.
+        }
       }
 
       onSignInSuccess(currentUser);
     } catch (signInError) {
-      let errorMessage = 'Sign in failed. Please try again.';
-
-      if (signInError.name === 'NotAuthorizedException') {
-        errorMessage = 'Incorrect email or password.';
-      } else if (signInError.name === 'UserNotConfirmedException') {
-        errorMessage = 'Please check your email and confirm your account.';
-      } else if (signInError.name === 'UserNotFoundException') {
-        errorMessage = 'No account found with this email address.';
-      }
-
-      setError(errorMessage);
+      // Log only the exception class; never log the submitted username/password.
+      console.error('Sign-in failed:', signInError?.name ?? 'UnknownAuthError');
+      setError(getSignInErrorMessage(signInError));
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +159,10 @@ const SignInForm = ({ onSignInSuccess }) => {
                 type="email"
                 inputMode="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  credentialSourceRef.current = 'edited';
+                  setEmail(event.target.value);
+                }}
                 placeholder="Enter your email here"
                 required
                 disabled={isLoading}
@@ -132,7 +185,10 @@ const SignInForm = ({ onSignInSuccess }) => {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={(event) => {
+                  credentialSourceRef.current = 'edited';
+                  setPassword(event.target.value);
+                }}
                 placeholder="Enter Password Here"
                 required
                 disabled={isLoading}

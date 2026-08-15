@@ -1,6 +1,7 @@
 package com.chironote.app;
 
 import android.os.CancellationSignal;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -26,6 +27,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 
 @CapacitorPlugin(name = "CredentialManager")
 public class CredentialManagerPlugin extends Plugin {
+    private static final String TAG = "ChiroNoteCredentials";
     private CredentialManager credentialManager;
 
     @Override
@@ -59,14 +61,16 @@ public class CredentialManagerPlugin extends Plugin {
                         return;
                     }
 
-                    resolveUnavailable(call);
+                    resolveUnavailable(call, "UnsupportedCredentialType");
                 }
 
                 @Override
                 public void onError(@NonNull GetCredentialException exception) {
                     // No credential, user cancellation, and provider unavailability
                     // all fall back to the manual sign-in form.
-                    resolveUnavailable(call);
+                    String errorType = getErrorType(exception);
+                    Log.w(TAG, "Credential retrieval unavailable: " + errorType);
+                    resolveUnavailable(call, errorType);
                 }
             }
         );
@@ -99,8 +103,11 @@ public class CredentialManagerPlugin extends Plugin {
                 public void onError(@NonNull CreateCredentialException exception) {
                     // Saving is user-controlled and optional. A dismissed prompt or
                     // unavailable provider must not convert a valid sign-in to an error.
+                    String errorType = getErrorType(exception);
+                    Log.w(TAG, "Credential save unavailable: " + errorType);
                     JSObject result = new JSObject();
                     result.put("saved", false);
+                    result.put("errorType", errorType);
                     call.resolve(result);
                 }
             }
@@ -116,28 +123,38 @@ public class CredentialManagerPlugin extends Plugin {
             new CredentialManagerCallback<Void, ClearCredentialException>() {
                 @Override
                 public void onResult(Void result) {
-                    resolveCleared(call);
+                    resolveCleared(call, true, null);
                 }
 
                 @Override
                 public void onError(@NonNull ClearCredentialException exception) {
                     // Clearing provider session state is best-effort and never deletes
                     // a password the user saved with their password manager.
-                    resolveCleared(call);
+                    String errorType = getErrorType(exception);
+                    Log.w(TAG, "Credential state clear failed: " + errorType);
+                    resolveCleared(call, false, errorType);
                 }
             }
         );
     }
 
-    private void resolveUnavailable(PluginCall call) {
+    private void resolveUnavailable(PluginCall call, String errorType) {
         JSObject result = new JSObject();
         result.put("available", false);
+        result.put("errorType", errorType);
         call.resolve(result);
     }
 
-    private void resolveCleared(PluginCall call) {
+    private void resolveCleared(PluginCall call, boolean cleared, String errorType) {
         JSObject result = new JSObject();
-        result.put("cleared", true);
+        result.put("cleared", cleared);
+        if (errorType != null) {
+            result.put("errorType", errorType);
+        }
         call.resolve(result);
+    }
+
+    private String getErrorType(Exception exception) {
+        return exception.getClass().getSimpleName();
     }
 }
