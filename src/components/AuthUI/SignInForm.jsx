@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { signIn, getCurrentUser } from 'aws-amplify/auth';
-import { Capacitor } from '@capacitor/core';
+import React, { useEffect, useState } from 'react';
+import { getCurrentUser, signIn } from 'aws-amplify/auth';
 import textLogo from '../../assets/fulllogo.svg';
+import {
+  getPasswordCredential,
+  savePasswordCredential,
+} from '../../plugins/CredentialManager';
 import './AuthUI.css';
 
 const SignInForm = ({ onSignInSuccess }) => {
@@ -10,89 +13,67 @@ const SignInForm = ({ onSignInSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
-  // Load saved credentials on component mount
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      loadSavedCredentials();
-    }
+    let isMounted = true;
+
+    const loadCredential = async () => {
+      try {
+        const credential = await getPasswordCredential();
+
+        if (
+          isMounted
+          && credential?.available
+          && typeof credential.username === 'string'
+          && typeof credential.password === 'string'
+        ) {
+          setEmail(credential.username);
+          setPassword(credential.password);
+        }
+      } catch {
+        // Credential retrieval is optional; manual sign-in remains available.
+      }
+    };
+
+    loadCredential();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const loadSavedCredentials = () => {
-    try {
-      const savedEmail = localStorage.getItem('saved_email');
-      const savedPassword = localStorage.getItem('saved_password');
-      
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setRememberMe(true);
-      }
-      if (savedPassword) {
-        setPassword(savedPassword);
-      }
-    } catch (error) {
-      console.log('No saved credentials found:', error);
-    }
-  };
-
-  const saveCredentials = () => {
-    if (Capacitor.isNativePlatform() && rememberMe) {
-      try {
-        localStorage.setItem('saved_email', email);
-        localStorage.setItem('saved_password', password);
-      } catch (error) {
-        console.log('Failed to save credentials:', error);
-      }
-    }
-  };
-
-  const clearCredentials = () => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        localStorage.removeItem('saved_email');
-        localStorage.removeItem('saved_password');
-      } catch (error) {
-        console.log('Failed to clear credentials:', error);
-      }
-    }
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     setError('');
 
+    const username = email.trim();
+
     try {
-      const user = await signIn({
-        username: email,
-        password: password
-      });
-      
-      // Save credentials if remember me is checked
-      if (rememberMe) {
-        saveCredentials();
-      } else {
-        clearCredentials();
-      }
-      
-      // Get current user details after successful sign in
+      await signIn({ username, password });
+
+      // Confirm Cognito established a session before offering the credential
+      // to the user's selected Android password provider.
       const currentUser = await getCurrentUser();
-      onSignInSuccess(currentUser);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      let errorMessage = 'Sign in failed. Please try again.';
-      
-      if (error.name === 'NotAuthorizedException') {
-        errorMessage = 'Incorrect email or password.';
-      } else if (error.name === 'UserNotConfirmedException') {
-        errorMessage = 'Please check your email and confirm your account.';
-      } else if (error.name === 'UserNotFoundException') {
-        errorMessage = 'No account found with this email address.';
-      } else if (error.message) {
-        errorMessage = error.message;
+
+      try {
+        await savePasswordCredential({ username, password });
+      } catch {
+        // A dismissed or unavailable save prompt must not undo a valid sign-in.
       }
-      
+
+      onSignInSuccess(currentUser);
+    } catch (signInError) {
+      let errorMessage = 'Sign in failed. Please try again.';
+
+      if (signInError.name === 'NotAuthorizedException') {
+        errorMessage = 'Incorrect email or password.';
+      } else if (signInError.name === 'UserNotConfirmedException') {
+        errorMessage = 'Please check your email and confirm your account.';
+      } else if (signInError.name === 'UserNotFoundException') {
+        errorMessage = 'No account found with this email address.';
+      }
+
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -100,39 +81,46 @@ const SignInForm = ({ onSignInSuccess }) => {
   };
 
   return (
-    <div className="auth-container">
-      {/* Header with logo - moved outside white container */}
-      <div className="auth-header">
-        <img 
-          src={textLogo} 
-          alt="ChiroNote" 
+    <main className="auth-container">
+      <header className="auth-header">
+        <img
+          src={textLogo}
+          alt="ChiroNote"
           className="auth-logo"
         />
-        <div className="auth-subtitle">
-          HIPAA compliant software
-        </div>
-      </div>
-      
-      <div className="auth-content">
+        <div className="auth-subtitle">HIPAA compliant software</div>
+      </header>
 
-        {/* Sign In Form */}
-        <form onSubmit={handleSubmit} className="auth-form">
+      <section className="auth-content" aria-labelledby="sign-in-heading">
+        <h1 id="sign-in-heading" className="auth-visually-hidden">Sign in</h1>
+
+        <form
+          onSubmit={handleSubmit}
+          className="auth-form"
+          autoComplete="on"
+          aria-busy={isLoading}
+        >
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <div className="input-container">
               <input
                 id="email"
-                name="email"
+                name="username"
                 type="email"
+                inputMode="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="Enter your email here"
                 required
                 disabled={isLoading}
                 className="auth-input"
-                autoComplete="email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'sign-in-error' : undefined}
               />
-              <span className="input-icon error-icon">!</span>
             </div>
           </div>
 
@@ -142,62 +130,52 @@ const SignInForm = ({ onSignInSuccess }) => {
               <input
                 id="password"
                 name="password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="Enter Password Here"
                 required
                 disabled={isLoading}
-                className="auth-input"
+                className="auth-input auth-password-input"
                 autoComplete="current-password"
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'sign-in-error' : undefined}
               />
-              <span className="input-icon error-icon">!</span>
               <button
                 type="button"
                 className="password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((visible) => !visible)}
                 disabled={isLoading}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
               >
-                <span className="material-symbols-rounded">
+                <span className="material-symbols-rounded" aria-hidden="true">
                   {showPassword ? 'visibility_off' : 'visibility'}
                 </span>
               </button>
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="remember-me-container">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
-                className="remember-me-checkbox"
-              />
-              <span className="remember-me-text">Remember me on this device</span>
-            </label>
-          </div>
-
           {error && (
-            <div className="error-message">
+            <div id="sign-in-error" className="error-message" role="alert">
               {error}
             </div>
           )}
 
           <button
             type="submit"
-            disabled={isLoading || !email || !password}
-            className="auth-submit-btn"
+            disabled={isLoading || !email.trim() || !password}
+            className={`auth-submit-btn${isLoading ? ' loading' : ''}`}
           >
             {isLoading ? 'Signing in...' : 'Sign in'}
           </button>
 
           <div className="website-info-text">
-            Sign-Up and Password recovery available on our website
+            Sign-up and password recovery are available on our website.
           </div>
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 };
 

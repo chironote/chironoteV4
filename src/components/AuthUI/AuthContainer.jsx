@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import SignInForm from './SignInForm';
 import { Hub } from 'aws-amplify/utils';
+import {
+  clearCredentialState,
+  clearLegacyCredentials,
+} from '../../plugins/CredentialManager';
 
 const AuthContainer = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -10,6 +14,10 @@ const AuthContainer = ({ children }) => {
 
   // Check authentication status on mount
   useEffect(() => {
+    // Older Android releases persisted raw credentials in WebView localStorage.
+    // Clear both keys on every launch, including when a Cognito session survives
+    // the upgrade and the sign-in form is never rendered.
+    clearLegacyCredentials();
     checkAuthState();
   }, []);
 
@@ -48,11 +56,9 @@ const AuthContainer = ({ children }) => {
     try {
       setIsLoading(true);
       const currentUser = await getCurrentUser();
-      console.log('Current user:', currentUser);
       setUser(currentUser);
       setAuthState('signedIn');
-    } catch (error) {
-      console.log('No authenticated user:', error);
+    } catch {
       setUser(null);
       setAuthState('signedOut');
     } finally {
@@ -61,7 +67,6 @@ const AuthContainer = ({ children }) => {
   };
 
   const handleSignInSuccess = (authenticatedUser) => {
-    console.log('Sign in successful:', authenticatedUser);
     setUser(authenticatedUser);
     setAuthState('signedIn');
   };
@@ -69,12 +74,17 @@ const AuthContainer = ({ children }) => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      setUser(null);
-      setAuthState('signedOut');
-      console.log('Sign out successful');
     } catch (error) {
       console.error('Sign out error:', error);
-      // Force sign out even if there's an error
+    } finally {
+      try {
+        // This clears the provider's active-session state without deleting
+        // any password the user chose to save with their password manager.
+        await clearCredentialState();
+      } catch {
+        // Credential Manager is optional; sign-out must always complete locally.
+      }
+
       setUser(null);
       setAuthState('signedOut');
     }

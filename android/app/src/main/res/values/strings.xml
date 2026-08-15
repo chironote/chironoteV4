@@ -4,4 +4,5 @@
     <string name="title_activity_main">ChiroNote</string>
     <string name="package_name">com.chironote.app</string>
     <string name="custom_url_scheme">com.chironote.app</string>
+    <string name="asset_statements" translatable="false">[{\"include\": \"https://chironote.ai/.well-known/assetlinks.json\"}]</string>
 </resources>
