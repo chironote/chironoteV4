@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-16
+
+- **Custom Instructions async UX**: Replaced the planned direct-Lambda, long-held browser request with authenticated AppSync start/status/disable operations, persisted job polling, focus resume, stale-response protection, an explicit first-compile/update/failure status matrix, preserved disabled source text, and server-only success confirmation. All 47 repository tests and the production build passed; unrelated pre-existing lint warnings remain. This closeout changed frontend source only: the AppSync operations, persistence, queue, Lambda, feature enablement, and production deployment remain outstanding.
+
 ## 2026-08-13
 
 - **Landing-page scroll motion**: Extended the existing dependency-free reveal treatment across features, pricing, FAQ, and the final CTA using one-time opacity/transform entrances, restrained card/step staggers, and the existing reduced-motion and browser fallbacks.

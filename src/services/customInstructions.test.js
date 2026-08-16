@@ -1,58 +1,137 @@
-jest.mock('aws-amplify/auth', () => ({ fetchAuthSession: jest.fn() }));
+jest.mock('./amplifyClient', () => ({ getAmplifyClient: jest.fn() }));
 
-const { fetchAuthSession } = require('aws-amplify/auth');
+const { getAmplifyClient } = require('./amplifyClient');
+
+const view = (overrides = {}) => ({
+  enableCustomInstructions: false,
+  effectiveMode: 'DEFAULT',
+  compileStatus: 'NEVER',
+  instructions: null,
+  compileJobId: null,
+  hasSavedInstructions: false,
+  updatedAt: null,
+  activeCompiledAt: null,
+  lastErrorCode: null,
+  ...overrides
+});
 
 describe('customInstructions service', () => {
   const originalEnv = process.env;
+  let graphql;
 
   beforeEach(() => {
     process.env = {
       ...originalEnv,
-      REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED: 'true',
-      REACT_APP_CUSTOM_INSTRUCTIONS_URL: 'https://example.test/custom'
+      REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED: 'true'
     };
-    fetchAuthSession.mockReset();
-    fetchAuthSession.mockResolvedValue({ tokens: { idToken: { toString: () => 'id-token' } } });
-    global.fetch = jest.fn();
+    graphql = jest.fn();
+    getAmplifyClient.mockReturnValue({ graphql });
   });
 
+  afterEach(() => jest.clearAllMocks());
   afterAll(() => { process.env = originalEnv; });
 
-  test('sends the narrow apply envelope with the Cognito ID token and normalizes the response', async () => {
-    global.fetch.mockResolvedValue({ ok: true, json: async () => ({ enabled: true, instructions: 'Use concise phrasing.', ignored: 'server-only' }) });
-    const { applyCustomInstructions } = require('./customInstructions');
+  test('uses the authenticated AppSync query and normalizes only the safe public projection', async () => {
+    graphql.mockResolvedValue({
+      data: {
+        getMyCustomInstructions: view({
+          instructions: 'Use concise phrasing.',
+          hasSavedInstructions: true,
+          ignoredCompiledPrompt: 'server-only'
+        })
+      }
+    });
+    const { loadCustomInstructions } = require('./customInstructions');
 
-    await expect(applyCustomInstructions('  Use concise phrasing.  ')).resolves.toEqual({ enabled: true, instructions: 'Use concise phrasing.' });
-    expect(global.fetch).toHaveBeenCalledWith('https://example.test/custom', expect.objectContaining({
-      method: 'POST',
-      headers: expect.objectContaining({ Authorization: 'Bearer id-token' }),
-      body: JSON.stringify({ action: 'apply', instructions: 'Use concise phrasing.' })
+    await expect(loadCustomInstructions()).resolves.toEqual(view({
+      instructions: 'Use concise phrasing.',
+      hasSavedInstructions: true
+    }));
+    expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
+      query: expect.stringContaining('query GetMyCustomInstructions')
+    }));
+    expect(graphql.mock.calls[0][0]).not.toHaveProperty('variables');
+  });
+
+  test('starts an idempotent asynchronous compile with trimmed source text', async () => {
+    graphql.mockResolvedValue({
+      data: {
+        startMyCustomInstructionsCompilation: {
+          accepted: true,
+          jobId: 'job-123',
+          compileStatus: 'COMPILING',
+          effectiveMode: 'DEFAULT',
+          ignored: 'server-only'
+        }
+      }
+    });
+    const { startCustomInstructionsCompilation } = require('./customInstructions');
+
+    await expect(startCustomInstructionsCompilation('  Use concise phrasing.  ', 'request-123')).resolves.toEqual({
+      accepted: true,
+      jobId: 'job-123',
+      compileStatus: 'COMPILING',
+      effectiveMode: 'DEFAULT'
+    });
+    expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
+      query: expect.stringContaining('mutation StartMyCustomInstructionsCompilation'),
+      variables: {
+        input: {
+          instructions: 'Use concise phrasing.',
+          clientRequestId: 'request-123'
+        }
+      }
     }));
   });
 
-  test('rejects whitespace, over-limit input, disabled configuration, and invalid response shapes', async () => {
-    const service = require('./customInstructions');
-    await expect(service.applyCustomInstructions('   ')).rejects.toMatchObject({ code: 'validation' });
-    await expect(service.applyCustomInstructions('a'.repeat(service.CUSTOM_INSTRUCTIONS_MAX_LENGTH + 1))).rejects.toMatchObject({ code: 'validation' });
+  test('disables through AppSync while preserving the returned saved source', async () => {
+    graphql.mockResolvedValue({
+      data: {
+        disableMyCustomInstructions: view({
+          compileStatus: 'READY',
+          instructions: 'Keep paragraphs short.',
+          hasSavedInstructions: true,
+          activeCompiledAt: '2026-08-16T12:00:00Z'
+        })
+      }
+    });
+    const { disableCustomInstructions } = require('./customInstructions');
 
-    global.fetch.mockResolvedValue({ ok: true, json: async () => ({ enabled: 'yes', instructions: null }) });
+    await expect(disableCustomInstructions()).resolves.toEqual(view({
+      compileStatus: 'READY',
+      instructions: 'Keep paragraphs short.',
+      hasSavedInstructions: true,
+      activeCompiledAt: '2026-08-16T12:00:00Z'
+    }));
+    expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
+      query: expect.stringContaining('mutation DisableMyCustomInstructions')
+    }));
+  });
+
+  test('needs only the global flag and rejects validation or malformed server state', async () => {
+    const service = require('./customInstructions');
+    expect(service.isCustomInstructionsAvailable()).toBe(true);
+    await expect(service.startCustomInstructionsCompilation('   ', 'request')).rejects.toMatchObject({ code: 'validation' });
+    await expect(service.startCustomInstructionsCompilation('a'.repeat(service.CUSTOM_INSTRUCTIONS_MAX_LENGTH + 1), 'request')).rejects.toMatchObject({ code: 'validation' });
+    await expect(service.startCustomInstructionsCompilation('Valid text', '   ')).rejects.toMatchObject({ code: 'validation' });
+
+    graphql.mockResolvedValue({ data: { getMyCustomInstructions: view({ effectiveMode: 'SURPRISE' }) } });
     await expect(service.loadCustomInstructions()).rejects.toMatchObject({ code: 'response' });
 
     process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED = 'false';
+    expect(service.isCustomInstructionsAvailable()).toBe(false);
     await expect(service.loadCustomInstructions()).rejects.toMatchObject({ code: 'configuration' });
   });
 
-  test('maps an aborted hung request to a stable timeout error', async () => {
-    jest.useFakeTimers();
-    global.fetch.mockImplementation((url, options) => new Promise((resolve, reject) => {
-      options.signal.addEventListener('abort', () => reject(Object.assign(new Error('aborted'), { name: 'AbortError' })));
-    }));
-    const service = require('./customInstructions');
-    const request = service.loadCustomInstructions();
-    for (let index = 0; index < 10 && !global.fetch.mock.calls.length; index += 1) await Promise.resolve();
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    jest.runOnlyPendingTimers();
-    await expect(request).rejects.toMatchObject({ code: 'timeout' });
-    jest.useRealTimers();
+  test('maps GraphQL rejection and returned errors to a stable service error', async () => {
+    const { loadCustomInstructions } = require('./customInstructions');
+    graphql.mockRejectedValueOnce(new Error('raw network detail'));
+    await expect(loadCustomInstructions()).rejects.toMatchObject({
+      code: 'service',
+      message: 'ChiroNote could not reach custom instructions. Please try again.'
+    });
+
+    graphql.mockResolvedValueOnce({ errors: [{ message: 'raw resolver detail' }] });
+    await expect(loadCustomInstructions()).rejects.toMatchObject({ code: 'service' });
   });
 });

@@ -2,168 +2,84 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { getUserSubscription } from '../../graphql/queries';
 import { getAmplifyClient } from '../../services/amplifyClient';
-import ProductDialog from '../Dialog/ProductDialog';
 import {
-  CUSTOM_INSTRUCTIONS_MAX_LENGTH,
-  applyCustomInstructions,
+  CUSTOM_INSTRUCTIONS_FAST_POLL_INTERVAL_MS,
+  CUSTOM_INSTRUCTIONS_FAST_POLL_WINDOW_MS,
+  CUSTOM_INSTRUCTIONS_POLL_CEILING_MS,
+  CUSTOM_INSTRUCTIONS_SLOW_POLL_INTERVAL_MS,
+  disableCustomInstructions,
   isCustomInstructionsAvailable,
-  loadCustomInstructions,
-  resetCustomInstructions
+  loadCustomInstructions
 } from '../../services/customInstructions';
+import CustomInstructionsDialog from './CustomInstructionsDialog';
 import './Settings.css';
-
-const progressStages = [
-  'Reviewing your preferences…',
-  'Tailoring your SOATP sections…',
-  'Finalizing examples and note style…'
-];
 
 const hoursFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 
-function CustomInstructionsDialog({ isOpen, settings, onClose, onSaved }) {
-  const [instructions, setInstructions] = useState('');
-  const [initialInstructions, setInitialInstructions] = useState('');
-  const [phase, setPhase] = useState('editing');
-  const [isUpdateMode, setIsUpdateMode] = useState(false);
-  const [error, setError] = useState('');
-  const [stageIndex, setStageIndex] = useState(0);
-  const textareaRef = useRef(null);
-  const mountedRef = useRef(true);
-  const submittingRef = useRef(false);
-  const wasOpenRef = useRef(false);
+const emptyCustomSettings = {
+  enableCustomInstructions: false,
+  effectiveMode: 'DEFAULT',
+  compileStatus: 'NEVER',
+  instructions: null,
+  compileJobId: null,
+  hasSavedInstructions: false,
+  updatedAt: null,
+  activeCompiledAt: null,
+  lastErrorCode: null
+};
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
+const resolveCustomStatus = (settings) => {
+  if (settings.compileStatus === 'COMPILING') {
+    if (!settings.enableCustomInstructions && settings.effectiveMode === 'DEFAULT') return 'compiling-disabled';
+    return settings.effectiveMode === 'CUSTOM' ? 'updating' : 'compiling';
+  }
+  if (settings.compileStatus === 'FAILED') {
+    return settings.effectiveMode === 'CUSTOM' ? 'failed-active' : 'failed-default';
+  }
+  if (settings.effectiveMode === 'CUSTOM') return 'enabled';
+  if (settings.hasSavedInstructions) return 'disabled';
+  return 'never';
+};
 
-  useEffect(() => {
-    if (isOpen && !wasOpenRef.current) {
-      const value = settings.enabled ? (settings.instructions || '') : '';
-      setIsUpdateMode(settings.enabled);
-      setInstructions(value);
-      setInitialInstructions(value);
-      setPhase('editing');
-      setError('');
-      setStageIndex(0);
-      submittingRef.current = false;
-    }
-    wasOpenRef.current = isOpen;
-  }, [isOpen, settings.enabled, settings.instructions]);
+const customPresentations = {
+  loading: ['hourglass_top', 'Loading', 'Loading your saved instructions before actions are enabled.'],
+  never: ['edit_note', 'Not set up', "ChiroNote's default note style is active. Add one description to personalize future notes."],
+  disabled: ['toggle_off', 'Using defaults', 'Your saved wording is available to edit, but ChiroNote defaults are active.'],
+  compiling: ['progress_activity', 'Compiling', 'ChiroNote defaults remain active until all ten instructions are ready. You can leave Settings safely.'],
+  'compiling-disabled': ['toggle_off', 'Using defaults', 'Compilation can finish in the background, but it will not re-enable your saved instructions.'],
+  updating: ['progress_activity', 'Updating', 'Your previous custom instructions remain active while the update is checked.'],
+  enabled: ['check_circle', 'Enabled', 'Server-confirmed custom instructions apply to new notes across your account.'],
+  'failed-active': ['error', 'Update needs attention', 'The update failed safely. Your previous custom instructions are still active.'],
+  'failed-default': ['error', 'Needs attention', 'The compilation failed safely. ChiroNote defaults remain active.'],
+  error: ['error', 'Status unavailable', 'The saved state is unknown. Retry before making changes.'],
+  unavailable: ['cloud_off', 'Unavailable', 'Custom instructions are hidden for this environment.']
+};
 
-  useEffect(() => {
-    if (phase !== 'saving') return undefined;
-    const timer = window.setInterval(() => setStageIndex((value) => Math.min(value + 1, progressStages.length - 1)), 1800);
-    return () => window.clearInterval(timer);
-  }, [phase]);
-
-  const isDirty = instructions !== initialInstructions;
-
-  const requestClose = useCallback(() => {
-    if (phase === 'saving') return;
-    if (isDirty && !window.confirm('Discard your unsaved custom instructions?')) return;
-    onClose();
-  }, [isDirty, onClose, phase]);
-
-  const validationError = !instructions.trim()
-    ? 'Enter your note-style preferences before applying.'
-    : instructions.length > CUSTOM_INSTRUCTIONS_MAX_LENGTH
-      ? `Keep instructions within ${CUSTOM_INSTRUCTIONS_MAX_LENGTH.toLocaleString()} characters.`
-      : '';
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    if (submittingRef.current) return;
-    if (validationError) {
-      setError(validationError);
-      textareaRef.current?.focus();
-      return;
-    }
-
-    submittingRef.current = true;
-    setError('');
-    setStageIndex(0);
-    setPhase('saving');
-    try {
-      const result = await applyCustomInstructions(instructions);
-      if (!mountedRef.current) return;
-      setInstructions(result.instructions || instructions.trim());
-      setInitialInstructions(result.instructions || instructions.trim());
-      setPhase('success');
-      onSaved(result);
-      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-      window.setTimeout(() => {
-        if (mountedRef.current) onClose();
-      }, reduceMotion ? 80 : 850);
-    } catch (requestError) {
-      if (!mountedRef.current) return;
-      setError(requestError.message);
-      setPhase('editing');
-      submittingRef.current = false;
-    }
-  };
-
-  return (
-    <ProductDialog
-      isOpen={isOpen}
-      title={isUpdateMode ? 'Update custom instructions' : 'Create custom instructions'}
-      description="Describe your preferred note style in natural language. ChiroNote will apply it to new notes."
-      onRequestClose={requestClose}
-      initialFocusRef={textareaRef}
-      dismissalDisabled={phase === 'saving'}
-    >
-      {phase === 'saving' && (
-        <div className="custom-progress" role="status" aria-live="polite">
-          <span className="settings-spinner" aria-hidden="true" />
-          <p>{progressStages[stageIndex]}</p>
-          <span>This is an approximate activity update while ChiroNote applies your preferences.</span>
-        </div>
-      )}
-
-      {phase === 'success' && (
-        <div className="custom-success" role="status" aria-live="polite">
-          <span className="material-symbols-rounded" aria-hidden="true">check_circle</span>
-          <strong>{isUpdateMode ? 'Custom instructions updated' : 'Custom instructions enabled'}</strong>
-        </div>
-      )}
-
-      {phase === 'editing' && (
-        <form className="custom-form" onSubmit={handleSubmit} noValidate>
-          <label htmlFor="custom-instructions">Your note-style preferences</label>
-          <p id="custom-instructions-help">For example, describe preferred tone, detail level, phrasing, or formatting. Do not include patient information.</p>
-          <textarea
-            ref={textareaRef}
-            id="custom-instructions"
-            value={instructions}
-            onChange={(event) => { setInstructions(event.target.value); setError(''); }}
-            maxLength={CUSTOM_INSTRUCTIONS_MAX_LENGTH}
-            aria-invalid={Boolean(error)}
-            aria-describedby={`custom-instructions-help${error ? ' custom-instructions-error' : ''}`}
-          />
-          <div className="custom-form__meta">
-            <span>{instructions.length.toLocaleString()} / {CUSTOM_INSTRUCTIONS_MAX_LENGTH.toLocaleString()} characters</span>
-          </div>
-          {error && <div id="custom-instructions-error" className="settings-message settings-message--error" role="alert">{error}</div>}
-          <div className="custom-form__actions">
-            <button type="button" className="settings-button settings-button--secondary" onClick={requestClose}>Cancel</button>
-            <button type="submit" className="settings-button settings-button--primary">Apply custom instructions</button>
-          </div>
-        </form>
-      )}
-    </ProductDialog>
-  );
-}
+const dialogActionLabels = {
+  never: 'Create',
+  disabled: 'Edit and enable',
+  compiling: 'View progress',
+  'compiling-disabled': 'View progress',
+  updating: 'View progress',
+  enabled: 'Update',
+  'failed-active': 'Review and retry',
+  'failed-default': 'Review and retry'
+};
 
 function Settings() {
   const [hoursStatus, setHoursStatus] = useState('loading');
   const [hoursSavedLifetime, setHoursSavedLifetime] = useState(0);
   const available = isCustomInstructionsAvailable();
-  const [customStatus, setCustomStatus] = useState(available ? 'loading' : 'unavailable');
-  const [customSettings, setCustomSettings] = useState({ enabled: false, instructions: null });
+  const [customLoadStatus, setCustomLoadStatus] = useState(available ? 'loading' : 'unavailable');
+  const [customSettings, setCustomSettings] = useState(emptyCustomSettings);
   const [customError, setCustomError] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
+  const [isDisabling, setIsDisabling] = useState(false);
+  const [pollPausedJobId, setPollPausedJobId] = useState(null);
+  const [pollNotice, setPollNotice] = useState('');
   const mountedRef = useRef(true);
+  const loadRequestCounterRef = useRef(0);
+  const latestAppliedLoadRef = useRef(0);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -183,47 +99,157 @@ function Settings() {
     }
   }, []);
 
-  const loadCustom = useCallback(async () => {
-    if (!available) return;
-    setCustomStatus('loading');
-    setCustomError('');
+  const invalidatePendingCustomLoads = useCallback(() => {
+    const boundary = ++loadRequestCounterRef.current;
+    latestAppliedLoadRef.current = boundary;
+  }, []);
+
+  const loadCustom = useCallback(async ({ showLoading = false } = {}) => {
+    if (!available) return null;
+    const requestId = ++loadRequestCounterRef.current;
+    if (showLoading) {
+      setCustomLoadStatus('loading');
+      setCustomError('');
+    }
+
     try {
       const result = await loadCustomInstructions();
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || requestId < latestAppliedLoadRef.current) return null;
+      latestAppliedLoadRef.current = requestId;
       setCustomSettings(result);
-      setCustomStatus(result.enabled ? 'enabled' : 'disabled');
+      setCustomLoadStatus('ready');
+      setCustomError('');
+      if (result.compileStatus !== 'COMPILING') {
+        setPollPausedJobId(null);
+        setPollNotice('');
+      }
+      return result;
     } catch (error) {
-      if (!mountedRef.current) return;
+      if (!mountedRef.current || requestId < latestAppliedLoadRef.current) return null;
+      latestAppliedLoadRef.current = requestId;
       setCustomError(error.message);
-      setCustomStatus('error');
+      if (showLoading) setCustomLoadStatus('error');
+      return null;
     }
   }, [available]);
 
-  useEffect(() => { loadHours(); loadCustom(); }, [loadCustom, loadHours]);
+  useEffect(() => {
+    loadHours();
+    if (available) loadCustom({ showLoading: true });
+  }, [available, loadCustom, loadHours]);
 
-  const handleReset = async () => {
-    if (!window.confirm('Use ChiroNote defaults for new notes? Your custom instructions will be disabled.')) return;
-    setIsResetting(true);
+  useEffect(() => {
+    if (!available) return undefined;
+    const handleFocus = () => {
+      setPollPausedJobId(null);
+      setPollNotice('');
+      loadCustom();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [available, loadCustom]);
+
+  useEffect(() => {
+    const jobId = customSettings.compileJobId;
+    if (customLoadStatus !== 'ready'
+      || customSettings.compileStatus !== 'COMPILING'
+      || !jobId
+      || pollPausedJobId === jobId) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let timerId;
+    const startedAt = Date.now();
+
+    const scheduleNext = () => {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed >= CUSTOM_INSTRUCTIONS_POLL_CEILING_MS) {
+        setPollPausedJobId(jobId);
+        setPollNotice('Still working. You can return later; ChiroNote will reload the real server status when Settings regains focus.');
+        return;
+      }
+      const delay = elapsed < CUSTOM_INSTRUCTIONS_FAST_POLL_WINDOW_MS
+        ? CUSTOM_INSTRUCTIONS_FAST_POLL_INTERVAL_MS
+        : CUSTOM_INSTRUCTIONS_SLOW_POLL_INTERVAL_MS;
+      timerId = window.setTimeout(poll, delay);
+    };
+
+    const poll = async () => {
+      const result = await loadCustom();
+      if (cancelled) return;
+      if (result && (result.compileStatus !== 'COMPILING' || result.compileJobId !== jobId)) return;
+      scheduleNext();
+    };
+
+    scheduleNext();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timerId);
+    };
+  }, [
+    customLoadStatus,
+    customSettings.compileJobId,
+    customSettings.compileStatus,
+    loadCustom,
+    pollPausedJobId
+  ]);
+
+  const handleCompilationAccepted = useCallback((accepted, instructions) => {
+    invalidatePendingCustomLoads();
+    setCustomSettings((current) => ({
+      ...current,
+      enableCustomInstructions: true,
+      effectiveMode: accepted.effectiveMode,
+      compileStatus: 'COMPILING',
+      compileJobId: accepted.jobId,
+      instructions,
+      hasSavedInstructions: true,
+      lastErrorCode: null
+    }));
+    setCustomLoadStatus('ready');
+    setCustomError('');
+    setPollPausedJobId(null);
+    setPollNotice('');
+  }, [invalidatePendingCustomLoads]);
+
+  const openCustomDialog = useCallback(() => {
+    setPollPausedJobId(null);
+    setPollNotice('');
+    setIsDialogOpen(true);
+    if (customSettings.compileStatus === 'COMPILING') loadCustom();
+  }, [customSettings.compileStatus, loadCustom]);
+
+  const closeCustomDialog = useCallback(() => setIsDialogOpen(false), []);
+
+  const handleDisable = async () => {
+    if (!window.confirm('Use ChiroNote defaults for new notes? Your saved wording will be kept.')) return;
+    invalidatePendingCustomLoads();
+    setIsDisabling(true);
     setCustomError('');
     try {
-      const result = await resetCustomInstructions();
+      const result = await disableCustomInstructions();
       if (!mountedRef.current) return;
+      invalidatePendingCustomLoads();
       setCustomSettings(result);
-      setCustomStatus(result.enabled ? 'enabled' : 'disabled');
+      setCustomLoadStatus('ready');
+      setPollPausedJobId(null);
+      setPollNotice('');
+      setIsDialogOpen(false);
     } catch (error) {
       if (mountedRef.current) setCustomError(error.message);
     } finally {
-      if (mountedRef.current) setIsResetting(false);
+      if (mountedRef.current) setIsDisabling(false);
     }
   };
 
-  const customCopy = {
-    loading: ['hourglass_top', 'Loading existing settings…', 'Actions will be available after your saved settings load.'],
-    disabled: ['toggle_off', 'Disabled', "ChiroNote's default note style is being used."],
-    enabled: ['check_circle', 'Enabled', 'Custom instructions apply to new notes.'],
-    error: ['error', 'Settings could not be loaded', 'The current state is unknown. Retry before making changes.'],
-    unavailable: ['cloud_off', 'Unavailable', 'Custom instructions are not configured for this environment.']
-  }[customStatus];
+  const customStatus = customLoadStatus === 'ready'
+    ? resolveCustomStatus(customSettings)
+    : customLoadStatus;
+  const customCopy = customPresentations[customStatus];
+  const dialogActionLabel = dialogActionLabels[customStatus];
+  const canDisable = customLoadStatus === 'ready'
+    && (customSettings.enableCustomInstructions || customSettings.effectiveMode === 'CUSTOM');
 
   return (
     <main className="settings-page">
@@ -243,14 +269,13 @@ function Settings() {
         </div>
         <p className="settings-card__description">{customCopy[2]}</p>
         {customStatus === 'loading' && <p className="settings-loading" role="status"><span className="settings-spinner" aria-hidden="true" />Loading existing settings…</p>}
-        {(customStatus === 'error' || customError) && <div className="settings-message settings-message--error" role="alert">{customError || 'Custom instructions could not be loaded.'}</div>}
+        {customError && <div className="settings-message settings-message--error" role="alert">{customError}</div>}
+        {pollNotice && !isDialogOpen && <div className="settings-message settings-message--info" role="status">{pollNotice}</div>}
         <div className="settings-actions">
-          {customStatus === 'error' && <button type="button" className="settings-button settings-button--secondary" onClick={loadCustom}>Retry</button>}
-          {(customStatus === 'disabled' || customStatus === 'enabled') && (
-            <button type="button" className="settings-button settings-button--primary" onClick={() => setIsDialogOpen(true)}>{customStatus === 'enabled' ? 'Update' : 'Create'}</button>
-          )}
-          {customStatus === 'enabled' && (
-            <button type="button" className="settings-button settings-button--secondary" onClick={handleReset} disabled={isResetting}>{isResetting ? 'Using defaults…' : 'Use defaults'}</button>
+          {customStatus === 'error' && <button type="button" className="settings-button settings-button--secondary" onClick={() => loadCustom({ showLoading: true })}>Retry</button>}
+          {dialogActionLabel && <button type="button" className="settings-button settings-button--primary" onClick={openCustomDialog}>{dialogActionLabel}</button>}
+          {canDisable && (
+            <button type="button" className="settings-button settings-button--secondary" onClick={handleDisable} disabled={isDisabling}>{isDisabling ? 'Using defaults…' : 'Use defaults'}</button>
           )}
         </div>
       </section>
@@ -258,8 +283,9 @@ function Settings() {
       <CustomInstructionsDialog
         isOpen={isDialogOpen}
         settings={customSettings}
-        onClose={() => setIsDialogOpen(false)}
-        onSaved={(result) => { setCustomSettings(result); setCustomStatus(result.enabled ? 'enabled' : 'disabled'); }}
+        pollNotice={pollNotice}
+        onClose={closeCustomDialog}
+        onCompilationAccepted={handleCompilationAccepted}
       />
     </main>
   );
