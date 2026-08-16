@@ -1,7 +1,7 @@
 import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { uploadData } from 'aws-amplify/storage';
-import { SQSClient } from '@aws-sdk/client-sqs';
+import { SendMessageCommand, SQSClient } from '@aws-sdk/client-sqs';
 import { generateToken, getAwsCredentials } from './recordingAuth';
 import useAudioUploadQueue from './useAudioUploadQueue';
 
@@ -48,6 +48,11 @@ describe('useAudioUploadQueue', () => {
   const Harness = () => {
     controller = useAudioUploadQueue({
       filePathRef: { current: null },
+      telemetryContext: {
+        appBuild: '1.3.0-test',
+        browser: 'safari',
+        platform: 'ios'
+      },
       onFinalAudioQueued,
       onUploadError
     });
@@ -165,11 +170,38 @@ describe('useAudioUploadQueue', () => {
     expect(uploadData).toHaveBeenCalledWith(expect.objectContaining({
       path: expect.stringMatching(/\.mp4$/),
       options: expect.objectContaining({
-        contentType: 'video/mp4'
+        contentType: 'video/mp4',
+        metadata: expect.objectContaining({
+          appBuild: '1.3.0-test',
+          chunkOrder: '0',
+          recordingJobId: 'session-1',
+          recordingBrowser: 'safari',
+          recordingPlatform: 'ios',
+          telemetrySchemaVersion: '1.0'
+        })
       })
     }));
     expect(mockSend).toHaveBeenCalledTimes(1);
+    const sqsInput = SendMessageCommand.mock.calls[0][0];
+    expect(sqsInput).toMatchObject({
+      MessageGroupId: 'session-1'
+    });
+    expect(JSON.parse(sqsInput.MessageBody)).toMatchObject({
+      appBuild: '1.3.0-test',
+      chunkBytes: 5,
+      chunkOrder: 0,
+      contentType: 'video/mp4',
+      recordingJobId: 'session-1',
+      recordingBrowser: 'safari',
+      recordingPlatform: 'ios',
+      telemetrySchemaVersion: '1.0'
+    });
     expect(onFinalAudioQueued).toHaveBeenCalledTimes(1);
+    expect(onFinalAudioQueued).toHaveBeenCalledWith(
+      'user-12345678',
+      1,
+      'session-1'
+    );
     expect(onUploadError).not.toHaveBeenCalled();
   });
 });

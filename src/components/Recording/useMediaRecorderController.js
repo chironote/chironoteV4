@@ -1,17 +1,39 @@
 import { useRef } from 'react';
 import {
   AUDIO_CHUNK_INTERVAL_MS,
-  MIN_AUDIO_BLOB_SIZE
+  AUDIO_UPLOAD_FAILURE_MESSAGE,
+  MIN_AUDIO_BLOB_SIZE,
+  RECORDING_CAPTURE_FAILURE_MESSAGE
 } from './recordingConstants';
 import { getUserId } from './recordingAuth';
 import { getRecordingMediaDescriptor } from './recordingMedia';
+import {
+  createPrivacySafeDeviceHash,
+  getAppliedTrackSettings
+} from './recordingTelemetryContext';
+import { createSignalHealthMonitor } from './recordingSignalHealth';
+import {
+  addRecordingSupportReference,
+  createRecordingJobId,
+  toSafeErrorCode
+} from './recordingTelemetrySchema';
+
+const RECORDING_AUDIO_CONSTRAINTS = Object.freeze({
+  channelCount: 1,
+  echoCancellation: false,
+  noiseSuppression: false,
+  autoGainControl: false
+});
 
 function useMediaRecorderController({
   timeStampRef,
   pathStampRef,
   filePathRef,
+  recordingJobIdRef = { current: null },
   noSleepRef,
   isDiscardingRef,
+  terminalOutcomeRef = { current: null },
+  emitTelemetry = () => {},
   queueUpload,
   startUploadSession,
   cancelUploadSession,
@@ -22,7 +44,9 @@ function useMediaRecorderController({
   setIsPreparingTranscript,
   setIsGeneratingSummary,
   setIsTranscriptCompleted,
-  setTextStream
+  setTextStream,
+  onTextStreamUpdate = () => {},
+  onTransitionToMainApp = () => {}
 }) {
   const mediaRecorderRef = useRef(null);
   const recordingIntervalRef = useRef(null);
@@ -34,8 +58,45 @@ function useMediaRecorderController({
   const recordingSessionIdRef = useRef(null);
   const discardResetTimeoutRef = useRef(null);
   const audioEventChainRef = useRef(Promise.resolve());
+  const emittedChunkOrderRef = useRef(0);
+  const captureStartedAtRef = useRef(null);
+  const signalHealthMonitorRef = useRef(null);
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
   const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)).current;
+
+  const emitTerminalOutcome = (eventName, payload = {}) => {
+    if (terminalOutcomeRef.current) {
+      return false;
+    }
+    const emittedEvent = emitTelemetry(eventName, payload) || emitTelemetry(eventName, {
+      outcome: payload.outcome || eventName.split('.')[1]
+    });
+    if (emittedEvent) {
+      terminalOutcomeRef.current = eventName;
+      return true;
+    }
+    return false;
+  };
+
+  const showRecordingFailure = (message) => {
+    const messageWithReference = addRecordingSupportReference(
+      message,
+      recordingJobIdRef.current
+    );
+    setTextStream(messageWithReference);
+    onTextStreamUpdate(messageWithReference);
+    onTransitionToMainApp();
+  };
+
+  const stopSignalHealthMonitor = () => {
+    if (!signalHealthMonitorRef.current) {
+      return null;
+    }
+    const summary = signalHealthMonitorRef.current.stop();
+    signalHealthMonitorRef.current = null;
+    emitTelemetry('signal.summary', summary);
+    return summary;
+  };
 
   const startChunkInterval = () => {
     recordingIntervalRef.current = setInterval(() => {
@@ -61,12 +122,7 @@ function useMediaRecorderController({
       if (!stream || !stream.active) {
         console.log('[RecordingManager] Creating new media stream');
         stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            channelCount: 1,
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false
-          }
+          audio: RECORDING_AUDIO_CONSTRAINTS
         });
         streamRef.current = stream;
       } else {
@@ -85,11 +141,30 @@ function useMediaRecorderController({
       }
 
       const recorder = new MediaRecorder(stream, options);
+      const audioTrack = stream.getAudioTracks?.()[0] || stream.getTracks?.()[0];
       const recorderSessionId = recordingSessionIdRef.current;
       const recorderTimestamp = timeStampRef.current;
       const recorderPathstamp = pathStampRef.current;
       mediaRecorderRef.current = recorder;
 
+      const safeTrackSettings = getAppliedTrackSettings(audioTrack);
+      createPrivacySafeDeviceHash(audioTrack, recordingJobIdRef.current)
+        .catch(() => null)
+        .then((deviceHash) => {
+          if (
+            isDiscardingRef.current ||
+            recordingSessionIdRef.current !== recorderSessionId
+          ) {
+            return;
+          }
+          emitTelemetry('capture.settings_applied', {
+            appliedTrackSettings: safeTrackSettings,
+            deviceHash: deviceHash || undefined,
+            deviceType: 'microphone',
+            mimeType: recorder.mimeType || options.mimeType || 'audio/webm',
+            requestedTrackSettings: RECORDING_AUDIO_CONSTRAINTS
+          });
+        });
       recorder.ondataavailable = (event) => {
         if (isDiscardingRef.current) {
           return;
@@ -107,17 +182,35 @@ function useMediaRecorderController({
           audioBlob.type,
           event.target?.mimeType
         );
+        const chunkOrder = emittedChunkOrderRef.current;
+        emittedChunkOrderRef.current += 1;
 
         if (!sessionId || !timestamp || !pathstamp) {
           return;
         }
 
         if (audioBlob.size < MIN_AUDIO_BLOB_SIZE) {
+          emitTelemetry('chunk.rejected', {
+            chunkBytes: audioBlob.size,
+            chunkOrder,
+            container: mediaDescriptor.extension,
+            isFinalChunk: isFinalAudio,
+            mimeType: mediaDescriptor.contentType,
+            reasonCode: 'below_minimum_size'
+          });
           if (audioBlob.size > 0) {
             console.warn(`[RecordingManager] Skipping small audio blob (${audioBlob.size} bytes) - likely header-only, no audio frames`);
           }
           return;
         }
+
+        emitTelemetry('chunk.emitted', {
+          chunkBytes: audioBlob.size,
+          chunkOrder,
+          container: mediaDescriptor.extension,
+          isFinalChunk: isFinalAudio,
+          mimeType: mediaDescriptor.contentType
+        });
 
         audioEventChainRef.current = audioEventChainRef.current
           .then(async () => {
@@ -126,21 +219,42 @@ function useMediaRecorderController({
             }
 
             const userId = await getUserId();
-            if (!userId || isDiscardingRef.current || recordingSessionIdRef.current !== sessionId) {
+            if (isDiscardingRef.current || recordingSessionIdRef.current !== sessionId) {
+              return;
+            }
+            if (!userId) {
+              emitTelemetry('upload.failed', {
+                attempt: 1,
+                chunkBytes: audioBlob.size,
+                chunkOrder,
+                errorCode: 'user_identity_unavailable',
+                isFinalChunk: isFinalAudio,
+                provider: 'aws_auth',
+                reasonCode: 'authentication_failed'
+              });
+              emitTerminalOutcome('recording.failed', {
+                errorCode: 'user_identity_unavailable',
+                outcome: 'failed',
+                reasonCode: 'authentication_failed'
+              });
+              cancelRecording({ clearContent: false });
+              showRecordingFailure(AUDIO_UPLOAD_FAILURE_MESSAGE);
               return;
             }
 
             const chunkType = isFinalAudio ? 'final' : 'chunk';
             const filePath = `protected/${userId}/${timestamp}_recording_${chunkType}_${pathstamp}_${lastUploadedChunkRef.current++}.${mediaDescriptor.extension}`;
             queueUpload(audioBlob, filePath, {
+              chunkOrder,
               contentType: mediaDescriptor.contentType,
+              recordingJobId: sessionId,
               sessionId,
               timestamp,
               userId
             });
           })
           .catch((error) => {
-            console.error('Unable to queue recorded audio data:', error);
+            console.error(`Unable to queue recorded audio data (${toSafeErrorCode(error, 'queue_failed')})`);
           });
       };
 
@@ -168,7 +282,11 @@ function useMediaRecorderController({
         }
       };
     } catch (error) {
-      console.error('Error accessing microphone', error);
+      console.error(`Error accessing microphone (${toSafeErrorCode(error, 'microphone_access_failed')})`);
+      emitTelemetry('capture.failed', {
+        errorCode: toSafeErrorCode(error, 'microphone_access_failed'),
+        provider: 'media_recorder'
+      });
     }
   };
 
@@ -179,33 +297,89 @@ function useMediaRecorderController({
     }
     isDiscardingRef.current = false;
     lastUploadedChunkRef.current = 0;
+    emittedChunkOrderRef.current = 0;
     audioEventChainRef.current = Promise.resolve();
     isFinalizingRecordingRef.current = false;
+    terminalOutcomeRef.current = null;
     resetNoteGenerationState();
     cleanupNoteGeneration();
 
     timeStampRef.current = Date.now();
     pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
-    recordingSessionIdRef.current = `${timeStampRef.current}_${pathStampRef.current}`;
+    try {
+      recordingJobIdRef.current = createRecordingJobId();
+    } catch (error) {
+      console.error(`Unable to create recording correlation id (${toSafeErrorCode(error, 'correlation_id_failed')})`);
+      cancelRecording({ clearContent: false });
+      showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
+      return;
+    }
+    recordingSessionIdRef.current = recordingJobIdRef.current;
+    const startedSessionId = recordingSessionIdRef.current;
+    captureStartedAtRef.current = Date.now();
+    emitTelemetry('capture.requested', {
+      provider: 'media_recorder',
+      requestedTrackSettings: RECORDING_AUDIO_CONSTRAINTS
+    });
     startUploadSession(recordingSessionIdRef.current);
 
     await setupRecorder();
-    if (mediaRecorderRef.current) {
-      setIsRecording(true);
-      isRecordingRef.current = true;
-      setIsPaused(false);
-      isPausedRef.current = false;
-
-      startRecorder();
-
-      if (noSleepRef.current) {
-        noSleepRef.current.enable();
+    if (
+      isDiscardingRef.current ||
+      recordingSessionIdRef.current !== startedSessionId
+    ) {
+      if (mediaRecorderRef.current?.state !== 'inactive') {
+        mediaRecorderRef.current?.stop();
       }
+      mediaRecorderRef.current = null;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      stopSignalHealthMonitor();
+      return;
+    }
+    if (mediaRecorderRef.current) {
+      try {
+        startRecorder();
+        const signalHealthMonitor = createSignalHealthMonitor(streamRef.current);
+        if (signalHealthMonitor) {
+          signalHealthMonitorRef.current = signalHealthMonitor;
+        }
+        setIsRecording(true);
+        isRecordingRef.current = true;
+        setIsPaused(false);
+        isPausedRef.current = false;
+        emitTelemetry('capture.started', {
+          provider: 'media_recorder'
+        });
 
-      startChunkInterval();
+        if (noSleepRef.current) {
+          noSleepRef.current.enable();
+        }
+
+        startChunkInterval();
+      } catch (error) {
+        const errorCode = toSafeErrorCode(error, 'media_recorder_start_failed');
+        console.error(`Unable to start media recorder (${errorCode})`);
+        emitTelemetry('capture.failed', {
+          errorCode,
+          provider: 'media_recorder'
+        });
+        emitTerminalOutcome('recording.failed', {
+          errorCode,
+          outcome: 'failed'
+        });
+        cancelRecording({ clearContent: false });
+        showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
+      }
     } else {
-      cancelUploadSession(recordingSessionIdRef.current);
-      recordingSessionIdRef.current = null;
+      emitTerminalOutcome('recording.failed', {
+        errorCode: 'capture_start_failed',
+        outcome: 'failed'
+      });
+      cancelRecording({ clearContent: false });
+      showRecordingFailure(RECORDING_CAPTURE_FAILURE_MESSAGE);
     }
   };
 
@@ -216,6 +390,11 @@ function useMediaRecorderController({
       setIsPaused(false);
       isPausedRef.current = false;
       mediaRecorderRef.current.stop();
+      stopSignalHealthMonitor();
+      emitTelemetry('capture.stopped', {
+        durationMs: Math.max(0, Date.now() - (captureStartedAtRef.current || Date.now())),
+        reasonCode: 'user_stopped'
+      });
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
@@ -227,6 +406,8 @@ function useMediaRecorderController({
 
   const cancelRecording = ({
     clearContent = true,
+    discardReasonCode = 'user_discarded',
+    emitDiscarded = false,
     resetDiscardFlag = true,
     updateState = true
   } = {}) => {
@@ -254,6 +435,24 @@ function useMediaRecorderController({
 
     cancelUploadSession(recordingSessionIdRef.current);
     recordingSessionIdRef.current = null;
+    stopSignalHealthMonitor();
+
+    if (emitDiscarded) {
+      emitTelemetry('capture.stopped', {
+        durationMs: Math.max(0, Date.now() - (captureStartedAtRef.current || Date.now())),
+        reasonCode: 'discarded'
+      });
+      emitTerminalOutcome('recording.discarded', {
+        outcome: 'discarded',
+        reasonCode: discardReasonCode
+      });
+    } else if (recordingJobIdRef.current && !terminalOutcomeRef.current) {
+      emitTerminalOutcome('recording.failed', {
+        errorCode: 'recording_cancelled_after_failure',
+        outcome: 'failed',
+        reasonCode: 'workflow_failure'
+      });
+    }
 
     if (updateState) {
       setIsRecording(false);
@@ -269,6 +468,7 @@ function useMediaRecorderController({
     timeStampRef.current = null;
     pathStampRef.current = null;
     filePathRef.current = null;
+    captureStartedAtRef.current = null;
     lastUploadedChunkRef.current = 0;
     resetNoteGenerationState();
 
@@ -290,8 +490,15 @@ function useMediaRecorderController({
     }
   };
 
-  const discardRecording = () => {
-    cancelRecording();
+  const discardRecording = (reasonCode = 'user_discarded') => {
+    const safeReasonCode = toSafeErrorCode(
+      null,
+      typeof reasonCode === 'string' ? reasonCode : 'user_discarded'
+    );
+    cancelRecording({
+      discardReasonCode: safeReasonCode,
+      emitDiscarded: true
+    });
   };
 
   const cancelRecordingForFailure = () => {
@@ -301,6 +508,10 @@ function useMediaRecorderController({
   const pauseRecording = () => {
     if (mediaRecorderRef.current && isRecordingRef.current) {
       mediaRecorderRef.current.pause();
+      signalHealthMonitorRef.current?.pause();
+      emitTelemetry('capture.paused', {
+        provider: 'media_recorder'
+      });
       setIsPaused(true);
       isPausedRef.current = true;
       if (recordingIntervalRef.current) {
@@ -312,6 +523,10 @@ function useMediaRecorderController({
   const resumeRecording = () => {
     if (mediaRecorderRef.current && isPausedRef.current) {
       mediaRecorderRef.current.resume();
+      signalHealthMonitorRef.current?.resume();
+      emitTelemetry('capture.resumed', {
+        provider: 'media_recorder'
+      });
       setIsPaused(false);
       isPausedRef.current = false;
       startChunkInterval();
@@ -321,6 +536,8 @@ function useMediaRecorderController({
   const cleanupRecorder = () => {
     cancelRecording({
       clearContent: false,
+      discardReasonCode: 'component_unmounted',
+      emitDiscarded: Boolean(recordingJobIdRef.current && !terminalOutcomeRef.current),
       resetDiscardFlag: false,
       updateState: false
     });

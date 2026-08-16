@@ -30,7 +30,7 @@ Use npm with the checked-in `package-lock.json`.
 
 Prioritize tests around recording, authentication, GraphQL interactions, and clinical-note text transformations. `src/utils/dictationInsertion.test.js` is the regression suite for dictation cursor insertion and preservation of surrounding note text.
 
-Commit `62f4ec8` removed the former recording test harness. The 2026-07-15 safety pass rebuilt focused coverage for media metadata, emitted-chunk ordering, session cancellation, late upload callbacks, SQS failure, and unmount cleanup. Together with dictation insertion, the active suite now has 13 tests across four files. It still does not validate real browser chunk rotation, AppSync transcript fallback, or the complete Lambda stream, so use the recording test matrix rather than treating a green Jest run as complete release evidence.
+Commit `62f4ec8` removed the former recording test harness. The 2026-07-15 safety pass began rebuilding focused coverage for media metadata, emitted-chunk ordering, session cancellation, late upload callbacks, SQS failure, and unmount cleanup. The active suite now has 86 tests across 14 files, including the PHI-safe telemetry, delivery, resolver, signal-health, backend-correlation, and current landing-page contracts. It still does not validate real browser chunk rotation, a deployed AppSync subscription migration, the complete Lambda stream, or native builds, so use the recording test matrix rather than treating a green Jest run as complete release evidence.
 
 ## Change Responsibilities
 

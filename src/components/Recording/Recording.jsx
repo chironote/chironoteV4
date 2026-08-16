@@ -6,6 +6,7 @@ import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
 import ConfirmationPopup from './ConfirmationPopup';
 import { trackRecordingStart } from '../../utils/analytics';
+import { toSafeErrorCode } from './recordingTelemetrySchema';
 
 const client = generateClient();
 
@@ -22,7 +23,6 @@ function Recording({
   pauseRecording, 
   resumeRecording,
 }) {
-  const [userSubscription, setUserSubscription] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
     const storedLanguage = localStorage.getItem('selectedLanguage');
     return storedLanguage || 'auto';
@@ -45,10 +45,9 @@ function Recording({
         query: queries.getUserSubscription,
         variables: { owner: user.username }
       });
-      setUserSubscription(subscriptionData.data.getUserSubscription);
       return subscriptionData.data.getUserSubscription;
     } catch (error) {
-      console.error("Error fetching user subscription:", error);
+      console.error(`Error fetching user subscription (${toSafeErrorCode(error, 'subscription_fetch_failed')})`);
       return null;
     }
   };
@@ -57,8 +56,8 @@ function Recording({
   const currentSession = async () => {
     try {
       await fetchAuthSession({ forceRefresh: true });
-    } catch (err) {
-      console.log(err);
+    } catch (error) {
+      console.error(`Unable to refresh authentication (${toSafeErrorCode(error, 'auth_refresh_failed')})`);
     }
   };
 
@@ -77,14 +76,14 @@ function Recording({
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
         // Cancel without uploading the recording we just started.
-        discardRecording();
+        discardRecording('insufficient_credit');
         setShowCreditPopup(true);
         return;
       }
     } catch (error) {
-      console.error("Error in handleStartRecording:", error);
+      console.error(`Unable to start recording (${toSafeErrorCode(error, 'recording_start_failed')})`);
       // Cancel without uploading when subscription validation fails.
-      discardRecording();
+      discardRecording('subscription_check_failed');
     }
   };
 
@@ -95,12 +94,10 @@ function Recording({
 
   useEffect(() => {
     localStorage.setItem('selectedLanguage', selectedLanguage);
-    console.log('Language changed:', selectedLanguage);
   }, [selectedLanguage]);
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
-    console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
   }, [noteSettings]);
 
   // Keyboard event listener for Esc key during active recording
@@ -145,7 +142,6 @@ function Recording({
   const handleLanguageChange = (event) => {
     const newLanguage = event.target.value;
     setSelectedLanguage(newLanguage);
-    console.log('Language changed. localStorage selectedLanguage:', localStorage.getItem('selectedLanguage'));
   };
 
   const handleCheckboxChange = (event) => {

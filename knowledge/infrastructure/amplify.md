@@ -18,7 +18,17 @@ Helpful resources:
 - More details on this folder & generated files: https://docs.amplify.aws/cli/reference/files.
 - Join Amplify's community: https://amplify.aws/community/.
 
+## Recording Telemetry Resources
+
+`backend/api/chironotev4/schema.graphql` defines the source contract for `RecordingTelemetryEvent` and the recording correlation/status fields on `Notes`. Authenticated Cognito producers receive create-only access; explicitly allowlisted IAM roles may receive create-only access; only the Cognito `Support` group receives read access. There is no telemetry update authorization. External Lambda roles must be named in this Gen 1 API's `custom-roles.json` at rollout; no role names are guessed or committed by the website repository.
+
+`backend/api/chironotev4/resolvers/Mutation.createRecordingTelemetryEvent.req.vtl` replaces the generated create request with strict field/event/shape validation. It assigns the persisted id, occurrence time, timeline key, and 30-day expiry server-side, preserves retry idempotency, and stores only a GraphQL-hidden job-salted non-cryptographic producer fingerprint for coarse abuse attribution. Client-supplied timing or TTL values are never authoritative; the fingerprint is collision-prone by design and is not a principal identity.
+
+`backend/api/chironotev4/override.ts` enables DynamoDB TTL on the telemetry model's `expiresAt` field. Producers set that value to 30 days after occurrence. DynamoDB TTL is asynchronous, and both the model authorization and real deletion behavior must be verified after an explicitly authorized deployment.
+
+The schema and override are source definitions, not evidence that AWS has been updated. See [PHI-safe Recording Correlation and Telemetry](../operations/recording-telemetry.md) for the support query, privacy boundary, backend handoff, and release gates.
+
 ## Provenance
 
-Derived from [`README.md`](../../amplify/README.md).
+Derived from [`README.md`](../../amplify/README.md), [`schema.graphql`](../../amplify/backend/api/chironotev4/schema.graphql), and [`override.ts`](../../amplify/backend/api/chironotev4/override.ts).
 
