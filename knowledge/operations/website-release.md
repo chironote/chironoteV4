@@ -44,6 +44,7 @@ The unpublished delta includes:
 - cursor-aware dictation insertion in Clipboard and Smart Editor;
 - the July 1 Strict-Mode-safe insertion snapshot, green caret, textarea locking, and five regression tests;
 - repository and component documentation plus the Healtech knowledge system.
+- the frontend-only asynchronous Custom Instructions Settings flow, which remains feature-flagged off until its AppSync, persistence, queue, and MetaPrompter dependencies are implemented and staged.
 
 The UI refactor is large in file movement but intended to preserve behavior. The recording implementation is not behavior-neutral: it changes where cleanup, upload, fallback, and generation responsibilities live.
 

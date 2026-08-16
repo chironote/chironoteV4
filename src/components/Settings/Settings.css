@@ -13,7 +13,9 @@
 .settings-badge { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; min-height: 32px; padding: 4px 10px; border: 1px solid var(--color-border); border-radius: 999px; background: var(--color-surface-soft); font-size: 13px; font-weight: 700; }
 .settings-badge .material-symbols-rounded { font-size: 19px; }
 .settings-badge--enabled { border-color: var(--medium-green); }
-.settings-badge--error { color: #721c24; border-color: #f5c6cb; background: #f8d7da; }
+.settings-badge--compiling, .settings-badge--updating { border-color: var(--light-green); background: var(--color-badge); }
+.settings-badge--compiling .material-symbols-rounded, .settings-badge--updating .material-symbols-rounded { animation: settings-spin 1.1s linear infinite; }
+.settings-badge--failed-active, .settings-badge--failed-default, .settings-badge--error { color: #721c24; border-color: #f5c6cb; background: #f8d7da; }
 .settings-lifetime-value { margin: 20px 0 0; color: var(--color-text) !important; font-size: 32px; line-height: 38px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .settings-lifetime-value span { font-size: 16px; font-weight: 500; }
 .settings-loading { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; }
@@ -22,12 +24,15 @@
 .settings-button { min-height: 44px; min-width: 112px; padding: 10px 20px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background-color 160ms ease, color 160ms ease; }
 .settings-button--primary { border: 1px solid var(--medium-green); background: var(--medium-green); color: white; }
 .settings-button--primary:hover:not(:disabled) { background: var(--dark-green); }
+.settings-button--primary:active:not(:disabled) { background: var(--dark-green); }
 .settings-button--secondary { border: 1px solid var(--color-border-strong); background: white; color: var(--dark-green); }
 .settings-button--secondary:hover:not(:disabled) { background: var(--color-hover); }
+.settings-button--secondary:active:not(:disabled) { background: var(--color-pressed); }
 .settings-button:focus-visible, .settings-message button:focus-visible, .custom-form textarea:focus-visible { outline: 2px solid var(--medium-green); outline-offset: 2px; }
 .settings-button:disabled { opacity: .6; cursor: not-allowed; }
 .settings-message { padding: 12px; margin-top: 16px; border: 1px solid; border-radius: 8px; }
 .settings-message--error { color: #721c24; background: #f8d7da; border-color: #f5c6cb; }
+.settings-message--info { color: var(--color-text); background: var(--color-surface-soft); border-color: var(--color-border-strong); }
 .settings-message button { margin-left: 8px; border: 0; background: transparent; color: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
 .custom-form label { display: block; margin-bottom: 8px; font-weight: 700; }
 .custom-form > p { margin: 0 0 12px; color: var(--color-text-muted); }
@@ -37,11 +42,18 @@
 .custom-form__actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
 .custom-progress, .custom-success { min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .custom-progress p { min-height: 24px; margin: 20px 0 4px; color: var(--color-text); font-weight: 700; animation: custom-stage 220ms ease-out; }
-.custom-progress > span:last-child { max-width: 44ch; color: var(--color-text-muted); }
+.custom-progress > span { max-width: 52ch; color: var(--color-text-muted); }
+.custom-progress__active-mode { max-width: 52ch; min-height: 0 !important; margin: 16px 0 0 !important; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface-soft); font-weight: 500 !important; }
+.custom-progress__leave { width: min(100%, 460px); display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: 20px; }
+.custom-progress__leave > span { color: var(--color-text-muted); }
+.custom-progress__leave .settings-button { margin-top: 12px; }
+.custom-progress .settings-message { width: min(100%, 460px); text-align: left; }
 .custom-success { color: #155724; }
 .custom-success .material-symbols-rounded { font-size: 48px; margin-bottom: 12px; animation: custom-check 220ms ease-out; }
+.custom-success > span:not(.material-symbols-rounded) { max-width: 48ch; margin-top: 8px; color: var(--color-text-muted); }
+.custom-success .settings-button { margin-top: 20px; }
 @keyframes settings-spin { to { transform: rotate(360deg); } }
 @keyframes custom-stage { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes custom-check { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
 @media (max-width: 768px) { .settings-page { padding: 24px 16px 40px; } .settings-card { padding: 16px; } .settings-card__header { flex-direction: column; } .custom-form__actions { flex-direction: column-reverse; } .custom-form__actions .settings-button { width: 100%; } }
-@media (prefers-reduced-motion: reduce) { .settings-spinner, .custom-progress p, .custom-success .material-symbols-rounded { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } .settings-button { transition-duration: .01ms !important; } }
+@media (prefers-reduced-motion: reduce) { .settings-spinner, .settings-badge .material-symbols-rounded, .custom-progress p, .custom-success .material-symbols-rounded { animation-duration: .01ms !important; animation-iteration-count: 1 !important; } .settings-button { transition-duration: .01ms !important; } }

@@ -1,12 +1,61 @@
-import { fetchAuthSession } from 'aws-amplify/auth';
+import { getAmplifyClient } from './amplifyClient';
 
 export const CUSTOM_INSTRUCTIONS_MAX_LENGTH = 4000;
-export const CUSTOM_INSTRUCTIONS_TIMEOUT_MS = 105000;
+export const CUSTOM_INSTRUCTIONS_FAST_POLL_INTERVAL_MS = 3000;
+export const CUSTOM_INSTRUCTIONS_SLOW_POLL_INTERVAL_MS = 9000;
+export const CUSTOM_INSTRUCTIONS_FAST_POLL_WINDOW_MS = 30000;
+export const CUSTOM_INSTRUCTIONS_POLL_CEILING_MS = 5 * 60 * 1000;
 
-const endpoint = () => (process.env.REACT_APP_CUSTOM_INSTRUCTIONS_URL || '').trim();
+const compileStatuses = new Set(['NEVER', 'COMPILING', 'READY', 'FAILED']);
+const effectiveModes = new Set(['DEFAULT', 'CUSTOM']);
+
+const getMyCustomInstructions = /* GraphQL */ `
+  query GetMyCustomInstructions {
+    getMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
+    }
+  }
+`;
+
+const startMyCustomInstructionsCompilation = /* GraphQL */ `
+  mutation StartMyCustomInstructionsCompilation(
+    $input: StartCustomInstructionsCompilationInput!
+  ) {
+    startMyCustomInstructionsCompilation(input: $input) {
+      accepted
+      jobId
+      compileStatus
+      effectiveMode
+    }
+  }
+`;
+
+const disableMyCustomInstructions = /* GraphQL */ `
+  mutation DisableMyCustomInstructions {
+    disableMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
+    }
+  }
+`;
 
 export const isCustomInstructionsAvailable = () => (
-  String(process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED).toLowerCase() === 'true' && Boolean(endpoint())
+  String(process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED).toLowerCase() === 'true'
 );
 
 export class CustomInstructionsError extends Error {
@@ -19,67 +68,91 @@ export class CustomInstructionsError extends Error {
 
 const messages = {
   configuration: 'Custom instructions are not available yet.',
-  auth: 'Your session could not be verified. Please sign in again.',
-  timeout: 'The request took too long. Your changes were not applied. Please try again.',
-  network: 'ChiroNote could not reach the custom instructions service. Please try again.',
-  server: 'The custom instructions service could not complete the request. Please try again.',
-  response: 'ChiroNote received an unexpected response. Please try again.'
+  service: 'ChiroNote could not reach custom instructions. Please try again.',
+  response: 'ChiroNote received an unexpected custom instructions response. Please try again.'
 };
 
-const normalizeResponse = (value) => {
-  if (!value || typeof value !== 'object' || typeof value.enabled !== 'boolean') {
-    throw new CustomInstructionsError('response', messages.response);
+const responseError = () => new CustomInstructionsError('response', messages.response);
+
+const normalizeNullableString = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== 'string') throw responseError();
+  return value;
+};
+
+const normalizeView = (value) => {
+  if (!value || typeof value !== 'object'
+    || typeof value.enableCustomInstructions !== 'boolean'
+    || typeof value.hasSavedInstructions !== 'boolean'
+    || !compileStatuses.has(value.compileStatus)
+    || !effectiveModes.has(value.effectiveMode)) {
+    throw responseError();
   }
-  if (value.instructions !== null && typeof value.instructions !== 'string') {
-    throw new CustomInstructionsError('response', messages.response);
-  }
+
   return {
-    enabled: value.enabled,
-    instructions: value.instructions,
-    ...(typeof value.updatedAt === 'string' ? { updatedAt: value.updatedAt } : {})
+    enableCustomInstructions: value.enableCustomInstructions,
+    effectiveMode: value.effectiveMode,
+    compileStatus: value.compileStatus,
+    instructions: normalizeNullableString(value.instructions),
+    compileJobId: normalizeNullableString(value.compileJobId),
+    hasSavedInstructions: value.hasSavedInstructions,
+    updatedAt: normalizeNullableString(value.updatedAt),
+    activeCompiledAt: normalizeNullableString(value.activeCompiledAt),
+    lastErrorCode: normalizeNullableString(value.lastErrorCode)
   };
 };
 
-const request = async (payload) => {
+const normalizeAccepted = (value) => {
+  if (!value || typeof value !== 'object'
+    || value.accepted !== true
+    || typeof value.jobId !== 'string'
+    || !value.jobId
+    || !compileStatuses.has(value.compileStatus)
+    || !effectiveModes.has(value.effectiveMode)) {
+    throw responseError();
+  }
+
+  return {
+    accepted: true,
+    jobId: value.jobId,
+    compileStatus: value.compileStatus,
+    effectiveMode: value.effectiveMode
+  };
+};
+
+const execute = async ({ query, variables, select }) => {
   if (!isCustomInstructionsAvailable()) {
     throw new CustomInstructionsError('configuration', messages.configuration);
   }
 
-  let token;
+  let result;
   try {
-    const session = await fetchAuthSession();
-    token = session.tokens?.idToken?.toString();
+    result = await getAmplifyClient().graphql({ query, ...(variables ? { variables } : {}) });
   } catch (error) {
-    throw new CustomInstructionsError('auth', messages.auth);
+    throw new CustomInstructionsError('service', messages.service);
   }
-  if (!token) throw new CustomInstructionsError('auth', messages.auth);
 
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), CUSTOM_INSTRUCTIONS_TIMEOUT_MS);
-  try {
-    const response = await fetch(endpoint(), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    });
-    if (!response.ok) throw new CustomInstructionsError('server', messages.server);
-    return normalizeResponse(await response.json());
-  } catch (error) {
-    if (error instanceof CustomInstructionsError) throw error;
-    if (error?.name === 'AbortError') throw new CustomInstructionsError('timeout', messages.timeout);
-    throw new CustomInstructionsError('network', messages.network);
-  } finally {
-    window.clearTimeout(timeoutId);
+  if (result?.errors?.length) {
+    throw new CustomInstructionsError('service', messages.service);
   }
+
+  return select(result?.data);
 };
 
-export const loadCustomInstructions = () => request({ action: 'get' });
+export const createCustomInstructionsRequestId = () => {
+  if (typeof window !== 'undefined' && typeof window.crypto?.randomUUID === 'function') {
+    return window.crypto.randomUUID();
+  }
 
-export const applyCustomInstructions = async (instructions) => {
+  return `custom-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+};
+
+export const loadCustomInstructions = () => execute({
+  query: getMyCustomInstructions,
+  select: (data) => normalizeView(data?.getMyCustomInstructions)
+});
+
+export const startCustomInstructionsCompilation = async (instructions, clientRequestId = createCustomInstructionsRequestId()) => {
   const normalized = typeof instructions === 'string' ? instructions.trim() : '';
   if (!normalized || normalized.length > CUSTOM_INSTRUCTIONS_MAX_LENGTH) {
     throw new CustomInstructionsError(
@@ -87,13 +160,24 @@ export const applyCustomInstructions = async (instructions) => {
       `Enter instructions between 1 and ${CUSTOM_INSTRUCTIONS_MAX_LENGTH.toLocaleString()} characters.`
     );
   }
-  const result = await request({ action: 'apply', instructions: normalized });
-  if (!result.enabled) throw new CustomInstructionsError('response', messages.response);
-  return result;
+
+  if (typeof clientRequestId !== 'string' || !clientRequestId.trim()) {
+    throw new CustomInstructionsError('validation', 'A valid request identifier is required.');
+  }
+
+  return execute({
+    query: startMyCustomInstructionsCompilation,
+    variables: {
+      input: {
+        instructions: normalized,
+        clientRequestId: clientRequestId.trim()
+      }
+    },
+    select: (data) => normalizeAccepted(data?.startMyCustomInstructionsCompilation)
+  });
 };
 
-export const resetCustomInstructions = async () => {
-  const result = await request({ action: 'reset' });
-  if (result.enabled) throw new CustomInstructionsError('response', messages.response);
-  return result;
-};
+export const disableCustomInstructions = () => execute({
+  query: disableMyCustomInstructions,
+  select: (data) => normalizeView(data?.disableMyCustomInstructions)
+});
