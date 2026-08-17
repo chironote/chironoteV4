@@ -28,10 +28,17 @@ Settings polls persisted AppSync state every three seconds for the initial 30 se
 
 As of 2026-08-16, the production Amplify stacks contain the Cognito-authenticated AppSync operations and resolvers, PromptProfiles persistence, encrypted FIFO compile queue and DLQ, least-privilege roles, alarms, and the active Node.js 24 MetaPrompter Lambda. The frontend `src/graphql/schema.json`, `queries.js`, and `mutations.js` are reconciled to that deployed public contract without changing `amplify/backend/api/chironotev4/schema.graphql`. The browser projection does not include compiled prompts.
 
-The feature is not release-ready yet: the queue has no Lambda event-source mapping, reserved concurrency of two is unresolved because of the account quota, and no authenticated browser-to-provider end-to-end test has demonstrated a real `READY` or `FAILED` transition. `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED` must remain off until the owner separately authorizes enablement after those gates and the intended runtime Amplify configuration are verified. The existing note-generation endpoints are outside this feature and remain unchanged.
+The feature is not release-ready yet: the queue has no Lambda event-source mapping,
+reserved concurrency of two is unresolved because of the account quota, and no
+authenticated browser-to-provider end-to-end test has demonstrated a real `READY` or
+`FAILED` transition. `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED` must remain off until the
+owner separately authorizes enablement after those gates and the intended runtime
+Amplify configuration are verified. The tested consumer source is merged but has not
+been uploaded to the production `transcriptToNoteV2` Lambda. Use the
+[launch handoff](../operations/custom-instructions-launch-handoff.md) before continuing.
 
 Because the runtime Amplify configuration is ignored by Git and the generated frontend schema can lag the deployed API, every enablement review must verify the configured AppSync endpoint identity and refresh the frontend schema/operations from that exact API before authenticated testing.
 
 ## Provenance
 
-Derived from [`Billing.jsx`](../../src/components/Billing/Billing.jsx), [`Settings.jsx`](../../src/components/Settings/Settings.jsx), [`CustomInstructionsDialog.jsx`](../../src/components/Settings/CustomInstructionsDialog.jsx), [`customInstructions.js`](../../src/services/customInstructions.js), the generated [`queries.js`](../../src/graphql/queries.js) and [`mutations.js`](../../src/graphql/mutations.js), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx). Backend-state statements reflect the read-only production stack and AppSync schema review completed on 2026-08-16.
+Derived from [`Billing.jsx`](../../src/components/Billing/Billing.jsx), [`Settings.jsx`](../../src/components/Settings/Settings.jsx), [`CustomInstructionsDialog.jsx`](../../src/components/Settings/CustomInstructionsDialog.jsx), [`customInstructions.js`](../../src/services/customInstructions.js), the generated [`queries.js`](../../src/graphql/queries.js) and [`mutations.js`](../../src/graphql/mutations.js), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx). Backend-state statements reflect the read-only production stack and AppSync schema review completed on 2026-08-16, plus the read-only Lambda/worktree reconciliation completed on 2026-08-17.

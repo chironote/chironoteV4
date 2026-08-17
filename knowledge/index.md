@@ -52,6 +52,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
+| [Custom Instructions Launch Handoff](./operations/custom-instructions-launch-handoff.md) | Authoritative V2 runtime state, the merged-but-undeployed consumer, remaining gates, and the bounded launch proof. |
 
 ## Security
 
