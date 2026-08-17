@@ -67,4 +67,3 @@ unconfigured, and the queue has no worker trigger. Git merge is not AWS deployme
 - Read-only `transcriptToNoteV2` AWS configuration verification on 2026-08-17
 - `chironote/lambda-transcript2note` knowledge and tests
 - Airtable Workboard record `recNAvJXzjjGURszg`
-
