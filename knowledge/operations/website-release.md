@@ -65,7 +65,9 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 2. Extend recording tests to real/fake MediaRecorder chunk rotation, AppSync transcript fallback, and generation streaming. Session cancellation, SQS failure, media metadata, and teardown are now covered.
 3. Triage runtime-relevant dependency advisories and upgrade without using `npm audit fix --force` blindly.
 4. Review the hook dependency warnings in Dictation, Clipboard, and Smart Editor for stale closures before relying on a manual smoke test.
-5. Confirm that the new note-generation Lambda is deployed, compatible with the current request/error-stream contract, and expected to replace the old live endpoint.
+5. Deploy the merged Custom Instructions consumer source to the production
+   `transcriptToNoteV2` Lambda with revision locking and the runtime flag off, then
+   complete the bounded proof in the [Custom Instructions launch handoff](./custom-instructions-launch-handoff.md).
 6. Keep Custom Instructions disabled until its FIFO queue invokes the worker, an authenticated browser request reaches a provider-backed terminal state, the reserved-concurrency quota issue is resolved or accepted, and the deployed frontend is verified against the intended AppSync API. This gate does not authorize changing the existing note-generation endpoint.
 
 ## Owner-run Release Checklist
@@ -91,4 +93,4 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 
 ## Provenance
 
-Synthesized from Git branch and commit history; [`package.json`](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; local [`asset-manifest.json`](../../build/asset-manifest.json); the public `https://chironote.ai/asset-manifest.json`, `manifest.json`, and compiled JavaScript; the current recording implementation; and the read-only 2026-08-16 production CloudFormation/AppSync contract review. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.
+Synthesized from Git branch and commit history; [`package.json`](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; local [`asset-manifest.json`](../../build/asset-manifest.json); the public `https://chironote.ai/asset-manifest.json`, `manifest.json`, and compiled JavaScript; the current recording implementation; the read-only 2026-08-16 production CloudFormation/AppSync contract review; and the read-only 2026-08-17 `transcriptToNoteV2` AWS verification. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.
