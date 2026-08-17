@@ -1,4 +1,9 @@
 import { getAmplifyClient } from './amplifyClient';
+import { getMyCustomInstructions } from '../graphql/queries';
+import {
+  disableMyCustomInstructions,
+  startMyCustomInstructionsCompilation
+} from '../graphql/mutations';
 
 export const CUSTOM_INSTRUCTIONS_MAX_LENGTH = 4000;
 export const CUSTOM_INSTRUCTIONS_FAST_POLL_INTERVAL_MS = 3000;
@@ -8,51 +13,6 @@ export const CUSTOM_INSTRUCTIONS_POLL_CEILING_MS = 5 * 60 * 1000;
 
 const compileStatuses = new Set(['NEVER', 'COMPILING', 'READY', 'FAILED']);
 const effectiveModes = new Set(['DEFAULT', 'CUSTOM']);
-
-const getMyCustomInstructions = /* GraphQL */ `
-  query GetMyCustomInstructions {
-    getMyCustomInstructions {
-      enableCustomInstructions
-      effectiveMode
-      compileStatus
-      instructions
-      compileJobId
-      hasSavedInstructions
-      updatedAt
-      activeCompiledAt
-      lastErrorCode
-    }
-  }
-`;
-
-const startMyCustomInstructionsCompilation = /* GraphQL */ `
-  mutation StartMyCustomInstructionsCompilation(
-    $input: StartCustomInstructionsCompilationInput!
-  ) {
-    startMyCustomInstructionsCompilation(input: $input) {
-      accepted
-      jobId
-      compileStatus
-      effectiveMode
-    }
-  }
-`;
-
-const disableMyCustomInstructions = /* GraphQL */ `
-  mutation DisableMyCustomInstructions {
-    disableMyCustomInstructions {
-      enableCustomInstructions
-      effectiveMode
-      compileStatus
-      instructions
-      compileJobId
-      hasSavedInstructions
-      updatedAt
-      activeCompiledAt
-      lastErrorCode
-    }
-  }
-`;
 
 export const isCustomInstructionsAvailable = () => (
   String(process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED).toLowerCase() === 'true'
@@ -89,12 +49,17 @@ const normalizeView = (value) => {
     throw responseError();
   }
 
+  const compileJobId = normalizeNullableString(value.compileJobId);
+  if (value.compileStatus === 'COMPILING' && (!compileJobId || !compileJobId.trim())) {
+    throw responseError();
+  }
+
   return {
     enableCustomInstructions: value.enableCustomInstructions,
     effectiveMode: value.effectiveMode,
     compileStatus: value.compileStatus,
     instructions: normalizeNullableString(value.instructions),
-    compileJobId: normalizeNullableString(value.compileJobId),
+    compileJobId,
     hasSavedInstructions: value.hasSavedInstructions,
     updatedAt: normalizeNullableString(value.updatedAt),
     activeCompiledAt: normalizeNullableString(value.activeCompiledAt),
@@ -106,7 +71,7 @@ const normalizeAccepted = (value) => {
   if (!value || typeof value !== 'object'
     || value.accepted !== true
     || typeof value.jobId !== 'string'
-    || !value.jobId
+    || !value.jobId.trim()
     || !compileStatuses.has(value.compileStatus)
     || !effectiveModes.has(value.effectiveMode)) {
     throw responseError();

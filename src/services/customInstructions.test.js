@@ -1,6 +1,11 @@
 jest.mock('./amplifyClient', () => ({ getAmplifyClient: jest.fn() }));
 
 const { getAmplifyClient } = require('./amplifyClient');
+const { getMyCustomInstructions } = require('../graphql/queries');
+const {
+  disableMyCustomInstructions,
+  startMyCustomInstructionsCompilation
+} = require('../graphql/mutations');
 
 const view = (overrides = {}) => ({
   enableCustomInstructions: false,
@@ -48,9 +53,10 @@ describe('customInstructions service', () => {
       hasSavedInstructions: true
     }));
     expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
-      query: expect.stringContaining('query GetMyCustomInstructions')
+      query: getMyCustomInstructions
     }));
     expect(graphql.mock.calls[0][0]).not.toHaveProperty('variables');
+    expect(getMyCustomInstructions).not.toMatch(/compiledPrompt|promptExam|promptTreatment/i);
   });
 
   test('starts an idempotent asynchronous compile with trimmed source text', async () => {
@@ -74,7 +80,7 @@ describe('customInstructions service', () => {
       effectiveMode: 'DEFAULT'
     });
     expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
-      query: expect.stringContaining('mutation StartMyCustomInstructionsCompilation'),
+      query: startMyCustomInstructionsCompilation,
       variables: {
         input: {
           instructions: 'Use concise phrasing.',
@@ -104,8 +110,9 @@ describe('customInstructions service', () => {
       activeCompiledAt: '2026-08-16T12:00:00Z'
     }));
     expect(graphql).toHaveBeenCalledWith(expect.objectContaining({
-      query: expect.stringContaining('mutation DisableMyCustomInstructions')
+      query: disableMyCustomInstructions
     }));
+    expect(disableMyCustomInstructions).not.toMatch(/compiledPrompt|promptExam|promptTreatment/i);
   });
 
   test('needs only the global flag and rejects validation or malformed server state', async () => {
@@ -116,6 +123,18 @@ describe('customInstructions service', () => {
     await expect(service.startCustomInstructionsCompilation('Valid text', '   ')).rejects.toMatchObject({ code: 'validation' });
 
     graphql.mockResolvedValue({ data: { getMyCustomInstructions: view({ effectiveMode: 'SURPRISE' }) } });
+    await expect(service.loadCustomInstructions()).rejects.toMatchObject({ code: 'response' });
+
+    graphql.mockResolvedValue({
+      data: {
+        getMyCustomInstructions: view({
+          compileStatus: 'COMPILING',
+          compileJobId: null,
+          instructions: 'Valid source.',
+          hasSavedInstructions: true
+        })
+      }
+    });
     await expect(service.loadCustomInstructions()).rejects.toMatchObject({ code: 'response' });
 
     process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED = 'false';

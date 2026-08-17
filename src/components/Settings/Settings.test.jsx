@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import Settings from './Settings';
 import {
+  createCustomInstructionsRequestId,
   disableCustomInstructions,
   isCustomInstructionsAvailable,
   loadCustomInstructions,
@@ -18,6 +19,7 @@ jest.mock('../../services/customInstructions', () => ({
   CUSTOM_INSTRUCTIONS_SLOW_POLL_INTERVAL_MS: 9000,
   CUSTOM_INSTRUCTIONS_FAST_POLL_WINDOW_MS: 30000,
   CUSTOM_INSTRUCTIONS_POLL_CEILING_MS: 300000,
+  createCustomInstructionsRequestId: jest.fn(),
   disableCustomInstructions: jest.fn(),
   isCustomInstructionsAvailable: jest.fn(),
   loadCustomInstructions: jest.fn(),
@@ -83,6 +85,7 @@ describe('Settings', () => {
     getAmplifyClient.mockReturnValue({ graphql: jest.fn(() => Promise.resolve({ data: { getUserSubscription: { hoursSavedLifetime: 12.34 } } })) });
     fetchUserAttributes.mockResolvedValue({ sub: 'synthetic-user' });
     isCustomInstructionsAvailable.mockReturnValue(true);
+    createCustomInstructionsRequestId.mockReturnValue('request-1');
     loadCustomInstructions.mockResolvedValue(customView());
     disableCustomInstructions.mockResolvedValue(customView());
     startCustomInstructionsCompilation.mockResolvedValue({
@@ -215,8 +218,9 @@ describe('Settings', () => {
     act(() => document.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
     expect(document.body.textContent).toContain('Enter your note-style preferences');
     expect(startCustomInstructionsCompilation).not.toHaveBeenCalled();
+    expect(document.querySelector('textarea').getAttribute('aria-invalid')).toBe('true');
 
-    startCustomInstructionsCompilation.mockRejectedValue(new Error('The request failed safely.'));
+    startCustomInstructionsCompilation.mockRejectedValueOnce(new Error('The request failed safely.'));
     changeTextarea('Use concise synthetic examples.');
     await act(async () => {
       const form = document.querySelector('form');
@@ -225,11 +229,21 @@ describe('Settings', () => {
       await Promise.resolve();
     });
     expect(startCustomInstructionsCompilation).toHaveBeenCalledTimes(1);
+    expect(startCustomInstructionsCompilation).toHaveBeenLastCalledWith('Use concise synthetic examples.', 'request-1');
     expect(document.querySelector('textarea').value).toBe('Use concise synthetic examples.');
+    expect(document.querySelector('textarea').getAttribute('aria-invalid')).toBe('false');
     expect(document.body.textContent).toContain('The request failed safely.');
+
+    await act(async () => {
+      document.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+    });
+    expect(startCustomInstructionsCompilation).toHaveBeenCalledTimes(2);
+    expect(startCustomInstructionsCompilation).toHaveBeenLastCalledWith('Use concise synthetic examples.', 'request-1');
+    expect(createCustomInstructionsRequestId).toHaveBeenCalledTimes(1);
   });
 
-  test('never reports timer-based success and closes only after server-confirmed READY', async () => {
+  test('never reports timer-based success and shows completion only after server-confirmed READY', async () => {
     jest.useFakeTimers();
     const compiling = customView({
       enableCustomInstructions: true,
@@ -269,7 +283,41 @@ describe('Settings', () => {
     expect(document.body.textContent).toContain('Custom instructions enabled');
     expect(document.body.textContent).toContain('Server-confirmed');
     await advance(850);
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    act(() => button('Close').click());
+    await advance(0);
     expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.activeElement).toBe(button('Update'));
+  });
+
+  test('reconciles an uncertain start failure when AppSync already persisted the job', async () => {
+    const compiling = customView({
+      enableCustomInstructions: true,
+      compileStatus: 'COMPILING',
+      instructions: 'Use concise reassessments.',
+      compileJobId: 'job-uncertain',
+      hasSavedInstructions: true
+    });
+    loadCustomInstructions
+      .mockResolvedValueOnce(customView())
+      .mockResolvedValueOnce(compiling);
+    startCustomInstructionsCompilation.mockRejectedValueOnce(new Error('The response was interrupted.'));
+
+    act(() => root.render(<Settings />));
+    await flush();
+    act(() => button('Create').click());
+    changeTextarea('Use concise reassessments.');
+    await act(async () => {
+      document.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(loadCustomInstructions).toHaveBeenCalledTimes(2);
+    expect(document.body.textContent).toContain('Compiling your instructions');
+    expect(document.body.textContent).toContain('Close and continue later');
+    expect(document.body.textContent).not.toContain('The response was interrupted.');
   });
 
   test('keeps the newer server result when overlapping reloads resolve out of order', async () => {

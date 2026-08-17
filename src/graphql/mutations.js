@@ -58,6 +58,35 @@ export const deleteUserSubscription = /* GraphQL */ `
     }
   }
 `;
+export const startMyCustomInstructionsCompilation = /* GraphQL */ `
+  mutation StartMyCustomInstructionsCompilation(
+    $input: StartCustomInstructionsCompilationInput!
+  ) {
+    startMyCustomInstructionsCompilation(input: $input) {
+      accepted
+      jobId
+      compileStatus
+      effectiveMode
+      __typename
+    }
+  }
+`;
+export const disableMyCustomInstructions = /* GraphQL */ `
+  mutation DisableMyCustomInstructions {
+    disableMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
+      __typename
+    }
+  }
+`;
 export const createNotes = /* GraphQL */ `
   mutation CreateNotes(
     $input: CreateNotesInput!

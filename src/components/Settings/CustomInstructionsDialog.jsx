@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ProductDialog from '../Dialog/ProductDialog';
 import {
   CUSTOM_INSTRUCTIONS_MAX_LENGTH,
+  createCustomInstructionsRequestId,
   startCustomInstructionsCompilation
 } from '../../services/customInstructions';
 
@@ -23,20 +24,25 @@ function CustomInstructionsDialog({
   isOpen,
   settings,
   pollNotice,
+  statusError,
   onClose,
-  onCompilationAccepted
+  onCompilationAccepted,
+  onCompilationRequestFailed,
+  returnFocusRef
 }) {
   const [instructions, setInstructions] = useState('');
   const [initialInstructions, setInitialInstructions] = useState('');
   const [phase, setPhase] = useState('editing');
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [error, setError] = useState('');
+  const [errorType, setErrorType] = useState(null);
   const [stageIndex, setStageIndex] = useState(0);
   const [canLeave, setCanLeave] = useState(true);
   const [currentJobId, setCurrentJobId] = useState(null);
   const textareaRef = useRef(null);
   const mountedRef = useRef(true);
   const submittingRef = useRef(false);
+  const retryRequestRef = useRef(null);
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
@@ -53,13 +59,37 @@ function CustomInstructionsDialog({
       setInitialInstructions(value);
       setPhase(compilationInProgress ? 'compiling' : 'editing');
       setError(settings.compileStatus === 'FAILED' ? compilationErrorMessage(settings) : '');
+      setErrorType(settings.compileStatus === 'FAILED' ? 'form' : null);
       setStageIndex(0);
       setCanLeave(compilationInProgress);
       setCurrentJobId(settings.compileJobId || null);
       submittingRef.current = compilationInProgress;
+      retryRequestRef.current = null;
     }
     wasOpenRef.current = isOpen;
   }, [isOpen, settings]);
+
+  useEffect(() => {
+    if (!isOpen
+      || phase !== 'editing'
+      || settings.compileStatus !== 'COMPILING'
+      || !settings.compileJobId) {
+      return;
+    }
+
+    const value = settings.instructions || instructions;
+    setInstructions(value);
+    setInitialInstructions(value);
+    setIsUpdateMode(settings.hasSavedInstructions || Boolean(settings.activeCompiledAt));
+    setCurrentJobId(settings.compileJobId);
+    setStageIndex(0);
+    setCanLeave(true);
+    setError('');
+    setErrorType(null);
+    setPhase('compiling');
+    submittingRef.current = true;
+    retryRequestRef.current = null;
+  }, [instructions, isOpen, phase, settings]);
 
   useEffect(() => {
     if (phase !== 'submitting' && phase !== 'compiling') return undefined;
@@ -109,19 +139,11 @@ function CustomInstructionsDialog({
       setInitialInstructions(savedValue);
       setIsUpdateMode(settings.hasSavedInstructions || Boolean(settings.activeCompiledAt));
       setError(compilationErrorMessage(settings));
+      setErrorType('form');
       setCanLeave(true);
       setPhase('editing');
     }
   }, [currentJobId, instructions, isOpen, phase, settings]);
-
-  useEffect(() => {
-    if (!isOpen || phase !== 'success') return undefined;
-    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const timer = window.setTimeout(() => {
-      if (mountedRef.current) onClose();
-    }, reduceMotion ? 80 : 850);
-    return () => window.clearTimeout(timer);
-  }, [isOpen, onClose, phase]);
 
   const isDirty = instructions !== initialInstructions;
 
@@ -142,31 +164,41 @@ function CustomInstructionsDialog({
     if (submittingRef.current) return;
     if (validationError) {
       setError(validationError);
+      setErrorType('field');
       textareaRef.current?.focus();
       return;
     }
 
     const normalizedInstructions = instructions.trim();
+    const retryRequest = retryRequestRef.current;
+    const clientRequestId = retryRequest?.instructions === normalizedInstructions
+      ? retryRequest.clientRequestId
+      : createCustomInstructionsRequestId();
+    retryRequestRef.current = { instructions: normalizedInstructions, clientRequestId };
     submittingRef.current = true;
     setError('');
+    setErrorType(null);
     setStageIndex(0);
     setCanLeave(false);
     setPhase('submitting');
 
     try {
-      const accepted = await startCustomInstructionsCompilation(normalizedInstructions);
+      const accepted = await startCustomInstructionsCompilation(normalizedInstructions, clientRequestId);
       if (!mountedRef.current) return;
       setInstructions(normalizedInstructions);
       setInitialInstructions(normalizedInstructions);
       setCurrentJobId(accepted.jobId);
       setPhase('compiling');
+      retryRequestRef.current = null;
       onCompilationAccepted(accepted, normalizedInstructions);
     } catch (requestError) {
       if (!mountedRef.current) return;
       setError(requestError.message);
+      setErrorType('form');
       setCanLeave(true);
       setPhase('editing');
       submittingRef.current = false;
+      onCompilationRequestFailed();
     }
   };
 
@@ -190,6 +222,7 @@ function CustomInstructionsDialog({
         : 'Describe your preferred note style in natural language. ChiroNote will apply it to new notes.'}
       onRequestClose={requestClose}
       initialFocusRef={phase === 'editing' ? textareaRef : undefined}
+      returnFocusRef={returnFocusRef}
       dismissalDisabled={phase === 'submitting' || (phase === 'compiling' && !canLeave)}
     >
       {isProcessing && (
@@ -210,14 +243,16 @@ function CustomInstructionsDialog({
             </div>
           )}
           {pollNotice && <div className="settings-message settings-message--info" role="status">{pollNotice}</div>}
+          {statusError && <div className="settings-message settings-message--error" role="alert">{statusError} You can close this dialog and return later.</div>}
         </div>
       )}
 
       {phase === 'success' && (
-        <div className="custom-success" role="status" aria-live="polite">
+        <div className="custom-success">
           <span className="material-symbols-rounded" aria-hidden="true">check_circle</span>
-          <strong>{isUpdateMode ? 'Custom instructions updated' : 'Custom instructions enabled'}</strong>
+          <strong role="status" aria-live="polite">{isUpdateMode ? 'Custom instructions updated' : 'Custom instructions enabled'}</strong>
           <span>Server-confirmed and ready for new notes across your account.</span>
+          <button type="button" className="settings-button settings-button--primary" onClick={requestClose}>Close</button>
         </div>
       )}
 
@@ -238,10 +273,10 @@ function CustomInstructionsDialog({
             ref={textareaRef}
             id="custom-instructions"
             value={instructions}
-            onChange={(event) => { setInstructions(event.target.value); setError(''); }}
+            onChange={(event) => { setInstructions(event.target.value); setError(''); setErrorType(null); }}
             maxLength={CUSTOM_INSTRUCTIONS_MAX_LENGTH}
-            aria-invalid={Boolean(error)}
-            aria-describedby={`custom-instructions-help${error ? ' custom-instructions-error' : ''}`}
+            aria-invalid={errorType === 'field'}
+            aria-describedby={`custom-instructions-help${errorType === 'field' ? ' custom-instructions-error' : ''}`}
           />
           <div className="custom-form__meta">
             <span>{instructions.length.toLocaleString()} / {CUSTOM_INSTRUCTIONS_MAX_LENGTH.toLocaleString()} characters</span>
