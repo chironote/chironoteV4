@@ -80,6 +80,7 @@ function Settings() {
   const mountedRef = useRef(true);
   const loadRequestCounterRef = useRef(0);
   const latestAppliedLoadRef = useRef(0);
+  const customActionRef = useRef(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -262,10 +263,10 @@ function Settings() {
         {hoursStatus === 'error' && <div className="settings-message settings-message--error" role="alert">Lifetime hours are unavailable. <button type="button" onClick={loadHours}>Retry</button></div>}
       </section>
 
-      <section className="settings-card" aria-labelledby="custom-title">
+      <section className="settings-card" aria-labelledby="custom-title" aria-busy={customStatus === 'loading' || isDisabling}>
         <div className="settings-card__header">
           <div><h2 id="custom-title">Custom instructions</h2><p>Tell ChiroNote how you prefer new clinical notes to be written.</p></div>
-          <span className={`settings-badge settings-badge--${customStatus}`}><span className="material-symbols-rounded" aria-hidden="true">{customCopy[0]}</span>{customCopy[1]}</span>
+          <span className={`settings-badge settings-badge--${customStatus}`} role="status" aria-live="polite"><span className="material-symbols-rounded" aria-hidden="true">{customCopy[0]}</span>{customCopy[1]}</span>
         </div>
         <p className="settings-card__description">{customCopy[2]}</p>
         {customStatus === 'loading' && <p className="settings-loading" role="status"><span className="settings-spinner" aria-hidden="true" />Loading existing settings…</p>}
@@ -273,7 +274,7 @@ function Settings() {
         {pollNotice && !isDialogOpen && <div className="settings-message settings-message--info" role="status">{pollNotice}</div>}
         <div className="settings-actions">
           {customStatus === 'error' && <button type="button" className="settings-button settings-button--secondary" onClick={() => loadCustom({ showLoading: true })}>Retry</button>}
-          {dialogActionLabel && <button type="button" className="settings-button settings-button--primary" onClick={openCustomDialog}>{dialogActionLabel}</button>}
+          {dialogActionLabel && <button ref={customActionRef} type="button" className="settings-button settings-button--primary" onClick={openCustomDialog}>{dialogActionLabel}</button>}
           {canDisable && (
             <button type="button" className="settings-button settings-button--secondary" onClick={handleDisable} disabled={isDisabling}>{isDisabling ? 'Using defaults…' : 'Use defaults'}</button>
           )}
@@ -284,8 +285,11 @@ function Settings() {
         isOpen={isDialogOpen}
         settings={customSettings}
         pollNotice={pollNotice}
+        statusError={customError}
         onClose={closeCustomDialog}
         onCompilationAccepted={handleCompilationAccepted}
+        onCompilationRequestFailed={loadCustom}
+        returnFocusRef={customActionRef}
       />
     </main>
   );

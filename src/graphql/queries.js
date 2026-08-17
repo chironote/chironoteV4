@@ -17,6 +17,22 @@ export const getUserSubscription = /* GraphQL */ `
     }
   }
 `;
+export const getMyCustomInstructions = /* GraphQL */ `
+  query GetMyCustomInstructions {
+    getMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
+      __typename
+    }
+  }
+`;
 export const listUserSubscriptions = /* GraphQL */ `
   query ListUserSubscriptions(
     $owner: String

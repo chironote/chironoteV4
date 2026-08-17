@@ -44,7 +44,7 @@ The unpublished delta includes:
 - cursor-aware dictation insertion in Clipboard and Smart Editor;
 - the July 1 Strict-Mode-safe insertion snapshot, green caret, textarea locking, and five regression tests;
 - repository and component documentation plus the Healtech knowledge system.
-- the frontend-only asynchronous Custom Instructions Settings flow, which remains feature-flagged off until its AppSync, persistence, queue, and MetaPrompter dependencies are implemented and staged.
+- the asynchronous Custom Instructions Settings flow and installed backend control plane. It remains feature-flagged off because the queue-to-worker event-source mapping, reserved-concurrency decision, authenticated provider end-to-end test, and runtime configuration verification are not complete.
 
 The UI refactor is large in file movement but intended to preserve behavior. The recording implementation is not behavior-neutral: it changes where cleanup, upload, fallback, and generation responsibilities live.
 
@@ -66,6 +66,7 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 3. Triage runtime-relevant dependency advisories and upgrade without using `npm audit fix --force` blindly.
 4. Review the hook dependency warnings in Dictation, Clipboard, and Smart Editor for stale closures before relying on a manual smoke test.
 5. Confirm that the new note-generation Lambda is deployed, compatible with the current request/error-stream contract, and expected to replace the old live endpoint.
+6. Keep Custom Instructions disabled until its FIFO queue invokes the worker, an authenticated browser request reaches a provider-backed terminal state, the reserved-concurrency quota issue is resolved or accepted, and the deployed frontend is verified against the intended AppSync API. This gate does not authorize changing the existing note-generation endpoint.
 
 ## Owner-run Release Checklist
 
@@ -90,4 +91,4 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 
 ## Provenance
 
-Synthesized from Git branch and commit history; [`package.json`](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; local [`asset-manifest.json`](../../build/asset-manifest.json); the public `https://chironote.ai/asset-manifest.json`, `manifest.json`, and compiled JavaScript; and the current recording implementation. No deploy action or Amplify console history was available, so the live asset fingerprint outranks guesses based on Git dates.
+Synthesized from Git branch and commit history; [`package.json`](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; local [`asset-manifest.json`](../../build/asset-manifest.json); the public `https://chironote.ai/asset-manifest.json`, `manifest.json`, and compiled JavaScript; the current recording implementation; and the read-only 2026-08-16 production CloudFormation/AppSync contract review. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.
