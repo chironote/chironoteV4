@@ -134,7 +134,9 @@ Handling:
 User credentials and authentication tokens are critical for maintaining the security of PHI:
 
 - User authentication is managed through AWS Amplify
-- Passwords are never stored in plain text
+- Passwords are never persisted by ChiroNote in browser or WebView storage
+- On Android, optional password saving and retrieval is delegated to the user's system credential provider through AndroidX Credential Manager
+- The authentication boundary removes legacy `saved_email` and `saved_password` local-storage entries on every app launch, including upgrades with a surviving session
 - Authentication tokens are securely stored and transmitted
 - Token expiration and refresh mechanisms are implemented to enhance security
 - Multi-factor authentication (MFA) is available for additional security

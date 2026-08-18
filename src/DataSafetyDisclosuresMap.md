@@ -10,13 +10,13 @@ Assumptions:
 
 ## Authentication & Identity Data
 - **Credentials (email, password)**  
-  - **Code Locations:** `src/components/AuthUI/SignInForm.jsx`, `src/components/AuthUI/AuthContainer.jsx`  
+  - **Code Locations:** `src/components/AuthUI/SignInForm.jsx`, `src/components/AuthUI/AuthContainer.jsx`, `src/plugins/CredentialManager.js`, `android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java`
   - **Purpose:** Cognito authentication, session management.  
   - **Collected From:** User input.  
   - **Transmission:** Sent to Amazon Cognito via Amplify Auth SDK (TLS).  
-  - **Storage:** Cognito user pool (managed by AWS). Optional `localStorage` entries `saved_email` and `saved_password` on native platforms when "Remember me" is checked.  
-  - **User Control:** User can opt out by leaving "Remember me" unchecked; sign-out clears session.  
-  - **Disclosure Notes:** Declare collection of email and password for account login. Mention optional on-device storage of credentials for autofill.  
+  - **Storage:** ChiroNote does not persist the raw password in browser/WebView storage. On Android, the user may save it with their selected system credential provider through AndroidX Credential Manager. The authentication boundary idempotently deletes the legacy `saved_email` and `saved_password` local-storage keys on every app launch, including when an existing Cognito session survives an upgrade.
+  - **User Control:** The system credential provider owns its save confirmation and credential management UI. ChiroNote clears provider session state at sign-out without deleting a password the user chose to save.
+  - **Disclosure Notes:** Declare collection of email and password for account login. OS-managed password saving is optional and is not ChiroNote-owned credential storage.
 
 - **Cognito User Attributes (email, sub, etc.)**  
   - **Code Locations:** `src/components/Account/Account.jsx`, `src/components/Feedback/Feedback.jsx` (via `fetchUserAttributes()`), `src/components/AuthUI/AuthContainer.jsx`.  

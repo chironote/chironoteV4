@@ -91,6 +91,10 @@ This tier handles authentication flow and all functionality once a user is logge
 
 - **Authentication Flow**: When users are not authenticated, they see the custom `SignInForm` with email/password fields. The form uses Gen 1 Amplify auth functions (`signIn`, `getCurrentUser`) instead of the hosted UI. After successful authentication, `AuthContainer` passes user details and `signOut` function to `AuthenticatedApp`.
 
+- **Android Password Autofill**: The Android build registers a Capacitor bridge backed by AndroidX Credential Manager 1.5.0. The sign-in fields use the standard `username` and `current-password` autocomplete hints. A selected provider credential is held only in form state. A manually entered or edited password is offered to the user's system provider only after Cognito confirms sign-in; a provider-supplied password is not redundantly offered back to that provider. ChiroNote never writes raw credentials to WebView storage; the authentication boundary removes the legacy `saved_email` and `saved_password` keys on every app launch, including when a Cognito session survives an upgrade. Sign-out clears Credential Manager's active provider state but does not delete user-saved passwords.
+
+- **App/site credential association**: `AndroidManifest.xml` declares the `asset_statements` include for `https://chironote.ai/.well-known/assetlinks.json`. The website endpoint must serve a valid Digital Asset Links JSON document with `Content-Type: application/json` and the production signing-certificate fingerprint before app/site password sharing can be considered verified. As of 2026-08-15 it returns the React SPA HTML shell, so cross-surface sharing remains an external website configuration follow-up; the application workflow must not publish or fabricate that document.
+
 - **Internal Routing (`AuthenticatedApp`)**: Once inside `AuthenticatedApp`, a second, nested `<Routes>` block manages navigation within the secure part of the application. Routes here are relative to `/app`. For example:
   - `path="/"`: Renders the main dashboard (Clipboard, Panels, etc.).
   - `path="/account"`: Renders the `<Account />` component.
