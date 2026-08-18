@@ -7,6 +7,11 @@ import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from '../../graphql/subscriptions';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import {
+  NOTE_GENERATION_URL,
+  createNoteGenerationRequest,
+  readNoteGenerationStream
+} from './noteGenerationContract';
 
 const client = generateClient();
 
@@ -396,19 +401,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
       const accessToken = await generateToken();
 
-      const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        signal: abortController.signal,
-        body: JSON.stringify({
-          userId: userId,
-          timeStamp: timeStampRef.current,
-          accessToken: accessToken,
-          noteSettings: localStorage.getItem('noteSettings'),
-        }),
-      });
+      const response = await fetch(NOTE_GENERATION_URL, createNoteGenerationRequest({
+        userId,
+        timeStamp: timeStampRef.current,
+        accessToken,
+        noteSettings: localStorage.getItem('noteSettings'),
+        signal: abortController.signal
+      }));
       
       if (!response.ok) {
         console.error(`HTTP error! status: ${response.status}`);
@@ -419,16 +418,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         return;
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
       let isFirstChunk = true;
-      
-      while (true) {
-        const chunk = await reader.read();
-        if (chunk.done) {
-          break;
-        }
 
+      await readNoteGenerationStream(response, (text) => {
         // Once streaming has started, use a shorter stall watchdog.
         resetGenerateWatchdog(30000);
 
@@ -438,25 +430,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           onTransitionToMainApp();
         }
 
-        const text = decoder.decode(chunk.value, { stream: true });
-        if (text) {
-          setTextStream((prev) => {
-            const newText = prev + text;
-            onTextStreamUpdate(newText);
-            return newText;
-          });
-        }
-      }
-
-      // Flush any buffered decoder output after completion.
-      const trailingText = decoder.decode();
-      if (trailingText) {
         setTextStream((prev) => {
-          const newText = prev + trailingText;
+          const newText = prev + text;
           onTextStreamUpdate(newText);
           return newText;
         });
-      }
+      });
     } catch (error) {
       if (error.name === 'AbortError') {
         console.warn('Streaming aborted due to watchdog timeout');

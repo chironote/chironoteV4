@@ -81,7 +81,7 @@ Key dependencies include:
 The application integrates with AWS Lambda functions for audio processing and transcription. Two main Lambda endpoints are used:
 
 1. Audio chunk upload: `https://jl6rxdp4o3akmpye3ex3q2qlkq0zfyjf.lambda-url.us-east-2.on.aws`
-2. Transcription and summarization: `https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws`
+2. Transcription and summarization: `https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/`
 
 ## State Management
 
