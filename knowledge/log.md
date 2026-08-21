@@ -3,6 +3,7 @@
 ## 2026-08-20
 
 - **Android recording boundary**: Documented the single-scheduler invariant: Android uses only the four-minute `MediaRecorder` timeslice, while external stop/restart rotation remains non-Android behavior. Recorded serialized audio-event/upload ordering, intentional final-chunk classification, paused-stop flushing, and discard-like unmount cleanup.
+- **Internal testing 19**: Published the signed `19 (1.19)` Android bundle to the active Internal testing track. Play confirmed the package `com.chironote.app`, target SDK 35, no device-support loss, and availability to internal testers at 17:08 Pacific. The verified local AAB SHA-256 is `8F71DAA283C3FDBC7BAAD7580D9E4EA3976BFC351A4D53423348ED1BB7DB32B6`; Production was not changed.
 
 ## 2026-07-20
 
