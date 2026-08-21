@@ -33,8 +33,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const isAppInBackgroundRef = useRef(false); // Track if app is in background
-  const isFinalizingRef = useRef(false); // iOS final stop is complete only after dataavailable/stop
-  const isRotatingRef = useRef(false); // iOS chunk rotation waits for the stop event before restart
+  const isFinalizingRef = useRef(false);
+  const isRotatingRef = useRef(false);
+  const iosStopRef = useRef(null); // Immutable-at-event-time stop transaction for WebKit.
+  const recordingIdentityRef = useRef(null);
+  const recordingGenerationRef = useRef(0);
+  const finalChunkQueuedRef = useRef(false);
+  const isUnmountedRef = useRef(false);
   // Android fix: Detect Android devices for timeslice parameter
   // Recent Android WebView updates cause MediaRecorder to produce audio blobs with duration=0 without timeslice
   // Using 240-second (4-minute) timeslice to match chunk cycle and enable proper transcription
@@ -63,6 +68,61 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     return true;
   };
 
+  const stopTracksAndReleaseRecorder = (recorder) => {
+    recorder.stream.getTracks().forEach(track => track.stop());
+    if (mediaRecorderRef.current === recorder) {
+      mediaRecorderRef.current = null;
+    }
+  };
+
+  const isCancelled = (generation) => (
+    isDiscardingRef.current || isUnmountedRef.current ||
+    recordingGenerationRef.current !== generation
+  );
+
+  const requestIOSStop = (intent) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || isCancelled(recordingGenerationRef.current)) {
+      return;
+    }
+
+    const pendingStop = iosStopRef.current;
+    if (pendingStop && pendingStop.recorder === recorder) {
+      // A user stop before WebKit's delayed data event promotes this one
+      // pending segment to final. Once dataavailable has run, its captured
+      // classification is intentionally never changed.
+      if (intent === 'final' && !pendingStop.dataHandled) {
+        pendingStop.intent = 'final';
+        isFinalizingRef.current = true;
+        isRotatingRef.current = false;
+      }
+      return;
+    }
+
+    if (recorder.state !== 'recording' && recorder.state !== 'paused') {
+      return;
+    }
+
+    const stop = {
+      recorder,
+      generation: recordingGenerationRef.current,
+      intent,
+      dataHandled: false,
+    };
+    iosStopRef.current = stop;
+    isRotatingRef.current = intent === 'rotation';
+    isFinalizingRef.current = intent === 'final';
+
+    if (recorder.state === 'paused') {
+      recorder.resume();
+      // WebKit may dispatch resume later, but state is normally updated now.
+      if (recorder.state !== 'recording') {
+        return;
+      }
+    }
+    recorder.stop();
+  };
+
   const rotateIOSRecordingChunk = () => {
     const recorder = mediaRecorderRef.current;
 
@@ -74,8 +134,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     // Safari/WKWebView delivers dataavailable asynchronously after stop().
     // Do not call start() until its stop event has fired; otherwise the next
     // four-minute segment can race the previous segment's final media bytes.
-    isRotatingRef.current = true;
-    recorder.stop();
+    requestIOSStop('rotation');
   };
 
   const scheduleRecordingInterval = () => {
@@ -186,7 +245,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       // Process all regular chunks first
       const regularChunks = uploadQueueRef.current.filter(item => !item.filePath.includes('_final_'));
       for (const item of regularChunks) {
-        await uploadS3(item.audioBlob, item.filePath);
+        await uploadS3(item);
         // Remove this item from the queue
         uploadQueueRef.current = uploadQueueRef.current.filter(
           queueItem => queueItem !== item
@@ -196,7 +255,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       // Then process the final chunk if it exists
       const finalChunk = uploadQueueRef.current.find(item => item.filePath.includes('_final_'));
       if (finalChunk) {
-        await uploadS3(finalChunk.audioBlob, finalChunk.filePath);
+        await uploadS3(finalChunk);
         // Remove the final chunk from the queue
         uploadQueueRef.current = uploadQueueRef.current.filter(
           queueItem => queueItem !== finalChunk
@@ -215,21 +274,21 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   // Add to upload queue instead of uploading directly
-  const queueUpload = (audioBlob, filePath) => {
-    uploadQueueRef.current.push({ audioBlob, filePath });
+  const queueUpload = (audioBlob, filePath, identity, generation) => {
+    if (isCancelled(generation)) {
+      return;
+    }
+    uploadQueueRef.current.push({ audioBlob, filePath, identity, generation });
     processUploadQueue();
   };
 
-  const uploadS3 = async (audioBlob, filePath) => {
-    // Use provided filePath instead of generating it here to prevent race conditions
-    const timestamp = timeStampRef.current; // Conversation identifier
-    const pathstamp = pathStampRef.current; // Unique path identifier
-    const userId = await getUserId();
-    
-    if (!userId) {
-      console.error('User not authenticated for S3 upload');
+  const uploadS3 = async ({ audioBlob, filePath, identity, generation }) => {
+    // Every queue item carries the identity captured with its media event so a
+    // later recording cannot relabel an earlier upload.
+    if (isCancelled(generation)) {
       return null; 
     }
+    const { timestamp, userId } = identity;
 
     // Store the last used path in the ref
     filePathRef.current = filePath;
@@ -237,6 +296,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     try {
       // Fetch credentials first
       const session = await fetchAuthSession(); // Get fresh session/credentials
+      if (isCancelled(generation)) {
+        return null;
+      }
       const credentials = session.credentials; 
       if (!credentials) {
         console.error("AWS Credentials not found in session");
@@ -245,6 +307,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
       // Generate access token
       const accessToken = await generateToken();
+      if (isCancelled(generation)) {
+        return null;
+      }
 
       // Initialize SQS Client here with fetched credentials
       const sqsClient = new SQSClient({ 
@@ -257,6 +322,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         path: filePath,
         data: audioBlob,
         options: {
+          // Keep the established browser-to-backend contract unchanged. The
+          // iPhone recorder's Blob is MP4, but backend ingestion currently
+          // expects WebM-labelled objects and must be migrated separately.
           contentType: 'audio/webm',
           metadata: {
             timestamp: timestamp.toString(),
@@ -468,53 +536,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         }
 
         clearRecordingInterval();
-        const wasRotating = isRotatingRef.current;
-        isRotatingRef.current = false;
-        isFinalizingRef.current = true;
         setIsRecording(false);
         isRecordingRef.current = false;
         setIsPaused(false);
         isPausedRef.current = false;
         setIsPreparingTranscript(true);
         setIsTranscriptCompleted(false);
-
-        // A stop can land during the asynchronous four-minute rotation. The
-        // rotation's stop event already contains the complete media up to the
-        // user's stop request, so let that event finalize instead of calling
-        // stop() a second time.
-        if (wasRotating) {
-          return;
-        }
-
-        const stopAfterResume = () => {
-          if (recorder.state === "recording") {
-            recorder.stop();
-          } else if (recorder.state === "inactive") {
-            // A recorder that became inactive without a stop event still
-            // needs the same cleanup path, but has no final bytes to emit.
-            recorder.stream.getTracks().forEach(track => track.stop());
-            if (mediaRecorderRef.current === recorder) {
-              mediaRecorderRef.current = null;
-            }
-            isFinalizingRef.current = false;
-          }
-        };
-
-        if (recorder.state === "paused") {
-          const previousOnResume = recorder.onresume;
-          recorder.onresume = (...args) => {
-            if (typeof previousOnResume === "function") {
-              previousOnResume(...args);
-            }
-            stopAfterResume();
-          };
-          recorder.resume();
-          // Some WebKit versions update state synchronously but dispatch the
-          // event later; cover both behaviors without stopping while paused.
-          stopAfterResume();
-        } else {
-          stopAfterResume();
-        }
+        requestIOSStop('final');
         return;
       }
 
@@ -536,6 +564,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const discardRecording = () => {
     // Set flag to prevent any data processing
     isDiscardingRef.current = true;
+    recordingGenerationRef.current += 1;
+    clearRecordingInterval();
     
     // Immediately stop recording and clean up without processing
     if (mediaRecorderRef.current) {
@@ -544,15 +574,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       setIsPaused(false);
       isPausedRef.current = false;
       
-      // Stop the media recorder
-      mediaRecorderRef.current.stop();
-      
-      // Clear the recording interval
-      clearRecordingInterval();
+      const recorder = mediaRecorderRef.current;
+      // ondataavailable/onstop observe the cancelled generation and cannot
+      // upload or restart. Tracks can be released immediately on discard.
+      if (recorder.state !== 'inactive') {
+        recorder.stop();
+      }
       
       // Stop all media tracks
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      mediaRecorderRef.current = null;
+      stopTracksAndReleaseRecorder(recorder);
     }
     
     // Clear all upload queues and processing flags
@@ -561,6 +591,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     finalChunkRef.current = null;
     isFinalizingRef.current = false;
     isRotatingRef.current = false;
+    iosStopRef.current = null;
     
     // Reset all states immediately
     setIsPreparingTranscript(false);
@@ -585,10 +616,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       subscriptionRef.current = null;
     }
     
-    // Reset the discarding flag after cleanup
-    setTimeout(() => {
-      isDiscardingRef.current = false;
-    }, 100);
   };
 
   const requestMicrophonePermission = async () => {
@@ -657,58 +684,67 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
+      const recorder = mediaRecorderRef.current;
+      const recorderIdentity = recordingIdentityRef.current;
+      const recorderGeneration = recordingGenerationRef.current;
 
       if (isIOS) {
-        const recorder = mediaRecorderRef.current;
         recorder.onstop = () => {
-          if (isDiscardingRef.current) {
+          const stop = iosStopRef.current;
+          if (!stop || stop.recorder !== recorder) {
             return;
           }
+          iosStopRef.current = null;
 
-          if (isFinalizingRef.current) {
-            // dataavailable is delivered before stop. Only now is it safe to
-            // stop the microphone tracks and release the recorder reference.
-            recorder.stream.getTracks().forEach(track => track.stop());
-            if (mediaRecorderRef.current === recorder) {
-              mediaRecorderRef.current = null;
-            }
+          if (isCancelled(stop.generation)) {
+            stopTracksAndReleaseRecorder(recorder);
             isFinalizingRef.current = false;
             return;
           }
 
-          if (isRotatingRef.current && isRecordingRef.current && !isPausedRef.current) {
+          if (stop.intent === 'final') {
+            // WebKit guarantees dataavailable before onstop. The final event
+            // was classified from this stop transaction, then tracks are safe
+            // to release only after this completed lifecycle.
+            stopTracksAndReleaseRecorder(recorder);
+            isFinalizingRef.current = false;
+            isRotatingRef.current = false;
+            return;
+          }
+
+          if (stop.intent === 'rotation' && isRecordingRef.current && !isPausedRef.current) {
             isRotatingRef.current = false;
             startMediaRecorder(recorder);
           }
         };
       }
   
-      mediaRecorderRef.current.ondataavailable = async (event) => {
-        if (isDiscardingRef.current) {
+      recorder.ondataavailable = (event) => {
+        const stop = isIOS ? iosStopRef.current : null;
+        const identity = recorderIdentity;
+        const generation = recorderGeneration;
+        // Capture the stop intent synchronously. Do not infer it from React
+        // state or finalization refs after WebKit has scheduled this event.
+        const stopIntent = stop && stop.recorder === recorder
+          ? stop.intent
+          : null;
+        if (stop && stop.recorder === recorder) {
+          stop.dataHandled = true;
+        }
+        if (isCancelled(generation) || !identity || event.data.size === 0) {
           return;
         }
-        
-        // The explicit finalization flag is required on iOS because the
-        // final dataavailable event is asynchronous relative to stop().
-        if (event.data.size > 0 && (isFinalizingRef.current || !isRecordingRef.current)) {
-          // This is the final chunk when recording stops
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const finalPath = `protected/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Queue the final chunk instead of uploading directly
-          queueUpload(event.data, finalPath);
-        } else if (event.data.size > 0) {
-          // This is an intermediate chunk during recording
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current; // Conversation identifier
-          const pathstamp = pathStampRef.current; // Unique path identifier
-          const chunkPath = `protected/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          
-          // Queue the chunk instead of uploading directly
-          queueUpload(event.data, chunkPath);
+
+        const isFinal = isIOS ? stopIntent === 'final' : !isRecordingRef.current;
+        if (isFinal && finalChunkQueuedRef.current) {
+          return;
         }
+        const kind = isFinal ? 'final' : 'chunk';
+        const filePath = `protected/${identity.userId}/${identity.timestamp}_recording_${kind}_${identity.pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+        if (isFinal) {
+          finalChunkQueuedRef.current = true;
+        }
+        queueUpload(event.data, filePath, identity, generation);
       };
     } catch (error) {
       console.error('[RecordingManager] Error accessing microphone:', error);
@@ -734,16 +770,30 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const startRecording = async () => {
     try {
+      isDiscardingRef.current = false;
+      isUnmountedRef.current = false;
+      recordingGenerationRef.current += 1;
       // Reset the chunk counter when starting a new recording
       lastUploadedChunkRef.current = 0;
+      finalChunkQueuedRef.current = false;
       isFinalizingRef.current = false;
       isRotatingRef.current = false;
+      iosStopRef.current = null;
       
       // Set the conversation timestamp (identifies the conversation)
       timeStampRef.current = Date.now();
       
       // Set a unique path identifier (for ensuring unique file paths)
       pathStampRef.current = Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+      const userId = await getUserId();
+      if (!userId) {
+        throw new Error('User not authenticated for recording');
+      }
+      recordingIdentityRef.current = {
+        userId,
+        timestamp: timeStampRef.current,
+        pathstamp: pathStampRef.current,
+      };
       
       await setupRecorder();
       if (mediaRecorderRef.current) {
@@ -755,11 +805,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         // Android fix: Use timeslice parameter to ensure proper audio duration metadata
         // Without timeslice, Android produces blobs with size > 0 but duration = 0
         // Using 240-second timeslice to match chunk cycle and enable proper transcription
-        if (isAndroid) {
-          mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
-        } else {
-          mediaRecorderRef.current.start(); // No timeslice for other platforms
-        }
+        startMediaRecorder(mediaRecorderRef.current);
         
         if (noSleepRef.current) {
           noSleepRef.current.enable();
@@ -816,7 +862,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   useEffect(() => {
     return () => {
-      stopRecording();
+      // Unmount is cancellation, never a request to finalize and upload PHI.
+      isUnmountedRef.current = true;
+      discardRecording();
       // Clean up subscription when component unmounts
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();

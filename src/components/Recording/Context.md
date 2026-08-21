@@ -84,18 +84,18 @@ The process follows a specific sequence of events:
     -   Starts the `mediaRecorder`, which begins capturing audio.
 
 3.  **Audio Chunking & Uploading (`mediaRecorder.ondataavailable`)**:
-    -   The `MediaRecorder` is configured to emit audio data every few seconds. This `ondataavailable` event handler captures the audio as a `Blob`.
+    -   Four-minute rotation is timer-driven. On iPhone/iPad, WebKit's delayed `dataavailable` event is handled before `onstop` can start the next segment; regular chunks are queued before the one final chunk.
     -   Each blob is added to an `uploadQueueRef` array.
     -   The `processUploadQueue` function is called, which works through the queue sequentially to prevent race conditions.
 
 4.  **S3 Upload & SQS Notification (`uploadS3`)**:
     -   For each audio chunk in the queue, `uploadS3` performs two critical actions:
-        1.  **Upload to S3**: It uploads the audio blob to an S3 bucket using `uploadData` from Amplify Storage. The file path is unique for each chunk.
+        1.  **Upload to S3**: It uploads the audio blob to an S3 bucket using the established backend contract: `.webm` object paths and `audio/webm` content type, including for the iPhone recorder's MP4 Blob. Any backend format migration is a separate coordinated change.
         2.  **Notify SQS**: It sends a message to the `AudioTranscriptionQueue.fifo` SQS queue. This message, created with `SendMessageCommand`, includes the `userId`, the conversation `timestamp`, the `path` to the audio file in S3, and a flag `isFinalAudio` to indicate if it's the last chunk. This message triggers the backend transcription service.
 
 5.  **Stopping (`stopRecording`)**:
     -   When the user clicks "Stop", this function is called.
-    -   It stops the `mediaRecorder`, which triggers one final `ondataavailable` event for the remaining audio.
+    -   It stops the `mediaRecorder`, which triggers one final `ondataavailable` event for the remaining audio. On iPhone, the microphone tracks are released only after the subsequent `onstop` event; stopping while paused first resumes and flushes without a delay.
     -   The state is updated to `setIsPreparingTranscript(true)`, changing the UI to a loading state.
     -   Crucially, it ensures the final audio chunk is marked with `_final_` in its filename, signaling to the backend that the recording session is complete.
 

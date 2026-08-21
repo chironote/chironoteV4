@@ -1,5 +1,5 @@
 import React, { act } from 'react';
-import { render, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import RecordingManager from './RecordingManager';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
@@ -108,12 +108,15 @@ class FakeMediaRecorder {
     this.stopCalls += 1;
     this.state = 'inactive';
     const blob = this.blobs.shift() || new Blob(['final-media'], { type: 'video/mp4' });
-    this.ondataavailable({ data: blob });
-    Promise.resolve().then(() => {
+    // Model WKWebView: neither final event is synchronous with stop().
+    setTimeout(() => {
+      this.ondataavailable({ data: blob });
+    }, 0);
+    setTimeout(() => {
       if (this.onstop) {
         this.onstop();
       }
-    });
+    }, 1);
   }
 }
 
@@ -158,15 +161,29 @@ describe('RecordingManager iPhone lifecycle', () => {
     jest.useRealTimers();
   });
 
-  it('serializes the four-minute rotation and uploads a complete final MP4 after pause/resume', async () => {
+  const flushWebKitEvents = async () => {
+    await act(async () => {
+      jest.runOnlyPendingTimers();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+  };
+
+  const startManager = async () => {
     const managerRef = { current: null };
-    render(<RecordingHarness managerRef={managerRef} />);
+    const view = render(<RecordingHarness managerRef={managerRef} />);
 
     await act(async () => {
       await managerRef.current.startRecording();
     });
+    return { managerRef, view, recorder: FakeMediaRecorder.instances[0] };
+  };
 
-    const recorder = FakeMediaRecorder.instances[0];
+  it('serializes pause/resume rotation while preserving the WebM upload contract', async () => {
+    const { managerRef, recorder } = await startManager();
+
     expect(recorder.options).toEqual({ mimeType: 'video/mp4' });
 
     act(() => managerRef.current.pauseRecording());
@@ -177,9 +194,8 @@ describe('RecordingManager iPhone lifecycle', () => {
     expect(recorder.stopCalls).toBe(1);
     expect(recorder.startCalls).toHaveLength(1);
 
-    await act(async () => {
-      await Promise.resolve();
-    });
+    // The next segment is not started until delayed dataavailable and onstop.
+    await flushWebKitEvents();
     expect(recorder.startCalls).toHaveLength(2);
 
     await act(async () => {
@@ -187,15 +203,66 @@ describe('RecordingManager iPhone lifecycle', () => {
     });
 
     expect(recorder.stopCalls).toBe(2);
-    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+    expect(recorder.stream.track.stop).not.toHaveBeenCalled();
+    await flushWebKitEvents();
 
-    await waitFor(() => {
-      const finalUpload = uploadData.mock.calls.find(([request]) => request.path.includes('_final_'));
-      expect(finalUpload).toBeDefined();
-    });
-    const finalUpload = uploadData.mock.calls.find(([request]) => request.path.includes('_final_'));
-    expect(finalUpload[0].data.size).toBe(new Blob(['final-media']).size);
-    expect(finalUpload[0].data.type).toBe('video/mp4');
-    jest.clearAllTimers();
+    expect(uploadData).toHaveBeenCalledTimes(2);
+    const [rotationUpload, finalUpload] = uploadData.mock.calls.map(([request]) => request);
+    expect(rotationUpload.path).toContain('_chunk_');
+    expect(finalUpload.path).toContain('_final_');
+    expect(rotationUpload.path).toMatch(/\.webm$/);
+    expect(finalUpload.path).toMatch(/\.webm$/);
+    expect(rotationUpload.options.contentType).toBe('audio/webm');
+    expect(finalUpload.options.contentType).toBe('audio/webm');
+    expect(finalUpload.data.size).toBe(new Blob(['final-media']).size);
+    expect(finalUpload.data.type).toBe('video/mp4');
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('flushes a paused final stop once, without waiting or double cleanup', async () => {
+    const { managerRef, recorder } = await startManager();
+    act(() => managerRef.current.pauseRecording());
+    act(() => managerRef.current.stopRecording());
+    act(() => managerRef.current.stopRecording());
+    expect(recorder.stopCalls).toBe(1);
+    expect(recorder.state).toBe('inactive');
+    expect(uploadData).not.toHaveBeenCalled();
+
+    await flushWebKitEvents();
+    const uploads = uploadData.mock.calls.map(([request]) => request);
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].path).toContain('_final_');
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('turns a user stop during an in-flight rotation into one final upload', async () => {
+    const { managerRef, recorder } = await startManager();
+    act(() => jest.advanceTimersByTime(240000));
+    expect(recorder.stopCalls).toBe(1);
+    act(() => managerRef.current.stopRecording());
+    await flushWebKitEvents();
+
+    const uploads = uploadData.mock.calls.map(([request]) => request);
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].path).toContain('_final_');
+    expect(recorder.startCalls).toHaveLength(1);
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not upload final media or restart after discard or unmount', async () => {
+    const discarded = await startManager();
+    act(() => jest.advanceTimersByTime(240000));
+    act(() => discarded.managerRef.current.discardRecording());
+    await flushWebKitEvents();
+    expect(uploadData).not.toHaveBeenCalled();
+    expect(discarded.recorder.startCalls).toHaveLength(1);
+
+    jest.clearAllMocks();
+    const unmounted = await startManager();
+    act(() => unmounted.managerRef.current.stopRecording());
+    act(() => unmounted.view.unmount());
+    await flushWebKitEvents();
+    expect(uploadData).not.toHaveBeenCalled();
+    expect(unmounted.recorder.startCalls).toHaveLength(1);
   });
 });
