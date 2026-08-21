@@ -142,13 +142,14 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
   };
 
   return (
-    <div className={`edit-panel ${showEditPanel ? 'visible' : ''}`}>
-      <h2 className="panel-header" style={{width: '90%'}}>Smart Editor</h2>
+    <section className={`edit-panel ${showEditPanel ? 'visible' : ''}`} aria-label="Smart Editor">
+      <h2 className="panel-header">Smart Editor</h2>
       <div className="edit-panel-content">
         <div className="editor-toolbar">
           <button 
             className="toolbar-button primary-button"
             onClick={() => editStream(editContent)}
+            aria-label="Apply editing instructions"
           >
             <span className="material-symbols-rounded">edit</span>
             <span className="button-text">Apply Changes</span>
@@ -158,6 +159,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
             className="toolbar-button delete-button"
             onClick={() => setEditContent('')}
             title="Clear text"
+            aria-label="Clear editing instructions"
           >
             <span className="material-symbols-rounded">delete</span>
           </button>
@@ -171,6 +173,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
           onDragOver={(e) => e.preventDefault()}
           onDragLeave={(e) => e.preventDefault()}
           onDrop={(e) => e.preventDefault()}
+          aria-label="Editing instructions"
         />
       </div>
       {showCreditPopup && (
@@ -179,7 +182,7 @@ const EditPanel = ({ showEditPanel, editContent, setEditContent, clipboardConten
           subscription={userSubscription}
         />
       )}
-    </div>
+    </section>
   )
 }
 

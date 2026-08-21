@@ -7,7 +7,7 @@
 /* Main content area */
 .app-main {
   display: flex;
-  height: calc(100vh - 70px);
+  height: calc(100vh - 64px);
   max-height: 100vh;
   overflow-y: hidden;
   padding: 20px;
@@ -146,13 +146,14 @@
 
 .panel-header {
   font-size: 20px;
-  font-weight: 500;
-  color: #333;
+  font-weight: 600;
+  color: var(--color-text);
   margin: 0;
-  padding: 16px;
-  background-color: white;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 17px 20px 15px;
+  background-color: var(--pure-white);
+  border-bottom: 1px solid var(--color-divider);
   text-align: center;
+  letter-spacing: -0.015em;
 }
 
 .left-panel .panel-header {
@@ -173,6 +174,10 @@
   transition: margin-left 0.3s ease, flex 0.3s;
   height: calc(100vh - 110px);
   overflow-y: hidden;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  background: var(--pure-white);
+  box-shadow: var(--shadow-panel);
 }
 
 @media (min-width: 769px) {
@@ -196,16 +201,18 @@
   align-items: center;
   overflow: hidden;
   background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-panel);
   transition: opacity 0.1s, flex 0.3s, width 0.3s;
 }
 
 .edit-panel.visible {
-  flex: 0.5;
-  width: auto;
+  flex: 0 0 clamp(280px, 32vw, 420px);
+  width: clamp(280px, 32vw, 420px);
+  min-width: 280px;
   opacity: 1;
-  margin-left: 30px;
+  margin-left: 16px;
 }
 
 .edit-panel-content {
@@ -213,35 +220,36 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  padding: 0px 4px 0px 4px;
+  min-height: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
 .edit-textarea {
-  width: calc(100% - 20px);
+  width: calc(100% - 24px);
   height: 100%;
-  margin: 10px 10px 10px 10px;
-  padding: 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  margin: 12px;
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   resize: none;
   font-family: inherit;
   font-size: 14px;
   line-height: 1.6;
-  color: #333;
-  background-color: white;
-  transition: border-color 0.2s ease;
+  color: var(--color-text);
+  background-color: var(--pure-white);
+  transition: border-color var(--motion-standard) ease, box-shadow var(--motion-standard) ease, background-color var(--motion-standard) ease;
   box-sizing: border-box;
   overflow: auto;
 }
 
 .edit-textarea::placeholder{
-  color: #666666;
+  color: var(--color-text-muted);
 }
 .edit-textarea:focus {
   outline: none;
-  border-color: #c0c0c0;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  border-color: var(--medium-green);
+  box-shadow: 0 0 0 3px rgba(46, 105, 48, 0.12);
 }
 
 .edit-panel-buttons {
@@ -308,16 +316,23 @@
 /* Editor toolbar specific styles */
 .editor-toolbar {
   justify-content: space-between;
-  padding-left: 4px;
+  min-height: 52px;
+  padding: 6px 12px;
+  background: var(--color-surface-soft);
+  border-bottom-color: var(--color-divider);
 }
 
 .clipboard-toolbar {
   justify-content: flex-start;
+  min-height: 52px;
+  padding: 6px 12px;
+  background: var(--color-surface-soft);
+  border-bottom-color: var(--color-divider);
 }
 
 .toolbar-group {
   display: flex;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
   padding: 0 4px;
 }
@@ -332,13 +347,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 32px;
-  padding: 6px 12px;
+  min-width: 40px;
+  height: 40px;
+  padding: 8px 12px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease, color var(--motion-fast) ease;
   gap: 6px;
 }
 
@@ -347,13 +363,18 @@
 }
 
 .toolbar-button:hover {
-  background-color: #e9ecef;
-  border-color: #dee2e6;
+  background-color: var(--color-hover);
+  border-color: var(--color-border);
 }
 
 .toolbar-button.primary-button {
   background-color: var(--medium-green);
   color: white;
+  white-space: nowrap;
+}
+
+.editor-toolbar .toolbar-group {
+  padding: 0;
 }
 
 .toolbar-button.primary-button:hover {
@@ -367,8 +388,8 @@
 }
 
 .toolbar-button.active {
-  background-color: #e9ecef;
-  border-color: #ced4da;
+  background-color: var(--color-pressed);
+  border-color: var(--color-border-strong);
 }
 
 .toolbar-icon {
@@ -380,7 +401,7 @@
 }
 
 .material-symbols-rounded.toolbar-icon {
-  font-size: 20px;
+  font-size: 21px;
   width: auto;
   height: auto;
 }
@@ -395,8 +416,8 @@
 }
 
 .toolbar-button.active {
-  background-color: #e9ecef;
-  border-color: #ced4da;
+  background-color: var(--color-pressed);
+  border-color: var(--color-border-strong);
 }
 
 /* Copy message tooltip */
@@ -439,10 +460,10 @@
 
 /* New Note Button Styles */
 .toolbar-button.new-note-button {
-  background: linear-gradient(135deg, var(--medium-green) 0%, var(--dark-green) 35%, var(--dark-green) 100%) !important;
+  background: var(--medium-green) !important;
   color: white !important;
   font-weight: 600;
-  padding: 6px 16px;
+  padding: 8px 16px;
   min-width: 120px;
   transition: none !important;
   -webkit-transition: none !important;
@@ -461,8 +482,8 @@
 }
 
 .plus-icon {
-  font-size: 20px;
-  font-weight: bold;
+  font-size: 21px;
+  font-weight: 600;
   margin-right: 2px;
 }
 
@@ -472,9 +493,9 @@
 
 .toolbar-divider {
   width: 1px;
-  height: 24px;
-  background-color: #dee2e6;
-  margin: 0 8px;
+  height: 20px;
+  background-color: var(--color-divider);
+  margin: 0 4px;
 }
 
 /* Clipboard and edit panel div */
@@ -484,8 +505,8 @@
   height: 100%;
   padding: 0;
   background-color: white;
-  border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 0 0 12px 12px;
+  box-shadow: none;
 }
 
 .clipboard-textarea-container {
@@ -497,19 +518,20 @@
 }
 
 .clipboard-textarea {
-  width: 96%;
+  width: calc(100% - 20px);
   min-width: 200px; /* Minimum width before horizontal scroll appears */
   height: 100%;
   max-height: 100%;
-  padding: 16px;
-  margin: 10px 10px 10px 0;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
+  padding: 20px;
+  margin: 12px 12px 12px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
   resize: none;
   font-size: 14px;
   line-height: 1.6;
-  color: #333;
-  background-color: white;
+  color: var(--color-text);
+  background-color: var(--pure-white);
+  transition: border-color var(--motion-standard) ease, box-shadow var(--motion-standard) ease, background-color var(--motion-standard) ease;
   scrollbar-width: thin;
   scrollbar-color: var(--medium-green) var(--off-white);
   box-sizing: border-box; /* Ensure padding is included in width calculation */
@@ -518,12 +540,12 @@
 
 .clipboard-textarea:focus {
   outline: none;
-  border-color: #c0c0c0;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+  border-color: var(--medium-green);
+  box-shadow: 0 0 0 3px rgba(46, 105, 48, 0.12);
 }
 
 .clipboard-textarea::placeholder {
-  color: #666666;
+  color: var(--color-text-muted);
   font-family: inherit;
   font-size: 14px;
 }
@@ -856,16 +878,16 @@
   .app-main {
     display: flex;
     padding: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     position: relative;
     overflow: hidden;
   }
 
   .left-panel {
     position: fixed;
-    top: 70px;
+    top: 64px;
     left: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     width: 85%;
     max-width: 85%;
     background-color: white;
@@ -905,10 +927,10 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 64px;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 999;
     opacity: 0;
@@ -927,7 +949,7 @@
     margin-top: -11px;
     width: 100%;
     transition: margin-left 0.3s ease;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     overflow-y: auto;
   }
 
@@ -1053,7 +1075,7 @@
 
 /* Navbar animation */
 .navbar {
-  animation: fadeInFromTop 0.5s ease-out;
+  animation: none;
 }
 
 /* Keyframe animations for loading effects */
@@ -1320,9 +1342,9 @@
 @media (max-width: 768px) {
   .left-panel {
     position: fixed;
-    top: 70px;
+    top: 64px;
     left: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     width: 85%;
     max-width: 85%;
     background-color: white;
@@ -1362,10 +1384,10 @@
 
   .mobile-toggle-overlay {
     position: fixed;
-    top: 70px;
+    top: 64px;
     right: 0;
     width: 0;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     background-color: rgba(128, 128, 128, 0.5);
     z-index: 99;
     opacity: 0;
@@ -1384,7 +1406,7 @@
     margin-top: -11px;
     width: 100%;
     transition: margin-left 0.3s ease;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 64px);
     overflow-y: auto;
   }
 

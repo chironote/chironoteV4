@@ -200,6 +200,7 @@ const Clipboard = ({
               style={{ top: `${position}px` }}
               onClick={() => copySection(section)}
               disabled={isDisabled || isTranscribing}
+              aria-label={`Copy ${section} section`}
             >
               {section}
             </button>
@@ -218,6 +219,7 @@ const Clipboard = ({
           onDrop={handleDrop}
           disabled={isTranscribing || isWebSocketConnecting}
           readOnly={isTranscribing || isWebSocketConnecting}
+          aria-label="Clipboard note text"
         />
       </div>
       <style jsx>{`
