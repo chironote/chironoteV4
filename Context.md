@@ -260,6 +260,13 @@ CapacitorApp.addListener('appStateChange', ({ isActive }) => {
 - **Background**: Stops chunking, lets MediaRecorder accumulate audio in a single blob
 - **Return to Foreground**: Saves the background recording chunk, resumes normal chunking
 
+**iPhone lifecycle safety:** On iPhone/iPad, a four-minute rotation waits for the
+recorder's `stop` event before starting the next MP4 segment. Finalization also
+waits for the final `dataavailable`/`stop` sequence before stopping microphone
+tracks, and a stop requested while paused resumes only long enough to flush the
+recorder. This prevents a rotation or pause/resume boundary from producing an
+incomplete final chunk.
+
 **Trade-offs:**
 - ✅ **Prevents data loss** - No empty transcripts from failed chunk transitions
 - ✅ **iOS compatibility** - Works with existing `UIBackgroundModes` audio configuration

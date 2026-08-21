@@ -33,10 +33,70 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
   const isAppInBackgroundRef = useRef(false); // Track if app is in background
+  const isFinalizingRef = useRef(false); // iOS final stop is complete only after dataavailable/stop
+  const isRotatingRef = useRef(false); // iOS chunk rotation waits for the stop event before restart
   // Android fix: Detect Android devices for timeslice parameter
   // Recent Android WebView updates cause MediaRecorder to produce audio blobs with duration=0 without timeslice
   // Using 240-second (4-minute) timeslice to match chunk cycle and enable proper transcription
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
+  const isIOS = useRef(/iphone|ipad/i.test(navigator.userAgent)).current;
+
+  const clearRecordingInterval = () => {
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+  };
+
+  const startMediaRecorder = (recorder) => {
+    if (!recorder || recorder.state !== "inactive") {
+      return false;
+    }
+
+    // Keep the Android timeslice behavior unchanged. iOS intentionally uses
+    // the existing no-timeslice MP4 recording path.
+    if (isAndroid) {
+      recorder.start(240000);
+    } else {
+      recorder.start();
+    }
+    return true;
+  };
+
+  const rotateIOSRecordingChunk = () => {
+    const recorder = mediaRecorderRef.current;
+
+    if (!isIOS || isFinalizingRef.current || !isRecordingRef.current ||
+        isPausedRef.current || !recorder || recorder.state !== "recording") {
+      return;
+    }
+
+    // Safari/WKWebView delivers dataavailable asynchronously after stop().
+    // Do not call start() until its stop event has fired; otherwise the next
+    // four-minute segment can race the previous segment's final media bytes.
+    isRotatingRef.current = true;
+    recorder.stop();
+  };
+
+  const scheduleRecordingInterval = () => {
+    clearRecordingInterval();
+    recordingIntervalRef.current = setInterval(() => {
+      if (isIOS) {
+        rotateIOSRecordingChunk();
+        return;
+      }
+
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stop();
+        // Preserve the existing Android/non-iOS rotation behavior.
+        if (isAndroid) {
+          mediaRecorderRef.current.start(240000);
+        } else {
+          mediaRecorderRef.current.start();
+        }
+      }
+    }, 240000);
+  };
 
   useEffect(() => {
     isRecordingRef.current = isRecording;
@@ -86,27 +146,20 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           // First, trigger a chunk save for the background recording period
           if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             console.log('[RecordingManager] Saving background recording chunk...');
-            mediaRecorderRef.current.stop();
-            // Android fix: Apply conditional timeslice (240 seconds)
-            if (isAndroid) {
-              mediaRecorderRef.current.start(240000);
+            if (isIOS) {
+              rotateIOSRecordingChunk();
             } else {
-              mediaRecorderRef.current.start();
-            }
-          }
-          
-          // Restart the chunking interval
-          recordingIntervalRef.current = setInterval(() => {
-            if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
               mediaRecorderRef.current.stop();
-              // Android fix: Apply conditional timeslice (240 seconds)
               if (isAndroid) {
                 mediaRecorderRef.current.start(240000);
               } else {
                 mediaRecorderRef.current.start();
               }
             }
-          }, 240000); // 4 minutes
+          }
+
+          // Restart the chunking interval
+          scheduleRecordingInterval();
           
           console.log('[RecordingManager] ✓ Chunking interval restarted');
         }
@@ -407,15 +460,73 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
 
   const stopRecording = () => {
     if (mediaRecorderRef.current) {
+      const recorder = mediaRecorderRef.current;
+
+      if (isIOS) {
+        if (isFinalizingRef.current) {
+          return;
+        }
+
+        clearRecordingInterval();
+        const wasRotating = isRotatingRef.current;
+        isRotatingRef.current = false;
+        isFinalizingRef.current = true;
+        setIsRecording(false);
+        isRecordingRef.current = false;
+        setIsPaused(false);
+        isPausedRef.current = false;
+        setIsPreparingTranscript(true);
+        setIsTranscriptCompleted(false);
+
+        // A stop can land during the asynchronous four-minute rotation. The
+        // rotation's stop event already contains the complete media up to the
+        // user's stop request, so let that event finalize instead of calling
+        // stop() a second time.
+        if (wasRotating) {
+          return;
+        }
+
+        const stopAfterResume = () => {
+          if (recorder.state === "recording") {
+            recorder.stop();
+          } else if (recorder.state === "inactive") {
+            // A recorder that became inactive without a stop event still
+            // needs the same cleanup path, but has no final bytes to emit.
+            recorder.stream.getTracks().forEach(track => track.stop());
+            if (mediaRecorderRef.current === recorder) {
+              mediaRecorderRef.current = null;
+            }
+            isFinalizingRef.current = false;
+          }
+        };
+
+        if (recorder.state === "paused") {
+          const previousOnResume = recorder.onresume;
+          recorder.onresume = (...args) => {
+            if (typeof previousOnResume === "function") {
+              previousOnResume(...args);
+            }
+            stopAfterResume();
+          };
+          recorder.resume();
+          // Some WebKit versions update state synchronously but dispatch the
+          // event later; cover both behaviors without stopping while paused.
+          stopAfterResume();
+        } else {
+          stopAfterResume();
+        }
+        return;
+      }
+
       setIsRecording(false);
       isRecordingRef.current = false;
       setIsPaused(false);
       isPausedRef.current = false;
-      mediaRecorderRef.current.stop();
+      recorder.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
       }
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      recorder.stream.getTracks().forEach(track => track.stop());
       mediaRecorderRef.current = null;
       setIsPreparingTranscript(true);
       setIsTranscriptCompleted(false);
@@ -437,10 +548,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       mediaRecorderRef.current.stop();
       
       // Clear the recording interval
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
+      clearRecordingInterval();
       
       // Stop all media tracks
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
@@ -451,6 +559,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     uploadQueueRef.current = [];
     isProcessingUploadsRef.current = false;
     finalChunkRef.current = null;
+    isFinalizingRef.current = false;
+    isRotatingRef.current = false;
     
     // Reset all states immediately
     setIsPreparingTranscript(false);
@@ -547,13 +657,40 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
+
+      if (isIOS) {
+        const recorder = mediaRecorderRef.current;
+        recorder.onstop = () => {
+          if (isDiscardingRef.current) {
+            return;
+          }
+
+          if (isFinalizingRef.current) {
+            // dataavailable is delivered before stop. Only now is it safe to
+            // stop the microphone tracks and release the recorder reference.
+            recorder.stream.getTracks().forEach(track => track.stop());
+            if (mediaRecorderRef.current === recorder) {
+              mediaRecorderRef.current = null;
+            }
+            isFinalizingRef.current = false;
+            return;
+          }
+
+          if (isRotatingRef.current && isRecordingRef.current && !isPausedRef.current) {
+            isRotatingRef.current = false;
+            startMediaRecorder(recorder);
+          }
+        };
+      }
   
       mediaRecorderRef.current.ondataavailable = async (event) => {
         if (isDiscardingRef.current) {
           return;
         }
         
-        if (event.data.size > 0 && !isRecordingRef.current) {
+        // The explicit finalization flag is required on iOS because the
+        // final dataavailable event is asynchronous relative to stop().
+        if (event.data.size > 0 && (isFinalizingRef.current || !isRecordingRef.current)) {
           // This is the final chunk when recording stops
           const userId = await getUserId();
           const timestamp = timeStampRef.current; // Conversation identifier
@@ -599,6 +736,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     try {
       // Reset the chunk counter when starting a new recording
       lastUploadedChunkRef.current = 0;
+      isFinalizingRef.current = false;
+      isRotatingRef.current = false;
       
       // Set the conversation timestamp (identifies the conversation)
       timeStampRef.current = Date.now();
@@ -626,17 +765,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
           noSleepRef.current.enable();
         }
 
-        recordingIntervalRef.current = setInterval(() => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-            mediaRecorderRef.current.stop();
-            // Android fix: Apply same conditional timeslice when restarting (240 seconds)
-            if (isAndroid) {
-              mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
-            } else {
-              mediaRecorderRef.current.start(); // No timeslice for other platforms
-            }
-          }
-        }, 240000); // 240 seconds
+        scheduleRecordingInterval();
       }
     } catch (error) {
       // Error already handled in setupRecorder with user-friendly message
@@ -648,33 +777,22 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const pauseRecording = () => {
-    if (mediaRecorderRef.current && isRecordingRef.current) {
+    if (mediaRecorderRef.current && isRecordingRef.current &&
+        mediaRecorderRef.current.state === "recording" && !isRotatingRef.current) {
       mediaRecorderRef.current.pause();
       setIsPaused(true);
       isPausedRef.current = true;
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-      }
+      clearRecordingInterval();
     }
   };
 
   const resumeRecording = () => {
-    if (mediaRecorderRef.current && isPausedRef.current) {
+    if (mediaRecorderRef.current && isPausedRef.current &&
+        mediaRecorderRef.current.state === "paused") {
       mediaRecorderRef.current.resume();
       setIsPaused(false);
       isPausedRef.current = false;
-
-      recordingIntervalRef.current = setInterval(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-          mediaRecorderRef.current.stop();
-          // Android fix: Apply conditional timeslice when resuming (240 seconds)
-          if (isAndroid) {
-            mediaRecorderRef.current.start(240000); // 240-second (4-minute) timeslice for Android
-          } else {
-            mediaRecorderRef.current.start(); // No timeslice for other platforms
-          }
-        }
-      }, 240000);
+      scheduleRecordingInterval();
     }
   };
 
