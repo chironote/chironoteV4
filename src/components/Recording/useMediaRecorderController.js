@@ -5,6 +5,12 @@ import {
 } from './recordingConstants';
 import { getUserId } from './recordingAuth';
 import { addNativeAppStateListener } from '../../services/nativePlatform';
+import {
+  classifyAudioChunk,
+  getFinalizationAction,
+  shouldRestartRecorder,
+  shouldUseExternalChunkRotation
+} from './recordingLifecycle';
 
 function useMediaRecorderController({
   timeStampRef,
@@ -29,11 +35,17 @@ function useMediaRecorderController({
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const isFinalizingRecordingRef = useRef(false);
+  const hasQueuedFinalChunkRef = useRef(false);
+  const dataEventQueueRef = useRef(Promise.resolve());
   const streamRef = useRef(null);
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
   const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)).current;
 
   const startChunkInterval = () => {
+    if (!shouldUseExternalChunkRotation(isAndroid)) {
+      return;
+    }
+
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
     }
@@ -45,6 +57,10 @@ function useMediaRecorderController({
   };
 
   useEffect(() => {
+    if (!shouldUseExternalChunkRotation(isAndroid)) {
+      return undefined;
+    }
+
     let listenerHandle = null;
     let disposed = false;
 
@@ -87,7 +103,7 @@ function useMediaRecorderController({
       disposed = true;
       listenerHandle?.remove();
     };
-  }, []);
+  }, [isAndroid]);
 
   const startRecorder = () => {
     if (isAndroid) {
@@ -130,27 +146,44 @@ function useMediaRecorderController({
 
       mediaRecorderRef.current = new MediaRecorder(stream, options);
 
-      mediaRecorderRef.current.ondataavailable = async (event) => {
+      const handleDataAvailable = async (event) => {
         if (isDiscardingRef.current) {
           return;
         }
 
-        const isRecorderInactive = event.target?.state === 'inactive';
-        if (event.data.size >= MIN_AUDIO_BLOB_SIZE && isFinalizingRecordingRef.current && isRecorderInactive) {
+        const chunkType = classifyAudioChunk({
+          blobSize: event.data.size,
+          minimumBlobSize: MIN_AUDIO_BLOB_SIZE,
+          isDiscarding: isDiscardingRef.current,
+          isFinalizing: isFinalizingRecordingRef.current,
+          isRecorderInactive: event.target?.state === 'inactive',
+          hasQueuedFinalChunk: hasQueuedFinalChunkRef.current
+        });
+
+        if (chunkType === 'final') {
+          hasQueuedFinalChunkRef.current = true;
           const userId = await getUserId();
           const timestamp = timeStampRef.current;
           const pathstamp = pathStampRef.current;
           const finalPath = `protected/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           queueUpload(event.data, finalPath);
-        } else if (event.data.size >= MIN_AUDIO_BLOB_SIZE) {
+        } else if (chunkType === 'regular') {
           const userId = await getUserId();
           const timestamp = timeStampRef.current;
           const pathstamp = pathStampRef.current;
           const chunkPath = `protected/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
           queueUpload(event.data, chunkPath);
-        } else if (event.data.size > 0) {
+        } else if (event.data.size > 0 && !isDiscardingRef.current) {
           console.warn(`[RecordingManager] Skipping small audio blob (${event.data.size} bytes) - likely header-only, no audio frames`);
         }
+      };
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        dataEventQueueRef.current = dataEventQueueRef.current
+          .then(() => handleDataAvailable(event))
+          .catch((error) => {
+            console.error('Error queuing recorded audio chunk:', error);
+          });
       };
 
       mediaRecorderRef.current.onstop = () => {
@@ -162,13 +195,13 @@ function useMediaRecorderController({
             streamRef.current.getTracks().forEach(track => track.stop());
             streamRef.current = null;
           }
-        } else if (
-          isRecordingRef.current &&
-          mediaRecorderRef.current &&
-          mediaRecorderRef.current.state === 'inactive' &&
-          !isPausedRef.current &&
-          !isDiscardingRef.current
-        ) {
+        } else if (shouldRestartRecorder({
+          isFinalizing: isFinalizingRecordingRef.current,
+          isRecording: isRecordingRef.current,
+          isPaused: isPausedRef.current,
+          isDiscarding: isDiscardingRef.current,
+          recorderState: mediaRecorderRef.current?.state
+        })) {
           startRecorder();
         }
       };
@@ -180,6 +213,9 @@ function useMediaRecorderController({
   const startRecording = async () => {
     lastUploadedChunkRef.current = 0;
     isFinalizingRecordingRef.current = false;
+    hasQueuedFinalChunkRef.current = false;
+    dataEventQueueRef.current = Promise.resolve();
+    isDiscardingRef.current = false;
     resetNoteGenerationState();
     cleanupNoteGeneration();
 
@@ -203,41 +239,43 @@ function useMediaRecorderController({
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
+  const finalizeRecorder = ({ discard = false, prepareTranscript = true } = {}) => {
+    const recorder = mediaRecorderRef.current;
+    const finalizationAction = getFinalizationAction(recorder?.state);
+
+    if (recorder && finalizationAction !== 'none') {
       isFinalizingRecordingRef.current = true;
       setIsRecording(false);
       setIsPaused(false);
       isPausedRef.current = false;
-      mediaRecorderRef.current.stop();
+
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
         recordingIntervalRef.current = null;
       }
-      setIsPreparingTranscript(true);
-      setIsTranscriptCompleted(false);
+
+      if (finalizationAction === 'resume-and-stop') {
+        recorder.resume();
+      }
+      recorder.stop();
+
+      if (prepareTranscript && !discard) {
+        setIsPreparingTranscript(true);
+        setIsTranscriptCompleted(false);
+      }
     }
   };
+
+  const stopRecording = () => finalizeRecorder();
 
   const discardRecording = () => {
     isDiscardingRef.current = true;
 
-    if (mediaRecorderRef.current) {
-      isFinalizingRecordingRef.current = true;
-      setIsRecording(false);
-      setIsPaused(false);
-      isPausedRef.current = false;
-      mediaRecorderRef.current.stop();
+    finalizeRecorder({ discard: true, prepareTranscript: false });
 
-      if (!isSafari && streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-        streamRef.current = null;
-      }
-
-      if (recordingIntervalRef.current) {
-        clearInterval(recordingIntervalRef.current);
-        recordingIntervalRef.current = null;
-      }
+    if (!isSafari && streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
 
     clearUploadQueue();
@@ -285,7 +323,8 @@ function useMediaRecorderController({
   };
 
   const cleanupRecorder = () => {
-    stopRecording();
+    isDiscardingRef.current = true;
+    finalizeRecorder({ discard: true, prepareTranscript: false });
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;

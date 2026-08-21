@@ -26,5 +26,7 @@ The mobile menu closes on outside clicks using refs for the menu and menu button
 ## Maintenance Notes
 
 - Use `Link` for internal authenticated routes.
-- Logout is an anchor with `preventDefault()` that calls `onSignOut`.
+- Logout is a semantic button that calls `onSignOut`.
 - Any new authenticated route exposed in nav should also be added to `AuthenticatedApp` routes.
+- Keep the header at `64px`, navigation targets at least `44px` high, and current-page/focus semantics visible.
+- The mobile menu is a white product surface with the standard border, `12px` radius, and menu shadow.

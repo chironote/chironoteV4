@@ -4,27 +4,47 @@ import { formatTimestamp, getFirstSentenceOrSubstring } from '../../utils/histor
 function HistoryListItem({ item, onClick, onDragStart, isNew, onMouseEnter }) {
   const content = item.note || '';
   const displayText = item.noteLabel || getFirstSentenceOrSubstring(content);
-  const { day, time } = formatTimestamp(item.timestamp);
+  const { date, day, isToday, time } = formatTimestamp(item.timestamp);
 
   const handleDragStart = (event) => {
     event.dataTransfer.setData('text/plain', content);
     onDragStart(content);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onClick(item);
+    }
+  };
+
   return (
     <div
       className={`list-item ${isNew ? 'highlight' : ''}`}
       onClick={() => onClick(item)}
+      onKeyDown={handleKeyDown}
       draggable
       onDragStart={handleDragStart}
       onMouseEnter={onMouseEnter}
-      style={{ display: 'flex', alignItems: 'center' }}
+      role="button"
+      tabIndex={0}
     >
-      <div className="timestamp">
-        <span className="day">{day}</span>
-        <span className="time">{time}</span>
+      <div className="history-item-body">
+        <div className="content">{displayText}</div>
+        <div className="timestamp">
+          <span>{time}</span>
+          <span aria-hidden="true">|</span>
+          {isToday ? (
+            <span>Today</span>
+          ) : (
+            <>
+              <span>{day}</span>
+              <span aria-hidden="true">|</span>
+              <span>{date}</span>
+            </>
+          )}
+        </div>
       </div>
-      <div className="content">{displayText}</div>
     </div>
   );
 }

@@ -37,8 +37,10 @@ The mobile menu closes on outside clicks using refs for the menu and menu button
 ## Maintenance Notes
 
 - Use `Link` for internal authenticated routes.
-- Logout is an anchor with `preventDefault()` that calls `onSignOut`.
+- Logout is a semantic button that calls `onSignOut`.
 - Any new authenticated route exposed in nav should also be added to `AuthenticatedApp` routes.
+- The native dashboard header follows the production `64px` bar, `44px` target, restrained white-on-green state, and white mobile-menu contract.
+- Current routes expose `aria-current`; the menu trigger exposes expanded state and its menu relationship.
 
 ## Provenance
 

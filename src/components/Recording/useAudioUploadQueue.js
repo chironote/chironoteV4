@@ -4,6 +4,11 @@ import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { AUDIO_TRANSCRIPTION_QUEUE_URL } from './recordingConstants';
 import { generateToken, getAwsCredentials, getUserId } from './recordingAuth';
 
+export const getNextUploadItem = (uploadQueue) => (
+  uploadQueue.find(item => !item.filePath.includes('_final_')) ||
+  uploadQueue.find(item => item.filePath.includes('_final_'))
+);
+
 function useAudioUploadQueue({
   timeStampRef,
   filePathRef,
@@ -101,16 +106,14 @@ function useAudioUploadQueue({
     isProcessingUploadsRef.current = true;
 
     try {
-      const regularChunks = uploadQueueRef.current.filter(item => !item.filePath.includes('_final_'));
-      for (const item of regularChunks) {
+      while (uploadQueueRef.current.length > 0) {
+        const item = getNextUploadItem(uploadQueueRef.current);
+        if (!item) {
+          break;
+        }
+
         await uploadS3(item.audioBlob, item.filePath);
         uploadQueueRef.current = uploadQueueRef.current.filter(queueItem => queueItem !== item);
-      }
-
-      const finalChunk = uploadQueueRef.current.find(item => item.filePath.includes('_final_'));
-      if (finalChunk) {
-        await uploadS3(finalChunk.audioBlob, finalChunk.filePath);
-        uploadQueueRef.current = uploadQueueRef.current.filter(queueItem => queueItem !== finalChunk);
       }
     } catch (error) {
       console.error('Error processing upload queue:', error);

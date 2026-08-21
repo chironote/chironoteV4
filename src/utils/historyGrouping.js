@@ -34,15 +34,24 @@ export const getWeekStartDate = (date) => {
 export const formatTimestamp = (timestamp) => {
   const numTimestamp = Number(timestamp);
   const date = new Date(numTimestamp);
+  const today = new Date();
   const weekStart = getWeekStartDate(date);
+  const isToday = date.getFullYear() === today.getFullYear() &&
+    date.getMonth() === today.getMonth() &&
+    date.getDate() === today.getDate();
 
   return {
     day: date.toLocaleString(undefined, { weekday: 'short' }),
+    date: date.toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric'
+    }),
     time: date.toLocaleString(undefined, {
       hour: 'numeric',
       minute: 'numeric',
       hour12: true
     }),
+    isToday,
     weekStart: weekStart.getTime(),
     weekLabel: weekStart.toLocaleDateString(undefined, {
       month: 'short',

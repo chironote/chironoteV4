@@ -11,7 +11,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [ChiroNote System Architecture](./architecture/system-overview.md) | Product purpose, system boundaries, major data flows, and ownership across frontend and backend. |
-| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, and the minimal-difference alignment rule. |
+| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, Play versioning, testing-to-Production promotion state, and the minimal-difference alignment rule. |
 
 ## Development
 
@@ -28,11 +28,11 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Audio Recording and Note Generation](./components/recording.md) | Media capture, upload queues, transcription completion, and generated-note streaming. |
 | [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
-| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
-| [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the editing panel. |
+| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, native copying, SOAP+T extraction, and dictation locking. |
+| [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the visually paired Smart Editor workspace. |
 | [Account and Subscription](./components/account.md) | Subscription records, billing links, cancellation, and account deletion. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
-| [Authenticated Navigation](./components/navbar.md) | In-app navigation behavior and route links. |
+| [Authenticated Navigation](./components/navbar.md) | In-app routes, accessible state, and the 64px native product-header contract. |
 | [User Feedback](./components/feedback.md) | Feedback form behavior and backend submission. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
 | [Public Landing Pages](./components/landing-page.md) | Marketing/tutorial page structure and analytics. |

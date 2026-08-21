@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import captureIcon from '../../assets/conversation.svg';
+import React from 'react';
 import { trackDictationStart } from '../../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
@@ -18,13 +17,6 @@ const ClipboardButtons = ({
   dictationReady,
   isWebSocketConnecting
 }) => {
-  const [isDictationActive, setIsDictationActive] = useState(false);
-
-  // Update the dictation active state based on props
-  useEffect(() => {
-    setIsDictationActive(isDictationLoading || isTranscribing || isWebSocketConnecting);
-  }, [isDictationLoading, isTranscribing, isWebSocketConnecting]);
-
   const handleDictationClick = () => {
     // Track the dictation button click
     trackDictationStart();
@@ -40,6 +32,7 @@ const ClipboardButtons = ({
           id="new-note-btn"
           className="toolbar-button new-note-button"
           onClick={() => toggleRecordingPopup('conversation')}
+          aria-label="Create a new note"
         >
           <span className="plus-icon">+</span>
           <span className="button-text">New Note</span>
@@ -54,6 +47,8 @@ const ClipboardButtons = ({
             ${isTranscribing ? 'button-recording' : ''}`
           }
           onClick={handleDictationClick}
+          aria-label={dictationButtonStatus || 'Start dictation'}
+          title={dictationButtonStatus || 'Start dictation'}
           // Remove the disabled attribute to allow clicks during loading
         >
           <span className="material-symbols-rounded toolbar-icon">mic</span>
@@ -67,6 +62,7 @@ const ClipboardButtons = ({
             className="toolbar-button"
             onClick={() => handleCopy(false)}
             title="Copy text"
+            aria-label="Copy clipboard text"
           >
             <span className="material-symbols-rounded toolbar-icon">
               {showCopyMessage ? 'check' : 'content_copy'}
@@ -83,6 +79,7 @@ const ClipboardButtons = ({
           className="toolbar-button"
           onClick={() => setClipboardContent("")}
           title="Clear text"
+          aria-label="Clear clipboard text"
         >
           <span className="material-symbols-rounded toolbar-icon">delete</span>
         </button>
@@ -93,6 +90,9 @@ const ClipboardButtons = ({
           id="edit-panel-btn"
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
           onClick={toggleEditPanel}
+          aria-label={showEditPanel ? 'Close Smart Editor' : 'Open Smart Editor'}
+          title={showEditPanel ? 'Close Smart Editor' : 'Open Smart Editor'}
+          aria-pressed={showEditPanel}
         >
           <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
         </button>

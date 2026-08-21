@@ -21,12 +21,12 @@ The manager owns shared refs and high-level UI state, including `isRecording`, `
 
 ### Recording Lifecycle
 
-1. `startRecording()` requests microphone access and starts `MediaRecorder`.
-2. Audio blobs are passed to the ordered upload queue.
+1. `startRecording()` requests microphone access and starts `MediaRecorder`. Android supplies the four-minute timeslice directly; non-Android recorders use the external stop/restart rotation interval.
+2. Audio blobs are serialized before entering the ordered upload queue. Android timeslice events are regular chunks, while an intentional inactive stop event is the one final chunk.
 3. Each successful upload is announced to SQS; the final chunk starts transcript waiting.
 4. `useNoteGeneration` listens for the matching completed note record.
 5. The note-generation Lambda streams text through `onTextStreamUpdate`.
-6. Stop, discard, errors, and unmount all clean up tracks, queues, timers, subscriptions, and abort controllers.
+6. Stop from `paused` resumes and immediately flushes the recorder before stopping. Discard, errors, and unmount all clean up tracks, queues, timers, subscriptions, and abort controllers without uploading a final chunk.
 
 Backend URLs, queue configuration, timeouts, and retry messages live in `recordingConstants.js`. Authentication helpers live in `recordingAuth.js`, and user-facing error normalization lives in `noteGenerationErrors.js`.
 

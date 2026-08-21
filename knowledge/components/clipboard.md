@@ -45,13 +45,7 @@ writeClipboardText(cleanedText);
 
 ## Toolbar Behavior
 
-`ClipboardButtons` calls parent-provided handlers and only owns the active/loading visual state for dictation:
-
-```js
-setIsDictationActive(isDictationLoading || isTranscribing || isWebSocketConnecting);
-```
-
-The `New Note` button calls `toggleRecordingPopup('conversation')`, while the microphone button calls `startDictation()`.
+`ClipboardButtons` calls parent-provided handlers. The `New Note` button calls `toggleRecordingPopup('conversation')`, while the microphone button calls `startDictation()` and derives its visual state directly from props.
 
 ## Maintenance Notes
 
@@ -59,6 +53,8 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - Dictation locks textarea changes while transcription is active and shows a green caret at the live insertion point. The field remains focusable so browsers render the caret.
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
 - Keep platform detection out of clipboard components; extend the shared native adapter when clipboard behavior changes.
+- The Clipboard matches the production visual contract: `12px` shell, standard panel shadow, soft-green `52px` toolbar, and a `10px` inset textarea with `20px` padding.
+- Icon actions have accessible names; the Smart Editor toggle exposes pressed state.
 
 ## Provenance
 

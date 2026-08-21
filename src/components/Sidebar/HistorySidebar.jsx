@@ -28,15 +28,17 @@ function HistorySidebar({
 
     return groupItemsByWeek(notes).map(week => (
       <div key={week.weekStart} className="week-group">
-        <div
+        <button
+          type="button"
           className="week-header"
           onClick={() => onToggleWeek(week.weekStart)}
+          aria-expanded={!collapsedWeeks.has(week.weekStart)}
         >
           <span className="week-label">Week of {week.weekLabel}</span>
           <span className="collapse-icon">
             {collapsedWeeks.has(week.weekStart) ? '▶' : '▼'}
           </span>
-        </div>
+        </button>
 
         <div className={`week-items ${collapsedWeeks.has(week.weekStart) ? 'collapsed' : ''}`}>
           {week.items.map(item => (

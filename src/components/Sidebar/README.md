@@ -26,7 +26,7 @@ return groupItemsByWeek(notes).map(week => (
 ));
 ```
 
-It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse.
+It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse. History rows use a compact, flat two-line layout: the note label is followed by `time | weekday | date`, while notes from the current local calendar day use `time | Today`. Thin dividers separate rows, and week headers remain collapsible separators so users retain the existing time-based organization.
 
 ## Smart Editor
 
@@ -52,3 +52,5 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 - This folder shares styling with the main app CSS, not just `ContentPopup.css`.
 - `EditPanel` has its own dictation controls passed in from `AuthenticatedApp`; its textarea ref is also passed up so dictation can insert at the editor cursor and show the green live insertion caret.
 - `EditPanel` currently contains a direct Lambda URL and GraphQL subscription accounting logic; coordinate backend changes carefully.
+- Smart Editor mirrors Clipboard's header, toolbar, inset textarea, focus, radius, border, and shadow hierarchy. On constrained desktop widths it retains a `280px` minimum working width.
+- Preserve the explicit accessible names on editor controls and its instruction textarea.

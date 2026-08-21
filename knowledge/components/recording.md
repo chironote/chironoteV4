@@ -72,7 +72,7 @@ Chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blob
 
 ## Capacitor Lifecycle
 
-Android starts `MediaRecorder` with the same four-minute duration as the chunk interval. While the native app is backgrounded, `useMediaRecorderController` clears only the rotation interval so the active recorder is not repeatedly stopped by background timers. On foreground it requests one rotation and restores the interval. Android runtime microphone permission is bridged by `MainActivity`.
+Android starts `MediaRecorder` with the four-minute duration as its only chunk-boundary mechanism. It does not create the external stop/restart rotation interval used by non-Android recorders, so pause/resume and app foregrounding cannot establish a competing Android schedule. Native timeslice data is queued as regular audio; an intentional inactive stop yields one final chunk. Audio event processing and uploads are serialized so a final upload remains behind all pending regular chunks. Android runtime microphone permission is bridged by `MainActivity`.
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 
@@ -86,7 +86,7 @@ This preserves the established WebView implementation and does not add a native 
 - Be careful with Safari: `Recording.jsx` starts recording before async subscription checks because `getUserMedia()` must happen inside the user gesture.
 - `recordingConstants.js` contains backend URLs, queue URL, timeouts, and retry text. Update dependent backend code together.
 - Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder.
-- Regression-check background/foreground transitions on an installed Android build whenever recorder lifecycle code changes.
+- Regression-check background/foreground transitions on an installed Android build whenever recorder lifecycle code changes, along with pause/resume across the four-minute boundary and stopping while paused.
 
 ## Provenance
 

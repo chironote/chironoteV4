@@ -26,3 +26,5 @@ amplifytools.xcconfig
 .env
 android/keystore.properties
 android/chironote-release-key.keystore
+*.jks
+*.keystore
