@@ -463,7 +463,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       }
       const accessToken = await generateToken();
 
-      const response = await fetch("https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws", {
+      const response = await fetch("https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

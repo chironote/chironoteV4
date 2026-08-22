@@ -84,7 +84,7 @@ Assumptions:
 
 - **Streaming Summary Generation**  
   - **Code Location:** `src/components/Recording/RecordingManager.jsx` (`streamResponse()`).  
-  - **Purpose:** Send `userId`, `timeStamp`, `noteSettings` to AWS Lambda (`https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws`) to generate final note.  
+  - **Purpose:** Send `userId`, `timeStamp`, `noteSettings` to the `transcriptToNoteV2` AWS Lambda (`https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/`) to generate the final note.
   - **Disclosure Notes:** Data sent to AWS Lambda for AI summarization; confirm whether the Lambda stores generated text beyond immediate response. **(NEEDS USER ATTENTION)**
 
 - **Smart Edit (AI Rewrite) Requests**  

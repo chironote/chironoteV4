@@ -112,7 +112,7 @@ After the final audio chunk is uploaded, the frontend waits for the backend to c
     -   An **80-second timeout** is implemented as a fallback. If no message is received within this time, the frontend proceeds to the next step anyway to avoid getting stuck.
 
 2.  **Streaming the Summary (`streamResponse`)**:
-    -   Once the transcript is confirmed to be ready, this function makes a `POST` request to a specific Lambda URL (`https://xx3olxpcoay5sicmny45g7c5ay0ugvtm.lambda-url.us-east-2.on.aws`).
+    -   Once the transcript is confirmed to be ready, this function makes a `POST` request to the `transcriptToNoteV2` Lambda URL (`https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/`).
     -   This request includes the `userId`, `timeStamp`, and any `noteSettings` from `localStorage`.
     -   The Lambda function generates the final, structured note and **streams** the response back.
     -   The frontend reads the stream chunk by chunk, passing the incoming text to the main app via the `onTextStreamUpdate` prop, which displays the note being written in real-time.
