@@ -104,7 +104,7 @@ const ContentPopup = ({
       return 'No content available';
     }
 
-    const headers = ["Subjective:", "Objective:", "Assessment:", "Plan:"];
+    const headers = ["Subjective:", "Objective:", "Assessment:", "Plan:", "Treatment:"];
     // Escape headers for regex, though not strictly needed for these specific strings
     const headerRegex = new RegExp(`(${headers.map(h => h.replace(/[.*+?^${}()|\[\]]/g, '\\$&')).join('|')})`, 'g');
 
