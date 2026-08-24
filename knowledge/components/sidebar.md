@@ -56,7 +56,7 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 
 ## Content Popup
 
-`ContentPopup` is opened from a history item and receives all selected content from `AuthenticatedApp`. It is responsible for viewing/copying/sending selected note content, switching note/transcript view, and updating labels through parent callbacks.
+`ContentPopup` is opened from a history item and receives all selected content from `AuthenticatedApp`. It is responsible for viewing/copying/sending selected note content, switching note/transcript view, and updating labels through parent callbacks. Its Subjective, Objective, Assessment, Plan, and Treatment headers are clickable copy controls with success, empty, and failure feedback.
 
 ## Maintenance Notes
 

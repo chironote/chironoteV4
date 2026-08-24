@@ -28,7 +28,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
 | [Recording, Dictation, and Note Generation](./components/recording.md) | Current recording architecture, its 2026 history, browser behavior, failure risks, and required release matrix. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
-| [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, content popup behavior, and the visually paired Smart Editor workspace. |
+| [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, clickable SOAP/Treatment popup copy controls, and the visually paired Smart Editor workspace. |
 | [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the installed-contract but feature-gated asynchronous AppSync Custom Instructions experience. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
 | [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
