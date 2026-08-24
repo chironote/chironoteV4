@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-23
+
+- **Content popup Treatment copy control**: Documented that the saved-note popup treats `Treatment:` as a clickable section-copy header alongside the SOAP headers, including the same copy-result feedback states.
+
 ## 2026-08-16
 
 - **Custom Instructions backend reconciliation and UI finalization**: Refreshed the frontend GraphQL schema snapshot from the installed production AppSync contract, generated/imported the three safe Cognito-authenticated operations, preserved request IDs across uncertain retries, reconciled accepted jobs after interrupted starts, improved error semantics and focus restoration, and replaced the inaccessible timed success dismissal with an explicit close. All 48 repository tests and the production build pass. Review and merge evidence is [PR #6](https://github.com/chironote/chironoteV4/pull/6) from `codex/custom-instructions-ui-finalization`, including implementation commit `e5c1c9182c2a1e5373f3bf87fe0ccecbe6403824`, into `prod`; hosting deployment remains a separate owner action and was not performed here. The feature flag remains off because the SQS event-source mapping, reserved concurrency, authenticated provider end-to-end validation, and runtime configuration gate remain incomplete.
