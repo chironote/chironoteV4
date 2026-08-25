@@ -7,6 +7,7 @@ This folder owns the core recording, dictation, audio upload, transcript waiting
 - `RecordingManager.jsx` is the public hook-style orchestration API consumed by `AuthenticatedApp`.
 - `useMediaRecorderController.js` owns microphone access, `MediaRecorder`, chunking, pause/resume, discard, and cleanup.
 - `useAudioUploadQueue.js` owns ordered S3 upload and SQS dispatch for audio chunks.
+- `recordingLifecycle.js` holds the pure platform and event-classification decisions used by the recorder.
 - `useNoteGeneration.js` waits for transcript completion and streams generated note text from Lambda.
 - `Recording.jsx` renders the new-note popup, recording settings, language/options persistence, and active recording controls.
 - `Dictation.jsx` owns AssemblyAI realtime dictation into clipboard/editor text.
@@ -57,11 +58,15 @@ if (/iphone|ipad/i.test(uaString)) {
 }
 ```
 
-Chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blobs.
+Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blobs. A non-empty intentional final-stop event is still queued so the backend can finalize from already accepted audio even when the final marker itself contains no speech frames.
 
 ## Capacitor Lifecycle
 
-Android starts `MediaRecorder` with the same four-minute duration as the chunk interval. While the native app is backgrounded, `useMediaRecorderController` clears only the rotation interval so the active recorder is not repeatedly stopped by background timers. On foreground it requests one rotation and restores the interval. The app-state bridge is centralized in `src/services/nativePlatform.js`; Android runtime microphone permission is bridged by `android/app/src/main/java/com/chironote/app/MainActivity.java`.
+Android uses the four-minute `MediaRecorder` timeslice as its sole periodic chunk scheduler; the external stop/restart interval remains non-Android behavior. Android Pause ends and flushes the current WebM container as a regular chunk, and Resume starts a fresh container. This avoids continuing a WebM container across Android WebView's pause/resume boundary, which can otherwise leave the post-pause final blob structurally invalid.
+
+Audio-event state is snapshotted synchronously and processed serially, so asynchronous authentication cannot reorder or relabel the final event. Upload selection always drains every pending regular chunk before the final chunk. Object names carry the `rc2` recording-protocol marker, and SQS messages include stable `recordingJobId`, `chunkId`, and `chunkOrder` values derived from that name for backend idempotency and diagnosis.
+
+The app-state bridge remains centralized in `src/services/nativePlatform.js`; Android runtime microphone permission is bridged by `android/app/src/main/java/com/chironote/app/MainActivity.java`.
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 
@@ -74,5 +79,6 @@ This preserves the established WebView implementation and does not add a native 
 - Keep `RecordingManager.jsx` orchestration-only; implementation belongs in the focused hooks.
 - Be careful with Safari: `Recording.jsx` starts recording before async subscription checks because `getUserMedia()` must happen inside the user gesture.
 - `recordingConstants.js` contains backend URLs, queue URL, timeouts, and retry text. Update dependent backend code together.
-- Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder.
+- Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder. Unmount cleanup is discard-like and must not publish a final chunk.
 - Regression-check background/foreground transitions on an installed Android build whenever recorder lifecycle code changes.
+- Before an Android release, verify the bundled JavaScript contains `recordingLifecycle` and `getAudioObjectIdentity`; a version bump or UI-only convergence build must not silently reintroduce the older recorder.

@@ -18,6 +18,7 @@ This folder owns the core recording, dictation, audio upload, transcript waiting
 - `RecordingManager.jsx` is the public hook-style orchestration API consumed by `AuthenticatedApp`.
 - `useMediaRecorderController.js` owns microphone access, `MediaRecorder`, chunking, pause/resume, discard, and cleanup.
 - `useAudioUploadQueue.js` owns ordered S3 upload and SQS dispatch for audio chunks.
+- `recordingLifecycle.js` owns pure recorder lifecycle and chunk-classification decisions.
 - `useNoteGeneration.js` waits for transcript completion and streams generated note text from Lambda.
 - `Recording.jsx` renders the new-note popup, recording settings, language/options persistence, and active recording controls.
 - `Dictation.jsx` owns AssemblyAI realtime dictation into clipboard/editor text.
@@ -68,11 +69,11 @@ if (/iphone|ipad/i.test(uaString)) {
 }
 ```
 
-Chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blobs.
+Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blobs. Non-empty final-stop markers are retained so already accepted audio can still be finalized when the marker has no speech frames.
 
 ## Capacitor Lifecycle
 
-Android starts `MediaRecorder` with the same four-minute duration as the chunk interval. While the native app is backgrounded, `useMediaRecorderController` clears only the rotation interval so the active recorder is not repeatedly stopped by background timers. On foreground it requests one rotation and restores the interval. Android runtime microphone permission is bridged by `MainActivity`.
+Android uses the four-minute `MediaRecorder` timeslice as its sole periodic scheduler. Pause stops and flushes the current WebM container as a regular chunk; Resume starts a fresh container so post-pause audio is not appended to a container Android WebView may no longer finalize correctly. Event state is snapshotted synchronously, event handling is serialized, and the upload queue drains every regular chunk before the final chunk. Object names carry an `rc2` protocol marker, and SQS messages carry stable recording, chunk, and order identities.
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 
@@ -85,10 +86,11 @@ This preserves the established WebView implementation and does not add a native 
 - Keep `RecordingManager.jsx` orchestration-only; implementation belongs in the focused hooks.
 - Be careful with Safari: `Recording.jsx` starts recording before async subscription checks because `getUserMedia()` must happen inside the user gesture.
 - `recordingConstants.js` contains backend URLs, queue URL, timeouts, and retry text. Update dependent backend code together.
-- Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder.
+- Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder. Unmount cleanup is discard-like and does not publish final audio.
 - Regression-check background/foreground transitions on an installed Android build whenever recorder lifecycle code changes.
+- Verify the release bundle contains the lifecycle and object-identity helpers so an unrelated convergence build cannot revive an older recorder implementation.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Recording/README.md), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`nativePlatform.js`](../../src/services/nativePlatform.js), and [`MainActivity.java`](../../android/app/src/main/java/com/chironote/app/MainActivity.java).
+Derived from [`README.md`](../../src/components/Recording/README.md), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`recordingLifecycle.js`](../../src/components/Recording/recordingLifecycle.js), [`useAudioUploadQueue.js`](../../src/components/Recording/useAudioUploadQueue.js), [`nativePlatform.js`](../../src/services/nativePlatform.js), and [`MainActivity.java`](../../android/app/src/main/java/com/chironote/app/MainActivity.java).
 

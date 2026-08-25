@@ -39,6 +39,8 @@ The manager owns shared refs and high-level UI state, including `isRecording`, `
 5. The note-generation Lambda streams text through `onTextStreamUpdate`.
 6. Stop, discard, errors, and unmount all clean up tracks, queues, timers, subscriptions, and abort controllers.
 
+Android has one periodic scheduler: the four-minute `MediaRecorder` timeslice. Pause stops and flushes a regular chunk; Resume starts a fresh WebM container. Recorder state is captured when each audio event fires, the events are processed serially, and pending regular uploads cannot be overtaken by the final upload. SQS receives stable recording/chunk identities and order.
+
 Backend URLs, queue configuration, timeouts, and retry messages live in `recordingConstants.js`. Authentication helpers live in `recordingAuth.js`, and user-facing error normalization lives in `noteGenerationErrors.js`.
 
 ## Realtime Dictation Architecture
@@ -82,6 +84,7 @@ npm run build
 ```
 
 `src/utils/dictationInsertion.test.js` covers middle insertion, growing partial transcripts, duplicate phrases, intentional selection replacement, and end-of-text fallback.
+The recording lifecycle and upload-queue tests cover Android container renewal across pause/resume, single-scheduler chunking, final-event handling, and upload order.
 
 ## Maintenance Notes
 

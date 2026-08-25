@@ -4,6 +4,28 @@ import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { AUDIO_TRANSCRIPTION_QUEUE_URL } from './recordingConstants';
 import { generateToken, getAwsCredentials, getUserId } from './recordingAuth';
 
+export const getNextUploadItem = (uploadQueue) => (
+  uploadQueue.find(item => !item.filePath.includes('_final_')) ||
+  uploadQueue.find(item => item.filePath.includes('_final_'))
+);
+
+export const getAudioObjectIdentity = (filePath) => {
+  const fileName = filePath.split('/').pop() || '';
+  const match = fileName.match(/_recording_(?:chunk|final)_(.+)_(\d+)\.webm$/);
+
+  if (!match) {
+    return {};
+  }
+
+  const recordingJobId = match[1];
+  const chunkOrder = Number(match[2]);
+  return {
+    chunkId: `${recordingJobId}-${chunkOrder}`,
+    chunkOrder,
+    recordingJobId
+  };
+};
+
 function useAudioUploadQueue({
   timeStampRef,
   filePathRef,
@@ -51,6 +73,7 @@ function useAudioUploadQueue({
       console.log(`Successfully uploaded to: ${filePath}`, uploadResult);
 
       const selectedLanguage = localStorage.getItem('selectedLanguage');
+      const audioObjectIdentity = getAudioObjectIdentity(filePath);
       const messageBody = JSON.stringify({
         userId,
         timestamp,
@@ -58,7 +81,8 @@ function useAudioUploadQueue({
         language: selectedLanguage === 'null' ? null : selectedLanguage,
         isFinalAudio: filePath.includes('_final_'),
         accessToken,
-        noteSettings: localStorage.getItem('noteSettings')
+        noteSettings: localStorage.getItem('noteSettings'),
+        ...audioObjectIdentity
       });
 
       const filenameParts = filePath.split('/');
@@ -101,16 +125,14 @@ function useAudioUploadQueue({
     isProcessingUploadsRef.current = true;
 
     try {
-      const regularChunks = uploadQueueRef.current.filter(item => !item.filePath.includes('_final_'));
-      for (const item of regularChunks) {
+      while (uploadQueueRef.current.length > 0) {
+        const item = getNextUploadItem(uploadQueueRef.current);
+        if (!item) {
+          break;
+        }
+
         await uploadS3(item.audioBlob, item.filePath);
         uploadQueueRef.current = uploadQueueRef.current.filter(queueItem => queueItem !== item);
-      }
-
-      const finalChunk = uploadQueueRef.current.find(item => item.filePath.includes('_final_'));
-      if (finalChunk) {
-        await uploadS3(finalChunk.audioBlob, finalChunk.filePath);
-        uploadQueueRef.current = uploadQueueRef.current.filter(queueItem => queueItem !== finalChunk);
       }
     } catch (error) {
       console.error('Error processing upload queue:', error);

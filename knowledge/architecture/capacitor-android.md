@@ -22,10 +22,10 @@ The `cap-and` branch wraps the production React application in Capacitor 6. Shar
 - Native launches route directly to `/app`; public landing, blog, cookie-consent, route-tracking, and advertising analytics initialization and event helpers are not activated inside the wrapper.
 - Clipboard actions use the Capacitor clipboard plugin on native platforms and the browser Clipboard API on the website.
 - Note history refreshes when the native app returns to the foreground.
-- Android recording retains the four-minute `MediaRecorder` timeslice and the established behavior of stopping chunk rotation while backgrounded, then rotating and resuming the interval on foreground.
+- Android recording uses the four-minute `MediaRecorder` timeslice without a competing external rotation interval. Pause flushes the current WebM container and Resume starts a fresh one; recorder events and uploads are serialized through the final marker.
 - `MainActivity` bridges Android runtime microphone permission to WebView media permission requests. JavaScript still requests media through `getUserMedia()`.
 
-The app-state handling preserves the existing WebView recording approach. It is not evidence that Android will keep the WebView alive indefinitely while locked or backgrounded; no foreground recording service is implemented.
+The app-state bridge preserves the existing WebView recording approach for native integrations outside Android's timeslice scheduler. It is not evidence that Android will keep the WebView alive indefinitely while locked or backgrounded; no foreground recording service is implemented.
 
 ## Configuration and Identity
 
