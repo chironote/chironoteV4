@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { Helmet } from 'react-helmet-async';
 import Account from '../Account/Account';
@@ -15,13 +15,14 @@ import useNotesHistory from './useNotesHistory';
 import useUserAnalytics from './useUserAnalytics';
 import * as mutations from '../../graphql/mutations';
 import { getAmplifyClient } from '../../services/amplifyClient';
-import { writeClipboardText } from '../../services/nativePlatform';
+import { isNativePlatform, writeClipboardText } from '../../services/nativePlatform';
 import { trackRecordingCompleted } from '../../utils/analytics';
 import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 
 function AuthenticatedApp({ signOut, user }) {
+  const isNative = isNativePlatform();
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
@@ -483,7 +484,7 @@ function AuthenticatedApp({ signOut, user }) {
         } />
         <Route path="/account" element={<Account />} />
         <Route path="/feedback" element={<Feedback />} />
-        <Route path="/pricingplans" element={<PriceTable />} />
+        <Route path="/pricingplans" element={isNative ? <Navigate to="/account" replace /> : <PriceTable />} />
       </Routes>
     </div>
   );

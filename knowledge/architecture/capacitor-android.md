@@ -20,6 +20,7 @@ The `cap-and` branch wraps the production React application in Capacitor 6. Shar
 ## Native Runtime Differences
 
 - Native launches route directly to `/app`; public landing, blog, cookie-consent, route-tracking, and advertising analytics initialization and event helpers are not activated inside the wrapper.
+- Billing is intentionally absent from the Android runtime. The account screen presents the current tier and usage only; it does not render price cards or purchase/manage-billing controls, and `/app/pricingplans` redirects back to the account screen. Stripe pricing-table scripts and billing-portal requests must remain web-only until an Android billing design is explicitly approved.
 - Clipboard actions use the Capacitor clipboard plugin on native platforms and the browser Clipboard API on the website.
 - Note history refreshes when the native app returns to the foreground.
 - Android recording uses the four-minute `MediaRecorder` timeslice without a competing external rotation interval. Pause flushes the current WebM container and Resume starts a fresh one; recorder events and uploads are serialized through the final marker.
@@ -53,6 +54,10 @@ Run `npx cap sync android` after dependency or Capacitor configuration changes s
 
 When production changes, compare `cap-and` to `prod` by path. Treat native directories, Capacitor configuration, package additions, and explicitly documented adapter call sites as the expected delta. Port production behavior into the shared structure; do not revive the historical monolithic mobile app shell or recording manager.
 
+## `cap-and` and `cap-ios` Are Different Release Lines
+
+`cap-and` is the maintained Android convergence line: it contains the current shared application structure, the Android-specific recorder lifecycle and permission bridge, and the Play Internal-testing release workflow. `cap-ios` is a separately split, older iOS preparation line with its own iOS project/Pods, assets, and a divergent recording-finalization implementation. Its iOS dependencies and release path remain deferred and are not made current by an Android `cap sync` or Android validation. Do not treat either line as a drop-in platform equivalent or copy native changes between them without an explicit reconciliation review.
+
 ## Provenance
 
-Synthesized from [`capacitor.config.json`](../../capacitor.config.json), [`package.json`](../../package.json), [`nativePlatform.js`](../../src/services/nativePlatform.js), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`MainActivity.java`](../../android/app/src/main/java/com/chironote/app/MainActivity.java), [`AndroidManifest.xml`](../../android/app/src/main/AndroidManifest.xml), [`DataSafetyDisclosuresMap.md`](../../src/DataSafetyDisclosuresMap.md), and the merged `prod`/`cap-and` Git history. Current implementation takes precedence over older mobile context documents.
+Synthesized from [`capacitor.config.json`](../../capacitor.config.json), [`package.json`](../../package.json), [`nativePlatform.js`](../../src/services/nativePlatform.js), [`Account.jsx`](../../src/components/Account/Account.jsx), [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`MainActivity.java`](../../android/app/src/main/java/com/chironote/app/MainActivity.java), [`AndroidManifest.xml`](../../android/app/src/main/AndroidManifest.xml), [`DataSafetyDisclosuresMap.md`](../../src/DataSafetyDisclosuresMap.md), and the `cap-and`/`cap-ios` Git history. Current implementation takes precedence over older mobile context documents.
