@@ -13,6 +13,7 @@ This folder owns top-level route selection and cross-route side effects. It sits
 
 ```jsx
 <Route path="/" element={<LandingPage />} />
+<Route path="/demo" element={<DemoLandingPage />} />
 <Route path="/ai-chiropractic-soap-notes" element={<Navigate to="/" replace />} />
 <Route path="/learn-more" element={<Navigate to="/" replace />} />
 <Route path="/tutorial" element={<TutorialPage />} />
@@ -21,7 +22,7 @@ This folder owns top-level route selection and cross-route side effects. It sits
 <Route path="/app/*" element={<AuthWrapper />} />
 ```
 
-The former public landing URLs redirect to `/` so saved links keep working while search engines and analytics converge on one canonical page.
+`/demo` is the scheduler-focused public landing variant. The former public landing URLs redirect to `/` so saved links keep working while search engines and analytics converge on one canonical page.
 
 `PWARedirect` detects standalone mode with `matchMedia('(display-mode: standalone)')`, iOS `window.navigator.standalone`, and Android app referrers.
 

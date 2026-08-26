@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-25
+
+- **Demo landing page**: Added the `/demo` public route as a scheduler-focused variant of the canonical landing page. It retains the established responsive presentation, replaces conversion CTAs with anchored walkthrough actions, embeds the existing Zoom scheduler, omits pricing, and frames the session as practical workflow teaching for treatment processes including shockwave visits.
+
 ## 2026-08-23
 
 - **Content popup Treatment copy control**: Documented that the saved-note popup treats `Treatment:` as a clickable section-copy header alongside the SOAP headers, including the same copy-result feedback states.

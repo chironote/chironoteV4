@@ -22,6 +22,7 @@ import mockupLaptop from '../../assets/mockup-laptop-final.png';
 
 const SIGN_UP_URL = '/app?initialState=signUp';
 const SIGN_IN_URL = '/app';
+const SCHEDULER_URL = 'https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true';
 const TERMS_URL = 'https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html';
 const VIDEO_TITLE = 'ChiroNote clinical AI scribe overview';
 const VIDEO_MILESTONES = [10, 25, 50, 75, 90];
@@ -137,7 +138,8 @@ const structuredData = {
   ],
 };
 
-export default function LandingPage() {
+export default function LandingPage({ variant = 'standard' }) {
+  const isDemo = variant === 'demo';
   const pageRef = useRef(null);
   const videoRef = useRef(null);
   const carouselRef = useRef(null);
@@ -321,19 +323,19 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="marketing-page" ref={pageRef}>
+    <div className={`marketing-page${isDemo ? ' marketing-page--demo' : ''}`} ref={pageRef}>
       <Helmet>
-        <title>ChiroNote | AI Chiropractic SOAP Notes</title>
-        <meta name="description" content="Finish chiropractic SOAP notes faster with a browser-based AI scribe. HIPAA-compliant workflow, no complex EHR integration, and a free plan." />
-        <link rel="canonical" href="https://www.chironote.ai/" />
+        <title>{isDemo ? 'ChiroNote Demo | Schedule a Workflow Walkthrough' : 'ChiroNote | AI Chiropractic SOAP Notes'}</title>
+        <meta name="description" content={isDemo ? 'Schedule a practical ChiroNote walkthrough and learn how to record a treatment visit, review the SOAP note, and move it into your EHR.' : 'Finish chiropractic SOAP notes faster with a browser-based AI scribe. HIPAA-compliant workflow, no complex EHR integration, and a free plan.'} />
+        <link rel="canonical" href={isDemo ? 'https://www.chironote.ai/demo' : 'https://www.chironote.ai/'} />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://www.chironote.ai/" />
-        <meta property="og:title" content="ChiroNote | AI Chiropractic SOAP Notes" />
-        <meta property="og:description" content="Turn patient visits into structured chiropractic SOAP notes in the browser." />
+        <meta property="og:url" content={isDemo ? 'https://www.chironote.ai/demo' : 'https://www.chironote.ai/'} />
+        <meta property="og:title" content={isDemo ? 'ChiroNote Demo | Schedule a Workflow Walkthrough' : 'ChiroNote | AI Chiropractic SOAP Notes'} />
+        <meta property="og:description" content={isDemo ? 'Learn how ChiroNote fits into your treatment and documentation workflow.' : 'Turn patient visits into structured chiropractic SOAP notes in the browser.'} />
         <meta property="og:image" content="https://www.chironote.ai/logo512.png" />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="ChiroNote | AI Chiropractic SOAP Notes" />
-        <meta name="twitter:description" content="Turn patient visits into structured chiropractic SOAP notes in the browser." />
+        <meta name="twitter:title" content={isDemo ? 'ChiroNote Demo | Schedule a Workflow Walkthrough' : 'ChiroNote | AI Chiropractic SOAP Notes'} />
+        <meta name="twitter:description" content={isDemo ? 'Learn how ChiroNote fits into your treatment and documentation workflow.' : 'Turn patient visits into structured chiropractic SOAP notes in the browser.'} />
         <meta name="twitter:image" content="https://www.chironote.ai/logo512.png" />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
@@ -360,7 +362,11 @@ export default function LandingPage() {
         <nav id="marketing-navigation" className={`marketing-nav__links${mobileNavOpen ? ' is-open' : ''}`} aria-label="Main navigation">
           <a href="#how-it-works" onClick={() => handleNavigation('how_it_works')}>How it works</a>
           <a href="#features" onClick={() => handleNavigation('features')}>Features</a>
-          <a href="#prices" onClick={() => handleNavigation('pricing')}>Pricing</a>
+          {isDemo ? (
+            <a href="#scheduler" onClick={() => handleNavigation('scheduler')}>Walkthrough</a>
+          ) : (
+            <a href="#prices" onClick={() => handleNavigation('pricing')}>Pricing</a>
+          )}
           <a href="#faq" onClick={() => handleNavigation('faq')}>FAQ</a>
           <a href="/blog" onClick={() => handleNavigation('blog')}>Blog</a>
           <a className="marketing-nav__login" href={SIGN_IN_URL} onClick={() => handleCta('header', 'Log in', SIGN_IN_URL)}>Log in</a>
@@ -370,18 +376,18 @@ export default function LandingPage() {
       <main>
         <section className="marketing-hero" data-analytics-section="hero">
           <div className="marketing-hero__copy">
-            <p className="marketing-eyebrow">AI documentation built for chiropractors</p>
+            <p className="marketing-eyebrow">{isDemo ? 'A practical ChiroNote walkthrough' : 'AI documentation built for chiropractors'}</p>
             <h1>
-              SOAP notes,{' '}
-              <span>written while you treat.</span>
+              {isDemo ? 'Learn how to chart ' : 'SOAP notes, '}
+              <span>{isDemo ? 'while you treat.' : 'written while you treat.'}</span>
             </h1>
-            <p className="marketing-hero__summary">ChiroNote listens to the visit and turns the conversation into a structured note—automatically.</p>
+            <p className="marketing-hero__summary">{isDemo ? 'See how ChiroNote fits your real treatment flow—including shockwave visits—and get your setup questions answered.' : 'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'}</p>
             <div className="marketing-hero__actions">
-              <a className="marketing-button marketing-button--primary" href={SIGN_UP_URL} onClick={() => handleCta('hero', 'Try now for free')}>
-                <span>Try now for free</span>
-                <small>No credit card required</small>
+              <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('hero', 'Try now for free')}>
+                <span>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</span>
+                <small>{isDemo ? 'Choose a time below' : 'No credit card required'}</small>
               </a>
-              <a className="marketing-button marketing-button--secondary" href="#how-it-works" onClick={() => handleNavigation('how_it_works')}>See how it works</a>
+              <a className="marketing-button marketing-button--secondary" href="#how-it-works" onClick={() => handleNavigation('how_it_works')}>{isDemo ? 'Watch the workflow' : 'See how it works'}</a>
             </div>
           </div>
           <div className="marketing-hero__visual">
@@ -472,7 +478,7 @@ export default function LandingPage() {
               </button>
             )}
           </div>
-          <a className="marketing-button marketing-button--primary" href={SIGN_UP_URL} onClick={() => handleCta('video', 'Try now for free')}>Try now for free</a>
+          <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('video', 'Try now for free')}>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</a>
         </section>
 
         <section id="features" className="marketing-section marketing-features" data-analytics-section="features">
@@ -501,7 +507,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="prices" className="marketing-section marketing-pricing" data-analytics-section="pricing">
+        {!isDemo && <section id="prices" className="marketing-section marketing-pricing" data-analytics-section="pricing">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">Pricing</p>
             <h2>Simple plans for practices of every size</h2>
@@ -524,7 +530,29 @@ export default function LandingPage() {
             ))}
             <p className="marketing-pricing__shared-feature">All plans include unlimited devices.</p>
           </div>
-        </section>
+        </section>}
+
+        {isDemo && (
+          <section id="scheduler" className="marketing-section marketing-scheduler" data-analytics-section="scheduler">
+            <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
+              <p className="marketing-eyebrow">Schedule a walkthrough</p>
+              <h2>Learn the workflow with us</h2>
+              <p>We’ll show you how to record a treatment visit, review the generated SOAP note, and move it into your EHR. Bring questions about your current process.</p>
+            </div>
+            <ul className="marketing-scheduler__details marketing-reveal marketing-reveal--delay-1" aria-label="Walkthrough details" data-marketing-reveal>
+              <li>15 minutes</li>
+              <li>Clinic-friendly hours</li>
+              <li>Practical Q&amp;A</li>
+            </ul>
+            <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
+              <iframe
+                src={SCHEDULER_URL}
+                title="Schedule a ChiroNote workflow walkthrough"
+                loading="lazy"
+              />
+            </div>
+          </section>
+        )}
 
         <section id="faq" className="marketing-section marketing-faq" data-analytics-section="faq">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
@@ -553,11 +581,11 @@ export default function LandingPage() {
 
         <section className="marketing-final-cta marketing-reveal" data-analytics-section="final_cta" data-marketing-reveal>
           <div>
-            <p className="marketing-eyebrow">Chart less. Treat more.</p>
-            <h2>Try your first ChiroNote today.</h2>
-            <p>Start with the Free plan. No credit card and no software installation required.</p>
+            <p className="marketing-eyebrow">{isDemo ? 'Learn it with your workflow' : 'Chart less. Treat more.'}</p>
+            <h2>{isDemo ? 'Ready for a practical walkthrough?' : 'Try your first ChiroNote today.'}</h2>
+            <p>{isDemo ? 'Pick a time and we’ll teach you how ChiroNote can support the treatments you already provide.' : 'Start with the Free plan. No credit card and no software installation required.'}</p>
           </div>
-          <a className="marketing-button marketing-button--light" href={SIGN_UP_URL} onClick={() => handleCta('final', 'Create free account')}>Create free account</a>
+          <a className="marketing-button marketing-button--light" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('final', 'Create free account')}>{isDemo ? 'Schedule a walkthrough' : 'Create free account'}</a>
         </section>
       </main>
 

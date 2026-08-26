@@ -1,10 +1,11 @@
 # LandingPage Components
 
-This folder owns the main public marketing page and the standalone tutorial page.
+This folder owns the main public marketing page, its demo-focused variant, and the standalone tutorial page.
 
 ## Files
 
 - `LandingPage.jsx` is the canonical landing page rendered at `/`.
+- `DemoLandingPage.jsx` renders the scheduler-focused `/demo` variant by selecting the demo content path in `LandingPage`.
 - `LandingPage.css` contains fully scoped, responsive landing-page styles.
 - `TutorialPage.jsx` and `TutorialPage.css` retain the separate `/tutorial` workflow.
 
@@ -17,6 +18,7 @@ All calls to action are real destinations:
 - Sign-up links open `/app?initialState=signUp`.
 - Sign-in links open `/app`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
+- The `/demo` variant omits pricing. Its primary actions scroll to the embedded Zoom scheduler and frame the call as a practical workflow lesson, including how ChiroNote can support shockwave visits.
 - Blog, Terms & Privacy, section navigation, video playback, testimonial controls, and FAQ controls are keyboard accessible.
 
 The page sends stable funnel events through `utils/analytics.js`, including section views, CTA locations and plan names, navigation, FAQ opens, video milestones, testimonial navigation, and ten-second engagement. The global analytics component records route page views and Core Web Vitals.
@@ -38,3 +40,4 @@ The page sends stable funnel events through `utils/analytics.js`, including sect
 - Keep CTA destinations and analytics locations aligned when copy or page structure changes.
 - Do not add third-party scripts directly to this page; initialize measurement through the Analytics component and consent utilities.
 - Confirm pricing copy against the authenticated Stripe pricing table before publishing plan changes.
+- Keep the `/demo` scheduler URL, section anchor, CTA labels, and route metadata aligned.

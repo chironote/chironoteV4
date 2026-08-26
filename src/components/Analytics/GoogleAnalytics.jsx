@@ -11,6 +11,7 @@ let webVitalsStarted = false;
 
 const getPageType = (pathname) => {
   if (pathname === '/') return 'landing';
+  if (pathname === '/demo') return 'demo_landing';
   if (pathname.startsWith('/app')) return 'application';
   if (pathname.startsWith('/blog')) return 'blog';
   if (pathname === '/tutorial') return 'tutorial';

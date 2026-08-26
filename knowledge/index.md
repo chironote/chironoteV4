@@ -25,7 +25,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
-| [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
+| [Application Routing](./components/app-routing.md) | Public routes including the scheduler-focused demo page, protected app entry, analytics side effects, and PWA redirects. |
 | [Recording, Dictation, and Note Generation](./components/recording.md) | Current recording architecture, its 2026 history, browser behavior, failure risks, and required release matrix. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, clickable SOAP/Treatment popup copy controls, and the visually paired Smart Editor workspace. |
@@ -34,7 +34,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
 | [User Feedback](./components/feedback.md) | Accessible authenticated feedback modal behavior and fixed submission contract. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
-| [Public Landing Pages](./components/landing-page.md) | Marketing/tutorial structure, mobile-first hero, social proof, scroll-reveal behavior, and analytics. |
+| [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; mobile-first presentation; CTA destinations; and analytics. |
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
 | [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence and analytics initialization. |

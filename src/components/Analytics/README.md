@@ -5,6 +5,7 @@ This folder owns application-wide Google Analytics 4 and Google Ads measurement.
 ## Files
 
 - `GoogleAnalytics.jsx` initializes consent-aware analytics once, records React Router page views, captures Google click IDs, and reports Core Web Vitals.
+- Route page types distinguish the canonical `landing` page from the scheduler-focused `demo_landing` page.
 - `../../utils/analytics.js` owns the event vocabulary and feature-specific tracking helpers.
 
 ## Consent and Privacy

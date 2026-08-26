@@ -8,7 +8,7 @@ tags: [chironote, component, landing-page, marketing, performance]
 
 # Public Landing Pages
 
-ChiroNote has one canonical public marketing page: `LandingPage.jsx` at `/`. The former consideration page, prototype conversion route, and archived conversion implementation were removed after the prototype was completed. `/ai-chiropractic-soap-notes` and `/learn-more` redirect to `/` so published links remain valid.
+ChiroNote has one canonical public marketing page: `LandingPage.jsx` at `/`. `DemoLandingPage.jsx` selects its scheduler-focused demo variant at `/demo`, preserving the same visual and interaction foundation without duplicating the full implementation. The former consideration page, prototype conversion route, and archived conversion implementation were removed after the prototype was completed. `/ai-chiropractic-soap-notes` and `/learn-more` redirect to `/` so published links remain valid.
 
 `TutorialPage.jsx` remains a separate public route at `/tutorial` with its own `TutorialPage.css`.
 
@@ -20,6 +20,7 @@ The landing page exposes real destinations rather than placeholders:
 - Login opens `/app`.
 - Blog opens `/blog`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
+- The demo variant omits pricing and routes its primary actions to the embedded Zoom scheduler. Its copy teaches the recording-review-EHR workflow and welcomes questions about existing treatment processes, including shockwave visits.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 

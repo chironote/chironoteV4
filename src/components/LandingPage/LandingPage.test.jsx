@@ -53,7 +53,7 @@ describe('LandingPage', () => {
     renderLandingPage();
 
     expect(document.querySelectorAll('.marketing-testimonial__portrait img')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(16);
+    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(15);
     expect(document.querySelectorAll('.marketing-features [data-marketing-reveal]')).toHaveLength(5);
     expect(document.querySelectorAll('.marketing-plan[data-marketing-reveal]')).toHaveLength(3);
     expect(document.querySelector('.marketing-final-cta[data-marketing-reveal]')).not.toBeNull();

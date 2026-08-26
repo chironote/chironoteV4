@@ -15,6 +15,7 @@ tags: [chironote, component, app-routing]
 | Route | Owner | Behavior |
 | --- | --- | --- |
 | `/` | `LandingPage` | Canonical public landing page. |
+| `/demo` | `DemoLandingPage` | Scheduler-focused educational landing variant. |
 | `/ai-chiropractic-soap-notes` | redirect | Compatibility redirect to `/`. |
 | `/learn-more` | redirect | Compatibility redirect to `/`. |
 | `/tutorial` | `TutorialPage` | Standalone tutorial workflow. |
@@ -29,7 +30,7 @@ Inside `/app/*`, `AuthenticatedApp` owns the dashboard plus `/billing`, `/settin
 
 ## Cross-route Measurement
 
-`Analytics/GoogleAnalytics.jsx` initializes Consent Mode, captures `gclid`, emits a `page_view` for each pathname and query change, classifies the route type, and starts Core Web Vitals reporting. Do not add duplicate page-view effects inside route components.
+`Analytics/GoogleAnalytics.jsx` initializes Consent Mode, captures `gclid`, emits a `page_view` for each pathname and query change, classifies the route type (including `demo_landing` for `/demo`), and starts Core Web Vitals reporting. Do not add duplicate page-view effects inside route components.
 
 ## Provenance
 
