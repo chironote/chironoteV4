@@ -2,10 +2,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { Helmet } from 'react-helmet-async';
-import Account from '../Account/Account';
+import Billing from '../Billing/Billing';
 import Feedback from '../Feedback/Feedback';
 import Navbar from '../Navbar/Navbar';
-import PriceTable from '../Account/PriceTable';
+import PriceTable from '../Billing/PriceTable';
+import Settings from '../Settings/Settings';
 import IntroTour from '../IntroTour/IntroTour';
 import ErrorBanner from './ErrorBanner';
 import Dictation from '../Recording/Dictation';
@@ -23,6 +24,7 @@ import { stripMarkdown } from '../../utils/markdownStripper';
 
 function AuthenticatedApp({ signOut, user }) {
   const isNative = isNativePlatform();
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
@@ -51,6 +53,12 @@ function AuthenticatedApp({ signOut, user }) {
   const editDictationInsertionRef = useRef(null);
   const copyMessageTimeoutRef = useRef(null);
   const mobileOverlayRef = useRef(null);
+  const feedbackTriggerRef = useRef(null);
+
+  const openFeedback = useCallback((event) => {
+    feedbackTriggerRef.current = event?.currentTarget || document.activeElement;
+    setIsFeedbackOpen(true);
+  }, []);
 
   useUserAnalytics(user.username);
 
@@ -414,6 +422,7 @@ function AuthenticatedApp({ signOut, user }) {
       <Navbar
         username={user.username}
         onSignOut={signOut}
+        onFeedback={openFeedback}
       />
       <ErrorBanner isVisible={showErrorBanner} />
 
@@ -482,12 +491,24 @@ function AuthenticatedApp({ signOut, user }) {
             }}
           />
         } />
-        <Route path="/account" element={<Account />} />
-        <Route path="/feedback" element={<Feedback />} />
-        <Route path="/pricingplans" element={isNative ? <Navigate to="/account" replace /> : <PriceTable />} />
+        <Route path="/billing" element={<Billing />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/account" element={<Navigate to="/app/billing" replace />} />
+        <Route path="/feedback" element={<LegacyFeedbackRoute onOpen={openFeedback} />} />
+        <Route path="/pricingplans" element={isNative ? <Navigate to="/app/billing" replace /> : <PriceTable />} />
       </Routes>
+      <Feedback
+        isOpen={isFeedbackOpen}
+        onClose={() => setIsFeedbackOpen(false)}
+        returnFocusRef={feedbackTriggerRef}
+      />
     </div>
   );
+}
+
+function LegacyFeedbackRoute({ onOpen }) {
+  useEffect(() => { onOpen(); }, [onOpen]);
+  return <Navigate to="/app" replace />;
 }
 
 export default AuthenticatedApp;

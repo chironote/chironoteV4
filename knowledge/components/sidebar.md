@@ -1,7 +1,7 @@
 ---
 type: component-readme
 title: "Sidebar Components"
-description: "History sidebar, content popup, and Smart Editor behavior and maintenance guidance."
+description: "Accessible recent-note navigation, content popup, and Smart Editor behavior."
 resource: "../../src/components/Sidebar/README.md"
 tags: [chironote, component, sidebar]
 ---
@@ -30,14 +30,14 @@ This folder owns the note-history sidebar, mobile history toggle, content popup,
 ```js
 return groupItemsByWeek(notes).map(week => (
   <div key={week.weekStart} className="week-group">
-    <div className="week-header" onClick={() => onToggleWeek(week.weekStart)}>
+    <button type="button" className="week-header" onClick={() => onToggleWeek(week.weekStart)}>
       <span className="week-label">Week of {week.weekLabel}</span>
-    </div>
+    </button>
   </div>
 ));
 ```
 
-It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse.
+It delegates row rendering to semantic `HistoryListItem` buttons and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel has a labelled recent-notes heading, supporting text, count badge, bounded scroll area, and a viewport-bounded mobile drawer. The mobile toggle is a disabled-aware button with an explicit Open/Close recent notes label.
 
 ## Smart Editor
 
@@ -63,6 +63,7 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 - This folder shares styling with the main app CSS, not just `ContentPopup.css`.
 - `EditPanel` has its own dictation controls passed in from `AuthenticatedApp`; its textarea ref is also passed up so dictation can insert at the editor cursor and show the green live insertion caret.
 - `EditPanel` currently contains a direct Lambda URL and GraphQL subscription accounting logic; coordinate backend changes carefully.
+- Keep the accessible names on the weekly collapse controls, note rows, mobile history toggle, and Smart Editor controls.
 
 ## Provenance
 

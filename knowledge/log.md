@@ -2,6 +2,8 @@
 
 ## 2026-08-27
 
+- **Android Internal-test preparation 25**: Advanced the Android source version to `25 (1.25)` for the production-UI lineage correction. Google Play preflight confirmed `24 (1.24)` is the current Production and Internal version. Internal upload remains pending a signed artifact, full local build gates, and confirmation that the Internal track has the intended Early Beta tester audience.
+- **Android UI lineage correction**: Re-aligned the shared authenticated UI on `cap-and` with the production Billing, Settings, Feedback, Navbar, Sidebar, and App CSS lineage while retaining Android-only native routing, clipboard, foreground history refresh, and the finalized-container recorder boundary. Android Billing remains usage-only and `/app/pricingplans` remains a safe redirect to `/app/billing`; no Play track or release configuration changed.
 - **Production release 24 submitted**: Promoted the exact Internal-tested Android `24 (1.24)` bundle to the United States Production track at the existing 100% rollout scope with managed publishing off. Both production reviews passed, device support was unchanged, and the only Play warning remained the expected missing deobfuscation file. Google Play accepted the change as `Changes in review`; it is not yet available on Google Play. The prior `23 (1.23)` rollout remains rollback evidence, with Play serving `20 (1.20)` to new users while 23 is halted.
 
 ## 2026-08-26

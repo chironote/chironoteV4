@@ -1,7 +1,7 @@
 ---
 type: component-readme
 title: "Feedback Components"
-description: "Authenticated feedback form behavior and backend submission details."
+description: "Controlled authenticated Feedback modal behavior and safe submission states."
 resource: "../../src/components/Feedback/README.md"
 tags: [chironote, component, feedback]
 ---
@@ -11,12 +11,12 @@ tags: [chironote, component, feedback]
 
 # Feedback Components
 
-This folder owns the authenticated feedback form.
+This folder owns the controlled authenticated Feedback modal.
 
 ## Files
 
-- `Feedback.jsx` renders the form, loads the current user's email, and sends feedback to a Lambda URL.
-- `Feedback.css` styles the form layout, select, textarea, submit button, and success state.
+- `Feedback.jsx` renders the modal form, loads the current user's email, and sends feedback to a Lambda URL through `ProductDialog`.
+- `Feedback.css` styles the textarea, buttons, error, and success states.
 
 ## Important Code
 
@@ -33,15 +33,15 @@ Submissions are posted to the feedback Lambda:
 await fetch('https://xmryti2hkkvg5tosvv3p6lehsa0lysic.lambda-url.us-east-2.on.aws/', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ content: message, subject, userEmail }),
+  body: JSON.stringify({ content: message, subject: 'Feedback', userEmail }),
 });
 ```
 
 ## Maintenance Notes
 
-- `subject` is one of `Feedback`, `Report Problem`, or `Question`.
-- The component prevents duplicate submissions with `isSubmitting`.
-- Failed submissions currently use `alert`; consider a styled error state if expanding the form.
+- The subject is fixed to `Feedback`; no subject selector is shown.
+- The component prevents duplicate submissions, preserves text on failure, and exposes accessible inline error/success states.
+- The modal restores focus to its navigation trigger and disables dismissal during a submission.
 
 ## Provenance
 

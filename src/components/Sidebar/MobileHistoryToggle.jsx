@@ -21,16 +21,19 @@ function MobileHistoryToggle({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
       ></div>
-      <div
+      <button
+        type="button"
         className={`mobile-toggle-button ${isDisabled ? 'disabled' : ''}`}
-        onClick={isDisabled ? undefined : onToggle}
+        onClick={onToggle}
+        disabled={isDisabled}
+        aria-label={isCollapsed ? 'Open recent notes' : 'Close recent notes'}
       >
         {isCollapsed ? (
           <span className="material-symbols-rounded">sort</span>
         ) : (
           <span className="material-symbols-rounded">left_panel_close</span>
         )}
-      </div>
+      </button>
     </>
   );
 }

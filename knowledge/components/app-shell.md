@@ -1,7 +1,7 @@
 ---
 type: component-readme
 title: "AppShell Components"
-description: "Authenticated application shell architecture, state orchestration, and maintenance guidance."
+description: "Authenticated state, routing, feedback-modal behavior, and Android shell boundaries."
 resource: "../../src/components/AppShell/README.md"
 tags: [chironote, component, app-shell]
 ---
@@ -46,6 +46,10 @@ Clipboard and Smart Editor dictation insert into the target textarea instead of 
 
 `MainWorkspace` is intentionally mostly presentational. It receives structured prop groups such as `sidebar`, `clipboard`, `editPanel`, `recording`, `dictation`, and `contentPopup`.
 
+## Authenticated routing
+
+Billing and Settings are the current account surfaces at `/app/billing` and `/app/settings`. `/app/account` redirects to Billing. Feedback is shell-controlled modal state: `/app/feedback` is retained as a compatibility route that opens the modal and replaces the URL with `/app`, preserving the dashboard beneath it. Capacitor continues to redirect `/app/pricingplans` to `/app/billing` and keeps billing actions web-only.
+
 ## Notes History
 
 `useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`:
@@ -70,6 +74,7 @@ On Capacitor, `useNotesHistory` subscribes to native app-state changes through `
 
 - Keep business orchestration in `AuthenticatedApp` and rendering layout in `MainWorkspace`.
 - Be careful with keyboard shortcuts in `AuthenticatedApp`: `Ctrl+B`, `Ctrl+Backspace`, `Ctrl+\``, and `Escape` are handled globally.
+- Keep Feedback as controlled shell state rather than returning to a separate page route.
 - `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners.
 
 ## Provenance

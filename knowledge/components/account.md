@@ -1,28 +1,27 @@
 ---
 type: component-readme
-title: "Account Components"
-description: "Account and subscription component ownership, behavior, and maintenance guidance."
-resource: "../../src/components/Account/README.md"
-tags: [chironote, component, account]
+title: "Billing and Settings"
+description: "Current subscription, usage, settings, and Capacitor billing-boundary behavior."
+resource: "../../src/components/Billing/README.md"
+tags: [chironote, component, billing, settings, capacitor]
 ---
 
 
-> Source: [`README.md`](../../src/components/Account/README.md)
+> Source: [`Billing README`](../../src/components/Billing/README.md) and [`Settings README`](../../src/components/Settings/README.md)
 
-# Account Components
+# Billing and Settings
 
-This folder owns the authenticated account and web billing-plan views. It is mounted from `AuthenticatedApp` under `/app/account` and `/app/pricingplans`.
+The authenticated account experience is split between Billing and Settings. Billing is mounted at `/app/billing`, Settings is mounted at `/app/settings`, and `/app/account` is a compatibility redirect to Billing.
 
 ## Files
 
-- `Account.jsx` renders the current subscription plan and usage summary. Hours saved is the primary metric; remaining hours and free-tier smart edits are secondary context. Professional users see `Unlimited` for monthly dictation availability.
-- `Account.css` styles the account dashboard and subscription cards.
-- `PriceTable.jsx` embeds the Stripe pricing table used by the pricing route.
-- `PriceTable.css` styles the pricing table page wrapper.
+- `Billing/Billing.jsx` renders subscription state and monthly usage, with web-only plan comparison and billing actions.
+- `Billing/PriceTable.jsx` embeds the Stripe pricing table used only by the web pricing route.
+- `Settings/Settings.jsx` provides lifetime-hours and feature-flagged Custom Instructions preferences.
 
 ## Important Code Paths
 
-`Account` reads the user's subscription record through Amplify GraphQL:
+Billing and Settings read the user's subscription record through Amplify GraphQL:
 
 ```js
 const data = await client.graphql({
@@ -31,7 +30,7 @@ const data = await client.graphql({
 });
 ```
 
-On the website, the subscription tier controls both the active plan card and the main billing action. Free users are sent to `/app/pricingplans`; paid users call the billing portal Lambda and open the returned URL:
+On the website, the subscription tier controls both the active plan card and the main billing action. Free users are sent to `/app/pricingplans`; paid users call the billing portal Lambda and open the returned URL. Settings does not expose billing controls.
 
 ```js
 if (currentPlan === 'free') {
@@ -48,16 +47,15 @@ if (currentPlan === 'free') {
 
 ## Capacitor Billing Boundary
 
-Billing and purchasing are web-only. In a Capacitor runtime, `Account.jsx` shows only the current plan and usage summary: it does not render plan cards, prices, the plan-management control, or invoke the billing portal. `AuthenticatedApp` also redirects `/app/pricingplans` to `/app/account`, so a direct native deep link cannot load the Stripe pricing table.
+Billing and purchasing are web-only. In a Capacitor runtime, `Billing.jsx` shows only the current usage summary: it does not render plan cards, prices, the plan-management control, or invoke the billing portal. `AuthenticatedApp` redirects `/app/pricingplans` to `/app/billing`, so a direct native deep link cannot load the Stripe pricing table.
 
 ## Maintenance Notes
 
-- Plan limits and labels are currently rendered locally in `Account.jsx`; update both this file and any Stripe setup if plans change.
-- The code configures Amplify in this folder with `Amplify.configure(config)`. Check app-wide configuration before adding more local configuration calls.
-- `Account.jsx` tracks page views and account-button clicks through `../../utils/analytics`.
+- Plan limits and labels are currently rendered locally in `Billing.jsx`; update both this file and any Stripe setup if plans change.
+- `Billing.jsx` tracks page views and account-button clicks through `../../utils/analytics`.
 - Keep the native billing boundary intact. Any new purchase, pricing, billing-portal, or subscription-management UI must be introduced to mobile only after explicit platform and policy approval.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Account/README.md), [`Account.jsx`](../../src/components/Account/Account.jsx), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx).
+Derived from [`Billing README`](../../src/components/Billing/README.md), [`Billing.jsx`](../../src/components/Billing/Billing.jsx), [`Settings.jsx`](../../src/components/Settings/Settings.jsx), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx).
 

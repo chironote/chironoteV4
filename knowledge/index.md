@@ -30,7 +30,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the editing panel. |
-| [Account and Subscription](./components/account.md) | Account usage metrics, web-only billing controls, and the Capacitor billing boundary. |
+| [Billing and Settings](./components/account.md) | Current subscription and settings surfaces, web-only billing controls, and the Capacitor billing boundary. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
 | [Authenticated Navigation](./components/navbar.md) | In-app navigation behavior and route links. |
 | [User Feedback](./components/feedback.md) | Feedback form behavior and backend submission. |
