@@ -47,5 +47,5 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - `Clipboard.jsx` creates a hidden measurement div with id `soap-measure-div`; keep cleanup intact if changing positioning.
 - Dictation locks textarea changes while transcription is active and shows a green caret at the live insertion point. The field remains focusable so browsers render the caret.
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
-- The workspace uses a neutral inset around the white textarea so the writing surface, panel edge, and page background remain visually distinct. Keep that three-level surface hierarchy on desktop and mobile.
+- The workspace keeps one white clipboard canvas. The textarea begins directly after the SOAP rail with a 12px top inset; its border, rather than a second colored surface, defines the writing sheet on desktop and mobile.
 - Keep platform detection out of clipboard components; extend the shared native adapter when clipboard behavior changes.

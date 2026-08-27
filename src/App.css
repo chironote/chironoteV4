@@ -227,7 +227,7 @@
   font-weight: 600;
   color: var(--color-text);
   margin: 0;
-  padding: 17px 20px 15px;
+  padding: 17px 20px 12px;
   background-color: var(--pure-white);
   border-bottom: 1px solid var(--color-divider);
   text-align: center;
@@ -580,8 +580,8 @@
   height: 100%;
   min-height: 0;
   padding: 0;
-  /* The writing sheet remains white; this is the deliberately softer inset. */
-  background-color: var(--off-white);
+  /* Keep the clipboard as one white writing canvas, like the native home view. */
+  background-color: var(--pure-white);
   border-radius: 0 0 12px 12px;
   box-shadow: none;
 }
@@ -658,7 +658,8 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 12px 16px 16px 8px;
+  /* Align the sheet directly after the 30px SOAP rail; the border supplies the separation. */
+  padding: 12px 20px 12px 0;
   box-sizing: border-box;
 }
 
@@ -1090,7 +1091,7 @@
 
   .clipboard-container {
     margin-left: 0;
-    margin-top: 0;
+    margin-top: -9px;
     width: 100%;
     transition: margin-left 0.3s ease;
     height: calc(100vh - 64px);
@@ -1588,7 +1589,7 @@
 
   .clipboard-container {
     margin-left: 0;
-    margin-top: 0;
+    margin-top: -9px;
     width: 100%;
     transition: margin-left 0.3s ease;
     height: calc(100vh - 64px);

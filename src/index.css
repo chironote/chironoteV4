@@ -9,6 +9,17 @@
   --pale-green: #c5e1c6;
   --off-white: #f8f9fa;
   --pure-white: #ffffff;
+  --color-surface-soft: #fbfdfb;
+  --color-text: #102410;
+  --color-text-muted: #5c705d;
+  --color-border-strong: #cfdbcf;
+  --color-border: #dce6dc;
+  --color-divider: #e2e9e2;
+  --color-hover: #f4f8f4;
+  --color-pressed: #e8f2e8;
+  --shadow-panel: 0 8px 24px rgba(23, 55, 25, 0.08);
+  --motion-fast: 160ms;
+  --motion-standard: 200ms;
 }
 
 /* Universal styles */
