@@ -28,7 +28,7 @@ The manager owns shared refs and high-level UI state, including `isRecording`, `
 5. The note-generation Lambda streams text through `onTextStreamUpdate`.
 6. Stop, discard, errors, and unmount all clean up tracks, queues, timers, subscriptions, and abort controllers.
 
-On Android, periodic chunks come only from the four-minute `MediaRecorder` timeslice. Pause is a logical recording boundary: it stops and flushes the current WebM container as a regular chunk, while Resume starts a fresh container. Audio events snapshot finalization state before asynchronous work and are serialized into an upload queue that keeps all regular chunks ahead of the final chunk. Stable recording/chunk identities are included in the SQS message.
+On Android, the four-minute interval stops and restarts `MediaRecorder`; `start()` is deliberately called without a timeslice so every uploaded blob is a finalized, independently decodable WebM container. Pause is the same kind of logical boundary: it stops and flushes the current container as a regular chunk, while Resume starts a fresh container. Audio events snapshot finalization state before asynchronous work and are serialized into an upload queue that keeps all regular chunks ahead of the final chunk. Stable recording/chunk identities are included in the SQS message.
 
 Backend URLs, queue configuration, timeouts, and retry messages live in `recordingConstants.js`. Authentication helpers live in `recordingAuth.js`, and user-facing error normalization lives in `noteGenerationErrors.js`.
 
@@ -73,7 +73,7 @@ npm run build
 ```
 
 `src/utils/dictationInsertion.test.js` covers middle insertion, growing partial transcripts, duplicate phrases, intentional selection replacement, and end-of-text fallback.
-`recordingLifecycle.test.js` and `useAudioUploadQueue.test.js` cover Android single-scheduler behavior, pause-container renewal, final-event classification, stopped-while-paused finalization, and final-chunk ordering.
+`recordingLifecycle.test.js`, `useMediaRecorderController.test.js`, and `useAudioUploadQueue.test.js` cover Android stop/restart rotation, pause-container renewal, final-event classification, stopped-while-paused finalization, and final-chunk ordering.
 
 ## Maintenance Notes
 

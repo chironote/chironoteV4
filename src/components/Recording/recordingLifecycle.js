@@ -1,4 +1,7 @@
-export const usesMediaRecorderTimeslice = (isAndroid) => Boolean(isAndroid);
+// Uploaded blobs are transcribed independently, so every periodic chunk must
+// be a complete media container. MediaRecorder timeslices may be dependent
+// fragments of one WebM container and are therefore unsafe for this pipeline.
+export const usesMediaRecorderTimeslice = () => false;
 
 export const shouldUseExternalChunkRotation = (isAndroid) => !usesMediaRecorderTimeslice(isAndroid);
 

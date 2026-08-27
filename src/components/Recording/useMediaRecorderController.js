@@ -110,11 +110,7 @@ function useMediaRecorderController({
   }, [isAndroid]);
 
   const startRecorder = () => {
-    if (isAndroid) {
-      mediaRecorderRef.current.start(AUDIO_CHUNK_INTERVAL_MS);
-    } else {
-      mediaRecorderRef.current.start();
-    }
+    mediaRecorderRef.current.start();
   };
 
   const setupRecorder = async () => {

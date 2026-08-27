@@ -9,9 +9,9 @@ import {
 } from './recordingLifecycle';
 
 describe('recording lifecycle decisions', () => {
-  it('uses one Android chunk scheduler', () => {
-    expect(usesMediaRecorderTimeslice(true)).toBe(true);
-    expect(shouldUseExternalChunkRotation(true)).toBe(false);
+  it('uses stop-and-restart rotation so every Android chunk is a complete container', () => {
+    expect(usesMediaRecorderTimeslice(true)).toBe(false);
+    expect(shouldUseExternalChunkRotation(true)).toBe(true);
   });
 
   it('keeps external rotation for non-Android recorders', () => {

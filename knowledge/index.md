@@ -25,7 +25,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
-| [Audio Recording and Note Generation](./components/recording.md) | Pause-safe media containers, ordered upload queues, transcription completion, and generated-note streaming. |
+| [Audio Recording and Note Generation](./components/recording.md) | Independently decodable media chunks, pause-safe containers, ordered uploads, transcription completion, and generated-note streaming. |
 | [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |

@@ -73,7 +73,7 @@ Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-o
 
 ## Capacitor Lifecycle
 
-Android uses the four-minute `MediaRecorder` timeslice as its sole periodic scheduler. Pause stops and flushes the current WebM container as a regular chunk; Resume starts a fresh container so post-pause audio is not appended to a container Android WebView may no longer finalize correctly. Event state is snapshotted synchronously, event handling is serialized, and the upload queue drains every regular chunk before the final chunk. Object names carry an `rc2` protocol marker, and SQS messages carry stable recording, chunk, and order identities.
+Android uses one four-minute stop/restart scheduler and starts `MediaRecorder` without a timeslice. This makes every separately uploaded blob a finalized WebM container rather than a dependent fragment of a longer container. Pause also stops and flushes the current container as a regular chunk; Resume starts a fresh container. Event state is snapshotted synchronously, event handling is serialized, and the upload queue drains every regular chunk before the final chunk. Object names carry an `rc2` protocol marker, and SQS messages carry stable recording, chunk, and order identities.
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 

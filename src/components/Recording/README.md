@@ -62,7 +62,7 @@ Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-o
 
 ## Capacitor Lifecycle
 
-Android uses the four-minute `MediaRecorder` timeslice as its sole periodic chunk scheduler; the external stop/restart interval remains non-Android behavior. Android Pause ends and flushes the current WebM container as a regular chunk, and Resume starts a fresh container. This avoids continuing a WebM container across Android WebView's pause/resume boundary, which can otherwise leave the post-pause final blob structurally invalid.
+Android uses the four-minute stop/restart interval for periodic chunking and calls `MediaRecorder.start()` without a timeslice. Each uploaded blob is therefore finalized as its own WebM container instead of being a dependent fragment of one long container. Android Pause likewise ends and flushes the current container as a regular chunk, and Resume starts a fresh container. The native app-state bridge suspends timed rotation in the background, rotates once on foreground, and then resumes the interval.
 
 Audio-event state is snapshotted synchronously and processed serially, so asynchronous authentication cannot reorder or relabel the final event. Upload selection always drains every pending regular chunk before the final chunk. Object names carry the `rc2` recording-protocol marker, and SQS messages include stable `recordingJobId`, `chunkId`, and `chunkOrder` values derived from that name for backend idempotency and diagnosis.
 

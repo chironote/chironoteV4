@@ -2,6 +2,7 @@ import React, { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import useMediaRecorderController from './useMediaRecorderController';
 import { getUserId } from './recordingAuth';
+import { addNativeAppStateListener } from '../../services/nativePlatform';
 
 jest.mock('./recordingAuth', () => ({
   getUserId: jest.fn()
@@ -84,6 +85,7 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
       }))
     };
     getUserId.mockResolvedValue('user-id');
+    addNativeAppStateListener.mockResolvedValue(null);
 
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -92,6 +94,7 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    jest.useRealTimers();
     container.remove();
     if (originalUserAgent) {
       Object.defineProperty(window.navigator, 'userAgent', originalUserAgent);
@@ -116,7 +119,7 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     });
 
     expect(recorder.start).toHaveBeenCalledTimes(1);
-    expect(recorder.start).toHaveBeenLastCalledWith(240000);
+    expect(recorder.start).toHaveBeenLastCalledWith();
 
     act(() => controller.pauseRecording());
     await act(async () => Promise.resolve());
@@ -132,12 +135,54 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     act(() => controller.resumeRecording());
     expect(recorder.resume).not.toHaveBeenCalled();
     expect(recorder.start).toHaveBeenCalledTimes(2);
-    expect(recorder.start).toHaveBeenLastCalledWith(240000);
+    expect(recorder.start).toHaveBeenLastCalledWith();
 
     act(() => controller.stopRecording());
     await act(async () => Promise.resolve());
 
     expect(recorder.stop).toHaveBeenCalledTimes(2);
+    expect(props.queueUpload).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Blob),
+      expect.stringMatching(/_recording_final_.+_rc2_1\.webm$/)
+    );
+  });
+
+  it('rotates at four minutes by stopping and restarting instead of emitting WebM timeslices', async () => {
+    jest.useFakeTimers();
+    const props = createProps();
+    const Harness = () => {
+      controller = useMediaRecorderController(props);
+      return null;
+    };
+
+    await act(async () => {
+      root.render(<Harness />);
+    });
+    await act(async () => {
+      await controller.startRecording();
+    });
+
+    expect(recorder.start).toHaveBeenCalledTimes(1);
+    expect(recorder.start).toHaveBeenLastCalledWith();
+
+    act(() => {
+      jest.advanceTimersByTime(240000);
+    });
+    await act(async () => Promise.resolve());
+
+    expect(recorder.stop).toHaveBeenCalledTimes(1);
+    expect(recorder.start).toHaveBeenCalledTimes(2);
+    expect(recorder.start).toHaveBeenLastCalledWith();
+    expect(props.queueUpload).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Blob),
+      expect.stringMatching(/_recording_chunk_.+_rc2_0\.webm$/)
+    );
+
+    act(() => controller.stopRecording());
+    await act(async () => Promise.resolve());
+
     expect(props.queueUpload).toHaveBeenNthCalledWith(
       2,
       expect.any(Blob),

@@ -1,5 +1,14 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-27
+
+- **Production release 24 submitted**: Promoted the exact Internal-tested Android `24 (1.24)` bundle to the United States Production track at the existing 100% rollout scope with managed publishing off. Both production reviews passed, device support was unchanged, and the only Play warning remained the expected missing deobfuscation file. Google Play accepted the change as `Changes in review`; it is not yet available on Google Play. The prior `23 (1.23)` rollout remains rollback evidence, with Play serving `20 (1.20)` to new users while 23 is halted.
+
+## 2026-08-26
+
+- **Android recording container correction**: Replaced Android `MediaRecorder` timeslices with four-minute stop/restart rotation so each separately transcribed upload is a finalized WebM container, while retaining pause/resume container renewal, foreground rotation, upload ordering, and stable `rc2` identities.
+- **Internal test release 24**: Published Android `24 (1.24)` to the one-person `Early Beta` Internal testing list at 1:47 PM PDT. The signed target-SDK-36 bundle contains the recording container correction; Play reported no device-support loss and only the expected missing-deobfuscation-file warning. Production was untouched.
+
 ## 2026-08-25
 
 - **Android account boundary**: Made billing and purchasing web-only in the Capacitor runtime. Native accounts show the current plan and usage summary, while the pricing route redirects to Account; no native Stripe pricing table or billing-portal action is exposed.
