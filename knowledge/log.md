@@ -1,5 +1,10 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-29
+
+- **Production/Internal audio parity audit**: Verified in Play Console that Production is `24 (1.24)` at 100% in the existing single country and Internal testing is `27 (1.27)`. Both target SDK 36, support API 22+, and report the same 20,838-device coverage. The source comparison from `74e4df6` to `c9b54de` has no recording, native-lifecycle, upload, transcription, or note-generation changes; releases 25-27 are authenticated-product UI and Clipboard catch-up. The retained signed `com.chironote.app` AABs verify as SHA-256 `E36D72900C2EA079F1F2BC4686859F199CDD98F92C894E3C3809B14D862FB0F8` for Production 24 and `EB8B92E229A69FA690620BCCC5F683AA609656C10F12F6B7DB259ED8E343EA8E` for Internal 27. Production was not changed during this audit.
+- **History timestamp completion**: Restored the date and local-calendar-day fields already consumed by the aligned Recent Notes UI, with focused regression coverage for `Today` and prior-day labels.
+
 ## 2026-08-27
 
 - **Android Internal release 27**: Published `27 (1.27)` to the one-person `Early Beta` Internal testing track at 4:26 PM PDT. This signed build delivers the Clipboard reference-layout correction; Play confirmed target SDK 36, API 22+, unchanged supported-device coverage, and availability to Internal testers. The sole warning remains the expected absence of a deobfuscation file. Production was not changed.

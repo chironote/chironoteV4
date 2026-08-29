@@ -77,6 +77,10 @@ Android uses one four-minute stop/restart scheduler and starts `MediaRecorder` w
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 
+## Production and Internal Release Parity
+
+Google Play Production `24 (1.24)` and Internal testing `27 (1.27)` use the same recording, native lifecycle, upload, transcription, and note-generation source. The source range from recording-fix commit `74e4df6` through Internal release commit `c9b54de` changes no files under `src/components/Recording`, `src/services/nativePlatform.js`, or `android/app/src/main`; the later releases catch up the authenticated product UI and Clipboard presentation. The retained signed AABs verify as `com.chironote.app` with SHA-256 `E36D72900C2EA079F1F2BC4686859F199CDD98F92C894E3C3809B14D862FB0F8` for `24 (1.24)` and `EB8B92E229A69FA690620BCCC5F683AA609656C10F12F6B7DB259ED8E343EA8E` for `27 (1.27)`.
+
 ## Dictation Flow
 
 `Dictation.jsx` uses AssemblyAI `StreamingTranscriber`, an `AudioWorkletProcessor`, 16 kHz mono audio, and a token fetched from Lambda. It is instantiated twice by `AuthenticatedApp`: once for the clipboard and once for the smart editor. The controller streams transcript updates through optional insertion callbacks so parent components can insert dictation at the captured cursor/selection without clearing the existing text.

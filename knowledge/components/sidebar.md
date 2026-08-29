@@ -37,7 +37,7 @@ return groupItemsByWeek(notes).map(week => (
 ));
 ```
 
-It delegates row rendering to semantic `HistoryListItem` buttons and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel has a labelled recent-notes heading, supporting text, count badge, bounded scroll area, and a viewport-bounded mobile drawer. The mobile toggle is a disabled-aware button with an explicit Open/Close recent notes label.
+It delegates row rendering to semantic `HistoryListItem` buttons and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel has a labelled recent-notes heading, supporting text, count badge, bounded scroll area, and a viewport-bounded mobile drawer. Each row shows its time with `Today` for the current local calendar day, or its weekday and calendar date otherwise. The mobile toggle is a disabled-aware button with an explicit Open/Close recent notes label.
 
 ## Smart Editor
 
@@ -67,5 +67,5 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Sidebar/README.md).
+Derived from [`README.md`](../../src/components/Sidebar/README.md), [`HistoryListItem.jsx`](../../src/components/Sidebar/HistoryListItem.jsx), and [`historyGrouping.js`](../../src/utils/historyGrouping.js).
 
