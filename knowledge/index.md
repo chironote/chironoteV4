@@ -31,7 +31,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the editing panel. |
 | [Billing and Settings](./components/account.md) | Current subscription and settings surfaces, web-only billing controls, and the Capacitor billing boundary. |
-| [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
+| [Authentication UI](./components/auth-ui.md) | Web/native authentication boundaries, Android Credential Manager behavior, security invariants, and recovered implementation history. |
 | [Authenticated Navigation](./components/navbar.md) | In-app navigation behavior and route links. |
 | [User Feedback](./components/feedback.md) | Feedback form behavior and backend submission. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |

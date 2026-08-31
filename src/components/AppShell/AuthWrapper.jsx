@@ -2,7 +2,9 @@ import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Authenticator, CheckboxField, withAuthenticator } from '@aws-amplify/ui-react';
 import Header from '../AuthUI/SignIn';
+import NativeAuthContainer from '../AuthUI/NativeAuthContainer';
 import AuthenticatedApp from './AuthenticatedApp';
+import { isNativePlatform } from '../../services/nativePlatform';
 
 const components = {
   Header: () => <Header />,
@@ -69,6 +71,14 @@ function AuthWrapper() {
       window.history.replaceState({}, document.title, newUrl);
     }
   }, [initialAuthState, prefillEmail]);
+
+  if (isNativePlatform()) {
+    return (
+      <NativeAuthContainer>
+        <AuthenticatedApp />
+      </NativeAuthContainer>
+    );
+  }
 
   return withAuthenticator(AuthenticatedApp, authenticatorProps)();
 }

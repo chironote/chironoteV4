@@ -85,7 +85,7 @@ The main `App` component, rendered directly by `index.js`, sets up the top-level
 
 This tier handles all functionality once a user is logged in.
 
-- **Authentication Gate (`ProtectedApp` & `AuthWrapper`)**: The `<ProtectedApp />` component's sole purpose is to render `AuthWrapper`. This wrapper component uses the `withAuthenticator` Higher-Order Component (HOC) from AWS Amplify. `withAuthenticator` wraps the entire `AuthenticatedApp` and automatically handles the authentication flow. If a user is not logged in, it displays the Cognito-powered sign-in/sign-up UI. Only after a successful login does it render the `AuthenticatedApp` component, passing in user details and a `signOut` function as props.
+- **Authentication Gate (`AuthWrapper`)**: The website uses Amplify's `withAuthenticator` HOC for Cognito sign-in/sign-up. Capacitor Android instead renders `NativeAuthContainer` and `SignInForm`, which retain Cognito as the authentication authority while delegating optional password retrieval and saving to AndroidX Credential Manager. Both paths render `AuthenticatedApp` only after `getCurrentUser()` confirms a session and pass the same `user` and `signOut` props.
 
 - **Internal Routing (`AuthenticatedApp`)**: Once inside `AuthenticatedApp`, a second, nested `<Routes>` block manages navigation within the secure part of the application. Routes here are relative to `/app`. For example:
   - `path="/"`: Renders the main dashboard (Clipboard, Panels, etc.).

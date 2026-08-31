@@ -16,6 +16,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(CredentialManagerPlugin.class);
         super.onCreate(savedInstanceState);
         
         // Set custom WebChromeClient to handle permission requests properly

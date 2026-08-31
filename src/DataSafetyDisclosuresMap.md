@@ -10,13 +10,13 @@ Assumptions:
 
 ## Authentication & Identity Data
 - **Credentials (email, password)**
-  - **Code Locations:** `src/components/AppShell/AuthWrapper.jsx` and the AWS Amplify Authenticator
+  - **Code Locations:** `src/components/AppShell/AuthWrapper.jsx`, `src/components/AuthUI/NativeAuthContainer.jsx`, `src/components/AuthUI/SignInForm.jsx`, `src/plugins/CredentialManager.js`, `android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java`, and the website's AWS Amplify Authenticator
   - **Purpose:** Cognito authentication, session management.  
   - **Collected From:** User input.  
   - **Transmission:** Sent to Amazon Cognito via Amplify Auth SDK (TLS).  
-  - **Storage:** Cognito user pool (managed by AWS). The app does not write email addresses or passwords to `localStorage`; Amplify manages authentication session persistence.
-  - **User Control:** Signing out clears the managed authentication session.
-  - **Disclosure Notes:** Declare collection of email and password for account login.
+  - **Storage:** Cognito user pool (managed by AWS). ChiroNote does not persist a raw password in browser/WebView storage. On Android, the user may save it with their selected system provider through AndroidX Credential Manager. The native auth boundary idempotently deletes the historical `saved_email` and `saved_password` local-storage keys on every launch.
+  - **User Control:** The system credential provider owns its confirmation and password-management UI. Signing out clears the Cognito session and Credential Manager's active provider state without deleting a password the user chose to save.
+  - **Disclosure Notes:** Declare collection of email and password for account login. OS-managed password saving is optional and is not ChiroNote-owned credential storage.
 
 - **Cognito User Attributes (email, sub, etc.)**  
   - **Code Locations:** `src/components/Account/Account.jsx`, `src/components/Feedback/Feedback.jsx`, and `src/components/AppShell/AuthenticatedApp.jsx` (via `fetchUserAttributes()`).  

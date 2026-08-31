@@ -1,5 +1,11 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-08-31
+
+- **Android credential restoration**: Ported the reviewed AndroidX Credential Manager sign-in behavior from the unmerged `codex/android-login-credentials` branch into the current `cap-and` architecture. Android now uses a native-only Cognito form that retrieves provider passwords, offers manual passwords only after confirmed authentication, clears legacy plaintext WebView keys, and preserves the website's Amplify Authenticator flow.
+- **Recovered authentication history**: Expanded [Authentication UI](./components/auth-ui.md) with the previously unlogged sequence from the 2025 WebView `localStorage` “Remember me” attempt through the 2026 reviewed Credential Manager branch and the branch-lineage failure that kept it out of later Android releases.
+- **Credential association follow-up**: Recorded that the manifest's `chironote.ai` Digital Asset Links endpoint still serves the SPA HTML shell rather than association JSON, so app/site credential sharing remains externally blocked even though app-scoped Android provider behavior is restored.
+
 ## 2026-08-29
 
 - **Production release 27 submitted**: Promoted the exact Internal-tested `27 (1.27)` bundle to the United States Production track at the existing 100% rollout with managed publishing off. Both production reviews passed: package/version/release notes matched, API 22+ and target SDK 36 were preserved, zero devices were lost across all form factors, and the only warning was the understood missing deobfuscation file. Google Play accepted the submission as `Changes in review` at approximately 12:06 PM PDT; it is not yet available on Google Play. Production `24 (1.24)` and its signed AAB remain rollback evidence.
