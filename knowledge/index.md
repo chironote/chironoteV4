@@ -18,7 +18,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, code conventions, testing, documentation duties, and sensitive files. |
-| [ChiroNote Visual Style System](./development/STYLE.md) | Exact colors, typography, spacing, components, responsive rules, interaction states, accessibility, and visual QA for the entire app. |
+| [ChiroNote Visual Style System](./development/STYLE.md) | Current web visual authority plus the shared token, logical-unit, safe-area, dynamic-text, platform-adapter, component-parity, and migration contract for iOS and Android unification. |
 
 ## Application Components
 

@@ -4,9 +4,14 @@
 
 - **Demo landing page**: Added the `/demo` public route as a scheduler-focused variant of the canonical landing page. It retains the established responsive presentation, replaces conversion CTAs with anchored walkthrough actions, embeds the existing Zoom scheduler, omits pricing, and frames the session as practical workflow teaching for treatment processes including shockwave visits.
 
+## 2026-08-24
+
+- **Style-system cross-platform update**: Audited the rendered landing page at compact and desktop widths, reconciled the stale marketing breakpoint with the current `880px` implementation, recorded the current scroll-linked desktop assurance handoff, and expanded [ChiroNote Visual Style System](./development/STYLE.md) with shared semantic tokens, CSS/pt/dp/sp rules, safe-area and keyboard behavior, native platform adaptations, component parity acceptance criteria, and an ordered iOS/Android migration backlog. Updated the index route accordingly; no native parity is claimed because the current checkout contains only the website while the Capacitor branches remain historical evidence.
+
 ## 2026-08-23
 
 - **Content popup Treatment copy control**: Documented that the saved-note popup treats `Treatment:` as a clickable section-copy header alongside the SOAP headers, including the same copy-result feedback states.
+- **Landing assurance motion and copy**: Updated the desktop trust strip to tie each assurance's left-to-right reveal directly to scroll position, moved the sequence earlier, and added a scroll-distance reading pause after the final `No setup required` message before handing off to the testimonials heading; preserved reduced-motion fallback.
 
 ## 2026-08-16
 

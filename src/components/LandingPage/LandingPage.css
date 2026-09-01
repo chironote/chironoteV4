@@ -355,6 +355,18 @@
   transform: translateY(0);
 }
 
+.marketing-page.is-scroll-motion-ready .marketing-trust__item {
+  opacity: var(--marketing-scroll-reveal-progress);
+  transform: translateX(calc((1 - var(--marketing-scroll-reveal-progress)) * -24px));
+  will-change: opacity, transform;
+}
+
+.marketing-page.is-scroll-motion-ready .marketing-trust-followup {
+  opacity: var(--marketing-trust-followup-progress);
+  transform: translateY(calc((1 - var(--marketing-trust-followup-progress)) * 14px));
+  will-change: opacity, transform;
+}
+
 .marketing-reveal--delay-1 {
   --marketing-reveal-delay: 70ms;
 }

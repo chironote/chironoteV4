@@ -3,7 +3,7 @@ type: visual-design-system
 title: "ChiroNote Visual Style System"
 description: "Exact visual, responsive, interaction, and accessibility rules for reproducing and extending the ChiroNote interface."
 resource: "../../src/index.css"
-tags: [chironote, design-system, visual-style, css, responsive, accessibility, ui]
+tags: [chironote, design-system, visual-style, css, responsive, accessibility, ui, ios, android, capacitor, cross-platform]
 ---
 
 # ChiroNote Visual Style System
@@ -18,6 +18,26 @@ The current repository contains some older one-off values. This guide distinguis
 
 The authenticated clinical workspace is the canonical product interface. The public marketing page is an intentionally warmer, editorial exception described in [Public marketing exception](#public-marketing-exception). Do not mix its typography or cream palette into authenticated screens.
 
+## Current audit state (2026-08-24)
+
+This guide is based on the checked-out website `prod` branch at `8c1d03d` plus the current working-tree UI state. The website is the only runnable application in this checkout. The historical `cap-and` and `cap-ios` branches contain Capacitor 6 Android/iOS wrappers around an older CSS tree, but there are no native project directories in the current working tree and no shared native token package has been established. Native parity is therefore a target contract, not a claim that the current branches already match it.
+
+The most recent visual behavior that must be preserved in the next implementation is:
+
+- The public landing page uses the warmer marketing exception, with an `880px` compact-layout boundary, a `1040px` intermediate layout, and a `460px` phone refinement. The earlier `780px` description is stale.
+- On compact landing layouts, the hero stacks, the clinical image uses a filled portrait/shallower tablet crop, and the three short assurances sit inside the image. On desktop, the image is unobstructed and the separate assurance strip remains visible.
+- The current working-tree landing update makes desktop assurances track scroll progress left-to-right, pauses briefly after `No setup required`, and then reveals the testimonials heading. The page keeps an immediate reduced-motion/browser fallback. This is marketing-only motion and must not become a clinical-workspace pattern.
+- The authenticated product has the refined `64px` navigation, calm green/white panel system, sibling Clipboard/Smart Editor surfaces, responsive Recent Notes drawer, explicit dialog focus behavior, and clickable SOAP/Treatment section-copy headers with success, warning, and error feedback.
+- The visual system is still partly migrated. `src/index.css` contains the emerging semantic aliases, while `src/App.css`, older recording/tutorial/blog styles, and ContentPopup still contain raw colors, legacy radii, generic shadows, or `transition: all`. Treat those as migration debt, not new precedent.
+
+Use the following status words in implementation reviews:
+
+| Status | Meaning |
+| --- | --- |
+| **Implemented** | Verified in the current website source or rendered UI. |
+| **Shared target** | Required contract for new cross-platform work; native branches are not yet proven to comply. |
+| **Migration debt** | Existing behavior that may remain for a focused maintenance change but must not spread. |
+
 ## Design principles
 
 1. **Clinically calm**: favor stable white and soft-green surfaces, quiet borders, and restrained depth. The UI must feel dependable during repetitive clinical work.
@@ -27,6 +47,45 @@ The authenticated clinical workspace is the canonical product interface. The pub
 5. **Touch and keyboard parity**: every action must work with touch, mouse, and keyboard. A moved icon must never be separated from its hit area.
 6. **Motion explains state**: animate drawers, disclosure, loading, and direct feedback only. Do not animate clinical content for decoration.
 7. **No patient data in visual examples**: screenshots, fixtures, and design reviews must use synthetic or de-identified content.
+
+## Cross-platform unification model
+
+Unify semantics first and rendering second. The three application lines should share names, roles, content hierarchy, states, and interaction outcomes. They should not be forced to share every CSS selector, native control, gesture, animation curve, or system-bar treatment.
+
+### Three layers of ownership
+
+| Layer | Owns | Examples |
+| --- | --- | --- |
+| **Shared product tokens** | Brand colors, semantic surfaces, type roles, spacing rhythm, shape, elevation, motion intent, control sizes, and state names. | `color.action.primary`, `space.4`, `radius.panel`, `state.recording`. |
+| **Platform adapters** | Safe areas, system bars, keyboard/insets, focus APIs, native navigation, haptics/ripples, dynamic text scaling, and lifecycle-specific presentation. | CSS `env()` in the WebView, iOS `safeAreaInsets`/VoiceOver, Android `WindowInsets`/TalkBack. |
+| **Surface-specific composition** | Layout and content appropriate to the surface. | Web public marketing page, native recording permission sheet, authenticated Recent Notes drawer. |
+
+The authenticated clinical product is the shared product surface. Public landing, blog, cookie consent, app-store artwork, splash screens, permission prompts, and store metadata are platform or channel surfaces. Do not make the marketing palette a native clinical theme merely because the marketing page is the most recently polished screen.
+
+### Logical units and density
+
+Use logical dimensions, not device-pixel conversions:
+
+- Web uses CSS pixels (`px`), iOS uses points (`pt`), and Android uses density-independent pixels (`dp`). A shared `16` inset means `16px`, `16pt`, or `16dp` at the design layer; do not multiply or divide it by device density.
+- Android text uses scalable pixels (`sp`); iOS text uses Dynamic Type or an equivalent scalable text style; Web text uses `rem`/responsive CSS where text may grow. Never lock clinical text to a bitmap-sized device-pixel value.
+- Shared controls target a minimum interactive box of `48` logical units. Existing web and iOS-compatible controls with a `44px`/`44pt` minimum are accepted migration debt only when the component is not being redesigned. Android must not ship a shared control below `48dp`.
+- Preserve the 4px base grid and the `8px` rhythm across all platforms. Platform adapters may add system insets, but they must not invent a second spacing scale.
+
+### Token naming and handoff
+
+Use semantic names in the portable design source and map them to platform syntax at build time or in one adapter file:
+
+| Token family | Canonical pattern | Web example | Native mapping intent |
+| --- | --- | --- | --- |
+| Color | `color.<role>.<state>` | `var(--color-action-primary)` | `Color.actionPrimary` / `ChiroNoteColors.actionPrimary`. |
+| Type | `type.<role>.<property>` | `font-size`, `line-height`, `font-weight` | SwiftUI text style / Compose `Typography`; keep scaling enabled. |
+| Space | `space.<step>` | `var(--space-4)` | `Spacing.space4` in `pt`/`dp`. |
+| Shape | `radius.<role>` | `var(--radius-panel)` | `RoundedRectangle` / `RoundedCornerShape`. |
+| Elevation | `elevation.<role>` | `box-shadow` | Native shadow/elevation only where the surface needs depth. |
+| Motion | `motion.<intent>` | duration/easing | Native timing curve; honor reduced-motion settings. |
+| Size | `size.<role>` | `min-height`, `width` | `frame`, `size`, or hit-slop contract. |
+
+Do not copy raw web variable names into native view code one screen at a time. Add or change a semantic token once, then update all platform adapters and the token parity table.
 
 ## Product foundation
 
@@ -121,8 +180,16 @@ This is the intended reusable product token layer. Adding these aliases to code 
   --motion-layout: 300ms;
   --ease-ui: ease;
   --ease-enter: ease-out;
+
+  --size-touch-min: 48px;
+  --size-control-min: 40px;
+  --size-top-bar: 64px;
+  --size-mobile-gutter: 16px;
+  --size-content-max: 880px;
 }
 ```
+
+The `--size-*` values are web representations of shared logical dimensions. Native adapters use the same numbers as `pt`/`dp`, with the platform system inset added outside the component's content box.
 
 ### Typography
 
@@ -154,6 +221,17 @@ Required typography rules:
 - Clamp dense navigation titles to two lines. Do not truncate editable or clinical body content.
 - Keep long-form text measures below roughly `75ch` where the layout allows.
 
+Native typography mapping:
+
+| Product role | Shared baseline | iOS adapter | Android adapter |
+| --- | --- | --- | --- |
+| Body / clinical text | `16 / 24–26` | Dynamic Type body style with a `16pt` baseline; allow larger accessibility sizes to reflow. | `16sp` baseline through the shared typography theme; allow font-scale changes to reflow. |
+| Panel / section title | `20 / 24` or `24 / 30` | Scalable title style, not a fixed `systemFont(size:)`. | `20sp`/`24sp` token in `Typography`, not a view-local literal. |
+| Dense row title | `15 / 21` | Scalable subheadline-like role; preserve two-line wrapping. | `15sp` token; do not ellipsize clinical content. |
+| Metadata | `12–13 / 16–18` | Caption/footnote role, never the only carrier of important state. | `12–13sp` label role, paired with icon/text when state matters. |
+
+If a native surface is still rendered inside the Capacitor WebView, the CSS typography rules remain authoritative and the native shell must not apply a second font-size transform. If a surface is rewritten in SwiftUI or Jetpack Compose, the adapter must preserve these roles, weight hierarchy, wrapping behavior, and accessibility scaling rather than matching a screenshot with fixed sizes.
+
 ### Spacing rhythm
 
 Use a 4px base grid. Preferred values are `4, 8, 12, 16, 20, 24, 32, 40, 48px`.
@@ -173,6 +251,23 @@ Use a 4px base grid. Preferred values are `4, 8, 12, 16, 20, 24, 32, 40, 48px`.
 | Mobile page gutter | `16px`; dense drawers may use `10–12px`. |
 
 Avoid stacking container padding and child margins that create accidental double gutters. A scroll region should normally own its horizontal inset.
+
+### Safe areas, keyboards, and system chrome
+
+`public/index.html` already opts into `viewport-fit=cover`, but only the marketing hero currently uses `svh`; much of the authenticated CSS still uses `100vh`. Treat the following as the cross-platform target and record exceptions in the component concept:
+
+```css
+.fixed-surface {
+  padding-top: max(var(--space-4), env(safe-area-inset-top));
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+```
+
+- Fixed headers, drawers, bottom actions, dialogs, and recording controls must include top/bottom safe-area insets and must not place a hit target beneath the status bar, camera cutout, navigation bar, or home indicator.
+- Prefer `100svh`/`100dvh` for mobile viewport-sized surfaces. Use `100vh` only when the element is intentionally allowed to extend behind browser chrome and the safe-area behavior is tested.
+- A scroll region owns its content inset. Add bottom padding when a fixed CTA, keyboard accessory, or home indicator could cover the last editable line.
+- On keyboard open, clinical textareas and dialogs must remain scrollable and keep the focused field visible. The current native branch configured Capacitor Keyboard `resize: body` and iOS automatic content inset; these are historical settings to re-verify during native integration, not a substitute for layout tests.
+- System-bar color and icon mode are shell decisions. They must meet the active surface's contrast and never use a black status bar over the green product header without a deliberate, tested transition.
 
 ### Shape and depth
 
@@ -194,7 +289,8 @@ Migration note: Clipboard, Smart Editor, older recording controls, and parts of 
 - Authenticated product controls use **Material Symbols Rounded**, already loaded by the app.
 - Keep one outline/rounded icon language within a control layer; do not mix emoji, raster icons, and glyph families.
 - Default sizes: `20px` compact controls, `24px` standard controls/navigation, `28–33px` only for prominent mobile panel controls.
-- The visible glyph may be smaller than its button, but the hit target remains at least `44×44px` on touch layouts.
+- The visible glyph may be smaller than its button. The current website baseline is at least `44×44px` on touch layouts; the shared cross-platform target is `48×48` logical units as described below.
+- For new shared components, prefer a `48×48` logical-unit hit target across Web/iOS/Android. Existing `44×44` web/iOS targets remain valid only as migration debt where expanding the box would change an established layout.
 - Icon-only controls require an `aria-label` describing the action, not the icon name.
 - Destructive actions use the same icon family and become red through state styling; do not use a different icon style to imply danger.
 
@@ -202,7 +298,7 @@ Migration note: Clipboard, Smart Editor, older recording controls, and parts of 
 
 ### Breakpoints and test widths
 
-The authenticated app switches at `768px`; the scoped marketing page switches at `780px` and also adapts at `1040px` and `460px`. Do not add nearby breakpoints for local fixes unless the layout genuinely changes mode.
+The authenticated app switches at `768px`; the scoped marketing page switches at `880px` and also adapts at `1040px` and `460px`. Do not add nearby breakpoints for local fixes unless the layout genuinely changes mode. The `880px` marketing boundary is intentionally separate from the authenticated `768px` boundary because the public hero needs more width to preserve its image/copy composition.
 
 Required verification widths:
 
@@ -216,6 +312,29 @@ Required verification widths:
 | `1440px` | Wide desktop. |
 
 All states must avoid document-level horizontal scrolling. Lists and text areas may scroll vertically inside a bounded region. Tables, when unavoidable, get a deliberate horizontal-scroll wrapper rather than widening the page.
+
+Native width classes should be derived from available content width rather than copied from browser breakpoints:
+
+| Native class | Approximate available width | Composition intent |
+| --- | --- | --- |
+| Compact | `<600` logical units | One column, full-width actions, edge drawer or sheet, no side-by-side editors. |
+| Regular | `600–839` | Wider single-column content; allow two-up supporting cards only when each remains usable. |
+| Expanded | `>=840` | Side-by-side workspace surfaces, persistent navigation where useful, bounded long-form text measure. |
+
+These are target native composition classes, not a claim that the current Capacitor branches implement them. A tablet/landscape test must validate the actual available content width after safe-area and split-screen insets.
+
+### Platform behavior matrix
+
+| Concern | Shared invariant | Web implementation | iOS adaptation | Android adaptation |
+| --- | --- | --- | --- | --- |
+| Top bar | Brand, current destination, and primary action remain in the same visual order. | Authenticated `64px`; public `72px` desktop / `64px` compact. | Content bar plus safe-area inset; use native back/navigation semantics. | Content bar plus `WindowInsets`; preserve system back behavior and status-bar contrast. |
+| Recent Notes | One grouped list, visible date metadata, one selected/new state, and one vertical scroll owner. | Desktop sibling panel; compact edge drawer with scrim. | Navigation drawer or sheet; VoiceOver focus enters the drawer and dismisses predictably. | Modal navigation drawer or sheet; TalkBack focus and system Back dismiss before leaving the screen. |
+| Clipboard / Smart Editor | Text remains editable, reviewable, and copyable; no hidden horizontal overflow. | Sibling panels; textareas own vertical scroll. | Scroll view keeps focused field above keyboard; use native selection/copy affordances if rewritten. | IME resize/pan keeps the caret visible; use selection/copy affordances and Back-to-dismiss keyboard. |
+| Dialog / popup | Explicit title, close action, focus return, scrim, and non-color-only status. | Focus trap, Escape, `48%` scrim, `dvh` containment. | Sheet or full-screen cover when compact; VoiceOver escape/dismiss and safe-area padding. | Dialog/bottom sheet with Back dismissal; TalkBack announcement and IME-safe content. |
+| Primary action | One dominant action, stable bounds, pressed/disabled/loading states. | Hover plus `:active`/focus-visible; `44px` legacy minimum, `48px` target. | Pressed opacity/color; `44pt` platform minimum, `48pt` shared target. | Ripple/pressed state; `48dp` minimum and explicit disabled semantics. |
+| Recording | Record, pause/resume, stop/discard, processing, and failure remain distinct by label/icon/state. | Browser permission and MediaRecorder feedback. | Native permission/lifecycle adapter; do not make a gesture the only stop path. | Runtime permission/lifecycle adapter; system Back/background state must be explicit. |
+| Motion | Motion explains state and is optional. | CSS transitions/IntersectionObserver; marketing scroll-linked motion only. | Reduce/disable when Reduce Motion is enabled; avoid scroll-linked clinical motion. | Respect animator/reduced-motion settings; avoid continuous clinical animation. |
+| Iconography | Same semantic icon and size tier wherever possible. | Material Symbols Rounded. | Use the approved vector family; SF Symbols are allowed only as a platform-semantic substitute. | Material vector icons or the approved shared icon asset; no emoji. |
 
 ### Authenticated application shell
 
@@ -299,8 +418,8 @@ Product button hierarchy:
 
 Required dimensions:
 
-- Standard action: minimum height `40px` desktop and `44px` touch.
-- Icon-only touch action: minimum `44×44px`.
+- Standard action: minimum height `40px` desktop and `48px` for a new shared touch component. Existing web/iOS controls may remain `44px` until redesigned; Android shared controls require `48dp`.
+- Icon-only touch action: minimum `48×48` logical units for new shared components; the visible glyph may remain `20–24` units.
 - Compact desktop toolbar action may render at `32px` only when it is not the mobile target; expand it to `44px` at touch breakpoints.
 - Horizontal padding: `12–20px` product actions; icon/label gap `6–8px`.
 - Adjacent touch targets have at least `8px` separation unless one shared toolbar provides equivalent visual grouping and hit-area separation.
@@ -323,7 +442,7 @@ Migration note: [`Feedback.css`](../../src/components/Feedback/Feedback.css) use
 
 - Dialog surface: white, `16px` radius, `1px #cfdbcf` border, `--shadow-dialog`.
 - Default scrim: `rgba(0, 0, 0, 0.48)`. A green-tinted drag target may use `rgba(7, 87, 21, 0.35)` plus a dashed dark-green border.
-- Keep close action in the top-right visual corner with a `44×44px` target on touch layouts.
+- Keep close action in the top-right visual corner with a `48×48` logical-unit target for new shared dialogs (`44pt` is the iOS minimum and may be used by an iOS-specific legacy surface).
 - Trap focus in true modal dialogs, return focus to the trigger when dismissed, and support Escape unless dismissal would lose an in-progress critical operation.
 - Menus align to their trigger edge and use `8–16px` padding, `10–16px` radius, and `--shadow-menu`.
 - Do not place interactive content below fixed navigation or behind mobile safe areas.
@@ -430,9 +549,11 @@ Marketing layout:
 - Sticky nav is `72px` desktop and `64px` mobile, max content width about `1200px`.
 - Major sections use `clamp(72px, 9vw, 116px) 24px` padding.
 - Cards use `18–24px` radii, `20px` grid gaps, and low-opacity green shadows.
-- Hero is two columns until `780px`, then stacks. Do not use the clipped hero polygon on mobile.
-- At `<=780px`, primary CTA groups stack full-width, grids become one column, and testimonials become a scroll-snap carousel.
+- Hero is two columns until `880px`, then stacks. Do not use the clipped hero polygon on mobile.
+- At `<=880px`, primary CTA groups stack full-width, grids become one column, and testimonials become a scroll-snap carousel.
 - At `<=460px`, reduce section gutters to `18px` and scale media/card radii modestly.
+
+The current desktop trust strip is a special scroll-linked sequence: each assurance moves in from the left as its own scroll interval resolves, the final assurance remains readable for a short scroll distance, and the testimonials heading follows after that handoff. It must be disabled for reduced-motion users and must not be reused in the authenticated workspace, where direct interaction feedback is preferred over scroll choreography.
 
 Marketing styles must remain scoped below `.marketing-page`. Never redefine global `body`, `nav`, `h1`, or root product tokens from landing CSS.
 
@@ -442,8 +563,43 @@ Reference: [`src/App.css`](../../src/App.css) and [Authentication UI](../compone
 
 - Theme third-party UI through its supported token API before using selector overrides.
 - Amplify primary button is medium green, hover is dark green, button radius is `8px`, field focus is light green, and the authenticator router surface is `#f6fdf6`.
-- Imported third-party components must still satisfy the product focus, contrast, 44px touch-target, typography, and reduced-motion rules.
+- Imported third-party components must still satisfy the product focus, contrast, shared touch-target, typography, safe-area, and reduced-motion rules.
 - Keep third-party overrides scoped to the component root, such as `[data-amplify-authenticator]`.
+
+## Component parity matrix for iOS and Android
+
+Use this matrix when porting a surface. A port is not complete when it only matches colors; it must match the content hierarchy, state vocabulary, scrolling ownership, accessibility outcome, and platform-appropriate interaction.
+
+| Surface | Shared contract | Web reference | Native acceptance criteria |
+| --- | --- | --- | --- |
+| Authenticated navigation | `64` logical-unit content bar, brand, current route, account/menu action, visible focus/pressed state. | [`Navbar.css`](../../src/components/Navbar/Navbar.css). | Safe-area-aware top bar; native back behavior; VoiceOver/TalkBack order matches visual order; all icon actions hit `48` logical units. |
+| Recent Notes | Soft panel, grouped weeks, visible `time \| weekday \| date` metadata, two-line title maximum, selected/new indicator, one vertical scroller. | [`HistorySidebar.jsx`](../../src/components/Sidebar/HistorySidebar.jsx), [`HistoryListItem.jsx`](../../src/components/Sidebar/HistoryListItem.jsx). | Drawer/sheet presentation adapts to width; swipe/back dismissal does not conflict with system gestures; long titles and enlarged text remain usable. |
+| Clipboard and Smart Editor | Visually paired panels, clear header/toolbar/editor tiers, editable clinical text, dictation caret, copy/review actions. | [`src/App.css`](../../src/App.css), [`Clipboard.jsx`](../../src/components/Clipboard/Clipboard.jsx). | Keyboard/IME keeps caret visible; text selection and copy remain native-feeling; no fixed-height clipping at large text sizes. |
+| Recording and dictation | Stable record/pause/stop states, named processing state, explicit failure/retry/discard, no color-only state. | [`Recording.css`](../../src/components/Recording/Recording.css), [`RecordingManager.jsx`](../../src/components/Recording/RecordingManager.jsx). | Permission, interruption, background, lock-screen, and audio-route behavior belong to platform adapters; UI states remain shared and contract-tested. |
+| Dialogs and content popup | Title, close action, scrim, focus return, safe scroll region, section-copy feedback palette. | [`ProductDialog.css`](../../src/components/Dialog/ProductDialog.css), [`ContentPopup.css`](../../src/components/Sidebar/ContentPopup.css). | iOS sheet/full-screen and Android dialog/bottom-sheet choices may differ, but dismissal, announcement, and error semantics do not. SOAP and Treatment headers remain individually copyable. |
+| Billing and Settings | Bounded cards, `24/30` section titles, `44+` action height, explicit loading/success/error, tabular usage values. | [`Billing.css`](../../src/components/Billing/Billing.css), [`Settings.css`](../../src/components/Settings/Settings.css). | Forms reflow under dynamic text and IME; progress states preserve action width; success is explicit and not timer-only. |
+| Authentication | Amplify contract, visible labels, product green primary action, focus and error semantics. | [`SignIn.jsx`](../../src/components/AuthUI/SignIn.jsx), [`src/App.css`](../../src/App.css). | Permission/login handoff does not lose return route; secure text and system autofill remain native; screen-reader labels are descriptive. |
+| Public marketing | Separate warm palette, editorial type, 880px breakpoint, marketing-only motion and CTA hierarchy. | [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css). | Keep as responsive WebView/web surface unless a separate native acquisition design is approved; never leak marketing tokens into clinical screens. |
+
+## Current migration backlog
+
+This is the minimum sequence for a real style-unification effort. It is intentionally ordered so the UI can converge without mixing visual cleanup with recording/backend behavior changes.
+
+1. **Freeze the shared token contract.** Extract the color, type, spacing, shape, elevation, motion, and size tables above into one portable source. Generate or manually maintain Web CSS, iOS, and Android adapters from that source; add a parity test that fails on missing or differently named semantic tokens.
+2. **Classify every surface.** Mark each component as shared clinical, platform shell, or public marketing. Move legacy landing/tutorial/blog values out of the clinical migration queue rather than blending them into product tokens.
+3. **Migrate the web foundation.** Replace repeated raw values in `src/App.css`, `Recording.css`, `ContentPopup.css`, Billing/Settings/Feedback styles, and older Blog/Tutorial styles with semantic aliases. Replace `transition: all`, unbounded `100vh`, and layout-shifting transforms with explicit properties and safe viewport units.
+4. **Build platform adapters.** Add safe-area/system-bar, keyboard/IME, dynamic text, native focus, ripple/pressed, haptic, back, sheet/drawer, and permission adapters. Keep the shared component state names and copy unchanged.
+5. **Port by component contract.** Start with navigation, Recent Notes, Clipboard/Smart Editor, dialogs, and settings. Recording/media lifecycle remains a separate adapter effort governed by [Web, Android, and iPhone Codebase Divergence](../architecture/platform-divergence.md).
+6. **Run the parity matrix.** Test web at `375`, `667×375`, `768`, `1024`, `1280`, and `1440px`; test iOS at a small phone, large phone, and iPad portrait/landscape; test Android at a small phone, large phone, and tablet portrait/landscape. Include keyboard open, largest text setting, screen reader, reduced motion, light theme, and interruption/background cases.
+7. **Record exceptions.** Any platform-specific deviation needs a reason, owner, affected token/component, and a follow-up issue. A screenshot match is not enough evidence to accept a deviation.
+
+### Minimum parity evidence per component
+
+- Token snapshot: semantic colors, type role, spacing, radius, elevation, and motion intent used.
+- Layout snapshot: compact/regular/expanded dimensions, safe-area inset, scroll owner, and keyboard behavior.
+- State snapshot: default, pressed/hover, focus, disabled, loading, selected, success, and error.
+- Accessibility snapshot: label/role, focus order, text scaling, contrast, and non-color state signal.
+- Interaction snapshot: back/dismiss behavior, gesture conflict review, haptic/ripple policy, and reduced-motion behavior.
 
 ## CSS and component implementation rules
 
@@ -467,11 +623,14 @@ Before considering a UI change complete:
 - [ ] Confirm no document-level horizontal overflow.
 - [ ] Confirm the intended element owns scrolling and fixed controls do not cover content.
 - [ ] Check every interactive state: default, hover, pressed, focus-visible, disabled, loading, selected, success, and error.
-- [ ] Confirm touch targets are at least `44×44px` and adjacent targets have sufficient separation.
+- [ ] Confirm new shared touch targets are at least `48×48` logical units (`44pt` is the iOS minimum; existing web/iOS `44px`/`44pt` controls are migration debt) and adjacent targets have sufficient separation.
 - [ ] Check primary text at 4.5:1 and UI graphics/borders at 3:1 where required.
 - [ ] Verify keyboard order and accessible names from the rendered DOM.
 - [ ] Verify reduced-motion behavior.
 - [ ] Test text wrapping with long note labels, browser zoom, and enlarged system text.
+- [ ] Test safe-area insets, keyboard/IME open, back/dismiss behavior, and scroll ownership on native targets.
+- [ ] Test VoiceOver and TalkBack focus order, labels, announcements, and custom-control roles.
+- [ ] Confirm the semantic token snapshot is equivalent across Web CSS, iOS, and Android adapters.
 - [ ] Use only synthetic/de-identified visual fixtures.
 - [ ] Run `npm run build` and the relevant tests.
 - [ ] Update this guide, the affected component concept, `knowledge/index.md`, and `knowledge/log.md` when the visual contract changes.
@@ -490,9 +649,10 @@ Before considering a UI change complete:
 | Authentication | [`src/App.css`](../../src/App.css), [`SignIn.jsx`](../../src/components/AuthUI/SignIn.jsx) | [Authentication UI](../components/auth-ui.md) | [Third-party and Amplify UI](#third-party-and-amplify-ui) |
 | Marketing | [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css) | [Public Landing Pages](../components/landing-page.md) | [Public marketing exception](#public-marketing-exception) |
 | Consent | [`CookieConsent.css`](../../src/components/CookieConsent/CookieConsent.css) | [Cookie Consent and Analytics](../components/cookie-consent.md) | [Public marketing exception](#public-marketing-exception) |
+| Native shell evidence | Historical `origin/cap-and` and `origin/cap-ios` Capacitor configuration, permissions, and platform assets | [Web, Android, and iPhone Codebase Divergence](../architecture/platform-divergence.md) | [Cross-platform unification model](#cross-platform-unification-model), [Platform behavior matrix](#platform-behavior-matrix) |
 
 ## Provenance
 
-Synthesized from the current implementation, with specific evidence from [`src/index.css`](../../src/index.css), [`src/App.css`](../../src/App.css), [`Navbar.css`](../../src/components/Navbar/Navbar.css), [`HistorySidebar.jsx`](../../src/components/Sidebar/HistorySidebar.jsx), [`HistoryListItem.jsx`](../../src/components/Sidebar/HistoryListItem.jsx), [`MobileHistoryToggle.jsx`](../../src/components/Sidebar/MobileHistoryToggle.jsx), [`ContentPopup.css`](../../src/components/Sidebar/ContentPopup.css), [`Recording.css`](../../src/components/Recording/Recording.css), [`Billing.css`](../../src/components/Billing/Billing.css), [`Settings.css`](../../src/components/Settings/Settings.css), [`Feedback.css`](../../src/components/Feedback/Feedback.css), [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css), and [`CookieConsent.css`](../../src/components/CookieConsent/CookieConsent.css).
+Synthesized from the current implementation, the rendered landing page at representative compact/desktop widths, and specific evidence from [`public/index.html`](../../public/index.html), [`src/index.css`](../../src/index.css), [`src/App.css`](../../src/App.css), [`Navbar.css`](../../src/components/Navbar/Navbar.css), [`HistorySidebar.jsx`](../../src/components/Sidebar/HistorySidebar.jsx), [`HistoryListItem.jsx`](../../src/components/Sidebar/HistoryListItem.jsx), [`MobileHistoryToggle.jsx`](../../src/components/Sidebar/MobileHistoryToggle.jsx), [`ContentPopup.css`](../../src/components/Sidebar/ContentPopup.css), [`ProductDialog.css`](../../src/components/Dialog/ProductDialog.css), [`Recording.css`](../../src/components/Recording/Recording.css), [`Billing.css`](../../src/components/Billing/Billing.css), [`Settings.css`](../../src/components/Settings/Settings.css), [`Feedback.css`](../../src/components/Feedback/Feedback.css), [`LandingPage.jsx`](../../src/components/LandingPage/LandingPage.jsx), [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css), and [`CookieConsent.css`](../../src/components/CookieConsent/CookieConsent.css). Native constraints and current divergence are derived from [`knowledge/architecture/platform-divergence.md`](../architecture/platform-divergence.md), historical `origin/cap-and`/`origin/cap-ios` branches, Capacitor configuration, Android manifest, iOS plist, and the UI/UX review checklist used for touch, safe-area, dynamic-text, accessibility, and reduced-motion validation.
 
-The code and the visually verified Recent Notes implementation outrank generic design-system recommendations where they conflict. This guide also incorporates repository requirements for responsive behavior, keyboard access, 44px touch targets, reduced motion, and documentation maintenance. No secret, credential, patient, note, or transcript content is included.
+The code and the visually verified Recent Notes implementation outrank generic design-system recommendations where they conflict. This guide also incorporates repository requirements for responsive behavior, keyboard access, the shared `48` logical-unit target with explicit legacy exceptions, reduced motion, safe areas, dynamic text, and documentation maintenance. No secret, credential, patient, note, or transcript content is included.

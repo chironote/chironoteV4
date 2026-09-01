@@ -175,6 +175,46 @@ export default function LandingPage({ variant = 'standard' }) {
   }, []);
 
   useEffect(() => {
+    const page = pageRef.current;
+    const trustItems = page?.querySelectorAll('[data-marketing-scroll-reveal]');
+    const trustFollowup = page?.querySelector('[data-marketing-trust-followup]');
+    if (!page || !trustItems?.length || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    let animationFrame;
+    const updateTrustReveal = () => {
+      const viewportHeight = window.innerHeight;
+      trustItems.forEach((item) => {
+        const startPoint = viewportHeight * Number(item.dataset.marketingScrollRevealStart);
+        const endPoint = viewportHeight * Number(item.dataset.marketingScrollRevealEnd);
+        const progress = Math.max(0, Math.min(1, (startPoint - item.getBoundingClientRect().top) / (startPoint - endPoint)));
+        item.style.setProperty('--marketing-scroll-reveal-progress', progress);
+      });
+      if (trustFollowup) {
+        const finalTrustItem = trustItems[trustItems.length - 1];
+        const handoffPoint = viewportHeight * Number(finalTrustItem.dataset.marketingScrollRevealEnd);
+        const revealStart = handoffPoint - (viewportHeight * 0.18);
+        const progress = Math.max(0, Math.min(1, (revealStart - finalTrustItem.getBoundingClientRect().top) / (viewportHeight * 0.12)));
+        trustFollowup.style.setProperty('--marketing-trust-followup-progress', progress);
+      }
+      animationFrame = undefined;
+    };
+    const requestUpdate = () => {
+      if (!animationFrame) animationFrame = window.requestAnimationFrame(updateTrustReveal);
+    };
+
+    page.classList.add('is-scroll-motion-ready');
+    updateTrustReveal();
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate);
+    return () => {
+      window.removeEventListener('scroll', requestUpdate);
+      window.removeEventListener('resize', requestUpdate);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      page.classList.remove('is-scroll-motion-ready');
+    };
+  }, []);
+
+  useEffect(() => {
     const sections = document.querySelectorAll('[data-analytics-section]');
     if (!('IntersectionObserver' in window)) {
       sections.forEach((section) => trackLandingSectionView(section.dataset.analyticsSection));
@@ -411,13 +451,13 @@ export default function LandingPage({ variant = 'standard' }) {
         </section>
 
         <section className="marketing-trust" aria-label="Product assurances" data-analytics-section="trust">
-          <div><span aria-hidden="true">✓</span> HIPAA-compliant workflow</div>
-          <div><span aria-hidden="true">✓</span> Works alongside most EHRs</div>
-          <div><span aria-hidden="true">✓</span> No complex setup</div>
+          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.98" data-marketing-scroll-reveal-end="0.90"><span aria-hidden="true">✓</span> HIPAA-compliant workflow</div>
+          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.92" data-marketing-scroll-reveal-end="0.80"><span aria-hidden="true">✓</span> Works alongside most EHRs</div>
+          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.84" data-marketing-scroll-reveal-end="0.70"><span aria-hidden="true">✓</span> No setup required</div>
         </section>
 
         <section className="marketing-section marketing-testimonials" data-analytics-section="testimonials">
-          <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
+          <div className="marketing-section__heading marketing-trust-followup" data-marketing-trust-followup>
             <p className="marketing-eyebrow">Testimonials</p>
             <h2>Trusted by chiropractors in busy practices</h2>
           </div>
