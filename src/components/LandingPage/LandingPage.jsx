@@ -179,7 +179,9 @@ export default function LandingPage({ variant = 'standard' }) {
   const videoRef = useRef(null);
   const carouselRef = useRef(null);
   const navRef = useRef(null);
+  const schedulerRef = useRef(null);
   const trackedVideoMilestones = useRef(new Set());
+  const trackedSchedulerBookings = useRef(new Set());
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
@@ -194,6 +196,29 @@ export default function LandingPage({ variant = 'standard' }) {
     refreshSchedulerUrl();
 
     return () => window.removeEventListener(GOOGLE_ADS_ATTRIBUTION_EVENT, refreshSchedulerUrl);
+  }, [isDemo]);
+
+  useEffect(() => {
+    if (!isDemo || typeof window === 'undefined') return undefined;
+
+    const handleSchedulerBooking = (event) => {
+      if (event.origin !== 'https://scheduler.zoom.us') return;
+      if (event.source !== schedulerRef.current?.contentWindow) return;
+
+      const { type, payload } = event.data || {};
+      const scheduledEventId = payload?.scheduledEventId;
+      if (type !== 'bookingForm' || typeof scheduledEventId !== 'string' || !scheduledEventId) return;
+      if (trackedSchedulerBookings.current.has(scheduledEventId)) return;
+
+      trackedSchedulerBookings.current.add(scheduledEventId);
+      trackAnalyticsEvent('booked_demo', {
+        booking_channel: 'zoom_scheduler',
+        zoom_scheduled_event_id: scheduledEventId,
+      });
+    };
+
+    window.addEventListener('message', handleSchedulerBooking);
+    return () => window.removeEventListener('message', handleSchedulerBooking);
   }, [isDemo]);
 
   useEffect(() => {
@@ -646,6 +671,7 @@ export default function LandingPage({ variant = 'standard' }) {
             </ul>
             <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
               <iframe
+                ref={schedulerRef}
                 src={schedulerUrl}
                 title="Schedule a ChiroNote workflow walkthrough"
                 loading="lazy"

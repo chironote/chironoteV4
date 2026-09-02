@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HelmetProvider } from 'react-helmet-async';
 import DemoLandingPage from './DemoLandingPage';
@@ -23,6 +24,16 @@ const renderDemoLandingPage = () => {
     </HelmetProvider>
   );
   document.body.innerHTML = markup;
+};
+
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
+const renderClientDemoLandingPage = (root) => {
+  act(() => root.render(
+    <HelmetProvider>
+      <DemoLandingPage />
+    </HelmetProvider>
+  ));
 };
 
 describe('DemoLandingPage', () => {
@@ -67,5 +78,64 @@ describe('DemoLandingPage', () => {
     expect(schedulerUrl.searchParams.get('utm_medium')).toBe('cpc');
     expect(schedulerUrl.searchParams.get('utm_campaign')).toBe('demo_landing_page');
     expect(schedulerUrl.searchParams.get('utm_content')).toBe(`${prefix}test-click-id`);
+  });
+
+  test('tracks a confirmed Zoom Scheduler booking once', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    renderClientDemoLandingPage(root);
+    const scheduler = container.querySelector('#scheduler iframe');
+    const bookingMessage = {
+      type: 'bookingForm',
+      payload: { scheduledEventId: 'scheduler-event-123' },
+    };
+
+    require('../../utils/analytics').trackAnalyticsEvent.mockClear();
+
+    act(() => window.dispatchEvent(new MessageEvent('message', {
+      origin: 'https://scheduler.zoom.us',
+      source: scheduler.contentWindow,
+      data: bookingMessage,
+    })));
+    act(() => window.dispatchEvent(new MessageEvent('message', {
+      origin: 'https://scheduler.zoom.us',
+      source: scheduler.contentWindow,
+      data: bookingMessage,
+    })));
+
+    expect(require('../../utils/analytics').trackAnalyticsEvent).toHaveBeenCalledTimes(1);
+    expect(require('../../utils/analytics').trackAnalyticsEvent).toHaveBeenCalledWith('booked_demo', {
+      booking_channel: 'zoom_scheduler',
+      zoom_scheduled_event_id: 'scheduler-event-123',
+    });
+
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  test('ignores non-Zoom and malformed booking messages', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    renderClientDemoLandingPage(root);
+    const scheduler = container.querySelector('#scheduler iframe');
+    const sendMessage = (origin, data) => act(() => window.dispatchEvent(new MessageEvent('message', {
+      origin,
+      source: scheduler.contentWindow,
+      data,
+    })));
+
+    require('../../utils/analytics').trackAnalyticsEvent.mockClear();
+
+    sendMessage('https://example.com', { type: 'bookingForm', payload: { scheduledEventId: 'wrong-origin' } });
+    sendMessage('https://scheduler.zoom.us', { type: 'bookingForm', payload: {} });
+
+    expect(require('../../utils/analytics').trackAnalyticsEvent).not.toHaveBeenCalled();
+
+    act(() => root.unmount());
+    container.remove();
   });
 });

@@ -2,7 +2,7 @@
 
 ## 2026-09-02
 
-- **Booked-demo ad attribution**: Added consent-aware `gclid`/`gbraid`/`wbraid` capture and forwarding through the existing Zoom Scheduler embed's UTM fields for deduplicated server-side Google Ads conversion upload. Organic and non-consenting bookings remain unaffected, and pre-consent click IDs are no longer written to session storage.
+- **Booked-demo GA4 attribution**: Added a Zoom Scheduler `bookingForm` callback listener that validates the iframe source and Zoom origin before recording one non-PII `booked_demo` event per scheduled-event ID. This restores the established GA4-to-Google-Ads conversion path while preserving consent-aware click-ID forwarding. Organic and non-consenting bookings remain unaffected, and pre-consent click IDs are not written to session storage.
 
 ## 2026-09-01
 

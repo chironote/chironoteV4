@@ -21,7 +21,7 @@ The landing page exposes real destinations rather than placeholders:
 - Blog opens `/blog`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - The demo variant omits pricing and routes its primary actions to the embedded Zoom scheduler. Its copy teaches the recording-review-EHR workflow, welcomes questions about existing treatment processes including shockwave visits, and includes an FAQ prompt to discuss Business Associate Agreement (BAA) requirements.
-- The demo scheduler forwards a consented Google Ads click identifier (`gclid`, `gbraid`, or `wbraid`) through Zoom's UTM tracking fields. Organic and non-consenting visitors load the scheduler without an identifier, so downstream automation can skip conversion upload without failing the booking.
+- The demo scheduler forwards a consented Google Ads click identifier (`gclid`, `gbraid`, or `wbraid`) through Zoom's UTM tracking fields. Zoom's origin-validated `bookingForm` callback records one non-PII GA4 `booked_demo` event per scheduled-event ID after a confirmed booking. Organic and non-consenting visitors load the scheduler without an identifier.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 
@@ -35,11 +35,12 @@ Landing decisions can be evaluated with stable GA4 events:
 - `landing_cta_click` captures CTA location, label, destination, and plan where relevant.
 - `landing_navigation`, `landing_faq_open`, `video_progress`, and `landing_testimonial_navigation` measure content interaction.
 - `landing_engagement` records meaningful dwell time and maximum scroll depth.
+- `booked_demo` records a confirmed Zoom Scheduler booking and is the event imported from GA4 into Google Ads.
 - Global `page_view` and `web_vital` events cover acquisition, bounce/engagement reporting, and mobile performance.
 
 Never send form values, email addresses, note content, transcripts, or protected health information with these events.
 
-Booked-demo attribution is server-side: Zoom emits the scheduling event, Make selects the matching click-ID type, and Google Ads deduplicates uploads using the Zoom scheduled-event ID. The browser does not send a second Google Ads conversion on booking completion.
+Booked-demo attribution follows the existing GA4 conversion pattern: Zoom's embedded booking confirmation posts a `bookingForm` message to the parent page, which validates the Zoom origin and iframe source before sending `booked_demo` to GA4. Configure the imported GA4 action as the sole Google Ads primary conversion; do not also use the Make offline-import route for the same booking.
 
 ## Performance Boundaries
 
