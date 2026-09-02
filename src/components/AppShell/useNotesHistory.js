@@ -16,6 +16,41 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
   const [newItems, setNewItems] = useState(new Set());
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
 
+  const fetchNotes = useCallback(async () => {
+    const client = getAmplifyClient();
+
+    setIsLoading(true);
+    try {
+      const notesData = await client.graphql({
+        query: queries.listNotes,
+        variables: {
+          owner: username,
+          sortDirection: 'DESC',
+          limit: 120
+        }
+      });
+      const fetchedNotes = notesData.data.listNotes.items;
+
+      const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== '');
+      const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== '');
+
+      setNotes(filteredNotes.slice(0, 100));
+      setTranscripts(filteredTranscripts.slice(0, 100));
+
+      if (filteredNotes.length > 0 || filteredTranscripts.length > 0) {
+        const groupedWeeks = groupItemsByWeek([...filteredNotes, ...filteredTranscripts]);
+
+        if (groupedWeeks.length > 0) {
+          setCollapsedWeeks(new Set(groupedWeeks.slice(1).map(week => week.weekStart)));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [username]);
+
   const checkNoteMilestones = useCallback(async () => {
     try {
       const client = getAmplifyClient();
@@ -80,43 +115,8 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
   }, []);
 
   useEffect(() => {
-    const fetchNotes = async () => {
-      const client = getAmplifyClient();
-
-      setIsLoading(true);
-      try {
-        const notesData = await client.graphql({
-          query: queries.listNotes,
-          variables: {
-            owner: username,
-            sortDirection: 'DESC',
-            limit: 120
-          }
-        });
-        const fetchedNotes = notesData.data.listNotes.items;
-
-        const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== '');
-        const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== '');
-
-        setNotes(filteredNotes.slice(0, 100));
-        setTranscripts(filteredTranscripts.slice(0, 100));
-
-        if (filteredNotes.length > 0 || filteredTranscripts.length > 0) {
-          const groupedWeeks = groupItemsByWeek([...filteredNotes, ...filteredTranscripts]);
-
-          if (groupedWeeks.length > 0) {
-            setCollapsedWeeks(new Set(groupedWeeks.slice(1).map(week => week.weekStart)));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching notes:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchNotes();
-  }, [username]);
+  }, [fetchNotes]);
 
   useEffect(() => {
     const client = getAmplifyClient();
@@ -190,6 +190,7 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
     isLoading,
     newItems,
     collapsedWeeks,
+    refreshNotes: fetchNotes,
     removeHighlight,
     toggleWeekCollapse
   };

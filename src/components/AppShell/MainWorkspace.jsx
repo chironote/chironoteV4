@@ -31,6 +31,7 @@ function MainWorkspace({
         isLoading={notesHistory.isLoading}
         collapsedWeeks={notesHistory.collapsedWeeks}
         newItems={notesHistory.newItems}
+        onRefresh={notesHistory.refreshNotes}
         onItemClick={contentPopup.onOpen}
         onDragStart={() => {}}
         onRemoveHighlight={notesHistory.removeHighlight}

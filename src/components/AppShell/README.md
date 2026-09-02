@@ -41,7 +41,7 @@ Authenticated routes include `/billing`, `/settings`, and `/pricingplans`. `/acc
 
 ## Notes History
 
-`useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`:
+`useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`. It exposes the same fetch as `refreshNotes`, which the history sidebar uses as a manual recovery path when a realtime update is missed:
 
 ```js
 const subscription = client.graphql({

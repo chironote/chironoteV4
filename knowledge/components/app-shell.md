@@ -52,7 +52,7 @@ Clipboard and Smart Editor dictation insert into the target textarea instead of 
 
 ## Notes History
 
-`useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`:
+`useNotesHistory` loads recent records with `listNotes`, filters notes and transcripts, groups history by week, and subscribes to `onUpdateNotesByOwner`. It also exposes the same fetch as `refreshNotes`, allowing the history sidebar to recover a note when a realtime update was missed:
 
 ```js
 const subscription = client.graphql({
@@ -76,5 +76,5 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AppShell/README.md).
+Derived from [`README.md`](../../src/components/AppShell/README.md), [`useNotesHistory.js`](../../src/components/AppShell/useNotesHistory.js), and [`HistorySidebar.jsx`](../../src/components/Sidebar/HistorySidebar.jsx).
 

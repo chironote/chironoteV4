@@ -8,6 +8,7 @@ function HistorySidebar({
   isLoading,
   collapsedWeeks,
   newItems,
+  onRefresh,
   onItemClick,
   onDragStart,
   onRemoveHighlight,
@@ -72,6 +73,16 @@ function HistorySidebar({
               {notes.length}
             </span>
           )}
+          <button
+            type="button"
+            className="recent-notes-refresh"
+            onClick={onRefresh}
+            disabled={isLoading}
+            aria-label="Refresh recent notes"
+            title="Refresh recent notes"
+          >
+            <span className="material-symbols-rounded" aria-hidden="true">refresh</span>
+          </button>
         </div>
         <div className="list-container">
           {renderItems()}

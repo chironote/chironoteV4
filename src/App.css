@@ -215,6 +215,38 @@
   line-height: 1;
 }
 
+.recent-notes-refresh {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: -8px;
+  padding: 0;
+  border: 1px solid #cfe0d0;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--dark-green);
+  cursor: pointer;
+}
+
+.recent-notes-refresh:hover:not(:disabled),
+.recent-notes-refresh:focus-visible {
+  border-color: var(--dark-green);
+  background: #edf5ed;
+}
+
+.recent-notes-refresh:focus-visible {
+  outline: 2px solid var(--dark-green);
+  outline-offset: 2px;
+}
+
+.recent-notes-refresh:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
 /* Left panel animation */
 .left-panel-animate {
   animation: slideInFromLeft 0.3s ease-out;

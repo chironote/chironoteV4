@@ -14,7 +14,7 @@ This folder owns the note-history sidebar, mobile history toggle, content popup,
 
 ## History Sidebar
 
-`HistorySidebar` receives notes and UI state from `useNotesHistory` through `MainWorkspace`. It groups items using `groupItemsByWeek`:
+`HistorySidebar` receives notes and UI state from `useNotesHistory` through `MainWorkspace`. Its Refresh control reruns the server fetch so a user can recover a completed note if the realtime subscription did not deliver an update. It is disabled during the request. The sidebar groups items using `groupItemsByWeek`:
 
 ```js
 return groupItemsByWeek(notes).map(week => (
