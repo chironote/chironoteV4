@@ -18,7 +18,7 @@ This folder owns the authenticated application shell: authentication wrapping, m
 - `AuthWrapper.jsx` wraps Amplify authentication UI and provides the signed-in app.
 - `AuthenticatedApp.jsx` is the main stateful controller for authenticated routes.
 - `MainWorkspace.jsx` composes the note history sidebar, clipboard, smart editor, recording popup, dictation popup, and content popup.
-- `useNotesHistory.js` fetches recent notes and listens for note updates over GraphQL subscriptions.
+- `useNotesHistory.js` fetches recent notes, exposes its established fetch for manual recovery, and listens for note updates over GraphQL subscriptions.
 - `useUserAnalytics.js` attaches user-level analytics context.
 - `ErrorBanner.jsx` renders a global error banner when enabled.
 
@@ -75,7 +75,7 @@ On Capacitor, `useNotesHistory` subscribes to native app-state changes through `
 - Keep business orchestration in `AuthenticatedApp` and rendering layout in `MainWorkspace`.
 - Be careful with keyboard shortcuts in `AuthenticatedApp`: `Ctrl+B`, `Ctrl+Backspace`, `Ctrl+\``, and `Escape` are handled globally.
 - Keep Feedback as controlled shell state rather than returning to a separate page route.
-- `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners.
+- `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners. Manual refresh must reuse its existing fetch path, report failures, and retain any notes already shown.
 
 ## Provenance
 

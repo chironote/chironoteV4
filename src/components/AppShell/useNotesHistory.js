@@ -14,6 +14,7 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
   const [notes, setNotes] = useState([]);
   const [, setTranscripts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [newItems, setNewItems] = useState(new Set());
   const [collapsedWeeks, setCollapsedWeeks] = useState(new Set());
 
@@ -84,6 +85,7 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
     const client = getAmplifyClient();
 
     setIsLoading(true);
+    setFetchError(null);
     try {
       const notesData = await client.graphql({
         query: queries.listNotes,
@@ -110,6 +112,7 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
+      setFetchError('Unable to refresh recent notes. Check your connection and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -213,6 +216,8 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
     setNotes,
     setTranscripts,
     isLoading,
+    fetchError,
+    refreshNotes: fetchNotes,
     newItems,
     collapsedWeeks,
     removeHighlight,

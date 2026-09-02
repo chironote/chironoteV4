@@ -26,7 +26,7 @@ return groupItemsByWeek(notes).map(week => (
 ));
 ```
 
-It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel uses one bounded scroll region, a stable desktop width, and a viewport-bounded mobile drawer. A title, supporting label, and note-count badge establish the hierarchy. Notes are grouped into bordered weekly surfaces; each semantic button row shows the note label above `time · weekday · date`, while notes from the current local calendar day use `time · Today`.
+It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel uses one bounded scroll region, a stable desktop width, and a viewport-bounded mobile drawer. A title, supporting label, note-count badge, and accessible Refresh action establish the hierarchy. Refresh reuses `useNotesHistory`'s existing server fetch so users can recover a note missed by a realtime subscription; it disables while loading and announces a retryable fetch error without clearing already displayed notes. Notes are grouped into bordered weekly surfaces; each semantic button row shows the note label above `time · weekday · date`, while notes from the current local calendar day use `time · Today`.
 
 ## Smart Editor
 

@@ -37,7 +37,7 @@ return groupItemsByWeek(notes).map(week => (
 ));
 ```
 
-It delegates row rendering to semantic `HistoryListItem` buttons and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel has a labelled recent-notes heading, supporting text, count badge, bounded scroll area, and a viewport-bounded mobile drawer. Each row shows its time with `Today` for the current local calendar day, or its weekday and calendar date otherwise. The mobile toggle is a disabled-aware button with an explicit Open/Close recent notes label.
+It delegates row rendering to semantic `HistoryListItem` buttons and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel has a labelled recent-notes heading, supporting text, count badge, accessible Refresh action, bounded scroll area, and a viewport-bounded mobile drawer. Refresh reuses the App Shell history fetch to recover notes missed by realtime delivery, disables while that fetch is active, and exposes errors without removing the already displayed notes. Each row shows its time with `Today` for the current local calendar day, or its weekday and calendar date otherwise. The mobile toggle is a disabled-aware button with an explicit Open/Close recent notes label.
 
 ## Smart Editor
 

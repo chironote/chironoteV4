@@ -216,6 +216,54 @@
   line-height: 1;
 }
 
+.recent-notes-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recent-notes-refresh {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid #cfe0d0;
+  border-radius: 6px;
+  background: #fff;
+  color: var(--dark-green);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.recent-notes-refresh .material-symbols-rounded {
+  font-size: 17px;
+}
+
+.recent-notes-refresh:hover:not(:disabled) {
+  background: #edf5ed;
+}
+
+.recent-notes-refresh:focus-visible {
+  outline: 2px solid var(--medium-green);
+  outline-offset: 2px;
+}
+
+.recent-notes-refresh:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.recent-notes-error {
+  margin: 0;
+  padding: 8px 20px;
+  border-bottom: 1px solid #f0c8c8;
+  background: #fff6f6;
+  color: #9d2424;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
 /* Left panel animation */
 .left-panel-animate {
   animation: slideInFromLeft 0.3s ease-out;
@@ -1704,6 +1752,11 @@
 
   .recent-notes-header {
     padding: 18px 16px 14px;
+  }
+
+  .recent-notes-error {
+    padding-right: 16px;
+    padding-left: 16px;
   }
 
   .recent-notes-panel .list-container {

@@ -6,15 +6,17 @@ function HistorySidebar({
   notes,
   isCollapsed,
   isLoading,
+  fetchError,
   collapsedWeeks,
   newItems,
   onItemClick,
   onDragStart,
   onRemoveHighlight,
-  onToggleWeek
+  onToggleWeek,
+  onRefresh
 }) {
   const renderItems = () => {
-    if (isLoading) {
+    if (isLoading && notes.length === 0) {
       return <div className="loading-message">Loading recent history</div>;
     }
 
@@ -67,12 +69,25 @@ function HistorySidebar({
             <h2 id="recent-notes-title" className="left-panel-title">Recent Notes</h2>
             <p className="recent-notes-subtitle">Your latest generated notes</p>
           </div>
-          {!isLoading && notes.length > 0 && (
-            <span className="recent-notes-count" aria-label={`${notes.length} recent notes`}>
-              {notes.length}
-            </span>
-          )}
+          <div className="recent-notes-header-actions">
+            {!isLoading && notes.length > 0 && (
+              <span className="recent-notes-count" aria-label={`${notes.length} recent notes`}>
+                {notes.length}
+              </span>
+            )}
+            <button
+              type="button"
+              className="recent-notes-refresh"
+              onClick={onRefresh}
+              disabled={isLoading}
+              aria-label={isLoading ? 'Refreshing recent notes' : 'Refresh recent notes'}
+            >
+              <span className="material-symbols-rounded" aria-hidden="true">refresh</span>
+              <span>{isLoading ? 'Refreshing' : 'Refresh'}</span>
+            </button>
+          </div>
         </div>
+        {fetchError && <p className="recent-notes-error" role="alert">{fetchError}</p>}
         <div className="list-container">
           {renderItems()}
         </div>

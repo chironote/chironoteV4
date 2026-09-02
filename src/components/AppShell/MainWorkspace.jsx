@@ -29,12 +29,14 @@ function MainWorkspace({
         notes={notesHistory.notes}
         isCollapsed={sidebar.isCollapsed}
         isLoading={notesHistory.isLoading}
+        fetchError={notesHistory.fetchError}
         collapsedWeeks={notesHistory.collapsedWeeks}
         newItems={notesHistory.newItems}
         onItemClick={contentPopup.onOpen}
         onDragStart={() => {}}
         onRemoveHighlight={notesHistory.removeHighlight}
         onToggleWeek={notesHistory.toggleWeekCollapse}
+        onRefresh={notesHistory.refreshNotes}
       />
       <MobileHistoryToggle
         isCollapsed={sidebar.isCollapsed}

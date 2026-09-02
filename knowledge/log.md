@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-01
+
+- **Update**: Documented the manual Recent Notes recovery path in [Authenticated Application Shell](./components/app-shell.md) and [History Sidebar and Smart Editor](./components/sidebar.md): it reuses the canonical note fetch after a missed realtime update, represents loading and retryable errors honestly, and keeps existing results visible.
+
 ## 2026-08-31
 
 - **Android Internal release 28**: Published `28 (1.28)` to the one-person `Early Beta` Internal testing track at 6:51 PM PDT. The signed bundle restores secure Android password saving and autofill; Play confirmed package `com.chironote.app`, target SDK 36, API 22+, zero supported-device loss, and availability to Internal testers. The sole warning remains the expected absence of a deobfuscation file. The release AAB SHA-256 is `DA8C08513E5D2EAC05402C1397DB82949C6F00942D66C8356F7E8299D833485E`. Production was untouched.
