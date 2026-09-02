@@ -202,6 +202,8 @@ function AuthenticatedApp({ signOut, user }) {
   const [transcripts, setTranscripts] = useState([]);
   const [draggedContent, setDraggedContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshingHistory, setIsRefreshingHistory] = useState(false);
+  const [historyRefreshError, setHistoryRefreshError] = useState('');
   const [newItems, setNewItems] = useState(new Set());
   const [queryLoaded, setQueryLoaded] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth <= 768);
@@ -305,15 +307,29 @@ function AuthenticatedApp({ signOut, user }) {
           setCollapsedWeeks(initialCollapsedWeeks);
         }
       }
+      return true;
     } catch (error) {
       console.error("Error fetching notes:", error);
       setShowErrorBanner(true);
+      return false;
     } finally {
       if (showLoading) {
         setIsLoading(false);
       }
     }
   }, [user.username]);
+
+  const handleHistoryRefresh = useCallback(async () => {
+    setHistoryRefreshError('');
+    setIsRefreshingHistory(true);
+
+    const didRefresh = await fetchNotes({ showLoading: false });
+    if (!didRefresh) {
+      setHistoryRefreshError('Could not refresh recent history. Please try again.');
+    }
+
+    setIsRefreshingHistory(false);
+  }, [fetchNotes]);
 
   const processRefreshQueue = useCallback(async () => {
     if (isProcessingRefreshRef.current || refreshQueueRef.current.length === 0) {
@@ -768,7 +784,13 @@ function AuthenticatedApp({ signOut, user }) {
           <main className="app-main">
             <section className={`left-panel ${isCollapsed ? 'collapsed' : ''}`}>
               <div className="fade-content">
-                <TogglePanel showNotes={showNotes} setShowNotes={setShowNotes} />
+                <TogglePanel
+                  showNotes={showNotes}
+                  setShowNotes={setShowNotes}
+                  onRefresh={handleHistoryRefresh}
+                  isRefreshing={isRefreshingHistory}
+                  refreshError={historyRefreshError}
+                />
                 <div className="list-container">
                   {renderItems()}
                 </div>

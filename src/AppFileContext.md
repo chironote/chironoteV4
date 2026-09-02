@@ -73,6 +73,10 @@ Authentication is the entry point to the application's core features.
     -   When a new or updated note/transcript is pushed from the backend (e.g., after a recording is processed), the `next` callback fires.
     -   The new data is prepended to the appropriate `notes` or `transcripts` array, ensuring the UI updates in real-time without needing a refresh.
     -   A `newItems` set is used to briefly highlight newly added items in the UI.
+3.  **Manual Recovery Refresh**:
+    -   The History Panel's **Refresh recent history** button calls the same `fetchNotes` function as the initial load, so it re-queries the latest 120 records for the authenticated owner and replaces the displayed note and transcript lists.
+    -   While the request is pending, the button is disabled and announces that notes and transcripts are being fetched. If it fails, an in-panel alert asks the user to try again, in addition to the existing service-disruption banner.
+    -   This is a recovery path for missed or interrupted subscription updates; normal real-time updates still arrive through `onUpdateNotesByOwner`.
 
 ### Recording and Dictation Integration
 

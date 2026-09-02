@@ -5,6 +5,7 @@ This layer synthesizes the current implementation into task-oriented concepts; i
 ## Components
 
 - [Recording lifecycle](./components/recording-lifecycle.md): iPhone WebKit finalization, chunk rotation, upload ordering, cancellation, and media metadata.
+- [Recent history refresh](./components/recent-history.md): note and transcript loading, realtime updates, and recovery when a subscription update is missed.
 
 ## Maintenance
 
