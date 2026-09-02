@@ -15,10 +15,10 @@ jest.mock('../../utils/analytics', () => ({
   trackVideoProgress: jest.fn(),
 }));
 
-const renderLandingPage = () => {
+const renderLandingPage = (variant) => {
   const markup = renderToStaticMarkup(
     <HelmetProvider>
-      <LandingPage />
+      <LandingPage variant={variant} />
     </HelmetProvider>
   );
   document.body.innerHTML = markup;
@@ -92,5 +92,15 @@ describe('LandingPage', () => {
     expect(document.querySelectorAll('img[loading="lazy"]').length).toBeGreaterThan(3);
     expect(document.querySelector('button[aria-controls="marketing-navigation"]')).not.toBeNull();
     expect(document.querySelectorAll('.marketing-faq__item button[aria-expanded="false"]')).toHaveLength(9);
+  });
+
+  test('uses a dedicated HIPAA trust signal and BAA FAQ on the demo page', () => {
+    renderLandingPage('demo');
+
+    expect(document.querySelector('.marketing-trust')).toBeNull();
+    expect(document.querySelector('.marketing-hipaa-trust__icon')).not.toBeNull();
+    expect(document.querySelector('.marketing-hipaa-trust').textContent).toContain('HIPAA-ready clinical workflow');
+    expect(document.body.textContent).toContain('Business Associate Agreement (BAA)');
+    expect(document.querySelectorAll('.marketing-faq__item button[aria-expanded="false"]')).toHaveLength(10);
   });
 });

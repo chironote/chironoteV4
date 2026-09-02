@@ -133,7 +133,15 @@ const faqItems = [
   },
 ];
 
-const structuredData = {
+const demoFaqItems = [
+  ...faqItems,
+  {
+    question: 'Can we discuss a Business Associate Agreement (BAA)?',
+    answer: 'Yes. During your walkthrough, we can discuss Business Associate Agreement (BAA) requirements for your practice and the appropriate next steps.',
+  },
+];
+
+const createStructuredData = (items) => ({
   '@context': 'https://schema.org',
   '@graph': [
     {
@@ -151,7 +159,7 @@ const structuredData = {
     },
     {
       '@type': 'FAQPage',
-      mainEntity: faqItems.map((item) => ({
+      mainEntity: items.map((item) => ({
         '@type': 'Question',
         name: item.question,
         acceptedAnswer: {
@@ -161,10 +169,12 @@ const structuredData = {
       })),
     },
   ],
-};
+});
 
 export default function LandingPage({ variant = 'standard' }) {
   const isDemo = variant === 'demo';
+  const pageFaqItems = isDemo ? demoFaqItems : faqItems;
+  const structuredData = createStructuredData(pageFaqItems);
   const pageRef = useRef(null);
   const videoRef = useRef(null);
   const carouselRef = useRef(null);
@@ -395,7 +405,7 @@ export default function LandingPage({ variant = 'standard' }) {
   const toggleFaq = (index) => {
     const opening = activeFaq !== index;
     setActiveFaq(opening ? index : null);
-    if (opening) trackFaqOpen(faqItems[index].question, index);
+    if (opening) trackFaqOpen(pageFaqItems[index].question, index);
   };
 
   return (
@@ -486,11 +496,25 @@ export default function LandingPage({ variant = 'standard' }) {
           </div>
         </section>
 
-        <section className="marketing-trust" aria-label="Product assurances" data-analytics-section="trust">
-          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.98" data-marketing-scroll-reveal-end="0.90"><span aria-hidden="true">✓</span> HIPAA-compliant workflow</div>
-          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.92" data-marketing-scroll-reveal-end="0.80"><span aria-hidden="true">✓</span> Works alongside most EHRs</div>
-          <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.84" data-marketing-scroll-reveal-end="0.70"><span aria-hidden="true">✓</span> No setup required</div>
-        </section>
+        {isDemo ? (
+          <section className="marketing-hipaa-trust marketing-reveal" aria-labelledby="hipaa-trust-heading" data-analytics-section="trust" data-marketing-reveal>
+            <svg className="marketing-hipaa-trust__icon" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+              <path d="M32 5 54 13v16c0 14-8.9 25.2-22 30C18.9 54.2 10 43 10 29V13l22-8Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
+              <path d="m21 31 7 7 15-16" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <div>
+              <p className="marketing-eyebrow">HIPAA-ready clinical workflow</p>
+              <h2 id="hipaa-trust-heading">Patient privacy, built into the conversation.</h2>
+              <p>ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information.</p>
+            </div>
+          </section>
+        ) : (
+          <section className="marketing-trust" aria-label="Product assurances" data-analytics-section="trust">
+            <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.98" data-marketing-scroll-reveal-end="0.90"><span aria-hidden="true">✓</span> HIPAA-compliant workflow</div>
+            <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.92" data-marketing-scroll-reveal-end="0.80"><span aria-hidden="true">✓</span> Works alongside most EHRs</div>
+            <div className="marketing-trust__item" data-marketing-scroll-reveal data-marketing-scroll-reveal-start="0.84" data-marketing-scroll-reveal-end="0.70"><span aria-hidden="true">✓</span> No setup required</div>
+          </section>
+        )}
 
         <section className="marketing-section marketing-testimonials" data-analytics-section="testimonials">
           <div className="marketing-section__heading marketing-trust-followup" data-marketing-trust-followup>
@@ -636,7 +660,7 @@ export default function LandingPage({ variant = 'standard' }) {
             <h2>Frequently asked questions</h2>
           </div>
           <div className="marketing-faq__list marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
-            {faqItems.map((item, index) => {
+            {pageFaqItems.map((item, index) => {
               const isOpen = activeFaq === index;
               return (
                 <article className={`marketing-faq__item${isOpen ? ' is-open' : ''}`} key={item.question}>

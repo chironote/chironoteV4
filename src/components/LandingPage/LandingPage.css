@@ -307,6 +307,45 @@
   font-size: 0.78rem;
 }
 
+.marketing-hipaa-trust {
+  display: flex;
+  max-width: 1060px;
+  align-items: center;
+  gap: clamp(24px, 4vw, 48px);
+  margin: clamp(40px, 6vw, 72px) auto 0;
+  padding: clamp(28px, 4vw, 48px);
+  color: #fff;
+  border-radius: 24px;
+  background: #1666b8;
+  box-shadow: 0 20px 44px rgba(22, 102, 184, 0.22);
+}
+
+.marketing-hipaa-trust__icon {
+  width: clamp(56px, 7vw, 76px);
+  height: clamp(56px, 7vw, 76px);
+  flex: 0 0 auto;
+}
+
+.marketing-hipaa-trust .marketing-eyebrow {
+  margin-bottom: 10px;
+  color: #dbeeff;
+}
+
+.marketing-hipaa-trust h2 {
+  max-width: 620px;
+  margin: 0;
+  color: inherit;
+  font-size: clamp(1.55rem, 3.2vw, 2.4rem);
+  line-height: 1.15;
+}
+
+.marketing-hipaa-trust p:last-child {
+  max-width: 650px;
+  margin: 14px 0 0;
+  color: #f4f9ff;
+  line-height: 1.6;
+}
+
 .marketing-section {
   padding: clamp(72px, 9vw, 116px) 24px;
 }
@@ -1137,6 +1176,18 @@
 
   .marketing-trust {
     display: none;
+  }
+
+  .marketing-hipaa-trust {
+    align-items: flex-start;
+    margin: 32px 20px 0;
+    padding: 28px 24px;
+    border-radius: 20px;
+  }
+
+  .marketing-hipaa-trust__icon {
+    width: 52px;
+    height: 52px;
   }
 
   .marketing-testimonials {

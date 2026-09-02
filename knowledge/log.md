@@ -4,6 +4,11 @@
 
 - **Booked-demo ad attribution**: Added consent-aware `gclid`/`gbraid`/`wbraid` capture and forwarding through the existing Zoom Scheduler embed's UTM fields for deduplicated server-side Google Ads conversion upload. Organic and non-consenting bookings remain unaffected, and pre-consent click IDs are no longer written to session storage.
 
+## 2026-09-01
+
+- **Manual note-history recovery**: Documented the explicit Recent Notes refresh path, which reuses the server fetch when an AppSync subscription update is missed.
+- **Demo landing-page privacy trust**: Replaced the demo page's rolling assurance strip between the hero and testimonials with a static blue HIPAA trust signal using a shield SVG, while retaining the canonical landing-page strip. Added a demo-only FAQ prompt for Business Associate Agreement (BAA) requirements and recorded the visual/motion distinction.
+
 ## 2026-08-25
 
 - **Demo landing page**: Added the `/demo` public route as a scheduler-focused variant of the canonical landing page. It retains the established responsive presentation, replaces conversion CTAs with anchored walkthrough actions, embeds the existing Zoom scheduler, omits pricing, and frames the session as practical workflow teaching for treatment processes including shockwave visits.
