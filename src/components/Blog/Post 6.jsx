@@ -33,9 +33,4 @@ function Post6Content() {
   );
 }
 
-const post = {
-  ...metadata,
-  component: Post6Content,
-};
-
-export default post;
+export default { ...metadata, component: Post6Content };
