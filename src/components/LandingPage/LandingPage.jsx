@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import './LandingPage.css';
 import {
+  GOOGLE_ADS_ATTRIBUTION_EVENT,
+  getGoogleAdsClickId,
   trackAnalyticsEvent,
   trackFaqOpen,
   trackLandingCta,
@@ -22,10 +24,33 @@ import mockupLaptop from '../../assets/mockup-laptop-final.png';
 
 const SIGN_UP_URL = '/app?initialState=signUp';
 const SIGN_IN_URL = '/app';
-const SCHEDULER_URL = 'https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true';
+const SCHEDULER_URL = 'https://scheduler.zoom.us/nikita-predtechensky/chironote-demo';
+const SCHEDULER_ORIGIN = 'https://chironote.ai';
 const TERMS_URL = 'https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html';
 const VIDEO_TITLE = 'ChiroNote clinical AI scribe overview';
 const VIDEO_MILESTONES = [10, 25, 50, 75, 90];
+const GOOGLE_ADS_CLICK_ID_PREFIXES = {
+  gclid: 'g:',
+  gbraid: 'b:',
+  wbraid: 'w:',
+};
+
+const createSchedulerUrl = () => {
+  const schedulerUrl = new URL(SCHEDULER_URL);
+  schedulerUrl.searchParams.set('embed', 'true');
+  schedulerUrl.searchParams.set('origin', SCHEDULER_ORIGIN);
+
+  const clickId = getGoogleAdsClickId();
+  const prefix = clickId && GOOGLE_ADS_CLICK_ID_PREFIXES[clickId.type];
+  if (prefix) {
+    schedulerUrl.searchParams.set('utm_source', 'google_ads');
+    schedulerUrl.searchParams.set('utm_medium', 'cpc');
+    schedulerUrl.searchParams.set('utm_campaign', 'demo_landing_page');
+    schedulerUrl.searchParams.set('utm_content', `${prefix}${clickId.value}`);
+  }
+
+  return schedulerUrl.toString();
+};
 
 const testimonials = [
   {
@@ -149,6 +174,17 @@ export default function LandingPage({ variant = 'standard' }) {
   const [activeFaq, setActiveFaq] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [schedulerUrl, setSchedulerUrl] = useState(createSchedulerUrl);
+
+  useEffect(() => {
+    if (!isDemo || typeof window === 'undefined') return undefined;
+
+    const refreshSchedulerUrl = () => setSchedulerUrl(createSchedulerUrl());
+    window.addEventListener(GOOGLE_ADS_ATTRIBUTION_EVENT, refreshSchedulerUrl);
+    refreshSchedulerUrl();
+
+    return () => window.removeEventListener(GOOGLE_ADS_ATTRIBUTION_EVENT, refreshSchedulerUrl);
+  }, [isDemo]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -586,7 +622,7 @@ export default function LandingPage({ variant = 'standard' }) {
             </ul>
             <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
               <iframe
-                src={SCHEDULER_URL}
+                src={schedulerUrl}
                 title="Schedule a ChiroNote workflow walkthrough"
                 loading="lazy"
               />

@@ -23,6 +23,8 @@ updateAnalyticsConsent(true);
 
 Declining stores `false` and keeps analytics, ad storage, ad user data, and ad personalization denied. `Analytics/GoogleAnalytics.jsx` owns initialization and cookieless Consent Mode measurement.
 
+Ad click identifiers are never written to browser storage before consent. They may remain in memory for the current page, are persisted for up to 90 days only after acceptance, and are cleared when consent is declined.
+
 ## Maintenance Notes
 
 - Keep the `cookieConsent` local-storage contract compatible with `utils/analytics.js`.

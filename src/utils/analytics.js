@@ -5,7 +5,13 @@ const DEFAULT_GOOGLE_ADS_ID = 'AW-16869907009';
 const CONSENT_STORAGE_KEY = 'cookieConsent';
 const GCLID_STORAGE_KEY = 'gclid';
 const GCLID_EXPIRY_KEY = 'gclid_expiry';
-const GCLID_TTL_DAYS = 90;
+const GOOGLE_ADS_CLICK_ID_STORAGE_KEY = 'google_ads_click_id';
+const GOOGLE_ADS_CLICK_ID_TYPE_KEY = 'google_ads_click_id_type';
+const GOOGLE_ADS_CLICK_ID_EXPIRY_KEY = 'google_ads_click_id_expiry';
+const GOOGLE_ADS_CLICK_ID_TTL_DAYS = 90;
+const GOOGLE_ADS_CLICK_ID_TYPES = ['gclid', 'gbraid', 'wbraid'];
+
+export const GOOGLE_ADS_ATTRIBUTION_EVENT = 'chironote:google-ads-attribution-change';
 
 const measurementId = process.env.REACT_APP_GA_MEASUREMENT_ID || DEFAULT_GA_MEASUREMENT_ID;
 const googleAdsId = process.env.REACT_APP_GOOGLE_ADS_ID || DEFAULT_GOOGLE_ADS_ID;
@@ -13,6 +19,7 @@ const googleAdsId = process.env.REACT_APP_GOOGLE_ADS_ID || DEFAULT_GOOGLE_ADS_ID
 let analyticsInitialized = false;
 let queuedEvents = [];
 let lastPageView = { path: '', timestamp: 0 };
+let pendingGoogleAdsClickId = null;
 
 const isBrowser = () => typeof window !== 'undefined';
 
@@ -38,6 +45,60 @@ const safeStorageRemove = (storage, key) => {
   } catch (error) {
     // Analytics storage should never interrupt the product experience.
   }
+};
+
+const readGoogleAdsClickIdFromUrl = () => {
+  if (!isBrowser()) return null;
+
+  const searchParams = new URLSearchParams(window.location.search);
+  for (const type of GOOGLE_ADS_CLICK_ID_TYPES) {
+    const value = searchParams.get(type)?.trim();
+    if (value) return { type, value };
+  }
+
+  return null;
+};
+
+const createGoogleAdsClickId = ({ type, value }, expiry) => {
+  let expiryDate = expiry ? new Date(expiry) : new Date();
+  if (!expiry || Number.isNaN(expiryDate.getTime())) {
+    expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + GOOGLE_ADS_CLICK_ID_TTL_DAYS);
+  }
+
+  return {
+    type,
+    value,
+    expiry: expiryDate.toISOString(),
+  };
+};
+
+const persistGoogleAdsClickId = (clickId) => {
+  if (!isBrowser() || !clickId) return;
+
+  safeStorageSet(window.localStorage, GOOGLE_ADS_CLICK_ID_STORAGE_KEY, clickId.value);
+  safeStorageSet(window.localStorage, GOOGLE_ADS_CLICK_ID_TYPE_KEY, clickId.type);
+  safeStorageSet(window.localStorage, GOOGLE_ADS_CLICK_ID_EXPIRY_KEY, clickId.expiry);
+};
+
+const clearStoredGoogleAdsClickIds = () => {
+  if (!isBrowser()) return;
+
+  [
+    GOOGLE_ADS_CLICK_ID_STORAGE_KEY,
+    GOOGLE_ADS_CLICK_ID_TYPE_KEY,
+    GOOGLE_ADS_CLICK_ID_EXPIRY_KEY,
+    GCLID_STORAGE_KEY,
+    GCLID_EXPIRY_KEY,
+  ].forEach((key) => {
+    safeStorageRemove(window.localStorage, key);
+    safeStorageRemove(window.sessionStorage, key);
+  });
+};
+
+const notifyGoogleAdsAttributionChange = () => {
+  if (!isBrowser()) return;
+  window.dispatchEvent(new Event(GOOGLE_ADS_ATTRIBUTION_EVENT));
 };
 
 const toEventToken = (value, fallback = 'unknown') => {
@@ -130,13 +191,26 @@ export const updateAnalyticsConsent = (granted) => {
   ReactGA.gtag('consent', 'update', consentState(Boolean(granted)));
 
   if (granted) {
-    const sessionGclid = safeStorageGet(window.sessionStorage, GCLID_STORAGE_KEY);
-    const sessionExpiry = safeStorageGet(window.sessionStorage, GCLID_EXPIRY_KEY);
-    if (sessionGclid && sessionExpiry) {
-      safeStorageSet(window.localStorage, GCLID_STORAGE_KEY, sessionGclid);
-      safeStorageSet(window.localStorage, GCLID_EXPIRY_KEY, sessionExpiry);
+    const currentClickId = pendingGoogleAdsClickId || readGoogleAdsClickIdFromUrl();
+    const legacySessionGclid = safeStorageGet(window.sessionStorage, GCLID_STORAGE_KEY);
+    const legacySessionExpiry = safeStorageGet(window.sessionStorage, GCLID_EXPIRY_KEY);
+
+    if (currentClickId) {
+      pendingGoogleAdsClickId = createGoogleAdsClickId(currentClickId);
+      persistGoogleAdsClickId(pendingGoogleAdsClickId);
+    } else if (legacySessionGclid && legacySessionExpiry) {
+      pendingGoogleAdsClickId = createGoogleAdsClickId(
+        { type: 'gclid', value: legacySessionGclid },
+        legacySessionExpiry
+      );
+      persistGoogleAdsClickId(pendingGoogleAdsClickId);
     }
+  } else {
+    pendingGoogleAdsClickId = null;
+    clearStoredGoogleAdsClickIds();
   }
+
+  notifyGoogleAdsAttributionChange();
 };
 
 export const trackAnalyticsEvent = (eventName, params = {}) => {
@@ -271,44 +345,54 @@ export const trackMilestone = async (eventName, userId, params = {}) => {
   });
 };
 
-export const captureGclid = () => {
+export const captureGoogleAdsClickId = () => {
   if (!isBrowser()) return;
 
   try {
-    const gclid = new URLSearchParams(window.location.search).get('gclid');
-    if (!gclid) return;
+    const clickId = readGoogleAdsClickIdFromUrl();
+    if (!clickId) return;
 
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + GCLID_TTL_DAYS);
-    const expiry = expiryDate.toISOString();
-
-    safeStorageSet(window.sessionStorage, GCLID_STORAGE_KEY, gclid);
-    safeStorageSet(window.sessionStorage, GCLID_EXPIRY_KEY, expiry);
-
+    pendingGoogleAdsClickId = createGoogleAdsClickId(clickId);
     if (getAnalyticsConsent() === true) {
-      safeStorageSet(window.localStorage, GCLID_STORAGE_KEY, gclid);
-      safeStorageSet(window.localStorage, GCLID_EXPIRY_KEY, expiry);
+      persistGoogleAdsClickId(pendingGoogleAdsClickId);
     }
+    notifyGoogleAdsAttributionChange();
   } catch (error) {
     // Ignore malformed URLs or unavailable storage.
   }
 };
 
-export const getGclid = () => {
+export const getGoogleAdsClickId = () => {
   if (!isBrowser()) return null;
+  if (getAnalyticsConsent() !== true) return null;
 
-  const storageOptions = [window.localStorage, window.sessionStorage];
-  for (const storage of storageOptions) {
-    const gclid = safeStorageGet(storage, GCLID_STORAGE_KEY);
-    const expiry = safeStorageGet(storage, GCLID_EXPIRY_KEY);
-    if (!gclid || !expiry) continue;
+  const currentClickId = readGoogleAdsClickIdFromUrl();
+  if (currentClickId) return createGoogleAdsClickId(currentClickId);
 
-    if (new Date() <= new Date(expiry)) return gclid;
-    safeStorageRemove(storage, GCLID_STORAGE_KEY);
-    safeStorageRemove(storage, GCLID_EXPIRY_KEY);
+  const value = safeStorageGet(window.localStorage, GOOGLE_ADS_CLICK_ID_STORAGE_KEY);
+  const type = safeStorageGet(window.localStorage, GOOGLE_ADS_CLICK_ID_TYPE_KEY);
+  const expiry = safeStorageGet(window.localStorage, GOOGLE_ADS_CLICK_ID_EXPIRY_KEY);
+  if (value && GOOGLE_ADS_CLICK_ID_TYPES.includes(type) && expiry) {
+    if (new Date() <= new Date(expiry)) return { type, value, expiry };
+    clearStoredGoogleAdsClickIds();
+    return null;
   }
 
+  const legacyGclid = safeStorageGet(window.localStorage, GCLID_STORAGE_KEY);
+  const legacyExpiry = safeStorageGet(window.localStorage, GCLID_EXPIRY_KEY);
+  if (legacyGclid && legacyExpiry && new Date() <= new Date(legacyExpiry)) {
+    return { type: 'gclid', value: legacyGclid, expiry: legacyExpiry };
+  }
+
+  if (legacyGclid || legacyExpiry) clearStoredGoogleAdsClickIds();
   return null;
+};
+
+export const captureGclid = captureGoogleAdsClickId;
+
+export const getGclid = () => {
+  const clickId = getGoogleAdsClickId();
+  return clickId?.type === 'gclid' ? clickId.value : null;
 };
 
 export const setUserProperties = async (userId) => {

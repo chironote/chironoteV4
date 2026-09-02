@@ -25,7 +25,7 @@ Absent and declined consent keep storage denied. Accepting updates all four cate
 
 Analytics events must not contain raw or hashed email addresses, patient or provider names, clinical text, transcripts, generated notes, or protected health information. Signed-in tracking may attach the application's opaque user ID only after consent.
 
-Google click IDs are kept in session storage before consent and copied to 90-day local storage only after consent is granted. Analytics failures and unavailable storage never interrupt product behavior.
+Google Ads click IDs (`gclid`, `gbraid`, and `wbraid`) remain memory-only before consent and move to 90-day local storage only after consent is granted. Declining consent clears stored attribution. Analytics failures and unavailable storage never interrupt product behavior.
 
 ## Event Vocabulary
 

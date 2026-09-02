@@ -2,8 +2,11 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HelmetProvider } from 'react-helmet-async';
 import DemoLandingPage from './DemoLandingPage';
+import { getGoogleAdsClickId } from '../../utils/analytics';
 
 jest.mock('../../utils/analytics', () => ({
+  GOOGLE_ADS_ATTRIBUTION_EVENT: 'chironote:google-ads-attribution-change',
+  getGoogleAdsClickId: jest.fn(() => null),
   trackAnalyticsEvent: jest.fn(),
   trackFaqOpen: jest.fn(),
   trackLandingCta: jest.fn(),
@@ -23,6 +26,10 @@ const renderDemoLandingPage = () => {
 };
 
 describe('DemoLandingPage', () => {
+  beforeEach(() => {
+    getGoogleAdsClickId.mockReturnValue(null);
+  });
+
   test('uses the scheduler as its main conversion path and omits pricing', () => {
     renderDemoLandingPage();
 
@@ -37,9 +44,28 @@ describe('DemoLandingPage', () => {
 
     const scheduler = document.querySelector('#scheduler iframe');
     expect(scheduler).not.toBeNull();
-    expect(scheduler.getAttribute('src')).toBe('https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true');
+    const schedulerUrl = new URL(scheduler.getAttribute('src'));
+    expect(schedulerUrl.origin).toBe('https://scheduler.zoom.us');
+    expect(schedulerUrl.searchParams.get('embed')).toBe('true');
+    expect(schedulerUrl.searchParams.get('origin')).toBe('https://chironote.ai');
+    expect(schedulerUrl.searchParams.has('utm_content')).toBe(false);
     expect(scheduler.getAttribute('loading')).toBe('lazy');
     expect(document.querySelector('.marketing-hero__summary').textContent).toContain('shockwave visits');
     expect(document.body.textContent).toContain('Learn the workflow with us');
+  });
+
+  test.each([
+    ['gclid', 'g:'],
+    ['gbraid', 'b:'],
+    ['wbraid', 'w:'],
+  ])('passes a consented %s through Zoom tracking', (type, prefix) => {
+    getGoogleAdsClickId.mockReturnValue({ type, value: 'test-click-id' });
+    renderDemoLandingPage();
+
+    const schedulerUrl = new URL(document.querySelector('#scheduler iframe').getAttribute('src'));
+    expect(schedulerUrl.searchParams.get('utm_source')).toBe('google_ads');
+    expect(schedulerUrl.searchParams.get('utm_medium')).toBe('cpc');
+    expect(schedulerUrl.searchParams.get('utm_campaign')).toBe('demo_landing_page');
+    expect(schedulerUrl.searchParams.get('utm_content')).toBe(`${prefix}test-click-id`);
   });
 });

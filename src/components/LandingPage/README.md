@@ -41,3 +41,4 @@ The page sends stable funnel events through `utils/analytics.js`, including sect
 - Do not add third-party scripts directly to this page; initialize measurement through the Analytics component and consent utilities.
 - Confirm pricing copy against the authenticated Stripe pricing table before publishing plan changes.
 - Keep the `/demo` scheduler URL, section anchor, CTA labels, and route metadata aligned.
+- Keep the scheduler's consented `gclid`/`gbraid`/`wbraid` UTM forwarding aligned with the Make booked-demo conversion routes. Organic visitors load the same scheduler without attribution parameters.

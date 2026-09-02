@@ -19,6 +19,7 @@ describe('analytics', () => {
   beforeEach(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
+    window.history.replaceState({}, '', '/');
     window.dataLayer = [];
     delete window.gtag;
     jest.clearAllMocks();
@@ -108,16 +109,49 @@ describe('analytics', () => {
     }));
   });
 
-  test('stores ad click IDs in the session until consent is granted', () => {
+  test('keeps an ad click ID out of storage until consent is granted', () => {
     window.history.replaceState({}, '', '/?gclid=test-click-id');
     const { analytics } = loadAnalytics();
 
-    analytics.captureGclid();
-    expect(window.sessionStorage.getItem('gclid')).toBe('test-click-id');
+    analytics.captureGoogleAdsClickId();
+    expect(window.sessionStorage.getItem('gclid')).toBeNull();
     expect(window.localStorage.getItem('gclid')).toBeNull();
+    expect(window.localStorage.getItem('google_ads_click_id')).toBeNull();
+    expect(analytics.getGoogleAdsClickId()).toBeNull();
 
     analytics.updateAnalyticsConsent(true);
-    expect(window.localStorage.getItem('gclid')).toBe('test-click-id');
+    expect(window.localStorage.getItem('google_ads_click_id')).toBe('test-click-id');
+    expect(window.localStorage.getItem('google_ads_click_id_type')).toBe('gclid');
+    expect(analytics.getGoogleAdsClickId()).toEqual(expect.objectContaining({
+      type: 'gclid',
+      value: 'test-click-id',
+    }));
+    expect(analytics.getGclid()).toBe('test-click-id');
+  });
+
+  test.each(['gclid', 'gbraid', 'wbraid'])('captures consented %s attribution', (type) => {
+    window.history.replaceState({}, '', `/?${type}=test-click-id`);
+    const { analytics } = loadAnalytics();
+
+    analytics.updateAnalyticsConsent(true);
+    analytics.captureGoogleAdsClickId();
+
+    expect(analytics.getGoogleAdsClickId()).toEqual(expect.objectContaining({
+      type,
+      value: 'test-click-id',
+    }));
+  });
+
+  test('clears stored attribution when consent is declined', () => {
+    window.history.replaceState({}, '', '/?gclid=test-click-id');
+    const { analytics } = loadAnalytics();
+
+    analytics.updateAnalyticsConsent(true);
+    analytics.captureGoogleAdsClickId();
     window.history.replaceState({}, '', '/');
+    analytics.updateAnalyticsConsent(false);
+
+    expect(window.localStorage.getItem('google_ads_click_id')).toBeNull();
+    expect(analytics.getGoogleAdsClickId()).toBeNull();
   });
 });

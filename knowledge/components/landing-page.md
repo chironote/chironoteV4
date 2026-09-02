@@ -21,6 +21,7 @@ The landing page exposes real destinations rather than placeholders:
 - Blog opens `/blog`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - The demo variant omits pricing and routes its primary actions to the embedded Zoom scheduler. Its copy teaches the recording-review-EHR workflow and welcomes questions about existing treatment processes, including shockwave visits.
+- The demo scheduler forwards a consented Google Ads click identifier (`gclid`, `gbraid`, or `wbraid`) through Zoom's UTM tracking fields. Organic and non-consenting visitors load the scheduler without an identifier, so downstream automation can skip conversion upload without failing the booking.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 
@@ -37,6 +38,8 @@ Landing decisions can be evaluated with stable GA4 events:
 - Global `page_view` and `web_vital` events cover acquisition, bounce/engagement reporting, and mobile performance.
 
 Never send form values, email addresses, note content, transcripts, or protected health information with these events.
+
+Booked-demo attribution is server-side: Zoom emits the scheduling event, Make selects the matching click-ID type, and Google Ads deduplicates uploads using the Zoom scheduled-event ID. The browser does not send a second Google Ads conversion on booking completion.
 
 ## Performance Boundaries
 

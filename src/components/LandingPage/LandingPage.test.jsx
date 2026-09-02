@@ -4,6 +4,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import LandingPage from './LandingPage';
 
 jest.mock('../../utils/analytics', () => ({
+  GOOGLE_ADS_ATTRIBUTION_EVENT: 'chironote:google-ads-attribution-change',
+  getGoogleAdsClickId: jest.fn(() => null),
   trackAnalyticsEvent: jest.fn(),
   trackFaqOpen: jest.fn(),
   trackLandingCta: jest.fn(),

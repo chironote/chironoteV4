@@ -12,6 +12,8 @@ This folder owns application-wide Google Analytics 4 and Google Ads measurement.
 
 Analytics starts with Consent Mode storage denied unless `cookieConsent` is already `true`. The cookie banner updates analytics, ad-storage, ad-user-data, and ad-personalization consent together. Events do not include raw email addresses; signed-in analytics may use the application's opaque user ID after consent.
 
+Google Ads attribution recognizes `gclid`, `gbraid`, and `wbraid`. Before consent, the current click ID is retained only in memory; accepting consent stores it locally for up to 90 days, while declining clears it. The demo scheduler receives the consented identifier through Zoom's UTM tracking fields so the server-side webhook can upload one deduplicated booked-demo conversion.
+
 The default measurement IDs can be overridden with `REACT_APP_GA_MEASUREMENT_ID` and `REACT_APP_GOOGLE_ADS_ID`.
 
 ## Reporting Contract

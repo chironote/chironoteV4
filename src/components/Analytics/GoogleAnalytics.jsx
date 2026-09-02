@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
-  captureGclid,
+  captureGoogleAdsClickId,
   initializeAnalytics,
   trackRoutePageView,
   trackWebVital,
@@ -43,7 +43,7 @@ export default function GoogleAnalytics() {
 
   useEffect(() => {
     const path = `${location.pathname}${location.search}`;
-    captureGclid();
+    captureGoogleAdsClickId();
     trackRoutePageView({
       path,
       title: document.title,
