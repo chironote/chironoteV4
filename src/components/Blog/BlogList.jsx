@@ -11,11 +11,9 @@ import Post2 from './Post 2';
 import Post3 from './Post 3';
 import Post4 from './Post 4';
 import Post5 from './Post 5';
-import Post6 from './Post 6';
 
 // Array of all blog posts - add new posts here
 const BLOG_POSTS = [
-  Post6,
   Post1,
   Post2,
   Post3,

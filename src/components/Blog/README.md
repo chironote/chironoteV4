@@ -6,7 +6,7 @@ This folder owns the public blog index and individual blog post route rendering.
 
 - `BlogList.jsx` renders `/blog`, imports all post modules, and displays post cards.
 - `BlogPost.jsx` renders `/blog/:slug`, finds a post by slug, and renders its component.
-- `Post 1.jsx` through `Post 6.jsx` are individual blog modules.
+- `Post 1.jsx` through `Post 5.jsx` are individual blog modules.
 - `Blog.css` styles the blog list and article pages.
 
 ## Post Module Contract
@@ -26,7 +26,6 @@ export default {
 
 ```js
 const BLOG_POSTS = [
-  Post6,
   Post1,
   Post2,
   Post3,
@@ -44,7 +43,6 @@ const POST_MAP = {
   [Post3.slug]: Post3,
   [Post4.slug]: Post4,
   [Post5.slug]: Post5,
-  [Post6.slug]: Post6,
 };
 ```
 
