@@ -480,18 +480,23 @@ export default function LandingPage({ variant = 'standard' }) {
       <main>
         <section className="marketing-hero" data-analytics-section="hero">
           <div className="marketing-hero__copy">
-            <p className="marketing-eyebrow">{isDemo ? 'A practical ChiroNote walkthrough' : 'AI documentation built for chiropractors'}</p>
+            <p className="marketing-eyebrow">{isDemo ? 'Built for busy chiropractors' : 'AI documentation built for chiropractors'}</p>
             <h1>
-              {isDemo ? 'Learn how to chart ' : 'SOAP notes, '}
-              <span>{isDemo ? 'while you treat.' : 'written while you treat.'}</span>
+              SOAP notes, <span>written while you treat.</span>
             </h1>
-            <p className="marketing-hero__summary">{isDemo ? 'See how ChiroNote fits your real treatment flow—including shockwave visits—and get your setup questions answered.' : 'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'}</p>
+            <p className="marketing-hero__summary">{isDemo ? 'ChiroNote listens during the patient visit and turns the conversation into a structured chiropractic SOAP note—ready to review and copy into your EHR.' : 'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'}</p>
             <div className="marketing-hero__actions">
               <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('hero', 'Try now for free')}>
                 <span>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</span>
-                <small>{isDemo ? 'Choose a time below' : 'No credit card required'}</small>
+                {!isDemo && <small>No credit card required</small>}
               </a>
-              <a className="marketing-button marketing-button--secondary" href="#how-it-works" onClick={() => handleNavigation('how_it_works')}>{isDemo ? 'Watch the workflow' : 'See how it works'}</a>
+              <a
+                className="marketing-button marketing-button--secondary"
+                href={isDemo ? SIGN_UP_URL : '#how-it-works'}
+                onClick={() => isDemo ? handleCta('hero', 'Sign up') : handleNavigation('how_it_works')}
+              >
+                {isDemo ? 'Sign up' : 'See how it works'}
+              </a>
             </div>
           </div>
           <div className="marketing-hero__visual">

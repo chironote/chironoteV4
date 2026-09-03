@@ -232,6 +232,11 @@
   opacity: 0.82;
 }
 
+.marketing-page--demo .marketing-hero__actions .marketing-button--primary {
+  flex-direction: row;
+  font-size: 1.04rem;
+}
+
 .marketing-button--secondary {
   color: var(--marketing-green);
   border-color: var(--marketing-border);
@@ -1153,7 +1158,7 @@
     top: 18px;
     left: 12px;
     display: flex;
-    width: clamp(112px, 29vw, 118px);
+    width: clamp(132px, 34vw, 150px);
     min-height: clamp(124px, 33vw, 132px);
     justify-content: center;
     flex-direction: column;
@@ -1167,6 +1172,7 @@
     box-shadow: 0 14px 32px rgba(20, 35, 28, 0.18);
     backdrop-filter: blur(12px);
     list-style: none;
+    text-align: center;
   }
 
   .marketing-hero__mobile-assurances li {
@@ -1181,14 +1187,15 @@
 
   .marketing-hipaa-trust {
     align-items: flex-start;
-    margin: 32px 20px 0;
-    padding: 28px 24px;
+    gap: 18px;
+    margin: 32px 16px 0;
+    padding: 26px 18px;
     border-radius: 20px;
   }
 
   .marketing-hipaa-trust__icon {
-    width: 52px;
-    height: 52px;
+    width: 44px;
+    height: 44px;
   }
 
   .marketing-testimonials {

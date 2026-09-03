@@ -50,6 +50,33 @@ describe('DemoLandingPage', () => {
     expect(Array.from(document.querySelectorAll('a[href="#scheduler"]')).every((link) => link.textContent.includes('Schedule a walkthrough') || link.textContent.includes('Walkthrough'))).toBe(true);
   });
 
+  test('offers a tracked sign-up path beside the streamlined hero walkthrough CTA', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    renderClientDemoLandingPage(root);
+    const heroActions = container.querySelector('.marketing-hero__actions');
+    const walkthroughLink = heroActions.querySelector('a[href="#scheduler"]');
+    const signUpLink = heroActions.querySelector('a[href="/app?initialState=signUp"]');
+
+    expect(walkthroughLink.textContent).toBe('Schedule a walkthrough');
+    expect(signUpLink.textContent).toBe('Sign up');
+
+    require('../../utils/analytics').trackLandingCta.mockClear();
+    act(() => signUpLink.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+
+    expect(require('../../utils/analytics').trackLandingCta).toHaveBeenCalledWith({
+      location: 'hero',
+      label: 'Sign up',
+      destination: '/app?initialState=signUp',
+      plan: undefined,
+    });
+
+    act(() => root.unmount());
+    container.remove();
+  });
+
   test('embeds the Zoom scheduler with practical walkthrough context', () => {
     renderDemoLandingPage();
 
@@ -61,7 +88,8 @@ describe('DemoLandingPage', () => {
     expect(schedulerUrl.searchParams.get('origin')).toBe('https://chironote.ai');
     expect(schedulerUrl.searchParams.has('utm_content')).toBe(false);
     expect(scheduler.getAttribute('loading')).toBe('lazy');
-    expect(document.querySelector('.marketing-hero__summary').textContent).toContain('shockwave visits');
+    expect(document.querySelector('h1').textContent).toContain('SOAP notes, written while you treat.');
+    expect(document.querySelector('.marketing-hero__summary').textContent).toContain('structured chiropractic SOAP note');
     expect(document.body.textContent).toContain('Pick a timeslot below');
   });
 

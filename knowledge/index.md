@@ -34,7 +34,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
 | [User Feedback](./components/feedback.md) | Accessible authenticated feedback modal behavior and fixed submission contract. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
-| [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; mobile-first presentation; HIPAA/BAA demo trust content; CTA destinations; and analytics. |
+| [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; mobile-first presentation; demo scheduler/sign-up CTA split; HIPAA/BAA trust content; and analytics. |
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
 | [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence and analytics initialization. |

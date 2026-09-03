@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-03
+
+- **Demo hero conversion and mobile trust polish**: Replaced placeholder walkthrough-led hero copy with the benefit-led `SOAP notes, written while you treat.` message and a plain-language product explanation for unfamiliar visitors. Removed the walkthrough button helper line, promoted its main label, converted the adjacent workflow link into the standard tracked sign-up path, centered and widened the compact image assurances, and tightened the mobile HIPAA trust panel so its copy uses a wider measure.
+
 ## 2026-09-02
 
 - **Booked-demo GA4 attribution**: Added a Zoom Scheduler `bookingForm` callback listener that validates the iframe source and Zoom origin before recording one non-PII `booked_demo` event per scheduled-event ID. This restores the established GA4-to-Google-Ads conversion path while preserving consent-aware click-ID forwarding. Organic and non-consenting bookings remain unaffected, and pre-consent click IDs are not written to session storage.
