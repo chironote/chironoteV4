@@ -110,7 +110,7 @@ const faqItems = [
   },
   {
     question: 'Is ChiroNote HIPAA compliant?',
-    answer: 'ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information. Providers remain responsible for using the product according to their privacy and security policies.',
+    answer: 'ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information. All service providers with access to protected health information are covered by Business Associate Agreements with ChiroNote. Providers remain responsible for using the product according to their privacy and security policies.',
   },
   {
     question: "Can I edit the SOAP notes after they're created?",
@@ -520,7 +520,7 @@ export default function LandingPage({ variant = 'standard' }) {
             <div>
               <p className="marketing-eyebrow">HIPAA-ready clinical workflow</p>
               <h2 id="hipaa-trust-heading">Patient privacy, built into the conversation.</h2>
-              <p>ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information. All service providers with access to protected health information are covered by Business Associate Agreements with ChiroNote.</p>
+              <p>Encryption and access controls help safeguard protected health information throughout your workflow.</p>
             </div>
           </section>
         ) : (

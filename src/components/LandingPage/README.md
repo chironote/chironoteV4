@@ -42,4 +42,4 @@ The page sends stable funnel events through `utils/analytics.js`, including sect
 - Confirm pricing copy against the authenticated Stripe pricing table before publishing plan changes.
 - Keep the `/demo` scheduler URL, section anchor, CTA labels, and route metadata aligned.
 - Keep the scheduler's consented `gclid`/`gbraid`/`wbraid` UTM forwarding intact. Its origin-validated `bookingForm` callback is the sole client-side trigger for GA4's `booked_demo` event; never fire that event for a scheduler view or CTA click. Organic visitors load the same scheduler without attribution parameters.
-- Do not offer clinic-facing Business Associate Agreements in the `/demo` FAQ. The HIPAA trust section instead states that ChiroNote maintains BAAs with service providers that can access protected health information.
+- Do not offer clinic-facing Business Associate Agreements in the `/demo` FAQ. Explain in the existing HIPAA-compliance answer that ChiroNote maintains BAAs with service providers that can access protected health information, while keeping the visual HIPAA trust panel concise.
