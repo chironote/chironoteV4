@@ -316,19 +316,20 @@
   padding: clamp(28px, 4vw, 48px);
   color: #fff;
   border-radius: 24px;
-  background: #1666b8;
-  box-shadow: 0 20px 44px rgba(22, 102, 184, 0.22);
+  background: var(--marketing-green);
+  box-shadow: 0 20px 44px rgba(39, 63, 52, 0.22);
 }
 
 .marketing-hipaa-trust__icon {
   width: clamp(56px, 7vw, 76px);
   height: clamp(56px, 7vw, 76px);
   flex: 0 0 auto;
+  object-fit: contain;
 }
 
 .marketing-hipaa-trust .marketing-eyebrow {
   margin-bottom: 10px;
-  color: #dbeeff;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .marketing-hipaa-trust h2 {
@@ -842,7 +843,7 @@
 
 .marketing-scheduler__embed {
   width: min(1060px, 100%);
-  height: 720px;
+  height: 840px;
   overflow: hidden;
   margin: 0 auto;
   border: 1px solid var(--marketing-border);
@@ -1205,6 +1206,7 @@
     padding: 0 20px 10px;
     scroll-behavior: smooth;
     scroll-snap-type: x mandatory;
+    overscroll-behavior-inline: contain;
     scrollbar-width: none;
   }
 
@@ -1217,6 +1219,7 @@
     flex: 0 0 calc(100vw - 52px);
     grid-template-rows: 154px 1fr;
     scroll-snap-align: center;
+    scroll-snap-stop: always;
   }
 
   .marketing-testimonial__portrait img {
@@ -1332,7 +1335,7 @@
   }
 
   .marketing-scheduler__embed {
-    height: 640px;
+    height: 800px;
     border-radius: 18px;
   }
 
@@ -1414,7 +1417,7 @@
   }
 
   .marketing-scheduler__embed {
-    height: 600px;
+    height: 780px;
   }
 
   .marketing-faq__item h3 button {
@@ -1430,7 +1433,8 @@
 /* Keep the scheduler introduction concise on narrow phones. */
 @media (max-width: 600px) {
   .marketing-page--demo .marketing-scheduler .marketing-eyebrow,
-  .marketing-page--demo .marketing-scheduler .marketing-section__heading > p:last-child {
+  .marketing-page--demo .marketing-scheduler .marketing-section__heading > p:last-child,
+  .marketing-page--demo .marketing-scheduler__details {
     display: none;
   }
 }

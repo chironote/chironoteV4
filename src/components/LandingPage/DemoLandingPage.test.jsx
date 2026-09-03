@@ -62,7 +62,7 @@ describe('DemoLandingPage', () => {
     expect(schedulerUrl.searchParams.has('utm_content')).toBe(false);
     expect(scheduler.getAttribute('loading')).toBe('lazy');
     expect(document.querySelector('.marketing-hero__summary').textContent).toContain('shockwave visits');
-    expect(document.body.textContent).toContain('Learn the workflow with us');
+    expect(document.body.textContent).toContain('Pick a timeslot below');
   });
 
   test.each([

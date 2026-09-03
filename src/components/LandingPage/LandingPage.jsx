@@ -21,6 +21,7 @@ import samAvatar from '../../assets/sam-avatar.webp';
 import videoThumbnail from '../../assets/demo-thumbnail.webp';
 import whiteboardVideo from '../../assets/WhiteboardAnimation.mp4';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
+import hipaaIcon from '../../assets/hipaa.svg';
 
 const SIGN_UP_URL = '/app?initialState=signUp';
 const SIGN_IN_URL = '/app';
@@ -133,14 +134,6 @@ const faqItems = [
   },
 ];
 
-const demoFaqItems = [
-  ...faqItems,
-  {
-    question: 'Can we discuss a Business Associate Agreement (BAA)?',
-    answer: 'Yes. During your walkthrough, we can discuss Business Associate Agreement (BAA) requirements for your practice and the appropriate next steps.',
-  },
-];
-
 const createStructuredData = (items) => ({
   '@context': 'https://schema.org',
   '@graph': [
@@ -173,7 +166,7 @@ const createStructuredData = (items) => ({
 
 export default function LandingPage({ variant = 'standard' }) {
   const isDemo = variant === 'demo';
-  const pageFaqItems = isDemo ? demoFaqItems : faqItems;
+  const pageFaqItems = faqItems;
   const structuredData = createStructuredData(pageFaqItems);
   const pageRef = useRef(null);
   const videoRef = useRef(null);
@@ -523,14 +516,11 @@ export default function LandingPage({ variant = 'standard' }) {
 
         {isDemo ? (
           <section className="marketing-hipaa-trust marketing-reveal" aria-labelledby="hipaa-trust-heading" data-analytics-section="trust" data-marketing-reveal>
-            <svg className="marketing-hipaa-trust__icon" viewBox="0 0 64 64" fill="none" aria-hidden="true">
-              <path d="M32 5 54 13v16c0 14-8.9 25.2-22 30C18.9 54.2 10 43 10 29V13l22-8Z" stroke="currentColor" strokeWidth="4" strokeLinejoin="round" />
-              <path d="m21 31 7 7 15-16" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+            <img className="marketing-hipaa-trust__icon" src={hipaaIcon} alt="" aria-hidden="true" />
             <div>
               <p className="marketing-eyebrow">HIPAA-ready clinical workflow</p>
               <h2 id="hipaa-trust-heading">Patient privacy, built into the conversation.</h2>
-              <p>ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information.</p>
+              <p>ChiroNote is designed for HIPAA-compliant clinical use, with encryption and access controls for protected health information. All service providers with access to protected health information are covered by Business Associate Agreements with ChiroNote.</p>
             </div>
           </section>
         ) : (
@@ -661,7 +651,7 @@ export default function LandingPage({ variant = 'standard' }) {
           <section id="scheduler" className="marketing-section marketing-scheduler" data-analytics-section="scheduler">
             <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
               <p className="marketing-eyebrow">Schedule a walkthrough</p>
-              <h2>Learn the workflow with us</h2>
+              <h2>Pick a timeslot below</h2>
               <p>We’ll show you how to record a treatment visit, review the generated SOAP note, and move it into your EHR. Bring questions about your current process.</p>
             </div>
             <ul className="marketing-scheduler__details marketing-reveal marketing-reveal--delay-1" aria-label="Walkthrough details" data-marketing-reveal>
