@@ -1427,26 +1427,11 @@
   }
 }
 
-/* Phone demo visits are booking-led: show the scheduler before supporting content. */
+/* Keep the scheduler introduction concise on narrow phones. */
 @media (max-width: 600px) {
-  .marketing-page--demo main {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .marketing-page--demo .marketing-scheduler {
-    order: -1;
-    padding: 16px;
-  }
-
-  .marketing-page--demo .marketing-scheduler .marketing-section__heading,
-  .marketing-page--demo .marketing-scheduler__details {
+  .marketing-page--demo .marketing-scheduler .marketing-eyebrow,
+  .marketing-page--demo .marketing-scheduler .marketing-section__heading > p:last-child {
     display: none;
-  }
-
-  .marketing-page--demo .marketing-scheduler__embed {
-    height: clamp(560px, calc(100svh - 80px), 720px);
-    border-radius: 18px;
   }
 }
 
