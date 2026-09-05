@@ -2,6 +2,7 @@
 
 ## 2026-09-05
 
+- **Production release 29 submitted**: Submitted the exact Internal-tested `29 (1.29)` bundle for the existing full United States Production rollout with managed publishing off. Both production reviews confirmed package `com.chironote.app`, API 22+, target SDK 36, unchanged supported-device counts, accurate release notes, and the understood missing-deobfuscation-file warning. Google Play currently shows `Changes in review` while automated checks continue; the release is not yet available on Google Play. Production `27 (1.27)` remains rollback evidence.
 - **Android Internal release 29**: Published `29 (1.29)` to the one-person `Early Beta` Internal testing track at 8:33 AM PDT. The signed bundle delivers the manual Recent Notes refresh recovery path; Play confirmed package `com.chironote.app`, target SDK 36, API 22+, no supported-device loss, and availability to Internal testers. The sole warning remains the expected absence of a deobfuscation file. The AAB SHA-256 is `3BFD2BCE4A30A1405222E7DF7F5564EBD0BA65A9E0C8D3FEBE26D7BAF5D7FAD3`. Production was untouched.
 
 ## 2026-09-01

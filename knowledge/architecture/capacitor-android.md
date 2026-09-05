@@ -36,7 +36,7 @@ The app-state bridge preserves the existing WebView recording approach for nativ
 - The configured virtual hostname remains `chironote.ai`. Do not change it casually because origin changes can affect stored authentication state and allowed backend origins.
 - The manifest declares `https://chironote.ai/.well-known/assetlinks.json` for app/site credential association. That endpoint still returns the SPA HTML shell as of 2026-08-31, so verified cross-surface credential sharing remains an external website configuration follow-up; do not fabricate the signing fingerprint in this repository.
 - `src/amplifyconfiguration.json` and `src/aws-exports.js` are environment-sensitive, ignored files. They must be supplied locally or by an approved build workflow without committing credentials or environment secrets.
-- Release signing files stay outside Git. Versioning, signing ownership, internal testing, and Google Play Console synchronization are separate release work.
+- Release signing files stay outside Git. Versioning, signing ownership, Internal testing, and Production promotion are separate release work; record each confirmed track transition and its rollback evidence in the dated knowledge log.
 - `src/DataSafetyDisclosuresMap.md` preserves the repository evidence for the later Google Play data-safety review.
 
 ## Build and Validation
