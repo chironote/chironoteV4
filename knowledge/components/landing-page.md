@@ -56,4 +56,6 @@ The conversion-critical top of the page is mobile-first: concise hero copy bring
 
 ## Provenance
 
+Testimonial order on both public variants is Dr. David Ager, Dr. Matt Fryauf, then Dr. Jessica Yeung. David's quote, "Chironote is a real help and saves me hours per week.", is verbatim from his August 27, 2026 email in the "AI Problem" conversation (Gmail message `1a044ef33bbdc582`). He agreed to provide a website headshot on August 28 (`1a04a5b4cfafd75e`) and supplied the photographs on September 3 (`1a0676068541709b`). The first supplied photograph is the source of `src/assets/david-ager-avatar.webp`, with background replacement and square framing to match the existing portraits. Keep private correspondence and original full-resolution photos outside the repository. The former third testimonial and its unused portrait were removed.
+
 Derived from [`src/components/LandingPage/README.md`](../../src/components/LandingPage/README.md), [`LandingPage.jsx`](../../src/components/LandingPage/LandingPage.jsx), [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), and [`utils/analytics.js`](../../src/utils/analytics.js).

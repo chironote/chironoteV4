@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-07
+
+- **Landing testimonials**: Added Dr. David Ager first with his supplied portrait and verbatim hours-saved quote, followed by Matt and Jessica. Removed the former third testimonial and unused portrait. Recorded email provenance and website-headshot consent dates in the landing-page concept.
+
 ## 2026-09-03
 
 - **Demo hero conversion and mobile trust polish**: Replaced placeholder walkthrough-led hero copy with the benefit-led `SOAP notes, written while you treat.` message and a plain-language product explanation for unfamiliar visitors. Removed the walkthrough button helper line, promoted its main label, converted the adjacent workflow link into the standard tracked sign-up path, centered and widened the compact image assurances, and tightened the mobile HIPAA trust panel so its copy uses a wider measure.

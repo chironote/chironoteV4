@@ -17,7 +17,7 @@ import heroImageSmall from '../../assets/hero-chiropractor-720.webp';
 import heroImageLarge from '../../assets/hero-chiropractor-1200.webp';
 import mattAvatar from '../../assets/matt-avatar.webp';
 import jessAvatar from '../../assets/jess-avatar.webp';
-import samAvatar from '../../assets/sam-avatar.webp';
+import davidAvatar from '../../assets/david-ager-avatar.webp';
 import videoThumbnail from '../../assets/demo-thumbnail.webp';
 import whiteboardVideo from '../../assets/WhiteboardAnimation.mp4';
 import mockupLaptop from '../../assets/mockup-laptop-final.png';
@@ -55,6 +55,11 @@ const createSchedulerUrl = () => {
 
 const testimonials = [
   {
+    name: 'Dr. David Ager',
+    avatar: davidAvatar,
+    quote: 'Chironote is a real help and saves me hours per week.',
+  },
+  {
     name: 'Dr. Matt Fryauf',
     avatar: mattAvatar,
     quote: 'I highly recommend this app for high volume practices.',
@@ -63,11 +68,6 @@ const testimonials = [
     name: 'Dr. Jessica Yeung',
     avatar: jessAvatar,
     quote: 'Enables me to concentrate my time on patient care instead of paperwork.',
-  },
-  {
-    name: 'Sam Battochio',
-    avatar: samAvatar,
-    quote: 'Its speed and accuracy make it an invaluable tool.',
   },
 ];
 

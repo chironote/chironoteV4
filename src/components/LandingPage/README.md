@@ -27,6 +27,7 @@ The page sends stable funnel events through `utils/analytics.js`, including sect
 
 - The above-the-fold hero uses responsive WebP sources; the largest version is under 100 KB.
 - Testimonial avatars and the product mockup lazy-load.
+- Testimonials appear in this order on both `/` and `/demo`: Dr. David Ager, Dr. Matt Fryauf, Dr. Jessica Yeung. David's quote is a verbatim excerpt from his August 27, 2026 email; his supplied headshot has a matching pale-green background. Source and consent dates are recorded in `knowledge/components/landing-page.md`.
 - The 14 MB demo video uses `preload="none"` and loads only after interaction.
 - Below-the-fold sections use `content-visibility`, fixed image dimensions, scoped CSS, and reduced-motion support.
 - The hero uses concise spacing copy and moves from split to stacked composition at 880 px. Laptop and desktop views keep the clinical image unobstructed; compact layouts move three centered, unbulleted assurances into a portrait panel over unused image space and hide the separate desktop assurance strip. The image frame uses a portrait crop through 460 px and a shallower compact crop from 461–880 px so the photo stays immersive without becoming excessively tall on tablets.
