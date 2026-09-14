@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-13
+
+- **Correction**: Identified the generated local asset manifest as historical build evidence rather than a repository link in [Website Release](./operations/website-release.md), so knowledge navigation works in a clean Git checkout. No application files changed.
+
 ## 2026-09-07
 
 - **Landing testimonials**: Added Dr. David Ager first with his supplied portrait and verbatim hours-saved quote, followed by Matt and Jessica. Removed the former third testimonial and unused portrait. Recorded email provenance and website-headshot consent dates in the landing-page concept.
