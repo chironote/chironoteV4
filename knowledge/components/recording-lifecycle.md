@@ -18,6 +18,6 @@ iPhone records `video/mp4`, but uploads retain the established `.webm` object na
 
 ## Provenance
 
-- `src/components/Recording/RecordingManager.jsx` (current implementation)
-- `src/components/Recording/RecordingManager.test.js` (delayed-WebKit lifecycle coverage)
-- `src/components/Recording/Context.md` (component context; current code resolves its older generic chunking description)
+- [Recording manager](../../src/components/Recording/RecordingManager.jsx) (current implementation)
+- [Recording lifecycle tests](../../src/components/Recording/RecordingManager.test.js) (delayed-WebKit lifecycle coverage)
+- [Recording context](../../src/components/Recording/Context.md) (component context; current code resolves its older generic chunking description)
