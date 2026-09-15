@@ -18,6 +18,8 @@ The default measurement IDs can be overridden with `REACT_APP_GA_MEASUREMENT_ID`
 
 The Meta destination is centralized in `utils/metaPixel.js`, alongside the existing GA4 and Google Ads defaults. It loads only after consent, sends `PageView` only on `/`, `/demo`, and `/tutorial`, and maps the confirmed scheduler booking to Meta standard `Schedule` with a stable non-PII derived event ID. It does not load in `/app` or send automatic advanced-matching data.
 
+The adapter checks the current browser route and stored consent at every load/event entry point, including shared consent updates. Automatic event configuration is disabled. `AppRouting/ApplicationEntry` requires a fresh document before mounting `/app` when the marketing SDK has loaded, preventing its listeners from surviving into the clinical workspace.
+
 ## Reporting Contract
 
 Use stable, snake-case GA4 event names and descriptive parameters. Important events include:

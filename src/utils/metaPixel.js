@@ -6,13 +6,25 @@ let lastPageView = { path: '', timestamp: 0 };
 
 const isBrowser = () => typeof window !== 'undefined';
 
+const isMarketingPath = (path) => ['/', '/demo', '/tutorial'].includes(path.split(/[?#]/)[0]);
+const canUsePixel = () => {
+  if (!isBrowser() || !isMarketingPath(window.location.pathname)) return false;
+  try {
+    return window.localStorage.getItem('cookieConsent') === 'true';
+  } catch (error) {
+    return false;
+  }
+};
+
+export const hasLoadedMetaPixel = () => Boolean(initializedPixelId);
+
 export const getMetaPixelId = () => DEFAULT_META_PIXEL_ID;
 
 const getFbq = () => (isBrowser() && typeof window.fbq === 'function' ? window.fbq : null);
 
 const loadPixel = () => {
   const pixelId = getMetaPixelId();
-  if (!pixelId || !isBrowser()) return null;
+  if (!pixelId || !canUsePixel()) return null;
 
   window.fbq = window.fbq || function fbq() {
     window.fbq.callMethod
@@ -35,6 +47,7 @@ const loadPixel = () => {
 
   if (initializedPixelId !== pixelId) {
     window.fbq('init', pixelId);
+    window.fbq('set', 'autoConfig', false, pixelId);
     initializedPixelId = pixelId;
   }
 
@@ -44,7 +57,7 @@ const loadPixel = () => {
 export const updateMetaPixelConsent = (granted) => {
   if (!isBrowser()) return;
 
-  if (!granted) {
+  if (!granted || !canUsePixel()) {
     getFbq()?.('consent', 'revoke');
     return;
   }
@@ -54,7 +67,7 @@ export const updateMetaPixelConsent = (granted) => {
 };
 
 export const trackMetaPageView = ({ path, hasConsent }) => {
-  if (!hasConsent || !path) return;
+  if (!hasConsent || !path || !isMarketingPath(path) || !canUsePixel()) return;
 
   const now = Date.now();
   if (lastPageView.path === path && now - lastPageView.timestamp < 1000) return;
@@ -63,6 +76,7 @@ export const trackMetaPageView = ({ path, hasConsent }) => {
   if (!fbq) return;
 
   lastPageView = { path, timestamp: now };
+  fbq('consent', 'grant');
   fbq('track', 'PageView');
 };
 

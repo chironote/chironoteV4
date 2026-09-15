@@ -23,6 +23,8 @@ All calls to action are real destinations:
 
 The page sends stable funnel events through `utils/analytics.js`, including section views, CTA locations and plan names, navigation, FAQ opens, video milestones, testimonial navigation, and ten-second engagement. The global analytics component records route page views and Core Web Vitals.
 
+Keep the `trackAnalyticsEvent` import: testimonial navigation and mobile-menu toggles still call it even though confirmed-booking handling moved to `ZoomDemoScheduler`.
+
 ## Performance and Layout
 
 - The above-the-fold hero uses responsive WebP sources; the largest version is under 100 KB.

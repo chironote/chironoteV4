@@ -37,7 +37,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; testimonial order and source provenance; mobile-first presentation; shared confirmed-booking measurement; demo scheduler/sign-up CTA split; HIPAA/BAA trust content; and analytics. |
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
-| [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence plus Google and configured Meta analytics initialization. |
+| [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence, Google attribution, and the enforced Meta marketing-route/document boundary. |
 
 ## Infrastructure
 

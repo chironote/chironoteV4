@@ -6,6 +6,7 @@ This folder owns top-level route selection and cross-route side effects. It sits
 
 - `AppRoutes.jsx` defines the public and app route table.
 - `PWARedirect.jsx` redirects standalone PWA launches from `/` to `/app`.
+- `ApplicationEntry` in `AppRoutes.jsx` reloads the destination document before mounting authentication if Meta loaded on a marketing route. Removing a script cannot unload its SDK listeners; the reload preserves the app path, query, and hash while starting without Meta.
 
 ## Route Table
 

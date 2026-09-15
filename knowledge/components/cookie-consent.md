@@ -23,6 +23,8 @@ Absent and declined consent keep storage denied. Accepting updates all four cate
 
 Meta Pixel is separately gated by that same choice because Google Consent Mode does not control Meta. Its centralized website destination initializes only for public marketing routes after acceptance; declining or revocation sends Meta's consent-revoke command. No Meta script loads while consent is absent or declined.
 
+Every Meta load/event entry point checks the actual browser route (`/`, `/demo`, or `/tutorial`) and persisted consent, including the shared consent updater. A stale marketing callback cannot emit after entering `/app`. Automatic event configuration is disabled. Because removing the script does not unload SDK listeners, [Application Routing](./app-routing.md) starts a fresh document before mounting the clinical app if Meta has loaded in the current document.
+
 ## Privacy Boundaries
 
 Analytics events must not contain raw or hashed email addresses, patient or provider names, clinical text, transcripts, generated notes, or protected health information. Signed-in tracking may attach the application's opaque user ID only after consent.

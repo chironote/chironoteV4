@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-15
+
+- **Correction**: Documented enforcement of the Meta marketing-only boundary in [Cookie Consent and Analytics](./components/cookie-consent.md) and [Application Routing](./components/app-routing.md): adapter-level route/consent checks and a fresh document before app entry after Meta has loaded. Google click-ID storage and Stripe attribution remain unchanged.
+
 ## 2026-09-14
 
 - **Update**: Documented the unified confirmed Zoom booking contract across `/demo` and `/tutorial`, consent-gated Meta `PageView`/`Schedule` measurement, and the retained Google click-ID path for Stripe in [Public Landing Pages](./components/landing-page.md) and [Cookie Consent and Analytics](./components/cookie-consent.md). Added the owner-facing [Meta booking measurement guide](../docs/meta-booking-measurement.md).
