@@ -1,4 +1,5 @@
 import ReactGA from 'react-ga4';
+import { updateMetaPixelConsent } from './metaPixel';
 
 const DEFAULT_GA_MEASUREMENT_ID = 'G-02117DNZDH';
 const DEFAULT_GOOGLE_ADS_ID = 'AW-16869907009';
@@ -12,6 +13,7 @@ const GOOGLE_ADS_CLICK_ID_TTL_DAYS = 90;
 const GOOGLE_ADS_CLICK_ID_TYPES = ['gclid', 'gbraid', 'wbraid'];
 
 export const GOOGLE_ADS_ATTRIBUTION_EVENT = 'chironote:google-ads-attribution-change';
+export const ANALYTICS_CONSENT_EVENT = 'chironote:consent-change';
 
 const measurementId = process.env.REACT_APP_GA_MEASUREMENT_ID || DEFAULT_GA_MEASUREMENT_ID;
 const googleAdsId = process.env.REACT_APP_GOOGLE_ADS_ID || DEFAULT_GOOGLE_ADS_ID;
@@ -99,6 +101,11 @@ const clearStoredGoogleAdsClickIds = () => {
 const notifyGoogleAdsAttributionChange = () => {
   if (!isBrowser()) return;
   window.dispatchEvent(new Event(GOOGLE_ADS_ATTRIBUTION_EVENT));
+};
+
+const notifyAnalyticsConsentChange = () => {
+  if (!isBrowser()) return;
+  window.dispatchEvent(new Event(ANALYTICS_CONSENT_EVENT));
 };
 
 const toEventToken = (value, fallback = 'unknown') => {
@@ -211,6 +218,8 @@ export const updateAnalyticsConsent = (granted) => {
   }
 
   notifyGoogleAdsAttributionChange();
+  updateMetaPixelConsent(Boolean(granted));
+  notifyAnalyticsConsentChange();
 };
 
 export const trackAnalyticsEvent = (eventName, params = {}) => {

@@ -1,5 +1,10 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-14
+
+- **Update**: Documented the unified confirmed Zoom booking contract across `/demo` and `/tutorial`, consent-gated Meta `PageView`/`Schedule` measurement, and the retained Google click-ID path for Stripe in [Public Landing Pages](./components/landing-page.md) and [Cookie Consent and Analytics](./components/cookie-consent.md). Added the owner-facing [Meta booking measurement guide](../docs/meta-booking-measurement.md).
+- **Correction**: Centralized the confirmed website Meta Dataset ID with the existing hardcoded GA4 and Google Ads destinations; no new deployment-environment workflow is required.
+
 ## 2026-09-13
 
 - **Correction**: Identified the generated local asset manifest as historical build evidence rather than a repository link in [Website Release](./operations/website-release.md), so knowledge navigation works in a clean Git checkout. No application files changed.

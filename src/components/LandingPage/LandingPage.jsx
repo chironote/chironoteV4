@@ -2,9 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import './LandingPage.css';
 import {
-  GOOGLE_ADS_ATTRIBUTION_EVENT,
-  getGoogleAdsClickId,
-  trackAnalyticsEvent,
   trackFaqOpen,
   trackLandingCta,
   trackLandingEngagement,
@@ -12,6 +9,7 @@ import {
   trackLandingSectionView,
   trackVideoProgress,
 } from '../../utils/analytics';
+import ZoomDemoScheduler from './ZoomDemoScheduler';
 import textLogo from '../../assets/textlogo-blk.svg';
 import heroImageSmall from '../../assets/hero-chiropractor-720.webp';
 import heroImageLarge from '../../assets/hero-chiropractor-1200.webp';
@@ -25,34 +23,9 @@ import hipaaIcon from '../../assets/hipaa.svg';
 
 const SIGN_UP_URL = '/app?initialState=signUp';
 const SIGN_IN_URL = '/app';
-const SCHEDULER_URL = 'https://scheduler.zoom.us/nikita-predtechensky/chironote-demo';
-const SCHEDULER_ORIGIN = 'https://chironote.ai';
 const TERMS_URL = 'https://public-docs-and-agreements.s3.us-east-2.amazonaws.com/TermsAndConditions.html';
 const VIDEO_TITLE = 'ChiroNote clinical AI scribe overview';
 const VIDEO_MILESTONES = [10, 25, 50, 75, 90];
-const GOOGLE_ADS_CLICK_ID_PREFIXES = {
-  gclid: 'g:',
-  gbraid: 'b:',
-  wbraid: 'w:',
-};
-
-const createSchedulerUrl = () => {
-  const schedulerUrl = new URL(SCHEDULER_URL);
-  schedulerUrl.searchParams.set('embed', 'true');
-  schedulerUrl.searchParams.set('origin', SCHEDULER_ORIGIN);
-
-  const clickId = getGoogleAdsClickId();
-  const prefix = clickId && GOOGLE_ADS_CLICK_ID_PREFIXES[clickId.type];
-  if (prefix) {
-    schedulerUrl.searchParams.set('utm_source', 'google_ads');
-    schedulerUrl.searchParams.set('utm_medium', 'cpc');
-    schedulerUrl.searchParams.set('utm_campaign', 'demo_landing_page');
-    schedulerUrl.searchParams.set('utm_content', `${prefix}${clickId.value}`);
-  }
-
-  return schedulerUrl.toString();
-};
-
 const testimonials = [
   {
     name: 'Dr. David Ager',
@@ -172,47 +145,11 @@ export default function LandingPage({ variant = 'standard' }) {
   const videoRef = useRef(null);
   const carouselRef = useRef(null);
   const navRef = useRef(null);
-  const schedulerRef = useRef(null);
   const trackedVideoMilestones = useRef(new Set());
-  const trackedSchedulerBookings = useRef(new Set());
   const [videoPlaying, setVideoPlaying] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [activeSlide, setActiveSlide] = useState(0);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [schedulerUrl, setSchedulerUrl] = useState(createSchedulerUrl);
-
-  useEffect(() => {
-    if (!isDemo || typeof window === 'undefined') return undefined;
-
-    const refreshSchedulerUrl = () => setSchedulerUrl(createSchedulerUrl());
-    window.addEventListener(GOOGLE_ADS_ATTRIBUTION_EVENT, refreshSchedulerUrl);
-    refreshSchedulerUrl();
-
-    return () => window.removeEventListener(GOOGLE_ADS_ATTRIBUTION_EVENT, refreshSchedulerUrl);
-  }, [isDemo]);
-
-  useEffect(() => {
-    if (!isDemo || typeof window === 'undefined') return undefined;
-
-    const handleSchedulerBooking = (event) => {
-      if (event.origin !== 'https://scheduler.zoom.us') return;
-      if (event.source !== schedulerRef.current?.contentWindow) return;
-
-      const { type, payload } = event.data || {};
-      const scheduledEventId = payload?.scheduledEventId;
-      if (type !== 'bookingForm' || typeof scheduledEventId !== 'string' || !scheduledEventId) return;
-      if (trackedSchedulerBookings.current.has(scheduledEventId)) return;
-
-      trackedSchedulerBookings.current.add(scheduledEventId);
-      trackAnalyticsEvent('booked_demo', {
-        booking_channel: 'zoom_scheduler',
-        zoom_scheduled_event_id: scheduledEventId,
-      });
-    };
-
-    window.addEventListener('message', handleSchedulerBooking);
-    return () => window.removeEventListener('message', handleSchedulerBooking);
-  }, [isDemo]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -665,9 +602,7 @@ export default function LandingPage({ variant = 'standard' }) {
               <li>Practical Q&amp;A</li>
             </ul>
             <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
-              <iframe
-                ref={schedulerRef}
-                src={schedulerUrl}
+              <ZoomDemoScheduler
                 title="Schedule a ChiroNote workflow walkthrough"
                 loading="lazy"
               />
