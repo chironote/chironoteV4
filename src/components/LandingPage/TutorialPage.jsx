@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import './TutorialPage.css';
+import ZoomDemoScheduler from './ZoomDemoScheduler';
 
 // Import video assets
 import tutorialVideo from '../../assets/Tutorial.mp4';
@@ -207,8 +208,7 @@ export default function TutorialPage() {
         
         <div className="landing-page__scheduler-container">
           <div className="landing-page__scheduler-widget">
-            <iframe
-              src="https://scheduler.zoom.us/nikita-predtechensky/chironote-demo?embed=true"
+            <ZoomDemoScheduler
               title="Schedule a Demo with ChiroNote"
             />
           </div>

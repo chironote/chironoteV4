@@ -21,6 +21,8 @@ The persisted choice remains `localStorage.cookieConsent` with values `true`, `f
 
 Absent and declined consent keep storage denied. Accepting updates all four categories to granted. The banner owns the visitor-facing choice; `utils/analytics.js` owns initialization and consent commands.
 
+Meta Pixel is separately gated by that same choice because Google Consent Mode does not control Meta. Its centralized website destination initializes only for public marketing routes after acceptance; declining or revocation sends Meta's consent-revoke command. No Meta script loads while consent is absent or declined.
+
 ## Privacy Boundaries
 
 Analytics events must not contain raw or hashed email addresses, patient or provider names, clinical text, transcripts, generated notes, or protected health information. Signed-in tracking may attach the application's opaque user ID only after consent.
@@ -33,4 +35,4 @@ Google Ads click IDs (`gclid`, `gbraid`, and `wbraid`) remain memory-only before
 
 ## Provenance
 
-Derived from [`src/components/Analytics/README.md`](../../src/components/Analytics/README.md), [`GoogleAnalytics.jsx`](../../src/components/Analytics/GoogleAnalytics.jsx), [`CookieConsent.jsx`](../../src/components/CookieConsent/CookieConsent.jsx), and [`utils/analytics.js`](../../src/utils/analytics.js).
+Derived from [`src/components/Analytics/README.md`](../../src/components/Analytics/README.md), [`GoogleAnalytics.jsx`](../../src/components/Analytics/GoogleAnalytics.jsx), [`CookieConsent.jsx`](../../src/components/CookieConsent/CookieConsent.jsx), [`utils/analytics.js`](../../src/utils/analytics.js), and [`utils/metaPixel.js`](../../src/utils/metaPixel.js).

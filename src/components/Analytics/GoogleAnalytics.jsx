@@ -2,10 +2,13 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   captureGoogleAdsClickId,
+  ANALYTICS_CONSENT_EVENT,
+  getAnalyticsConsent,
   initializeAnalytics,
   trackRoutePageView,
   trackWebVital,
 } from '../../utils/analytics';
+import { trackMetaPageView } from '../../utils/metaPixel';
 
 let webVitalsStarted = false;
 
@@ -17,6 +20,8 @@ const getPageType = (pathname) => {
   if (pathname === '/tutorial') return 'tutorial';
   return 'public';
 };
+
+const isMarketingLandingPath = (pathname) => ['/', '/demo', '/tutorial'].includes(pathname);
 
 const startWebVitals = () => {
   if (webVitalsStarted) return;
@@ -49,6 +54,14 @@ export default function GoogleAnalytics() {
       title: document.title,
       pageType: getPageType(location.pathname),
     });
+    const trackMarketingPageView = () => {
+      if (!isMarketingLandingPath(location.pathname)) return;
+      trackMetaPageView({ path, hasConsent: getAnalyticsConsent() === true });
+    };
+
+    trackMarketingPageView();
+    window.addEventListener(ANALYTICS_CONSENT_EVENT, trackMarketingPageView);
+    return () => window.removeEventListener(ANALYTICS_CONSENT_EVENT, trackMarketingPageView);
   }, [location.pathname, location.search]);
 
   return null;

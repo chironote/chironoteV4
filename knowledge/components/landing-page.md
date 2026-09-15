@@ -21,7 +21,7 @@ The landing page exposes real destinations rather than placeholders:
 - Blog opens `/blog`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - The demo variant omits pricing. Its hero pairs a primary embedded-scheduler action with a consent-aware, `landing_cta_click`-tracked sign-up link to `/app?initialState=signUp`; later walkthrough actions continue to target the scheduler. The hero leads with the documentation benefit and then explains the unfamiliar product in plain language: ChiroNote listens during a patient visit, creates a structured chiropractic SOAP note, and leaves it ready to review and copy into the EHR. The page also includes an FAQ prompt to discuss Business Associate Agreement (BAA) requirements.
-- The demo scheduler forwards a consented Google Ads click identifier (`gclid`, `gbraid`, or `wbraid`) through Zoom's UTM tracking fields. Zoom's origin-validated `bookingForm` callback records one non-PII GA4 `booked_demo` event per scheduled-event ID after a confirmed booking. Organic and non-consenting visitors load the scheduler without an identifier.
+- `/demo` and `/tutorial` use the same Zoom scheduler integration. Its origin- and iframe-validated `bookingForm` callback records one non-PII GA4 `booked_demo` event per scheduled-event ID after a confirmed booking, and when configured and consented maps that same booking to Meta standard `Schedule` with a stable derived event ID. The old Zoom-specific Google click-ID UTM forwarding was removed because it served the retired Make offline-demo route; general Google click-ID storage remains for Stripe purchase attribution.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 
@@ -40,7 +40,7 @@ Landing decisions can be evaluated with stable GA4 events:
 
 Never send form values, email addresses, note content, transcripts, or protected health information with these events.
 
-Booked-demo attribution follows the existing GA4 conversion pattern: Zoom's embedded booking confirmation posts a `bookingForm` message to the parent page, which validates the Zoom origin and iframe source before sending `booked_demo` to GA4. Configure the imported GA4 action as the sole Google Ads primary conversion; do not also use the Make offline-import route for the same booking.
+Booked-demo attribution follows one confirmed-booking definition: Zoom's embedded booking confirmation posts a `bookingForm` message to the parent page, which validates the Zoom origin and iframe source before sending `booked_demo` to GA4 and, only with consent and a configured dataset, `Schedule` to Meta. Configure the imported GA4 action as the sole Google Ads primary conversion; do not also use the Make offline-import route for the same booking. Meta setup and validation details are in [`docs/meta-booking-measurement.md`](../../docs/meta-booking-measurement.md).
 
 ## Performance Boundaries
 
@@ -58,4 +58,4 @@ The conversion-critical top of the page is mobile-first: concise hero copy bring
 
 Testimonial order on both public variants is Dr. David Ager, Dr. Matt Fryauf, then Dr. Jessica Yeung. David's quote, "Chironote is a real help and saves me hours per week.", is verbatim from his August 27, 2026 email in the "AI Problem" conversation (Gmail message `1a044ef33bbdc582`). He agreed to provide a website headshot on August 28 (`1a04a5b4cfafd75e`) and supplied the photographs on September 3 (`1a0676068541709b`). The first supplied photograph is the source of `src/assets/david-ager-avatar.webp`, with background replacement and square framing to match the existing portraits. Keep private correspondence and original full-resolution photos outside the repository. The former third testimonial and its unused portrait were removed.
 
-Derived from [`src/components/LandingPage/README.md`](../../src/components/LandingPage/README.md), [`LandingPage.jsx`](../../src/components/LandingPage/LandingPage.jsx), [`LandingPage.css`](../../src/components/LandingPage/LandingPage.css), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), and [`utils/analytics.js`](../../src/utils/analytics.js).
+Derived from [`src/components/LandingPage/README.md`](../../src/components/LandingPage/README.md), [`LandingPage.jsx`](../../src/components/LandingPage/LandingPage.jsx), [`TutorialPage.jsx`](../../src/components/LandingPage/TutorialPage.jsx), [`ZoomDemoScheduler.jsx`](../../src/components/LandingPage/ZoomDemoScheduler.jsx), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), [`utils/analytics.js`](../../src/utils/analytics.js), and [`utils/metaPixel.js`](../../src/utils/metaPixel.js).
