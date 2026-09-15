@@ -28,6 +28,8 @@ Inside `/app/*`, `AuthenticatedApp` owns the dashboard plus `/billing`, `/settin
 
 `PWARedirect` sends standalone PWA launches from `/` to `/app`, including the iOS and Android standalone detection paths.
 
+`ApplicationEntry` gates `/app/*`: if the current document loaded Meta on a consented marketing route, it revokes Meta consent and reloads the exact app path, query, and hash before mounting `AuthWrapper`. Direct app loads proceed without the marketing SDK. This document boundary discards third-party listeners that cannot be unloaded by removing a script tag.
+
 ## Cross-route Measurement
 
 `Analytics/GoogleAnalytics.jsx` initializes Consent Mode, captures `gclid`, emits a `page_view` for each pathname and query change, classifies the route type (including `demo_landing` for `/demo`), and starts Core Web Vitals reporting. Do not add duplicate page-view effects inside route components.

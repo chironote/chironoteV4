@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import './LandingPage.css';
 import {
+  trackAnalyticsEvent,
   trackFaqOpen,
   trackLandingCta,
   trackLandingEngagement,
