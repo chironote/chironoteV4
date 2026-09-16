@@ -10,7 +10,7 @@ tags: [chironote, component, landing-page, marketing, performance]
 
 ChiroNote has one canonical public marketing page: `LandingPage.jsx` at `/`. `DemoLandingPage.jsx` selects its scheduler-focused demo variant at `/demo`, preserving the same visual and interaction foundation without duplicating the full implementation. The former consideration page, prototype conversion route, and archived conversion implementation were removed after the prototype was completed. `/ai-chiropractic-soap-notes` and `/learn-more` redirect to `/` so published links remain valid.
 
-`TutorialPage.jsx` remains a separate public route at `/tutorial` with its own `TutorialPage.css`.
+`TutorialPage.jsx` remains a separate public route at `/tutorial` with its own `TutorialPage.css`. `FiveHabitsPage.jsx` is an educational intermediate-funnel route at `/ai-scribe-habits-for-chiropractors`; it presents illustrated practical AI-scribe habits for chiropractic visits and directs its primary conversion to the existing `/demo` walkthrough, while retaining email-only sign-up as a de-emphasized alternative.
 
 ## Funnel Contract
 
@@ -22,6 +22,7 @@ The landing page exposes real destinations rather than placeholders:
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - The demo variant omits pricing. Its hero pairs a primary embedded-scheduler action with a consent-aware, `landing_cta_click`-tracked sign-up link to `/app?initialState=signUp`; later walkthrough actions continue to target the scheduler. The hero leads with the documentation benefit and then explains the unfamiliar product in plain language: ChiroNote listens during a patient visit, creates a structured chiropractic SOAP note, and leaves it ready to review and copy into the EHR. The page also includes an FAQ prompt to discuss Business Associate Agreement (BAA) requirements.
 - `/demo` and `/tutorial` use the same Zoom scheduler integration. Its origin- and iframe-validated `bookingForm` callback records one non-PII GA4 `booked_demo` event per scheduled-event ID after a confirmed booking, and when configured and consented maps that same booking to Meta standard `Schedule` with a stable derived event ID. The old Zoom-specific Google click-ID UTM forwarding was removed because it served the retired Make offline-demo route; general Google click-ID storage remains for Stripe purchase attribution.
+- The five-habits guide’s primary CTA goes to `/demo`, so it inherits the existing scheduler and confirmed-booking measurement instead of introducing a duplicate embed. Its email registration CTA opens `/app?initialState=signUp`; both CTA paths use the shared landing-CTA event contract.
 - Terms & Privacy opens the same public agreement used by the sign-up form.
 - Section, video, testimonial, mobile-menu, and FAQ controls are keyboard accessible.
 

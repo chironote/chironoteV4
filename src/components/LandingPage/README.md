@@ -1,11 +1,12 @@
 # LandingPage Components
 
-This folder owns the main public marketing page, its demo-focused variant, and the standalone tutorial page.
+This folder owns the main public marketing page, its demo-focused variant, an intermediate educational funnel page, and the standalone tutorial page.
 
 ## Files
 
 - `LandingPage.jsx` is the canonical landing page rendered at `/`.
 - `DemoLandingPage.jsx` renders the scheduler-focused `/demo` variant by selecting the demo content path in `LandingPage`.
+- `FiveHabitsPage.jsx` and `FiveHabitsPage.css` render `/ai-scribe-habits-for-chiropractors`, a five-habit AI-scribe field guide that brings visitors to the existing `/demo` walkthrough as its primary conversion, with email-only sign-up as the quieter alternative. Its five illustrated WebP assets are locally owned copies in `src/assets/five-habits-*.webp`.
 - `LandingPage.css` contains fully scoped, responsive landing-page styles.
 - `TutorialPage.jsx` and `TutorialPage.css` retain the separate `/tutorial` workflow.
 
@@ -19,6 +20,7 @@ All calls to action are real destinations:
 - Sign-in links open `/app`.
 - Pricing directs visitors to self-service sign-up without a personal walkthrough option.
 - The `/demo` variant omits pricing. Its primary hero action scrolls to the embedded Zoom scheduler, while the adjacent tracked sign-up action opens `/app?initialState=signUp`; benefit-led hero copy immediately explains that ChiroNote listens during a patient visit and creates a structured chiropractic SOAP note.
+- The five-habits guide links directly to `/demo` rather than embedding a second scheduler. Keep the conversion invitation brief and preserve the review-before-charting message; its sign-up alternative is `/app?initialState=signUp`.
 - Blog, Terms & Privacy, section navigation, video playback, testimonial controls, and FAQ controls are keyboard accessible.
 
 The page sends stable funnel events through `utils/analytics.js`, including section views, CTA locations and plan names, navigation, FAQ opens, video milestones, testimonial navigation, and ten-second engagement. The global analytics component records route page views and Core Web Vitals.

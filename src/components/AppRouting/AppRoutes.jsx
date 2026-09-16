@@ -4,6 +4,7 @@ import { hasLoadedMetaPixel, updateMetaPixelConsent } from '../../utils/metaPixe
 
 const LandingPage = lazy(() => import('../LandingPage/LandingPage'));
 const DemoLandingPage = lazy(() => import('../LandingPage/DemoLandingPage'));
+const FiveHabitsPage = lazy(() => import('../LandingPage/FiveHabitsPage'));
 const TutorialPage = lazy(() => import('../LandingPage/TutorialPage'));
 const BlogList = lazy(() => import('../Blog/BlogList'));
 const BlogPost = lazy(() => import('../Blog/BlogPost'));
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/demo" element={<DemoLandingPage />} />
+        <Route path="/ai-scribe-habits-for-chiropractors" element={<FiveHabitsPage />} />
         <Route path="/ai-chiropractic-soap-notes" element={<Navigate to="/" replace />} />
         <Route path="/learn-more" element={<Navigate to="/" replace />} />
         <Route path="/tutorial" element={<TutorialPage />} />

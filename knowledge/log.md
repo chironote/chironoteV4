@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-16
+
+- **Five-habits education funnel**: Added the SEO route `/ai-scribe-habits-for-chiropractors`, its five locally owned illustrations, accessible editorial layout, page metadata, and tracked conversion paths. The guide sends visitors primarily to the existing `/demo` walkthrough and retains an email-only sign-up alternative; documented the routing and measurement boundary in [Public Landing Pages](./components/landing-page.md).
+
 ## 2026-09-15
 
 - **Correction**: Documented enforcement of the Meta marketing-only boundary in [Cookie Consent and Analytics](./components/cookie-consent.md) and [Application Routing](./components/app-routing.md): adapter-level route/consent checks and a fresh document before app entry after Meta has loaded. Google click-ID storage and Stripe attribution remain unchanged.
