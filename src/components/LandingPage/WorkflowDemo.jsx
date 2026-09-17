@@ -135,23 +135,30 @@ export default function WorkflowDemo() {
             </span>
           </div>
 
-          <div className="workflow-demo__screen" key={`screen-${step}`}>
-            <img
-              src={steps[step].image}
-              alt={steps[step].alt}
-              width="1200"
-              height="800"
-              loading="lazy"
-              decoding="async"
-            />
-          </div>
-
-          <div className="workflow-demo__lesson" key={`lesson-${step}`} role="group" aria-roledescription="slide" aria-label={`Step ${step + 1} of 3`}>
-            <div className="workflow-demo__dots" aria-hidden="true">
-              {steps.map((item, index) => <i key={item.title} className={index === step ? 'is-active' : ''} />)}
+          <div className="workflow-demo__viewport">
+            <div className="workflow-demo__track" style={{ '--workflow-step': step }}>
+              {steps.map((item, index) => (
+                <div
+                  className="workflow-demo__slide"
+                  key={item.title}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`Step ${index + 1} of ${steps.length}`}
+                  aria-hidden={index === step ? undefined : 'true'}
+                >
+                  <div className="workflow-demo__screen">
+                    <img src={item.image} alt={item.alt} width="1200" height="800" loading="lazy" decoding="async" />
+                  </div>
+                  <div className="workflow-demo__lesson">
+                    <div className="workflow-demo__dots" aria-hidden="true">
+                      {steps.map((dot, dotIndex) => <i key={dot.title} className={dotIndex === index ? 'is-active' : ''} />)}
+                    </div>
+                    <h3>{item.title}</h3>
+                    <p className="workflow-demo__explanation">{item.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <h3>{steps[step].title}</h3>
-            <p className="workflow-demo__explanation">{steps[step].description}</p>
           </div>
 
           <div className="workflow-demo__stores">

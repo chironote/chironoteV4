@@ -72,6 +72,16 @@ describe('LandingPage', () => {
     expect(document.querySelector('.marketing-final-cta[data-marketing-reveal]')).not.toBeNull();
   });
 
+  test('renders workflow steps on a shared sliding track', () => {
+    renderLandingPage();
+
+    const track = document.querySelector('.workflow-demo__track');
+    expect(track).not.toBeNull();
+    expect(track.querySelectorAll('.workflow-demo__slide')).toHaveLength(3);
+    expect(track.style.getPropertyValue('--workflow-step')).toBe('0');
+    expect(track.querySelectorAll('[aria-roledescription="slide"]')).toHaveLength(3);
+  });
+
   test('provides compact mobile assurances inside the hero image', () => {
     renderLandingPage();
 
