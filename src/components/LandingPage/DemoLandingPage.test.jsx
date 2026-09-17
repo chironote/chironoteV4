@@ -84,7 +84,11 @@ describe('DemoLandingPage', () => {
     expect(scheduler.getAttribute('loading')).toBe('lazy');
     expect(document.querySelector('h1').textContent).toContain('SOAP notes, written while you treat.');
     expect(document.querySelector('.marketing-hero__summary').textContent).toContain('structured chiropractic SOAP note');
-    expect(document.body.textContent).toContain('Get comfortable with ChiroNote in 15 minutes.');
+    expect(document.body.textContent).toContain("LET'S CHAT");
+    expect(document.body.textContent).toContain('Have a Human explain ChiroNote');
+    expect(document.body.textContent).not.toContain('Join Nikita on Zoom.');
+    expect(document.body.textContent).not.toContain('Get a quick introduction, then see the steps for yourself in a personal walkthrough.');
+    expect(document.querySelector('.marketing-scheduler__details')).toBeNull();
   });
 
   test('tracks a confirmed Zoom Scheduler booking once', () => {

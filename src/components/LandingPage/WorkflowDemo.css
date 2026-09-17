@@ -1,0 +1,383 @@
+.marketing-page .workflow-demo {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 700px);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(34px, 5vw, 66px);
+  max-width: 1020px;
+  margin: 0 auto;
+}
+
+.marketing-page .workflow-demo__desktop-nav ol {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.marketing-page .workflow-demo__desktop-nav button {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 62px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--marketing-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.marketing-page .workflow-demo__desktop-nav button:hover {
+  background: var(--marketing-cream);
+}
+
+.marketing-page .workflow-demo__desktop-nav button[aria-current] {
+  border-color: #bbcbbf;
+  background: #e9efe8;
+}
+
+.marketing-page .workflow-demo__desktop-nav button > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--marketing-cream);
+  color: var(--marketing-sage-dark);
+  font-family: Georgia, serif;
+  font-size: 1rem;
+}
+
+.marketing-page .workflow-demo__desktop-nav button[aria-current] > span {
+  background: var(--marketing-green);
+  color: white;
+}
+
+.marketing-page .workflow-demo__desktop-nav strong {
+  font-size: 1.1rem;
+  line-height: 1.35;
+}
+
+.marketing-page .workflow-demo__stage-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.marketing-page .workflow-demo__stage {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #ccd5c9;
+  border-radius: 20px;
+  background: linear-gradient(140deg, #d9e4dd, var(--marketing-cream));
+  box-shadow: 0 20px 50px -30px #273f3450;
+}
+
+.marketing-page .workflow-demo__bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  min-height: 42px;
+  padding: 8px 18px;
+  color: var(--marketing-green);
+  font-size: .7rem;
+}
+
+.marketing-page .workflow-demo__bar > span:first-child,
+.marketing-page .workflow-demo__bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.marketing-page .workflow-demo__bar > span:first-child {
+  font-weight: 600;
+}
+
+.marketing-page .workflow-demo__bar i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--marketing-sage-dark);
+}
+
+.marketing-page .workflow-demo__screen {
+  height: clamp(205px, 20vw, 225px);
+  margin: 0 18px;
+  overflow: hidden;
+  border: 1px solid #bac9bb;
+  border-radius: 10px;
+  background: white;
+  animation: workflow-fade 260ms ease-out;
+}
+
+.marketing-page .workflow-demo__screen img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.marketing-page .workflow-demo__lesson {
+  min-height: 108px;
+  padding: 12px 28px;
+  text-align: center;
+  animation: workflow-rise 260ms ease-out;
+}
+
+.marketing-page .workflow-demo__dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 6px;
+}
+
+.marketing-page .workflow-demo__dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9eafa2;
+}
+
+.marketing-page .workflow-demo__dots i.is-active {
+  width: 18px;
+  border-radius: 999px;
+  background: var(--marketing-green);
+}
+
+.marketing-page .workflow-demo__lesson h3 {
+  margin: 0;
+  color: var(--marketing-green);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.marketing-page .workflow-demo__explanation {
+  max-width: 570px;
+  margin: 6px auto 0;
+  color: var(--marketing-green);
+  font-family: Georgia, serif;
+  font-size: clamp(1rem, 1.55vw, 1.16rem);
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.marketing-page .workflow-demo__arrow,
+.marketing-page .workflow-demo__pause {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--marketing-surface);
+  color: var(--marketing-green);
+  cursor: pointer;
+}
+
+.marketing-page .workflow-demo__arrow {
+  position: absolute;
+  z-index: 2;
+  top: 132px;
+  border: 1px solid #c4d0c4;
+  box-shadow: 0 8px 20px #273f3420;
+}
+
+.marketing-page .workflow-demo__arrow--previous {
+  left: -22px;
+}
+
+.marketing-page .workflow-demo__arrow--next {
+  right: -22px;
+}
+
+.marketing-page .workflow-demo__pause {
+  width: 32px;
+  height: 32px;
+  margin: -5px -7px -5px 0;
+  background: transparent;
+}
+
+.marketing-page .workflow-demo__arrow:hover,
+.marketing-page .workflow-demo__pause:hover {
+  background: #e5ece5;
+}
+
+.marketing-page .workflow-demo__arrow svg,
+.marketing-page .workflow-demo__pause svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.marketing-page .workflow-demo__pause .workflow-demo__play-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.marketing-page .workflow-demo__stores {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  min-height: 54px;
+  padding: 6px 18px;
+  border-top: 1px solid #cbd5c9;
+}
+
+.marketing-page .workflow-demo__stores a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 120px;
+  min-height: 42px;
+  padding: 4px 10px;
+  border: 1px solid #17221c;
+  border-radius: 7px;
+  background: #17221c;
+  color: #fff;
+  text-decoration: none;
+  transition: transform 180ms ease, background 180ms ease;
+}
+
+.marketing-page .workflow-demo__stores a:hover {
+  background: #26352c;
+  transform: translateY(-1px);
+}
+
+.marketing-page .workflow-demo__stores svg {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 21px;
+  fill: currentColor;
+}
+
+.marketing-page .workflow-demo__stores span {
+  display: flex;
+  flex-direction: column;
+  font-size: .86rem;
+  font-weight: 600;
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.marketing-page .workflow-demo__stores small {
+  margin-bottom: 2px;
+  font-size: .47rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
+.marketing-page .workflow-demo__swipe-hint {
+  display: none;
+}
+
+.marketing-page .workflow-demo button:focus-visible,
+.marketing-page .workflow-demo a:focus-visible {
+  outline: 3px solid var(--marketing-sage-dark);
+  outline-offset: 3px;
+}
+
+@keyframes workflow-fade {
+  from { opacity: .65; }
+  to { opacity: 1; }
+}
+
+@keyframes workflow-rise {
+  from { opacity: .4; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 880px) {
+  .marketing-page .workflow-demo {
+    display: block;
+    max-width: 680px;
+  }
+
+  .marketing-page .workflow-demo__desktop-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .marketing-page .workflow-demo__stage {
+    border-radius: 18px;
+    touch-action: pan-y;
+  }
+
+  .marketing-page .workflow-demo__bar {
+    min-height: 40px;
+    padding: 7px 13px;
+  }
+
+  .marketing-page .workflow-demo__screen {
+    height: clamp(165px, 51vw, 205px);
+    margin: 0 10px;
+    border-radius: 8px;
+  }
+
+  .marketing-page .workflow-demo__lesson {
+    min-height: 150px;
+    padding: 18px 24px 16px;
+  }
+
+  .marketing-page .workflow-demo__lesson h3 {
+    font-size: .98rem;
+  }
+
+  .marketing-page .workflow-demo__explanation {
+    margin-top: 8px;
+    font-size: clamp(1rem, 4.8vw, 1.16rem);
+    line-height: 1.38;
+  }
+
+  .marketing-page .workflow-demo__arrow {
+    top: 122px;
+  }
+
+  .marketing-page .workflow-demo__arrow--previous {
+    left: -8px;
+  }
+
+  .marketing-page .workflow-demo__arrow--next {
+    right: -8px;
+  }
+
+  .marketing-page .workflow-demo__stores {
+    min-height: 58px;
+    padding: 7px 9px;
+  }
+
+  .marketing-page .workflow-demo__stores a {
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 9px;
+  }
+
+  .marketing-page .workflow-demo__swipe-hint {
+    display: block;
+    margin: 9px 0 0;
+    color: var(--marketing-muted);
+    font-size: .69rem;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-page .workflow-demo *,
+  .marketing-page .workflow-demo *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

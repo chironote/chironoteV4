@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-09-17
+
+- **Workflow carousel refinement**: Replaced the marketing-page simulations with a compact three-step screenshot lesson for record, SOAP review, and EHR transfer. Desktop consistently shows the larger numbered rail; the first step simply omits its back arrow, while arrows otherwise sit at the card edges. The lesson keeps reduced serif explanation, dots plus mobile swiping, and compact Apple App Store and Google Play badges. The demo scheduler now introduces “LET'S CHAT” and “Have a Human explain ChiroNote,” then moves directly to its embed. Documented the behavior and SOAP-facing terminology in [Public Landing Pages](./components/landing-page.md).
+
 ## 2026-09-16
 
 - **Demo copy refinement**: Preserved the headline, hero image/layout, walkthrough CTA, and testimonials; refined demo-only copy around after-hours charting and learning the workflow, renamed the secondary CTA “Try It Now,” and kept the agenda visible on mobile. Separately drafted Zoom copy in [Public Landing Pages](./components/landing-page.md). No live Zoom update is implied.

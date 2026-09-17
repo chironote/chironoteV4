@@ -54,9 +54,10 @@ describe('LandingPage', () => {
   test('uses portrait-led testimonial cards and restrained reveal hooks across key sections', () => {
     renderLandingPage();
 
+    expect(document.querySelector('.marketing-features h2').textContent).toBe('Use it in 3 simple steps.');
     expect(document.querySelectorAll('.marketing-testimonial__portrait img')).toHaveLength(3);
-    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(15);
-    expect(document.querySelectorAll('.marketing-features [data-marketing-reveal]')).toHaveLength(5);
+    expect(document.querySelectorAll('[data-marketing-reveal]')).toHaveLength(11);
+    expect(document.querySelectorAll('.marketing-features [data-marketing-reveal]')).toHaveLength(1);
     expect(document.querySelectorAll('.marketing-plan[data-marketing-reveal]')).toHaveLength(3);
     expect(document.querySelector('.marketing-final-cta[data-marketing-reveal]')).not.toBeNull();
   });

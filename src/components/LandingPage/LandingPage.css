@@ -629,6 +629,16 @@
 .marketing-features {
   max-width: 1200px;
   margin: 0 auto;
+  padding-top: clamp(54px, 6vw, 76px);
+  padding-bottom: clamp(54px, 6vw, 76px);
+}
+
+.marketing-features .marketing-section__heading {
+  margin-bottom: clamp(22px, 2.4vw, 30px);
+}
+
+.marketing-features .marketing-section__heading h2 {
+  font-size: clamp(2rem, 3.5vw, 2.75rem);
 }
 
 .marketing-features__content {
@@ -824,26 +834,6 @@
   background:
     radial-gradient(circle at 50% 10%, rgba(111, 147, 130, 0.14), transparent 42%),
     var(--marketing-surface);
-}
-
-.marketing-scheduler__details {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: -12px auto 28px;
-  padding: 0;
-  list-style: none;
-}
-
-.marketing-scheduler__details li {
-  padding: 7px 14px;
-  color: var(--marketing-sage-dark);
-  border: 1px solid var(--marketing-border);
-  border-radius: 999px;
-  background: var(--marketing-background);
-  font-size: 0.82rem;
-  font-weight: 700;
 }
 
 .marketing-scheduler__embed {
@@ -1417,10 +1407,6 @@
   .marketing-features__steps li > span {
     width: 42px;
     height: 42px;
-  }
-
-  .marketing-scheduler__details {
-    margin-top: -8px;
   }
 
   .marketing-scheduler__embed {
