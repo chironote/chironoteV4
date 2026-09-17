@@ -11,6 +11,7 @@ import {
   trackVideoProgress,
 } from '../../utils/analytics';
 import ZoomDemoScheduler from './ZoomDemoScheduler';
+import DemoSampleNote from './DemoSampleNote';
 import textLogo from '../../assets/textlogo-blk.svg';
 import heroImageSmall from '../../assets/hero-chiropractor-720.webp';
 import heroImageLarge from '../../assets/hero-chiropractor-1200.webp';
@@ -140,7 +141,21 @@ const createStructuredData = (items) => ({
 
 export default function LandingPage({ variant = 'standard' }) {
   const isDemo = variant === 'demo';
-  const pageFaqItems = faqItems;
+  const pageFaqItems = isDemo ? [
+    {
+      question: 'Will I have to change the way I work?',
+      answer: 'You keep your current EHR. The new steps are recording the visit, saying relevant findings aloud, and reviewing the draft before copying it into the chart. In the walkthrough, we’ll show you those steps during a mock appointment and talk through how they fit your day.',
+    },
+    {
+      question: 'What happens during the walkthrough?',
+      answer: 'You’ll meet with Nikita on Zoom for a 15-minute screen share. We’ll help you get registered, walk through a mock appointment, and show you how to review the note and copy it into your EHR. Bring your questions about getting started or fitting ChiroNote into your practice.',
+    },
+    ...faqItems.filter(({ question }) => ![
+      'How does ChiroNote work?',
+      'Can I use ChiroNote on my work computer?',
+      'What happens when my monthly time runs out?',
+    ].includes(question)),
+  ] : faqItems;
   const structuredData = createStructuredData(pageFaqItems);
   const pageRef = useRef(null);
   const videoRef = useRef(null);
@@ -422,7 +437,7 @@ export default function LandingPage({ variant = 'standard' }) {
             <h1>
               SOAP notes, <span>written while you treat.</span>
             </h1>
-            <p className="marketing-hero__summary">{isDemo ? 'ChiroNote listens during the patient visit and turns the conversation into a structured chiropractic SOAP note—ready to review and copy into your EHR.' : 'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'}</p>
+            <p className="marketing-hero__summary">{isDemo ? 'Spend less of your evening catching up on notes. ChiroNote turns patient conversations into structured chiropractic SOAP notes, ready for you to review and copy into your EHR.' : 'ChiroNote listens to the visit and turns the conversation into a structured note—automatically.'}</p>
             <div className="marketing-hero__actions">
               <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('hero', 'Try now for free')}>
                 <span>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</span>
@@ -431,9 +446,9 @@ export default function LandingPage({ variant = 'standard' }) {
               <a
                 className="marketing-button marketing-button--secondary"
                 href={isDemo ? SIGN_UP_URL : '#how-it-works'}
-                onClick={() => isDemo ? handleCta('hero', 'Sign up') : handleNavigation('how_it_works')}
+                onClick={() => isDemo ? handleCta('hero', 'Try It Now') : handleNavigation('how_it_works')}
               >
-                {isDemo ? 'Sign up' : 'See how it works'}
+                {isDemo ? 'Try It Now' : 'See how it works'}
               </a>
             </div>
           </div>
@@ -461,7 +476,7 @@ export default function LandingPage({ variant = 'standard' }) {
           <section className="marketing-hipaa-trust marketing-reveal" aria-labelledby="hipaa-trust-heading" data-analytics-section="trust" data-marketing-reveal>
             <img className="marketing-hipaa-trust__icon" src={hipaaIcon} alt="" aria-hidden="true" />
             <div>
-              <p className="marketing-eyebrow">HIPAA-ready clinical workflow</p>
+              <p className="marketing-eyebrow">Designed for clinical use</p>
               <h2 id="hipaa-trust-heading">Patient privacy, built into the conversation.</h2>
               <p>Encryption and access controls help safeguard protected health information throughout your workflow.</p>
             </div>
@@ -512,8 +527,8 @@ export default function LandingPage({ variant = 'standard' }) {
         <section id="how-it-works" className="marketing-section marketing-video" data-analytics-section="video">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How it works</p>
-            <h2>See a clinical AI scribe in action</h2>
-            <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>
+            <h2>{isDemo ? 'See how ChiroNote works' : 'See a clinical AI scribe in action'}</h2>
+            <p>{isDemo ? 'Get a quick introduction, then see the steps for yourself in a personal walkthrough.' : 'Watch how a conversation becomes a reviewable chiropractic SOAP note.'}</p>
           </div>
           <div className="marketing-video__frame marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
             <video
@@ -539,10 +554,12 @@ export default function LandingPage({ variant = 'standard' }) {
           <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('video', 'Try now for free')}>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</a>
         </section>
 
+        {isDemo && <DemoSampleNote />}
+
         <section id="features" className="marketing-section marketing-features" data-analytics-section="features">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How ChiroNote works</p>
-            <h2>Secure, quick, and simple. Just like a tool should be.</h2>
+            <h2>{isDemo ? 'Keep your EHR. Start with one appointment.' : 'Secure, quick, and simple. Just like a tool should be.'}</h2>
           </div>
           <div className="marketing-features__content">
             <div className="marketing-features__image marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
@@ -551,15 +568,15 @@ export default function LandingPage({ variant = 'standard' }) {
             <ol className="marketing-features__steps">
               <li className="marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
                 <span>1</span>
-                <div><h3>Start recording and hold the appointment as usual.</h3><p>Focus on the patient while ChiroNote listens through your device microphone.</p></div>
+                <div><h3>{isDemo ? 'Record the visit.' : 'Start recording and hold the appointment as usual.'}</h3><p>{isDemo ? 'Start recording on your phone or computer. Talk with your patient and say the findings you want captured aloud.' : 'Focus on the patient while ChiroNote listens through your device microphone.'}</p></div>
               </li>
               <li className="marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
                 <span>2</span>
-                <div><h3>Stop recording and review the generated note.</h3><p>Edit the structured note yourself or ask Smart Editor for a targeted revision.</p></div>
+                <div><h3>{isDemo ? 'Review the draft.' : 'Stop recording and review the generated note.'}</h3><p>{isDemo ? 'Stop recording, check the note, and make any changes. Edit it yourself or ask Smart Editor for a revision.' : 'Edit the structured note yourself or ask Smart Editor for a targeted revision.'}</p></div>
               </li>
               <li className="marketing-reveal marketing-reveal--delay-3" data-marketing-reveal>
                 <span>3</span>
-                <div><h3>Transfer the finished note into your EHR.</h3><p>Copy and paste into the system you already use—no complex integration required.</p></div>
+                <div><h3>{isDemo ? 'Copy it into your EHR.' : 'Transfer the finished note into your EHR.'}</h3><p>Copy and paste into the system you already use—no complex integration required.</p></div>
               </li>
             </ol>
           </div>
@@ -594,13 +611,13 @@ export default function LandingPage({ variant = 'standard' }) {
           <section id="scheduler" className="marketing-section marketing-scheduler" data-analytics-section="scheduler">
             <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
               <p className="marketing-eyebrow">Schedule a walkthrough</p>
-              <h2>Pick a timeslot below</h2>
-              <p>We’ll show you how to record a treatment visit, review the generated SOAP note, and move it into your EHR. Bring questions about your current process.</p>
+              <h2>Get comfortable with ChiroNote in 15 minutes.</h2>
+              <p>Join Nikita on Zoom. We’ll help you get registered, walk through a mock appointment, and show you how to review and copy the note into your EHR. You’ll see each step and have time to ask questions.</p>
             </div>
             <ul className="marketing-scheduler__details marketing-reveal marketing-reveal--delay-1" aria-label="Walkthrough details" data-marketing-reveal>
               <li>15 minutes</li>
-              <li>Clinic-friendly hours</li>
-              <li>Practical Q&amp;A</li>
+              <li>Personal Zoom screen share</li>
+              <li>Your workflow. Your questions.</li>
             </ul>
             <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
               <ZoomDemoScheduler
@@ -638,9 +655,9 @@ export default function LandingPage({ variant = 'standard' }) {
 
         <section className="marketing-final-cta marketing-reveal" data-analytics-section="final_cta" data-marketing-reveal>
           <div>
-            <p className="marketing-eyebrow">{isDemo ? 'Learn it with your workflow' : 'Chart less. Treat more.'}</p>
-            <h2>{isDemo ? 'Ready for a practical walkthrough?' : 'Try your first ChiroNote today.'}</h2>
-            <p>{isDemo ? 'Pick a time and we’ll teach you how ChiroNote can support the treatments you already provide.' : 'Start with the Free plan. No credit card and no software installation required.'}</p>
+            <p className="marketing-eyebrow">{isDemo ? 'Less catching up after closing' : 'Chart less. Treat more.'}</p>
+            <h2>{isDemo ? 'Make room for life after your last patient.' : 'Try your first ChiroNote today.'}</h2>
+            <p>{isDemo ? 'Start with a personal walkthrough. We’ll show you the steps, answer your questions, and help you see where ChiroNote fits into your day.' : 'Start with the Free plan. No credit card and no software installation required.'}</p>
           </div>
           <a className="marketing-button marketing-button--light" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('final', 'Create free account')}>{isDemo ? 'Schedule a walkthrough' : 'Create free account'}</a>
         </section>

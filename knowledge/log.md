@@ -2,6 +2,7 @@
 
 ## 2026-09-16
 
+- **Demo copy refinement**: Preserved the headline, hero image/layout, walkthrough CTA, and testimonials; refined demo-only copy around after-hours charting and learning the workflow, renamed the secondary CTA “Try It Now,” added a labeled placeholder SOAP note, and kept the agenda visible on mobile. Recorded the sample replacement requirement and separately drafted Zoom copy in [Public Landing Pages](./components/landing-page.md). No live Zoom update is implied.
 - **Five-habits education funnel**: Added the SEO route `/ai-scribe-habits-for-chiropractors`, its five locally owned illustrations, accessible editorial layout, page metadata, and tracked conversion paths. The guide sends visitors primarily to the existing `/demo` walkthrough and retains an email-only sign-up alternative; documented the routing and measurement boundary in [Public Landing Pages](./components/landing-page.md).
 
 ## 2026-09-15

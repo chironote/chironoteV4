@@ -55,14 +55,14 @@ describe('DemoLandingPage', () => {
     const signUpLink = heroActions.querySelector('a[href="/app?initialState=signUp"]');
 
     expect(walkthroughLink.textContent).toBe('Schedule a walkthrough');
-    expect(signUpLink.textContent).toBe('Sign up');
+    expect(signUpLink.textContent).toBe('Try It Now');
 
     require('../../utils/analytics').trackLandingCta.mockClear();
     act(() => signUpLink.dispatchEvent(new MouseEvent('click', { bubbles: true })));
 
     expect(require('../../utils/analytics').trackLandingCta).toHaveBeenCalledWith({
       location: 'hero',
-      label: 'Sign up',
+      label: 'Try It Now',
       destination: '/app?initialState=signUp',
       plan: undefined,
     });
@@ -84,7 +84,7 @@ describe('DemoLandingPage', () => {
     expect(scheduler.getAttribute('loading')).toBe('lazy');
     expect(document.querySelector('h1').textContent).toContain('SOAP notes, written while you treat.');
     expect(document.querySelector('.marketing-hero__summary').textContent).toContain('structured chiropractic SOAP note');
-    expect(document.body.textContent).toContain('Pick a timeslot below');
+    expect(document.body.textContent).toContain('Get comfortable with ChiroNote in 15 minutes.');
   });
 
   test('tracks a confirmed Zoom Scheduler booking once', () => {

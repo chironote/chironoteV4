@@ -102,10 +102,10 @@ describe('LandingPage', () => {
 
     expect(document.querySelector('.marketing-trust')).toBeNull();
     expect(document.querySelector('.marketing-hipaa-trust__icon').getAttribute('src')).toContain('hipaa.svg');
-    expect(document.querySelector('.marketing-hipaa-trust').textContent).toContain('HIPAA-ready clinical workflow');
+    expect(document.querySelector('.marketing-hipaa-trust').textContent).toContain('Designed for clinical use');
     expect(document.querySelector('.marketing-hipaa-trust').textContent).not.toContain('Business Associate Agreements');
     expect(hipaaFaq.textContent).toContain('All service providers with access to protected health information are covered by Business Associate Agreements with ChiroNote.');
     expect(document.body.textContent).not.toContain('Can we discuss a Business Associate Agreement (BAA)?');
-    expect(document.querySelectorAll('.marketing-faq__item button[aria-expanded="false"]')).toHaveLength(9);
+    expect(document.querySelectorAll('.marketing-faq__item button[aria-expanded="false"]')).toHaveLength(8);
   });
 });
