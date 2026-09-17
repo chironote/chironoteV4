@@ -11,7 +11,6 @@ import {
   trackVideoProgress,
 } from '../../utils/analytics';
 import ZoomDemoScheduler from './ZoomDemoScheduler';
-import DemoSampleNote from './DemoSampleNote';
 import textLogo from '../../assets/textlogo-blk.svg';
 import heroImageSmall from '../../assets/hero-chiropractor-720.webp';
 import heroImageLarge from '../../assets/hero-chiropractor-1200.webp';
@@ -553,8 +552,6 @@ export default function LandingPage({ variant = 'standard' }) {
           </div>
           <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('video', 'Try now for free')}>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</a>
         </section>
-
-        {isDemo && <DemoSampleNote />}
 
         <section id="features" className="marketing-section marketing-features" data-analytics-section="features">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>

@@ -6,7 +6,6 @@ This folder owns the main public marketing page, its demo-focused variant, an in
 
 - `LandingPage.jsx` is the canonical landing page rendered at `/`.
 - `DemoLandingPage.jsx` renders the scheduler-focused `/demo` variant by selecting the demo content path in `LandingPage`.
-- `DemoSampleNote.jsx` owns the demo-only readable SOAP example. Its `sampleNoteSections` array is a clearly labeled fictional neck and right shoulder follow-up note; it contains no patient data or captured product output.
 - `FiveHabitsPage.jsx` and `FiveHabitsPage.css` render `/ai-scribe-habits-for-chiropractors`, a five-habit AI-scribe field guide that brings visitors to the existing `/demo` walkthrough as its primary conversion, with email-only sign-up as the quieter alternative. Its five illustrated WebP assets are locally owned copies in `src/assets/five-habits-*.webp`.
 - `LandingPage.css` contains fully scoped, responsive landing-page styles.
 - `TutorialPage.jsx` and `TutorialPage.css` retain the separate `/tutorial` workflow.
@@ -38,7 +37,7 @@ Keep the `trackAnalyticsEvent` import: testimonial navigation and mobile-menu to
 - The hero uses concise spacing copy and moves from split to stacked composition at 880 px. Laptop and desktop views keep the clinical image unobstructed; compact layouts move three centered, unbulleted assurances into a portrait panel over unused image space and hide the separate desktop assurance strip. The image frame uses a portrait crop through 460 px and a shallower compact crop from 461–880 px so the photo stays immersive without becoming excessively tall on tablets.
 - Testimonials use portrait-led cards with a swipeable mobile carousel; each mobile swipe stops at the next snap point so the middle card is easy to reach. Only the real practitioner images in `src/assets` may be associated with named quotes.
 - Hero motion runs on page entry. As visitors scroll, major section headings and content groups use a one-time 14px opacity/transform reveal, with short 70ms staggers for feature steps and pricing cards. The standard landing page's desktop trust assurances continuously track scroll position from left to right and resolve before the viewport center; after a short scroll-distance pause, the testimonials heading follows their final message through the same handoff. The `/demo` variant replaces that assurance strip with a static dark-green HIPAA trust signal using the restored custom blue medical-shield asset. Motion is disabled by `prefers-reduced-motion` and falls back to immediately visible content if `IntersectionObserver` is unavailable.
-- Mobile navigation uses an accessible menu at 880 px and below. Features and the demo sample note collapse to one column, while pricing becomes one compact comparison card with three plan rows and a shared unlimited-devices note. On `/demo` at 600 px and below, only the scheduler eyebrow is hidden; its agenda and three walkthrough-detail chips stay visible to explain the booking.
+- Mobile navigation uses an accessible menu at 880 px and below. Features collapse to one column, while pricing becomes one compact comparison card with three plan rows and a shared unlimited-devices note. On `/demo` at 600 px and below, only the scheduler eyebrow is hidden; its agenda and three walkthrough-detail chips stay visible to explain the booking.
 
 ## Maintenance Notes
 

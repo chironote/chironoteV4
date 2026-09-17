@@ -1444,67 +1444,6 @@
   }
 }
 
-.marketing-page--demo .marketing-sample {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
-  align-items: center;
-  gap: clamp(32px, 6vw, 80px);
-}
-
-.marketing-page--demo .marketing-sample h2 {
-  color: var(--marketing-green);
-  font-size: clamp(2rem, 4.2vw, 3.25rem);
-  line-height: 1.15;
-}
-
-.marketing-page--demo .marketing-sample__intro > p:not(.marketing-eyebrow) {
-  margin-top: 20px;
-  color: var(--marketing-muted);
-}
-
-.marketing-page--demo .marketing-sample__intro .marketing-sample__disclaimer {
-  font-size: 0.875rem;
-}
-
-.marketing-page--demo .marketing-sample__note {
-  padding: clamp(24px, 4vw, 40px);
-  border: 1px solid var(--marketing-border);
-  border-radius: 20px;
-  background: var(--marketing-surface);
-  box-shadow: 0 16px 40px rgba(39, 63, 52, 0.06);
-}
-
-.marketing-page--demo .marketing-sample__note header {
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--marketing-border);
-}
-
-.marketing-page--demo .marketing-sample__note h3 {
-  font-size: 1.5rem;
-}
-
-.marketing-page--demo .marketing-sample__note header > p:last-child {
-  margin-top: 8px;
-  color: var(--marketing-muted);
-  font-size: 0.875rem;
-}
-
-.marketing-page--demo .marketing-sample__note section {
-  margin-top: 20px;
-}
-
-.marketing-page--demo .marketing-sample__note h4 {
-  margin: 0 0 6px;
-  color: var(--marketing-green);
-  font-size: 1rem;
-}
-
-@media (max-width: 880px) {
-  .marketing-page--demo .marketing-sample {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @keyframes marketing-copy-enter {
   from {
     opacity: 0;

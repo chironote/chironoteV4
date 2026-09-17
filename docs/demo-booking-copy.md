@@ -19,7 +19,3 @@ Bring your questions about getting started or using ChiroNote with your current 
 ## Profile introduction
 
 Choose a time for your personal ChiroNote walkthrough.
-
-## Sample note before publishing
-
-The demo note is a fictional neck and right shoulder follow-up example. It is clearly labeled as a demonstration and contains no patient data or captured ChiroNote output.
