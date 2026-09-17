@@ -51,6 +51,16 @@ describe('LandingPage', () => {
     expect(document.body.textContent).not.toContain('45%');
   });
 
+  test('sends the top How it works navigation to the three-step feature lesson', () => {
+    renderLandingPage();
+
+    const howItWorks = Array.from(document.querySelectorAll('#marketing-navigation a'))
+      .find((link) => link.textContent === 'How it works');
+
+    expect(howItWorks.getAttribute('href')).toBe('#features');
+    expect(document.querySelector('.marketing-video h2').textContent).toBe('Watch our explainer video');
+  });
+
   test('uses portrait-led testimonial cards and restrained reveal hooks across key sections', () => {
     renderLandingPage();
 

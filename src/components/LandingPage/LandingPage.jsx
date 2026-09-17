@@ -416,7 +416,7 @@ export default function LandingPage({ variant = 'standard' }) {
           <span></span>
         </button>
         <nav id="marketing-navigation" className={`marketing-nav__links${mobileNavOpen ? ' is-open' : ''}`} aria-label="Main navigation">
-          <a href="#how-it-works" onClick={() => handleNavigation('how_it_works')}>How it works</a>
+          <a href="#features" onClick={() => handleNavigation('features')}>How it works</a>
           <a href="#features" onClick={() => handleNavigation('features')}>Features</a>
           {isDemo ? (
             <a href="#scheduler" onClick={() => handleNavigation('scheduler')}>Walkthrough</a>
@@ -526,7 +526,7 @@ export default function LandingPage({ variant = 'standard' }) {
         <section id="how-it-works" className="marketing-section marketing-video" data-analytics-section="video">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How it works</p>
-            <h2>{isDemo ? 'See how ChiroNote works' : 'See a clinical AI scribe in action'}</h2>
+            <h2>Watch our explainer video</h2>
             {!isDemo && <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>}
           </div>
           <div className="marketing-video__frame marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
@@ -590,7 +590,7 @@ export default function LandingPage({ variant = 'standard' }) {
           <section id="scheduler" className="marketing-section marketing-scheduler" data-analytics-section="scheduler">
             <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
               <p className="marketing-eyebrow">LET'S CHAT</p>
-              <h2>Have a Human explain ChiroNote</h2>
+              <h2>Have a Human explain it</h2>
             </div>
             <div className="marketing-scheduler__embed marketing-reveal marketing-reveal--delay-2" data-marketing-reveal>
               <ZoomDemoScheduler
