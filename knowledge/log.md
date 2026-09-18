@@ -2,6 +2,8 @@
 
 ## 2026-09-17
 
+- **Demo funnel and workflow display refinement**: Removed the redundant overview-video section from `/demo` while retaining it on `/`, preserved the three-step workflow lesson on both routes, corrected its desktop GIF frame to the native 3:2 composition, and delayed carousel autoplay until the lesson is actually visible.
+- **Workflow GIF demonstrations**: Replaced the three static landing-page workflow screenshots with compact live-app GIFs for starting an Exam Layout recording, stopping it through transcript preparation, and copying the Subjective section followed by the full note. Captures use a synthetic fictional exam and keep recent-note history hidden.
 - **Workflow mobile motion**: Documented the phone-width horizontal sliding track for the three-step public landing-page workflow, including testimonial-style spatial continuity and reduced-motion behavior.
 - **Workflow carousel refinement**: Replaced the marketing-page simulations with a compact three-step screenshot lesson for record, SOAP review, and EHR transfer. Desktop consistently shows the larger numbered rail; the first step simply omits its back arrow, while arrows otherwise sit at the card edges. The lesson keeps reduced serif explanation, dots plus mobile swiping, and compact Apple App Store and Google Play badges. Both overview videos now read “Watch our explainer video”; the top “How it works” navigation targets the workflow lesson. The demo scheduler introduces “LET'S CHAT” and “Have a Human explain it,” then moves directly to its embed. Documented the behavior and SOAP-facing terminology in [Public Landing Pages](./components/landing-page.md).
 
