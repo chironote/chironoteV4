@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import recordScreen from '../../assets/workflow-record.webp';
-import reviewScreen from '../../assets/workflow-review.webp';
-import editorScreen from '../../assets/workflow-editor.webp';
+import recordDemo from '../../assets/workflow-record.gif';
+import reviewDemo from '../../assets/workflow-review.gif';
+import editorDemo from '../../assets/workflow-editor.gif';
 import './WorkflowDemo.css';
 
 const AUTOPLAY_DELAY = 7000;
@@ -11,20 +11,20 @@ const steps = [
   {
     title: 'Record the visit',
     description: 'Click New Note, then Start Recording. Speak naturally through the visit while ChiroNote listens.',
-    image: recordScreen,
-    alt: 'ChiroNote Recording Settings with language and visit options above the Start Recording button.',
+    image: recordDemo,
+    alt: 'ChiroNote demo opening New Note, choosing Exam Layout, and starting a recording.',
   },
   {
     title: 'Review the SOAP note',
     description: 'Stop recording and review the structured SOAP note.',
-    image: editorScreen,
-    alt: 'A generated SOAP note in ChiroNote beside the Smart Editor.',
+    image: reviewDemo,
+    alt: 'ChiroNote demo stopping an active recording and preparing its transcript.',
   },
   {
     title: 'Move it into your EHR',
     description: 'Copy the full SOAP note—or one section at a time—and paste it into the patient chart you already use.',
-    image: reviewScreen,
-    alt: 'A generated SOAP note in ChiroNote with controls for copying individual sections.',
+    image: editorDemo,
+    alt: 'ChiroNote demo copying the Subjective section and then the complete note.',
   },
 ];
 
@@ -52,6 +52,8 @@ export default function WorkflowDemo() {
   const [step, setStep] = useState(0);
   const [userPaused, setUserPaused] = useState(false);
   const [interactionPaused, setInteractionPaused] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const demoRef = useRef(null);
   const touchStart = useRef(null);
 
   const selectStep = (nextStep) => {
@@ -59,15 +61,32 @@ export default function WorkflowDemo() {
   };
 
   useEffect(() => {
+    const demo = demoRef.current;
+    if (!demo) return undefined;
+
+    if (!('IntersectionObserver' in window)) {
+      setIsInView(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsInView(entry.isIntersecting);
+    }, { threshold: 0.35 });
+
+    observer.observe(demo);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (userPaused || interactionPaused || reducedMotion) return undefined;
+    if (!isInView || userPaused || interactionPaused || reducedMotion) return undefined;
 
     const timer = window.setTimeout(() => {
       setStep((current) => (current + 1) % steps.length);
     }, AUTOPLAY_DELAY);
 
     return () => window.clearTimeout(timer);
-  }, [interactionPaused, step, userPaused]);
+  }, [interactionPaused, isInView, step, userPaused]);
 
   const handleTouchStart = (event) => {
     const touch = event.touches[0];
@@ -87,6 +106,7 @@ export default function WorkflowDemo() {
 
   return (
     <div
+      ref={demoRef}
       className="workflow-demo"
       onMouseEnter={() => setInteractionPaused(true)}
       onMouseLeave={() => setInteractionPaused(false)}

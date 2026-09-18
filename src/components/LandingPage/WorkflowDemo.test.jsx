@@ -5,9 +5,14 @@ import WorkflowDemo from './WorkflowDemo';
 describe('WorkflowDemo', () => {
   let container;
   let root;
+  let intersectionCallback;
 
   beforeEach(() => {
     jest.useFakeTimers();
+    window.IntersectionObserver = jest.fn((callback) => {
+      intersectionCallback = callback;
+      return { observe: jest.fn(), disconnect: jest.fn() };
+    });
     global.IS_REACT_ACT_ENVIRONMENT = true;
     container = document.createElement('div');
     document.body.appendChild(container);
@@ -19,6 +24,7 @@ describe('WorkflowDemo', () => {
     act(() => root.unmount());
     container.remove();
     jest.useRealTimers();
+    delete window.IntersectionObserver;
     delete global.IS_REACT_ACT_ENVIRONMENT;
   });
 
@@ -43,7 +49,11 @@ describe('WorkflowDemo', () => {
     expect(container.querySelector('[aria-label="Get ChiroNote on Google Play"]').href).toContain('com.chironote.app');
   });
 
-  test('advances automatically and can be paused', () => {
+  test('starts advancing only after it enters the viewport and can be paused', () => {
+    act(() => jest.advanceTimersByTime(7000));
+    expect(container.textContent).toContain('Record the visit');
+
+    act(() => intersectionCallback([{ isIntersecting: true }]));
     act(() => jest.advanceTimersByTime(7000));
     expect(container.textContent).toContain('Review the SOAP note');
 

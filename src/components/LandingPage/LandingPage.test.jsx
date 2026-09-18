@@ -128,5 +128,7 @@ describe('LandingPage', () => {
     expect(hipaaFaq.textContent).toContain('All service providers with access to protected health information are covered by Business Associate Agreements with ChiroNote.');
     expect(document.body.textContent).not.toContain('Can we discuss a Business Associate Agreement (BAA)?');
     expect(document.querySelectorAll('.marketing-faq__item button[aria-expanded="false"]')).toHaveLength(8);
+    expect(document.querySelector('.marketing-video')).toBeNull();
+    expect(document.querySelector('.marketing-features')).not.toBeNull();
   });
 });

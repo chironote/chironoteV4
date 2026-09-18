@@ -523,11 +523,11 @@ export default function LandingPage({ variant = 'standard' }) {
           </div>
         </section>
 
-        <section id="how-it-works" className="marketing-section marketing-video" data-analytics-section="video">
+        {!isDemo && <section id="how-it-works" className="marketing-section marketing-video" data-analytics-section="video">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
             <p className="marketing-eyebrow">How it works</p>
             <h2>Watch our explainer video</h2>
-            {!isDemo && <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>}
+            <p>Watch how a conversation becomes a reviewable chiropractic SOAP note.</p>
           </div>
           <div className="marketing-video__frame marketing-reveal marketing-reveal--delay-1" data-marketing-reveal>
             <video
@@ -550,8 +550,8 @@ export default function LandingPage({ variant = 'standard' }) {
               </button>
             )}
           </div>
-          <a className="marketing-button marketing-button--primary" href={isDemo ? '#scheduler' : SIGN_UP_URL} onClick={() => isDemo ? handleNavigation('scheduler') : handleCta('video', 'Try now for free')}>{isDemo ? 'Schedule a walkthrough' : 'Try now for free'}</a>
-        </section>
+          <a className="marketing-button marketing-button--primary" href={SIGN_UP_URL} onClick={() => handleCta('video', 'Try now for free')}>Try now for free</a>
+        </section>}
 
         <section id="features" className="marketing-section marketing-features" data-analytics-section="features">
           <div className="marketing-section__heading marketing-reveal" data-marketing-reveal>
