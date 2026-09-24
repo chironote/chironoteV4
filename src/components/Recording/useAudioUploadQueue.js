@@ -3,6 +3,8 @@ import { uploadData } from 'aws-amplify/storage';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 import { AUDIO_TRANSCRIPTION_QUEUE_URL } from './recordingConstants';
 import { generateToken, getAwsCredentials } from './recordingAuth';
+import { RECORDING_TELEMETRY_SCHEMA_VERSION, toSafeErrorCode } from './recordingTelemetrySchema';
+import { createTranscriptionMessage } from './recordingBackendContract';
 
 const createUploadError = (stage, error) => {
   const uploadError = new Error(`Recording ${stage} failed`);
@@ -14,6 +16,8 @@ const createUploadError = (stage, error) => {
 
 function useAudioUploadQueue({
   filePathRef,
+  emitTelemetry = () => {},
+  telemetryContext = {},
   onFinalAudioQueued,
   onUploadError
 }) {
@@ -29,7 +33,7 @@ function useAudioUploadQueue({
       try {
         activeUploadTaskRef.current.cancel('Recording session cancelled');
       } catch (error) {
-        console.warn('Unable to cancel active recording upload:', error);
+        console.warn(`Unable to cancel active recording upload (${toSafeErrorCode(error, 'cancel_failed')})`);
       }
       activeUploadTaskRef.current = null;
     }
@@ -69,9 +73,11 @@ function useAudioUploadQueue({
   const uploadS3 = async (item, generation) => {
     const {
       audioBlob,
+      chunkOrder,
       contentType,
       filePath,
       isFinalAudio,
+      recordingJobId,
       sessionId,
       timestamp,
       userId
@@ -94,12 +100,27 @@ function useAudioUploadQueue({
       }
 
       stage = 'upload';
+      const uploadStartedAt = Date.now();
+      emitTelemetry('upload.started', {
+        attempt: 1,
+        chunkBytes: audioBlob.size,
+        chunkOrder,
+        isFinalChunk: isFinalAudio,
+        mimeType: contentType,
+        provider: 's3'
+      }, recordingJobId);
       const uploadTask = uploadData({
         path: filePath,
         data: audioBlob,
         options: {
           contentType,
           metadata: {
+            appBuild: telemetryContext.appBuild,
+            chunkOrder: chunkOrder.toString(),
+            recordingJobId,
+            recordingBrowser: telemetryContext.browser,
+            recordingPlatform: telemetryContext.platform,
+            telemetrySchemaVersion: RECORDING_TELEMETRY_SCHEMA_VERSION,
             timestamp: timestamp.toString(),
             userId
           }
@@ -121,31 +142,47 @@ function useAudioUploadQueue({
       }
 
       filePathRef.current = filePath;
-      console.log(`Successfully uploaded recording audio to: ${filePath}`);
+      console.log('Successfully uploaded recording audio');
+      emitTelemetry('upload.succeeded', {
+        attempt: 1,
+        chunkBytes: audioBlob.size,
+        chunkOrder,
+        durationMs: Math.max(0, Date.now() - uploadStartedAt),
+        isFinalChunk: isFinalAudio,
+        mimeType: contentType,
+        provider: 's3',
+        s3RequestId: uploadResult?.$metadata?.requestId
+      }, recordingJobId);
 
       const selectedLanguage = localStorage.getItem('selectedLanguage');
-      const messageBody = JSON.stringify({
-        userId,
-        timestamp,
-        path: filePath,
-        language: selectedLanguage === 'null' ? null : selectedLanguage,
-        isFinalAudio,
+      const messageBody = JSON.stringify(createTranscriptionMessage({
         accessToken,
-        noteSettings: localStorage.getItem('noteSettings')
-      });
+        chunkBytes: audioBlob.size,
+        chunkOrder,
+        contentType,
+        isFinalAudio,
+        language: selectedLanguage === 'null' ? null : selectedLanguage,
+        noteSettings: localStorage.getItem('noteSettings'),
+        path: filePath,
+        recordingJobId,
+        telemetryContext,
+        timestamp,
+        userId
+      }));
 
       const filenameParts = filePath.split('/');
       const lastPart = filenameParts[filenameParts.length - 1];
-      const deduplicationId = `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
+      const deduplicationId = `${recordingJobId}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
 
       const command = new SendMessageCommand({
         QueueUrl: AUDIO_TRANSCRIPTION_QUEUE_URL,
         MessageBody: messageBody,
-        MessageGroupId: userId,
+        MessageGroupId: recordingJobId,
         MessageDeduplicationId: deduplicationId
       });
 
       stage = 'queue notification';
+      const queueStartedAt = Date.now();
       const sqsAbortController = new AbortController();
       activeSqsAbortControllerRef.current = sqsAbortController;
 
@@ -169,8 +206,18 @@ function useAudioUploadQueue({
       }
 
       console.log('Successfully sent recording message to SQS:', sqsResult.MessageId);
+      emitTelemetry('sqs.accepted', {
+        attempt: 1,
+        awsRequestId: sqsResult?.$metadata?.requestId,
+        chunkBytes: audioBlob.size,
+        chunkOrder,
+        durationMs: Math.max(0, Date.now() - queueStartedAt),
+        isFinalChunk: isFinalAudio,
+        provider: 'sqs',
+        sqsMessageId: sqsResult.MessageId
+      }, recordingJobId);
       if (isFinalAudio) {
-        onFinalAudioQueued(userId, timestamp);
+        onFinalAudioQueued(userId, timestamp, recordingJobId);
       }
 
       return { uploadResult };
@@ -178,6 +225,20 @@ function useAudioUploadQueue({
       if (!isSessionActive(sessionId, generation)) {
         return { cancelled: true };
       }
+      emitTelemetry(stage === 'queue notification' ? 'sqs.failed' : 'upload.failed', {
+        attempt: 1,
+        chunkBytes: audioBlob.size,
+        chunkOrder,
+        errorCode: toSafeErrorCode(
+          error,
+          stage === 'authentication'
+            ? 'authentication_failed'
+            : (stage === 'upload' ? 'upload_failed' : 'sqs_failed')
+        ),
+        isFinalChunk: isFinalAudio,
+        provider: stage === 'upload' ? 's3' : (stage === 'queue notification' ? 'sqs' : 'aws_auth'),
+        reasonCode: stage.replace(/[^a-z0-9]+/gi, '_').toLowerCase()
+      }, recordingJobId);
       throw createUploadError(stage, error);
     }
   };
@@ -211,7 +272,7 @@ function useAudioUploadQueue({
       if (isSessionActive(sessionId, generation)) {
         uploadQueueRef.current = [];
         activeSessionIdRef.current = null;
-        console.error('Recording upload queue failed:', error);
+        console.error(`Recording upload queue failed (${toSafeErrorCode(error, 'upload_queue_failed')})`);
         onUploadError(error);
       }
     } finally {
@@ -222,8 +283,10 @@ function useAudioUploadQueue({
   };
 
   const queueUpload = (audioBlob, filePath, {
+    chunkOrder = 0,
     contentType,
     sessionId,
+    recordingJobId = sessionId,
     timestamp,
     userId
   }) => {
@@ -233,9 +296,11 @@ function useAudioUploadQueue({
 
     uploadQueueRef.current.push({
       audioBlob,
+      chunkOrder,
       contentType,
       filePath,
       isFinalAudio: filePath.includes('_final_'),
+      recordingJobId,
       sessionId,
       timestamp,
       userId

@@ -28,19 +28,32 @@ They share authenticated UI state but do not share audio capture, transport, or 
 | `recordingConstants.js` | Backend endpoints, queue URL, retry text, chunk interval, blob threshold, and timeout values. |
 | `recordingAuth.js` | Cognito user id, access token, and temporary AWS credential access. |
 | `noteGenerationErrors.js` | Recognition of Lambda JSON and streamed sentinel errors. |
+| `recordingTelemetrySchema.js` | Versioned event vocabulary, payload allowlist, recursive privacy rejection, safe-code normalization, retention, and cryptographic ids. |
+| `recordingTelemetryClient.js` | Authenticated nonblocking AppSync batching, bounded memory, retry/cooldown, reconnect, and keepalive delivery. |
+| `recordingTelemetryContext.js` / `recordingSignalHealth.js` | Build/platform/browser context, per-job device hashing, safe track settings, and aggregate-only signal analysis. |
+| `recordingBackendContract.js` | Correlated SQS/note-generation request shapes, status subscription, and legacy timestamp migration matching. |
 
 The controller exposes `startRecording`, `stopRecording`, `discardRecording`, `pauseRecording`, and `resumeRecording` plus UI state such as `isRecording`, `isPreparingTranscript`, and `isGeneratingSummary`.
 
 ## Conversation Lifecycle
 
-1. A user gesture starts `getUserMedia()` and creates a conversation timestamp and unique path stamp.
-2. `MediaRecorder` emits chunks. Desktop browsers are rotated by stopping and restarting the recorder every four minutes; Android also receives a four-minute `timeslice` to avoid zero-duration WebM blobs.
-3. Blobs smaller than 1,000 bytes are rejected as header-only containers.
-4. The upload queue writes chunks to `protected/<userId>/...` in order, then sends one FIFO SQS message per uploaded object. Every item belongs to an immutable recording session id.
-5. The final SQS message starts an owner-scoped AppSync subscription for the matching timestamp.
-6. Completion, subscription error, or a 40-second wait fallback starts the note-generation Lambda.
-7. The Lambda response is streamed into the clinical workspace. Generation has a 120-second normal timeout and a 45-second timeout after transcript fallback.
-8. Completion, failure, discard, and unmount release media tracks, intervals, subscriptions, abort controllers, timers, and NoSleep. Discard and unmount invalidate the session, cancel active Amplify/SQS work, and suppress late callbacks.
+1. A user gesture creates one cryptographically random `recordingJobId`, emits `capture.requested`, and starts `getUserMedia()` with a conversation timestamp and unique path stamp retained only for legacy backend compatibility.
+2. Applied microphone settings and a job-salted device hash are recorded without raw device identifiers. Aggregate-only signal analysis retains RMS/peak/duration counts but never audio samples.
+3. `MediaRecorder` emits chunks. Desktop browsers are rotated by stopping and restarting the recorder every four minutes; Android also receives a four-minute `timeslice` to avoid zero-duration WebM blobs.
+4. Blobs smaller than 1,000 bytes are rejected as header-only containers.
+5. The upload queue writes chunks to `protected/<userId>/...` in order with job/schema/order and originating app/platform/browser metadata, then sends one FIFO SQS message per object grouped by `recordingJobId`. Every item belongs to that immutable id.
+6. The final SQS acknowledgement starts an owner-scoped AppSync subscription. Job-id status correlation is authoritative; a timestamp query is tried once only when the deployed schema is still legacy.
+7. Completion, explicit no-speech, subscription error, or a 40-second wait fallback starts the note-generation Lambda with the same job id and schema version.
+8. The Lambda response is streamed into the clinical workspace. Generation has a 120-second normal timeout and a 45-second timeout after transcript fallback.
+9. Completion, failure, discard, and unmount emit one terminal outcome and release media tracks, intervals, subscriptions, abort controllers, timers, and NoSleep. Discard and unmount invalidate the session, cancel active Amplify/SQS work, and suppress late callbacks.
+
+### PHI-safe operational timeline
+
+Conversation recording emits a strict `1.0` event vocabulary into an authenticated first-party AppSync model. Delivery batches briefly in memory and retries independently of recording; GA4 and console availability are not part of the reliability path. Payload validation rejects clinical text, audio/binary values, credentials/tokens, names/email, direct patient/user/device identifiers, and unsafe strings before an event is queued.
+
+The timeline includes capture health/settings, chunk bytes/order, storage and queue acknowledgements, client-observed transcription/no-speech, note generation, retry, terminal state, and telemetry delivery health. The event vocabulary also reserves backend-owned notification, quarantine, and deletion outcomes. Those backend events are not complete until the external Lambda repositories adopt the contract and an authorized release provisions AppSync, TTL, access, metrics, and alarms.
+
+See [PHI-safe Recording Correlation and Telemetry](../operations/recording-telemetry.md) for the complete dictionary, exact support query, privacy tests, access/retention model, backend handoff, and deployment gates.
 
 ### Browser-specific behavior
 
@@ -88,7 +101,7 @@ The pre-publish review found five lifecycle and submission risks. The same revie
 5. `cleanupRecorder()` now takes a cancellation path with no final chunk and no React state updates.
 6. Failed or zero-credit subscription checks discard the just-started Safari-compatible recorder instead of finalizing and submitting it.
 
-The suite now contains 13 tests across dictation insertion, media mapping, emitted-chunk ordering, upload cancellation, late-callback suppression, SQS failure, MP4 upload metadata, and unmount cleanup. It still does not simulate real four-minute browser rotation, AppSync subscription fallback, or the complete Lambda stream, so the manual platform matrix remains required.
+The suite now contains 86 tests across 14 files, including dictation insertion, landing behavior, media mapping, emitted-chunk ordering, upload cancellation, late-callback suppression, SQS failure, MP4 upload metadata, capture/start/unmount cleanup, authenticated-identity/correlation-id failure, telemetry vocabulary/allowlisting/redaction, cryptographic ids/support references, platform/browser/device context, authenticated bounded delivery/partial-result recovery/timeouts/cooldown/lifecycle cleanup, aggregate signal health, AppSync ingestion contracts, and backend correlation/schema-migration contracts. It still does not simulate real four-minute browser rotation, a deployed AppSync subscription migration, the external Lambda chain, or native release builds, so the manual platform and backend matrix remains required.
 
 ## Minimum Manual Recording Matrix
 
@@ -99,6 +112,8 @@ Before publishing a build with recording changes, verify:
 - Android browser or WebView as applicable: recording longer than four minutes and valid audio duration after every rotation.
 - Firefox desktop: WebM capture and note generation.
 - Network interruption: S3 failure, SQS failure, transcript timeout, generation timeout, and user recovery.
+- Telemetry interruption: capture continues while delivery fails, reconnect flushes the buffered timeline, overflow/delivery failure is visible, and no event contains content or direct identifiers.
+- Backend correlation: one synthetic `recordingJobId` appears in S3 metadata, every SQS/retry message, Notes status, transcription/no-speech, generation, quarantine/deletion, notification, and exactly one terminal event.
 - Dictation in both textareas: cursor insertion, selection replacement, repeated phrases, stop/restart, and locked manual editing during the live caret.
 
 ## Maintenance Rules
@@ -107,8 +122,11 @@ Before publishing a build with recording changes, verify:
 - Update backend constants together with the corresponding Lambda and queue deployments.
 - Make upload cancellation/session identity explicit before allowing callbacks to mutate UI state.
 - Keep `src/components/Recording/README.md` synchronized with file ownership.
+- Treat `recordingJobId` as the authoritative correlation key. Timestamp matching is migration-only and must never override a mismatched job id.
+- Add telemetry fields only through the versioned allowlist, GraphQL model, rejection tests, and event dictionary; never send free-form error messages or content.
+- Keep telemetry delivery nonblocking and bounded. Do not add a recording-path `await` for operational logging.
 - Add focused tests whenever a recording race or platform bug is fixed; do not rely on the full browser matrix for every regression.
 
 ## Provenance
 
-Synthesized from [`RecordingManager.jsx`](../../src/components/Recording/RecordingManager.jsx), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`useAudioUploadQueue.js`](../../src/components/Recording/useAudioUploadQueue.js), [`useNoteGeneration.js`](../../src/components/Recording/useNoteGeneration.js), [`recordingMedia.js`](../../src/components/Recording/recordingMedia.js), the adjacent recording tests, [`Dictation.jsx`](../../src/components/Recording/Dictation.jsx), [`dictationInsertion.js`](../../src/utils/dictationInsertion.js), [`Context.md`](../../src/components/Recording/Context.md), [`README.md`](../../src/components/Recording/README.md), and Git commits `62f4ec8`, `a46b6d7`, `344f224`, `7200096`, `8d6e8b9`, `2f02843`, and `7761d93`. Current implementation takes precedence over older recording reference documents.
+Synthesized from [`RecordingManager.jsx`](../../src/components/Recording/RecordingManager.jsx), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`useAudioUploadQueue.js`](../../src/components/Recording/useAudioUploadQueue.js), [`useNoteGeneration.js`](../../src/components/Recording/useNoteGeneration.js), [`recordingTelemetrySchema.js`](../../src/components/Recording/recordingTelemetrySchema.js), [`recordingTelemetryClient.js`](../../src/components/Recording/recordingTelemetryClient.js), [`recordingBackendContract.js`](../../src/components/Recording/recordingBackendContract.js), [`recordingMedia.js`](../../src/components/Recording/recordingMedia.js), the adjacent recording tests, [`Dictation.jsx`](../../src/components/Recording/Dictation.jsx), [`dictationInsertion.js`](../../src/utils/dictationInsertion.js), [`Context.md`](../../src/components/Recording/Context.md), [`README.md`](../../src/components/Recording/README.md), and Git commits `62f4ec8`, `a46b6d7`, `344f224`, `7200096`, `8d6e8b9`, `2f02843`, and `7761d93`. Current implementation takes precedence over older recording reference documents.

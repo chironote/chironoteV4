@@ -1,0 +1,189 @@
+## Recording telemetry ingestion is intentionally stricter than the generated @model resolver.
+#set( $args = $util.defaultIfNull($ctx.stash.transformedArgs, $ctx.args) )
+#set( $mergedValues = {} )
+$util.qr($mergedValues.putAll($util.defaultIfNull($args.input, {})))
+
+#set( $allowedFields = [
+  "id", "recordingJobId", "timelineKey", "occurredAt", "expiresAt", "sequence",
+  "schemaVersion", "appBuild", "source", "platform", "browser", "eventName",
+  "attempt", "awsRequestId", "s3RequestId", "sqsMessageId", "providerRequestId",
+  "chunkBytes", "chunkOrder", "deliveryAttempt", "droppedEventCount", "durationMs",
+  "httpStatus", "observedDurationMs", "queueDepth", "retryDelayMs", "sampleCount",
+  "signalDurationMs", "peak", "rmsAverage", "isFinalChunk", "noSpeech",
+  "transcriptFallback", "alertCode", "container", "errorCode", "notificationChannel",
+  "outcome", "provider", "reasonCode", "stage", "transcriptMatchedBy", "deviceHash",
+  "deviceType", "mimeType", "producerVersion", "requestedTrackSettings",
+  "appliedTrackSettings"
+] )
+#foreach( $field in $mergedValues.keySet() )
+  $util.validate($allowedFields.contains($field), "Unsupported recording telemetry field", "TelemetryValidationError")
+#end
+
+$util.validate($util.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$", $mergedValues.recordingJobId), "Invalid recording job id", "TelemetryValidationError")
+$util.validate($util.matches("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$", $mergedValues.id), "Invalid telemetry event id", "TelemetryValidationError")
+$util.validate($util.matches("^[0-9]+[.][0-9]+$", $mergedValues.schemaVersion), "Invalid telemetry schema version", "TelemetryValidationError")
+$util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$", $mergedValues.appBuild), "Invalid app build", "TelemetryValidationError")
+$util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", $mergedValues.source), "Invalid telemetry source", "TelemetryValidationError")
+$util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$", $mergedValues.platform), "Invalid platform", "TelemetryValidationError")
+$util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$", $mergedValues.browser), "Invalid browser", "TelemetryValidationError")
+#if( $mergedValues.sequence <= 0 || $mergedValues.sequence > 2147483647 )
+  $util.error("Invalid telemetry sequence", "TelemetryValidationError")
+#end
+
+## Cognito producers may only represent the current client; backend stages require IAM.
+#if( $util.authType() == "User Pool Authorization" )
+  $util.validate($util.matches("^(web|android|ios)$", $mergedValues.platform), "Invalid client platform", "TelemetryValidationError")
+  #set( $expectedClientSource = "client.${mergedValues.platform}" )
+  #if( $mergedValues.source != $expectedClientSource )
+    $util.error("Invalid client telemetry source", "TelemetryValidationError")
+  #end
+#elseif( $util.authType() == "IAM Authorization" )
+  $util.validate($util.matches("^(backend|lambda)[.][A-Za-z0-9][A-Za-z0-9._:-]{0,119}$", $mergedValues.source), "Invalid backend telemetry source", "TelemetryValidationError")
+#else
+  $util.unauthorized()
+#end
+
+#set( $eventNames = [
+  "capture.requested", "capture.started", "capture.settings_applied", "capture.paused",
+  "capture.resumed", "capture.stopped", "capture.failed", "signal.summary",
+  "chunk.emitted", "chunk.rejected", "upload.started", "upload.succeeded",
+  "upload.failed", "sqs.accepted", "sqs.failed", "transcription.wait_started",
+  "transcription.completed", "transcription.no_speech", "transcription.failed",
+  "note_generation.started", "note_generation.succeeded", "note_generation.failed",
+  "retry.scheduled", "alert.triggered", "alert.failed", "notification.succeeded",
+  "notification.failed", "quarantine.created", "quarantine.failed",
+  "deletion.succeeded", "deletion.failed", "recording.discarded",
+  "recording.completed", "recording.failed", "telemetry.delivery_failed",
+  "telemetry.buffer_overflow"
+] )
+$util.validate($eventNames.contains($mergedValues.eventName), "Invalid telemetry event", "TelemetryValidationError")
+#if( $util.authType() == "User Pool Authorization" )
+  #set( $clientEventNames = [
+    "capture.requested", "capture.started", "capture.settings_applied", "capture.paused",
+    "capture.resumed", "capture.stopped", "capture.failed", "signal.summary",
+    "chunk.emitted", "chunk.rejected", "upload.started", "upload.succeeded",
+    "upload.failed", "sqs.accepted", "sqs.failed", "transcription.wait_started",
+    "transcription.completed", "transcription.no_speech", "transcription.failed",
+    "note_generation.started", "note_generation.succeeded", "note_generation.failed",
+    "retry.scheduled", "recording.discarded", "recording.completed", "recording.failed",
+    "telemetry.delivery_failed", "telemetry.buffer_overflow"
+  ] )
+  $util.validate($clientEventNames.contains($mergedValues.eventName), "Invalid client telemetry event", "TelemetryValidationError")
+#end
+
+#set( $integerFields = ["attempt", "chunkBytes", "chunkOrder", "deliveryAttempt", "droppedEventCount", "durationMs", "httpStatus", "observedDurationMs", "queueDepth", "retryDelayMs", "sampleCount", "signalDurationMs"] )
+#foreach( $field in $integerFields )
+  #if( !$util.isNull($mergedValues.get($field)) )
+    #if( $mergedValues.get($field) < 0 || $mergedValues.get($field) > 2147483647 )
+      $util.error("Invalid numeric telemetry field", "TelemetryValidationError")
+    #end
+  #end
+#end
+#foreach( $field in ["peak", "rmsAverage"] )
+  #if( !$util.isNull($mergedValues.get($field)) )
+    #if( $mergedValues.get($field) < 0 || $mergedValues.get($field) > 1 )
+      $util.error("Invalid signal telemetry field", "TelemetryValidationError")
+    #end
+  #end
+#end
+
+#set( $codeFields = ["alertCode", "container", "errorCode", "notificationChannel", "outcome", "provider", "reasonCode", "stage", "transcriptMatchedBy", "deviceType"] )
+#foreach( $field in $codeFields )
+  #if( !$util.isNull($mergedValues.get($field)) )
+    $util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$", $mergedValues.get($field)), "Invalid coded telemetry field", "TelemetryValidationError")
+  #end
+#end
+#foreach( $field in ["awsRequestId", "s3RequestId", "sqsMessageId", "providerRequestId"] )
+  #if( !$util.isNull($mergedValues.get($field)) )
+    $util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._:=+-]{0,255}$", $mergedValues.get($field)), "Invalid request identifier", "TelemetryValidationError")
+  #end
+#end
+#if( !$util.isNull($mergedValues.deviceHash) )
+  $util.validate($util.matches("^[a-fA-F0-9]{16,64}$", $mergedValues.deviceHash), "Invalid device hash", "TelemetryValidationError")
+#end
+#if( !$util.isNull($mergedValues.mimeType) )
+  #set( $safeMimePattern = '^(audio|video)/[A-Za-z0-9.+-]+(;[ A-Za-z0-9=".,_-]+)?$' )
+  $util.validate($util.matches($safeMimePattern, $mergedValues.mimeType), "Invalid media type", "TelemetryValidationError")
+#end
+#if( !$util.isNull($mergedValues.producerVersion) )
+  $util.validate($util.matches("^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$", $mergedValues.producerVersion), "Invalid producer version", "TelemetryValidationError")
+#end
+
+#set( $trackSettingFields = ["autoGainControl", "channelCount", "echoCancellation", "latency", "noiseSuppression", "sampleRate", "sampleSize", "volume"] )
+#foreach( $field in ["requestedTrackSettings", "appliedTrackSettings"] )
+  #if( !$util.isNull($mergedValues.get($field)) )
+    #if( $mergedValues.get($field).length() > 512 )
+      $util.error("Track settings too large", "TelemetryValidationError")
+    #end
+    #set( $settings = $util.parseJson($mergedValues.get($field)) )
+    $util.validate($util.isMap($settings), "Invalid track settings", "TelemetryValidationError")
+    #foreach( $setting in $settings.keySet() )
+      $util.validate($trackSettingFields.contains($setting), "Unsupported track setting", "TelemetryValidationError")
+      #set( $settingValue = $settings.get($setting) )
+      #if( !$util.isBoolean($settingValue) && !$util.isNumber($settingValue) )
+        $util.error("Invalid track setting value", "TelemetryValidationError")
+      #end
+      #if( $util.isNumber($settingValue) )
+        #if( $settingValue < 0 || $settingValue > 1000000000 )
+          $util.error("Invalid track setting number", "TelemetryValidationError")
+        #end
+      #end
+    #end
+  #end
+#end
+
+## The client fields are required by the generated input type, so require their exact
+## non-sensitive shape before replacing every authoritative storage value.
+#set( $sequenceKey = "0000000000${mergedValues.sequence}" )
+#set( $sequenceStart = $sequenceKey.length() - 10 )
+#set( $sequenceKey = $sequenceKey.substring($sequenceStart) )
+#set( $expectedClientTimelineKey = "${mergedValues.occurredAt}#${sequenceKey}#${mergedValues.id}" )
+#if( $mergedValues.timelineKey != $expectedClientTimelineKey )
+  $util.error("Invalid client timeline key", "TelemetryValidationError")
+#end
+
+## Server-authoritative identity, ordering time, and retention prevent client forgery.
+#set( $producerOccurredAt = $mergedValues.occurredAt )
+#set( $serverOccurredAt = $util.time.nowISO8601() )
+#set( $serverExpiresAt = $util.time.nowEpochSeconds() + 2592000 )
+#set( $serverId = "${mergedValues.recordingJobId}#${mergedValues.source}#${mergedValues.id}" )
+#set( $serverTimelineKey = "${serverOccurredAt}#${mergedValues.source}#${sequenceKey}#${serverId}" )
+$util.qr($mergedValues.put("id", $serverId))
+$util.qr($mergedValues.put("occurredAt", $serverOccurredAt))
+$util.qr($mergedValues.put("producerOccurredAt", $producerOccurredAt))
+$util.qr($mergedValues.put("expiresAt", $serverExpiresAt))
+$util.qr($mergedValues.put("timelineKey", $serverTimelineKey))
+$util.qr($mergedValues.put("__typename", "RecordingTelemetryEvent"))
+
+## Store only a job-salted, GraphQL-hidden producer fingerprint for abuse attribution.
+#set( $producerPrincipal = "unknown" )
+#if( $util.authType() == "User Pool Authorization" )
+  #set( $producerPrincipal = $util.defaultIfNull($ctx.identity.claims.get("sub"), "unknown-user-pool") )
+#elseif( $util.authType() == "IAM Authorization" )
+  #set( $producerPrincipal = $util.defaultIfNull($ctx.identity.cognitoIdentityId, $ctx.identity.userArn) )
+#end
+#set( $producerMaterial = "${mergedValues.recordingJobId}|${producerPrincipal}" )
+$util.qr($mergedValues.put("producerFingerprint", $producerMaterial.hashCode()))
+
+$util.qr($ctx.stash.metadata.put("modelObjectKey", {
+  "id": $util.dynamodb.toDynamoDB($serverId)
+}))
+$util.validate($util.isNull($args.condition), "Create conditions are unsupported", "TelemetryValidationError")
+#set( $keyConditionExpr = { "id": { "attributeExists": false } } )
+$util.qr($ctx.stash.conditions.add($keyConditionExpr))
+#set( $mergedConditions = { "and": $ctx.stash.conditions } )
+#set( $conditions = $util.parseJson($util.transform.toDynamoDBConditionExpression($mergedConditions)) )
+#if( $conditions.expressionValues && $conditions.expressionValues.size() == 0 )
+  #set( $conditions = {
+    "expression": $conditions.expression,
+    "expressionNames": $conditions.expressionNames
+  } )
+#end
+
+$util.toJson({
+  "version": "2018-05-29",
+  "operation": "PutItem",
+  "key": $ctx.stash.metadata.modelObjectKey,
+  "attributeValues": $util.dynamodb.toMapValues($mergedValues),
+  "condition": $conditions
+})

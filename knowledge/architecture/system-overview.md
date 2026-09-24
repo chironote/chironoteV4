@@ -33,10 +33,13 @@ This repository's maintained `prod` line is the hosted website. Older Capacitor 
 ## Audio-to-Note Flow
 
 1. `RecordingManager` coordinates the workflow while focused hooks own the implementation.
-2. `useMediaRecorderController` captures browser audio and emits chunks.
-3. `useAudioUploadQueue` uploads chunks to Amplify Storage in order and dispatches processing messages through SQS.
-4. `useNoteGeneration` waits for transcript completion and streams generated note text from the backend.
-5. The app inserts cleaned text into the clinical workspace; saved backend updates return through GraphQL subscriptions.
+2. `useMediaRecorderController` creates one opaque `recordingJobId`, captures browser audio, records aggregate signal health, and emits ordered chunks.
+3. `useAudioUploadQueue` carries the job id through S3 metadata and SQS while emitting authenticated PHI-safe operational events.
+4. `useNoteGeneration` prefers job-id-correlated AppSync status, falls back to the legacy timestamp during migration, and streams generated note text from the backend.
+5. AppSync stores the privacy-safe operational timeline separately from clinical records; Support-group readers query it by `recordingJobId` with a 30-day TTL target.
+6. The app inserts cleaned text into the clinical workspace; saved backend updates return through GraphQL subscriptions.
+
+The web producer and Amplify source contract are implemented locally, but the external transcription/note Lambdas must still propagate and emit the identifier before this is an end-to-end deployed flow. See [PHI-safe Recording Correlation and Telemetry](../operations/recording-telemetry.md).
 
 Realtime dictation is a separate AssemblyAI streaming path. It captures an immutable snapshot around the selected textarea range and replaces only the evolving transcript region. The insertion operation is pure so React Strict Mode cannot duplicate or consume neighboring text.
 
@@ -53,6 +56,7 @@ Realtime dictation is a separate AssemblyAI streaming path. It captures an immut
 | Security constraints | [Company Security Policy](../security/security-policy.md) |
 | Platform lineage and synchronization | [Web, Android, and iPhone Codebase Divergence](./platform-divergence.md) |
 | Publish state and release decisions | [Website Publish State and Release Checklist](../operations/website-release.md) |
+| Recording correlation, telemetry, and support response | [PHI-safe Recording Correlation and Telemetry](../operations/recording-telemetry.md) |
 
 ## Provenance
 

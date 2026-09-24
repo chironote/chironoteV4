@@ -4,8 +4,8 @@ export async function getUserId() {
   try {
     const userId = (await getCurrentUser()).userId;
     return userId;
-  } catch (err) {
-    console.log(err);
+  } catch {
+    console.error('Unable to resolve authenticated recording user');
     return null;
   }
 }

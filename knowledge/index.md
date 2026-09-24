@@ -51,6 +51,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 | Concept | Use it to understand |
 | --- | --- |
+| [PHI-safe Recording Correlation and Telemetry](./operations/recording-telemetry.md) | Recording job identity, versioned event vocabulary, privacy boundary, support query, retention/access, alarm requirements, and backend rollout gates. |
 | [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
 
 ## Security

@@ -4,6 +4,18 @@ import useAudioUploadQueue from './useAudioUploadQueue';
 import useMediaRecorderController from './useMediaRecorderController';
 import useNoteGeneration from './useNoteGeneration';
 import { AUDIO_UPLOAD_FAILURE_MESSAGE } from './recordingConstants';
+import { createRecordingTelemetryClient } from './recordingTelemetryClient';
+import { getRecordingClientContext } from './recordingTelemetryContext';
+
+const createManagerTelemetryClient = (clientContext) => createRecordingTelemetryClient({
+  clientContext,
+  onDeliveryFailure: ({ errorCode }) => {
+    console.error(`Recording telemetry delivery failed: ${errorCode}`);
+  },
+  onRejected: ({ code }) => {
+    console.error(`Recording telemetry event rejected: ${code}`);
+  }
+});
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isRecording, setIsRecording] = useState(false);
@@ -16,13 +28,28 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const timeStampRef = useRef(null);
   const pathStampRef = useRef(null);
   const filePathRef = useRef(null);
+  const recordingJobIdRef = useRef(null);
   const noSleepRef = useRef(null);
   const isDiscardingRef = useRef(false);
+  const terminalOutcomeRef = useRef(null);
+  const telemetryContextRef = useRef(null);
+  const telemetryClientRef = useRef(null);
   const cleanupRef = useRef({
     cleanupRecorder: () => {},
     cancelRecordingForFailure: () => {},
     cleanupNoteGeneration: () => {}
   });
+
+  if (!telemetryContextRef.current) {
+    telemetryContextRef.current = getRecordingClientContext();
+  }
+  if (!telemetryClientRef.current) {
+    telemetryClientRef.current = createManagerTelemetryClient(telemetryContextRef.current);
+  }
+
+  const emitTelemetry = (eventName, payload = {}, jobId = recordingJobIdRef.current) => (
+    telemetryClientRef.current?.emit(jobId, eventName, payload) || null
+  );
 
   const {
     subscribeToNoteCompletion,
@@ -31,8 +58,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     cleanupNoteGeneration
   } = useNoteGeneration({
     timeStampRef,
+    recordingJobIdRef,
     isDiscardingRef,
+    terminalOutcomeRef,
     noSleepRef,
+    emitTelemetry,
+    telemetryContext: telemetryContextRef.current,
     setTextStream,
     setIsPreparingTranscript,
     setIsGeneratingSummary,
@@ -47,9 +78,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     cancelUploadSession
   } = useAudioUploadQueue({
     filePathRef,
-    onFinalAudioQueued: (userId, timestamp) => {
+    emitTelemetry,
+    telemetryContext: telemetryContextRef.current,
+    onFinalAudioQueued: (userId, timestamp, recordingJobId) => {
       setIsTranscriptCompleted(false);
-      subscribeToNoteCompletion(userId, timestamp);
+      subscribeToNoteCompletion(userId, timestamp, recordingJobId);
     },
     onUploadError: (error) => {
       failNoteGeneration(
@@ -75,8 +108,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     timeStampRef,
     pathStampRef,
     filePathRef,
+    recordingJobIdRef,
     noSleepRef,
     isDiscardingRef,
+    terminalOutcomeRef,
+    emitTelemetry,
     queueUpload,
     startUploadSession,
     cancelUploadSession,
@@ -87,7 +123,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     setIsPreparingTranscript,
     setIsGeneratingSummary,
     setIsTranscriptCompleted,
-    setTextStream
+    setTextStream,
+    onTextStreamUpdate,
+    onTransitionToMainApp
   });
 
   useEffect(() => {
@@ -107,6 +145,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   }, [isPaused, isPausedRef]);
 
   useEffect(() => {
+    if (telemetryClientRef.current?.isDisposed) {
+      telemetryClientRef.current = createManagerTelemetryClient(telemetryContextRef.current);
+    }
+    telemetryClientRef.current?.start();
     noSleepRef.current = new NoSleep();
     return () => {
       if (noSleepRef.current) {
@@ -119,6 +161,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     return () => {
       cleanupRef.current.cleanupRecorder();
       cleanupRef.current.cleanupNoteGeneration();
+      telemetryClientRef.current?.dispose();
     };
   }, []);
 
@@ -133,6 +176,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     discardRecording,
     pauseRecording,
     resumeRecording,
+    recordingJobId: recordingJobIdRef.current,
     textStream
   };
 }
