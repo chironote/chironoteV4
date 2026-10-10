@@ -2,6 +2,10 @@
 
 ## 2026-10-10
 
+- **Additive backend compatibility**: Added a default-strict AppSync environment gate for the create/update clinical-write restrictions, with explicit `false` during prompt deferral. Six synthetic AWS VTL evaluations pass. Corrected override validation to use `amplify build` after tracing the installed CLI; `api gql-compile` omits overrides. Emitted Notes Retain/PITR/deletion protection and API compatibility configuration were inspected successfully. No clinical prompt publication is included.
+
+- **Production preparation and recovery**: Merged patient source to `prod` via PR #16 (`dcd1e8c`), without website/backend publication. Clinical prompt release is deferred. Added the CLI-generated source override for Notes Retain policies, deletion protection and PITR so future stack changes preserve the retention/recovery decision. Documented legacy-writer compatibility and the pending coordinated cutover; automatic cleanup retirement and backup/PITR were separately verified in AWS.
+
 - **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Desktop web has persistent Save; mobile web keeps local edit/copy. The Patients route owns profiles, source diagnosis display and PDF selection. Settings owns Configure Signature. Local candidate only; no push, release or deployment.
 
 ## 2026-09-17

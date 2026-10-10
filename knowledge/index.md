@@ -4,6 +4,8 @@ okf_version: "0.1"
 
 # ChiroNote Knowledge Index
 
+For the patient release's additive infrastructure stage and legacy-writer compatibility gate, read [Amplify infrastructure](./infrastructure/amplify.md) and [patient notes](./architecture/patient-notes.md).
+
 This is a concept-oriented knowledge map for ChiroNote. Query by the thing you need to understand or change; each concept contains its own provenance and links to adjacent concepts. Files remain at `knowledge/<category>/<concept>.md` so the hierarchy never exceeds one folder below `knowledge/`. See the [knowledge update log](./log.md) for the newest-first history of how this map has evolved.
 
 ## Architecture
