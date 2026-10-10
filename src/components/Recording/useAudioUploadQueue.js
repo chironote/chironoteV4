@@ -34,9 +34,9 @@ function useAudioUploadQueue({
   const uploadQueueRef = useRef([]);
   const isProcessingUploadsRef = useRef(false);
 
-  const uploadS3 = async (audioBlob, filePath) => {
-    const timestamp = timeStampRef.current;
-    const userId = await getUserId();
+  const uploadS3 = async (audioBlob, filePath, capture) => {
+    const timestamp = capture?.timestamp ?? timeStampRef.current;
+    const userId = capture?.userId ?? await getUserId();
 
     if (!userId) {
       console.error('User not authenticated for S3 upload');
@@ -70,25 +70,24 @@ function useAudioUploadQueue({
         }
       }).result;
 
-      console.log(`Successfully uploaded to: ${filePath}`, uploadResult);
 
-      const selectedLanguage = localStorage.getItem('selectedLanguage');
+
       const audioObjectIdentity = getAudioObjectIdentity(filePath);
       const messageBody = JSON.stringify({
         userId,
         timestamp,
         path: filePath,
-        language: selectedLanguage === 'null' ? null : selectedLanguage,
+        language: 'auto',
         isFinalAudio: filePath.includes('_final_'),
         accessToken,
-        noteSettings: localStorage.getItem('noteSettings'),
+        noteSettings: capture?.noteSettings ?? localStorage.getItem('noteSettings'),
+        ...(capture?.visitMetadata ? { visitMetadata: capture.visitMetadata } : {}),
         ...audioObjectIdentity
       });
 
       const filenameParts = filePath.split('/');
       const lastPart = filenameParts[filenameParts.length - 1];
       const deduplicationId = `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
-      console.log('Deduplication ID:', deduplicationId);
 
       const command = new SendMessageCommand({
         QueueUrl: AUDIO_TRANSCRIPTION_QUEUE_URL,
@@ -104,7 +103,7 @@ function useAudioUploadQueue({
 
         if (filePath.includes('_final_')) {
           console.log('Final recording uploaded, waiting for transcript completion...');
-          onFinalAudioQueued(userId, timestamp);
+          onFinalAudioQueued(userId, timestamp, capture);
         }
       } catch (error) {
         console.error('Error sending message to SQS:', error);
@@ -131,7 +130,7 @@ function useAudioUploadQueue({
           break;
         }
 
-        await uploadS3(item.audioBlob, item.filePath);
+        await uploadS3(item.audioBlob, item.filePath, item.capture);
         uploadQueueRef.current = uploadQueueRef.current.filter(queueItem => queueItem !== item);
       }
     } catch (error) {
@@ -145,8 +144,8 @@ function useAudioUploadQueue({
     }
   };
 
-  const queueUpload = (audioBlob, filePath) => {
-    uploadQueueRef.current.push({ audioBlob, filePath });
+  const queueUpload = (audioBlob, filePath, capture) => {
+    uploadQueueRef.current.push({ audioBlob, filePath, capture });
     processUploadQueue();
   };
 

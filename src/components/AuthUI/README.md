@@ -33,3 +33,7 @@ On Android, `SignInForm` asks Credential Manager for a password on mount. A manu
 - Keep website signup, password recovery, and terms acceptance in Amplify Authenticator; the native form intentionally directs those workflows to the website.
 - Preserve `autocomplete="username"` and `autocomplete="current-password"` on the native fields.
 - `chironote.ai/.well-known/assetlinks.json` must eventually serve valid Digital Asset Links JSON for verified app/site credential sharing. The Android app can use its provider without that cross-surface association.
+
+## Patient notes integration
+
+The approved native auth fixes are retained alongside patient integration: sign-out holds a loading state until completion, a network-only token-refresh failure does not force logout, and Credential Manager retries on foreground only while fields remain untouched. In-flight and unmounted guards prevent duplicate or late credential updates. The authenticated AppShell separately keys the clinical workspace by principal to clear patient state on account changes.

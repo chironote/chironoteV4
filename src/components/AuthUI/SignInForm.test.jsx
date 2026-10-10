@@ -1,10 +1,12 @@
 import '@testing-library/jest-dom';
+import { act } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { getCurrentUser, signIn } from 'aws-amplify/auth';
 import {
   getPasswordCredential,
   savePasswordCredential,
 } from '../../plugins/CredentialManager';
+import { addNativeAppStateListener } from '../../services/nativePlatform';
 import SignInForm from './SignInForm';
 
 jest.mock('aws-amplify/auth', () => ({
@@ -17,12 +19,17 @@ jest.mock('../../plugins/CredentialManager', () => ({
   savePasswordCredential: jest.fn(),
 }));
 
+jest.mock('../../services/nativePlatform', () => ({
+  addNativeAppStateListener: jest.fn(),
+}));
+
 describe('SignInForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'error').mockImplementation(() => {});
     getPasswordCredential.mockResolvedValue({ available: false });
     savePasswordCredential.mockResolvedValue({ saved: true });
+    addNativeAppStateListener.mockResolvedValue({ remove: jest.fn() });
   });
 
   afterEach(() => {
@@ -50,6 +57,36 @@ describe('SignInForm', () => {
 
     expect(await screen.findByDisplayValue('saved@example.com')).toBeInTheDocument();
     expect(screen.getByLabelText('Password')).toHaveValue('provider-password');
+  });
+
+  it('retries a failed automatic lookup once the app returns to the foreground', async () => {
+    let appStateListener;
+    let finishInitialLookup;
+    addNativeAppStateListener.mockImplementation(async (listener) => {
+      appStateListener = listener;
+      return { remove: jest.fn() };
+    });
+    getPasswordCredential
+      .mockImplementationOnce(
+        () => new Promise((resolve) => { finishInitialLookup = resolve; }),
+      )
+      .mockResolvedValueOnce({
+        available: true,
+        username: 'saved@example.com',
+        password: 'provider-password',
+      });
+
+    render(<SignInForm onSignInSuccess={jest.fn()} />);
+    await waitFor(() => expect(getPasswordCredential).toHaveBeenCalledTimes(1));
+    await act(async () => finishInitialLookup({ available: false }));
+
+    act(() => {
+      appStateListener({ isActive: false });
+      appStateListener({ isActive: true });
+    });
+
+    expect(await screen.findByDisplayValue('saved@example.com')).toBeInTheDocument();
+    expect(getPasswordCredential).toHaveBeenCalledTimes(2);
   });
 
   it('offers a manually entered password only after Cognito confirms sign-in', async () => {

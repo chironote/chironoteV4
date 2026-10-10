@@ -1,4 +1,6 @@
 import React from 'react';
+import SavedNoteEditor from '../Patients/SavedNoteEditor';
+import { patientNotesEnabled } from '../../services/patientNotes';
 import Recording from '../Recording/Recording';
 import DictationPopup from '../Recording/DictationPopup';
 import ClipboardButtons from '../Clipboard/ClipboardButtons';
@@ -98,6 +100,7 @@ function MainWorkspace({
         <Recording
           toggleRecordingPopup={recording.toggleRecordingPopup}
           recordingType={recording.recordingType}
+          isStarting={recording.manager.isStarting}
           isRecording={recording.manager.isRecording}
           isPaused={recording.manager.isPaused}
           isPreparingTranscript={recording.manager.isPreparingTranscript}
@@ -121,7 +124,12 @@ function MainWorkspace({
         />
       )}
 
-      {contentPopup.showContentPopup && (
+      {patientNotesEnabled && contentPopup.showContentPopup && contentPopup.selectedItem?.note && (
+        <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Saved note">
+          <SavedNoteEditor timestamp={contentPopup.selectedTimestamp} onClose={() => contentPopup.setShowContentPopup(false)} onSaved={() => notesHistory.refreshNotes()} />
+        </div></div>
+      )}
+      {contentPopup.showContentPopup && (!patientNotesEnabled || !contentPopup.selectedItem?.note) && (
         <ContentPopup
           setShowContentPopup={contentPopup.setShowContentPopup}
           setShowPopupMenu={contentPopup.setShowPopupMenu}

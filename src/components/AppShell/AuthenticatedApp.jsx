@@ -22,7 +22,7 @@ import { applyDictationText, createDictationInsertion } from '../../utils/dictat
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 
-function AuthenticatedApp({ signOut, user }) {
+function ClinicalWorkspace({ signOut, user }) {
   const isNative = isNativePlatform();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
@@ -184,7 +184,7 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const toggleRecordingPopup = (type) => {
-    if (recordingManager.isRecording) {
+    if (recordingManager.isRecording || recordingManager.isStarting) {
       recordingManager.discardRecording();
     } else {
       setRecordingType(type);
@@ -425,6 +425,7 @@ function AuthenticatedApp({ signOut, user }) {
         onFeedback={openFeedback}
       />
       <ErrorBanner isVisible={showErrorBanner} />
+      {recordingManager.generationError && <p className="patient-confirmation" role="alert">{recordingManager.generationError}</p>}
 
       <Routes>
         <Route path="/" element={
@@ -511,4 +512,7 @@ function LegacyFeedbackRoute({ onOpen }) {
   return <Navigate to="/app" replace />;
 }
 
+function AuthenticatedApp(props) {
+  return <ClinicalWorkspace key={props.user?.userId || props.user?.username || 'signed-out'} {...props} />;
+}
 export default AuthenticatedApp;

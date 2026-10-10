@@ -54,3 +54,7 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 - `EditPanel` currently contains a direct Lambda URL and GraphQL subscription accounting logic; coordinate backend changes carefully.
 - Smart Editor mirrors Clipboard's header, toolbar, inset textarea, focus, radius, border, and shadow hierarchy. On constrained desktop widths it retains a `280px` minimum working width.
 - Preserve the explicit accessible names on editor controls and its instruction textarea.
+
+## Patient notes integration
+
+Patient-enabled rows show the current verified directory name above `visitLabel`, falling back to the untouched legacy `noteLabel` caption. Unassigned notes use Name Unknown. Search includes the resolved name and caption/body. Patient identity never comes from parsing a label. Selection flows through the shell so draft guards run before changing the active note; patient-aware saved-note viewing and metadata controls belong to `Patients`.

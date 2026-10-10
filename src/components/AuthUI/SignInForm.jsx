@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { getCurrentUser, signIn } from 'aws-amplify/auth';
 import textLogo from '../../assets/fulllogo.svg';
 import {
   getPasswordCredential,
   savePasswordCredential,
 } from '../../plugins/CredentialManager';
+import { addNativeAppStateListener } from '../../services/nativePlatform';
 import './AuthUI.css';
 
 const SIGN_IN_ERROR_MESSAGES = {
@@ -59,36 +60,71 @@ function SignInForm({ onSignInSuccess }) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const credentialSourceRef = useRef('untouched');
+  const credentialRequestInFlightRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  const loadCredential = useCallback(async () => {
+    if (
+      credentialRequestInFlightRef.current
+      || credentialSourceRef.current !== 'untouched'
+    ) {
+      return;
+    }
+
+    credentialRequestInFlightRef.current = true;
+
+    try {
+      const credential = await getPasswordCredential();
+
+      if (
+        isMountedRef.current
+        && credentialSourceRef.current === 'untouched'
+        && credential?.available
+        && typeof credential.username === 'string'
+        && typeof credential.password === 'string'
+      ) {
+        credentialSourceRef.current = 'provider';
+        setEmail(credential.username);
+        setPassword(credential.password);
+      }
+    } catch {
+      // Credential retrieval is optional; manual sign-in remains available.
+    } finally {
+      credentialRequestInFlightRef.current = false;
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
-
-    const loadCredential = async () => {
-      try {
-        const credential = await getPasswordCredential();
-
-        if (
-          isMounted
-          && credentialSourceRef.current === 'untouched'
-          && credential?.available
-          && typeof credential.username === 'string'
-          && typeof credential.password === 'string'
-        ) {
-          credentialSourceRef.current = 'provider';
-          setEmail(credential.username);
-          setPassword(credential.password);
-        }
-      } catch {
-        // Credential retrieval is optional; manual sign-in remains available.
-      }
-    };
+    let appWasActive = true;
+    let listenerHandle;
+    isMountedRef.current = true;
 
     loadCredential();
 
+    const listenForForeground = async () => {
+      const handle = await addNativeAppStateListener(({ isActive }) => {
+        if (isMounted && isActive && !appWasActive) {
+          loadCredential();
+        }
+        appWasActive = isActive;
+      });
+
+      if (isMounted) {
+        listenerHandle = handle;
+      } else {
+        handle?.remove();
+      }
+    };
+
+    listenForForeground();
+
     return () => {
       isMounted = false;
+      isMountedRef.current = false;
+      listenerHandle?.remove();
     };
-  }, []);
+  }, [loadCredential]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
