@@ -1,5 +1,9 @@
 # Knowledge Update Log
 
+## 2026-10-10
+
+- **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. iOS keeps native edit/copy behavior with no new clinical-body Save. Native presentation tokens, scoped ios.css and status-bar appearance were ported from the original dirty checkout; unrelated original changes remain untouched. Local candidate only; no push, release or deployment.
+
 ## 2026-09-13
 
 - **Initialization**: Expanded the thin knowledge layer into a shallow,

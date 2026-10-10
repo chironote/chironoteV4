@@ -3,6 +3,17 @@
 
 /* Root variables for colors */
 :root {
+  --color-canvas: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-text-soft: #59705a;
+  --shadow-drawer: 12px 0 32px rgba(12, 32, 14, 0.16);
+  --shadow-menu: 0 18px 42px rgba(23, 55, 25, 0.16);
+  --shadow-dialog: 0 18px 46px rgba(12, 32, 14, 0.2);
+  --radius-control: 8px;
+  --radius-group: 10px;
+  --radius-panel: 12px;
+  --radius-dialog: 16px;
+  --radius-pill: 999px;
   --dark-green: #1e4620;
   --medium-green: #2e6930;
   --light-green: #4a8f4d;

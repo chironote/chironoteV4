@@ -1,16 +1,17 @@
+import { captureSnapshot, recordingSettingsSnapshot } from '../../services/patientNotes';
+import useNoteGeneration from './useNoteGeneration';
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs"; 
 import NoSleep from 'nosleep.js';
-import { generateClient } from 'aws-amplify/api';
-import * as subscriptions from '../../graphql/subscriptions';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 
-const client = generateClient();
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
+  const [isStarting, setIsStarting] = useState(false);
+  const startingRef = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
@@ -22,10 +23,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const pathStampRef = useRef(null); // For uniquely identifying file paths
   const filePathRef = useRef(null); // Add a ref to store the file path
   const lastUploadedChunkRef = useRef(0); // Track chunk number for unique paths
+  const [generationError, setGenerationError] = useState('');
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
-  const subscriptionRef = useRef(null);
-  const generateTimeoutRef = useRef(null);
   const uploadQueueRef = useRef([]); // Queue for audio uploads
   const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
   const finalChunkRef = useRef(null); // Reference to store the final chunk
@@ -45,6 +45,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   // Using 240-second (4-minute) timeslice to match chunk cycle and enable proper transcription
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
   const isIOS = useRef(/iphone|ipad/i.test(navigator.userAgent)).current;
+
+  const { subscribeToNoteCompletion, resetNoteGenerationState, cleanupNoteGeneration } = useNoteGeneration({
+    timeStampRef, isDiscardingRef, noSleepRef, setTextStream, setIsPreparingTranscript,
+    setIsGeneratingSummary, setIsTranscriptCompleted, onTextStreamUpdate, onTransitionToMainApp,
+    onGenerationError: setGenerationError,
+  });
 
   const clearRecordingInterval = () => {
     if (recordingIntervalRef.current) {
@@ -336,16 +342,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       console.log('[RecordingManager] Successfully uploaded audio chunk');
       
       // Then send a message to SQS to trigger transcription Lambda
-      const selectedLanguage = localStorage.getItem('selectedLanguage');
+
       const queueUrl = "https://sqs.us-east-2.amazonaws.com/026090532772/AudioTranscriptionQueue.fifo"; 
       const messageBody = JSON.stringify({
         userId,
         timestamp,
         path: filePath,
-        language: selectedLanguage === 'null' ? null : selectedLanguage,
+        language: 'auto',
         isFinalAudio: filePath.includes('_final_'),
         accessToken: accessToken,
-        noteSettings: localStorage.getItem('noteSettings')
+        noteSettings: identity.noteSettings,
+        ...(identity.visitMetadata ? { visitMetadata: identity.visitMetadata } : {})
       });
       // Create a shorter, valid deduplication ID (max 128 chars, alphanumeric, hyphens, underscores only)
       // Use the last part of the filename which should be unique enough
@@ -370,7 +377,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         if (filePath.includes('_final_')) {
           console.log("Final recording uploaded, waiting for transcript completion...");
           setIsTranscriptCompleted(false);
-          subscribeToNoteCompletion(userId, timestamp);
+          subscribeToNoteCompletion(userId, timestamp, identity);
         }
       } catch (error) {
         console.error("Error sending message to SQS:", error);
@@ -381,148 +388,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     } catch (error) {
       console.error('Error uploading audio to S3:', error);
       throw error; 
-    }
-  };
-
-  const subscribeToNoteCompletion = async (userId, timestamp) => {
-    // Clean up previous subscription if it exists
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-    }
-
-    // Set up timeout to automatically move on after 80 seconds
-    const timeoutId = setTimeout(() => {
-      console.log('Subscription wait timeout (40 seconds) - moving on automatically');
-      // Make sure to unsubscribe before moving on
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-      setIsTranscriptCompleted(true);
-      streamResponse();
-    }, 80000); // 80 seconds
-
-    // Set up new subscription
-    subscriptionRef.current = client.graphql({
-      query: subscriptions.onUpdateNotesByOwner,
-      variables: { owner: userId }
-    }).subscribe({
-      next: ({ data }) => {
-        console.log('[RecordingManager] Received subscription update');
-        const updatedNote = data.onUpdateNotesByOwner;
-        
-        // Check if this is the note we're waiting for
-        if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
-          console.log('[RecordingManager] Found matching note');
-          
-          // Check if the note processing is completed
-          if (updatedNote.isCompleted === true) {
-            console.log('Transcript processing completed!');
-            // Clear the timeout since we got a response
-            clearTimeout(timeoutId);
-            setIsTranscriptCompleted(true);
-            // Unsubscribe since we found our match
-            if (subscriptionRef.current) {
-              subscriptionRef.current.unsubscribe();
-              subscriptionRef.current = null;
-            }
-            // Proceed to stream response
-            streamResponse();
-          }
-        }
-      },
-      error: (error) => {
-        console.error('Subscription error:', error);
-        // Clear the timeout since we're handling the error
-        clearTimeout(timeoutId);
-        // If there's an error with subscription, proceed anyway to avoid blocking
-        setIsTranscriptCompleted(true);
-        streamResponse();
-      }
-    });
-  };
-
-  const streamResponse = async () => {
-    setIsGeneratingSummary(true);
-    setIsPreparingTranscript(false);
-    // Safety timeout: auto-exit "Generating Note" after 4 minutes if streaming doesn't start
-    generateTimeoutRef.current = setTimeout(() => {
-      console.warn('Generating Note timeout (4 minutes) - closing spinner and returning to main app');
-      setIsGeneratingSummary(false);
-      setIsPreparingTranscript(false);
-      onTransitionToMainApp();
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
-    }, 240000);
-    try {
-      const userId = await getUserId();
-      if (!userId) {
-        console.error('User not authenticated');
-        return;
-      }
-      const accessToken = await generateToken();
-
-      const response = await fetch("https://rmg4v7tjipa3lb5e5jkyjyc3ri0vdqmn.lambda-url.us-east-2.on.aws/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: userId,
-          timeStamp: timeStampRef.current,
-          accessToken: accessToken,
-          noteSettings: localStorage.getItem('noteSettings'),
-        }),
-      });
-      
-      if (!response.ok) {
-        console.error(`HTTP error! status: ${response.status}`);
-        return;
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let chunk;
-      let isFirstChunk = true;
-      
-      // Hide the "Generating Note" window as soon as streaming starts
-      if (generateTimeoutRef.current) {
-        clearTimeout(generateTimeoutRef.current);
-        generateTimeoutRef.current = null;
-      }
-      setIsGeneratingSummary(false);
-      
-      // Close the recording popup so user can see the streaming text
-      onTransitionToMainApp();
-      
-      while (true) {
-        chunk = await reader.read();
-        const text = decoder.decode(chunk.value, { stream: !chunk.done });
-        setTextStream((prev) => {
-          const newText = prev + text;
-          onTextStreamUpdate(newText);
-          if (isFirstChunk) {
-            isFirstChunk = false;
-          }
-          return newText;
-        }); 
-
-        if (chunk.done) {
-          break;
-        } 
-      }
-    } catch (error) {
-      console.error("Streaming error:", error);
-    } finally {
-      setIsPreparingTranscript(false);
-      if (generateTimeoutRef.current) {
-        clearTimeout(generateTimeoutRef.current);
-        generateTimeoutRef.current = null;
-      }
-      if (noSleepRef.current) {
-        noSleepRef.current.disable();
-      }
     }
   };
 
@@ -562,6 +427,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   };
 
   const discardRecording = () => {
+    startingRef.current = false; if (!isUnmountedRef.current) setIsStarting(false);
     // Set flag to prevent any data processing
     isDiscardingRef.current = true;
     recordingGenerationRef.current += 1;
@@ -611,14 +477,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }
     
     // Cancel any active subscriptions
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
-    }
+    cleanupNoteGeneration();
     
   };
 
-  const requestMicrophonePermission = async () => {
+  const requestMicrophonePermission = () => {
     // Check if user has already seen the permission rationale
     const hasSeenPermissionRationale = localStorage.getItem('chironote_mic_permission_rationale_shown');
     
@@ -640,31 +503,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     return true;
   };
 
-  const setupRecorder = async () => {
+  const setupRecorder = async (microphonePromise, generation) => {
     try {
       setTextStream('');
       
-      // Request microphone permission with disclosure
-      const permissionGranted = await requestMicrophonePermission();
-      if (!permissionGranted) {
-        console.log('[RecordingManager] User denied permission rationale');
-        return;
-      }
-      
-      // Add Capacitor permission handling
-      if (Capacitor.isNativePlatform()) {
-        console.log('[RecordingManager] Running on native platform, requesting microphone access...');
-      }
-      
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1, // Mono
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        }
-      });
-      
+      const stream = await microphonePromise;
+      if (isCancelled(generation)) { stream.getTracks().forEach(track => track.stop()); return; }
       console.log('[RecordingManager] Microphone access granted successfully');
   
       const uaString = navigator.userAgent.toLowerCase();
@@ -768,11 +612,23 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     }
   };
 
-  const startRecording = async () => {
+  const startRecording = async (metadata) => {
+    if (startingRef.current || isRecordingRef.current) return;
+    startingRef.current = true; setIsStarting(true);
+    cleanupNoteGeneration(); resetNoteGenerationState();
+    const capture = Object.freeze({ visitMetadata: captureSnapshot(metadata), noteSettings: recordingSettingsSnapshot() });
+    let microphonePromise;
+    const generation = ++recordingGenerationRef.current;
     try {
       isDiscardingRef.current = false;
       isUnmountedRef.current = false;
-      recordingGenerationRef.current += 1;
+
+      if (!requestMicrophonePermission()) return;
+      // Start media acquisition in the gesture, before authentication/network.
+      microphonePromise = navigator.mediaDevices.getUserMedia({ audio: {
+        channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false
+      } });
+      microphonePromise.catch(() => {});
       // Reset the chunk counter when starting a new recording
       lastUploadedChunkRef.current = 0;
       finalChunkQueuedRef.current = false;
@@ -789,13 +645,16 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       if (!userId) {
         throw new Error('User not authenticated for recording');
       }
+      if (isCancelled(generation)) { microphonePromise.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => {}); return; }
       recordingIdentityRef.current = {
+        ...capture,
         userId,
         timestamp: timeStampRef.current,
         pathstamp: pathStampRef.current,
       };
       
-      await setupRecorder();
+      await setupRecorder(microphonePromise, generation);
+      if (isCancelled(generation)) return;
       if (mediaRecorderRef.current) {
         setIsRecording(true);
         isRecordingRef.current = true;
@@ -814,11 +673,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
         scheduleRecordingInterval();
       }
     } catch (error) {
+      microphonePromise?.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => {});
       // Error already handled in setupRecorder with user-friendly message
-      console.error('[RecordingManager] Failed to start recording:', error);
-      // Ensure recording state is reset if setup fails
-      setIsRecording(false);
-      isRecordingRef.current = false;
+      console.error('[RecordingManager] Failed to start recording');
+      if (!isCancelled(generation)) { setIsRecording(false); isRecordingRef.current = false; }
+    } finally {
+      if (recordingGenerationRef.current === generation) {
+        startingRef.current = false;
+        if (!isUnmountedRef.current) setIsStarting(false);
+      }
     }
   };
 
@@ -866,13 +729,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
       isUnmountedRef.current = true;
       discardRecording();
       // Clean up subscription when component unmounts
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-      }
+      cleanupNoteGeneration();
     };
   }, []);
 
   return {
+    generationError,
+    isStarting,
     isRecording,
     isPaused,
     isPreparingTranscript,

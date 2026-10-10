@@ -51,3 +51,7 @@ configuration, or an external integration contract invalidates a claim. Review
 this router when concepts are added, removed, renamed, split, or merged. Keep
 concepts one category deep, preserve source documents, and never place secrets,
 tokens, audio, notes, transcripts, or patient data in knowledge files.
+
+## Patient notes update
+
+- [Patient notes](architecture/patient-notes.md): capture, saved-note contracts, platform scope and rollout gates.
