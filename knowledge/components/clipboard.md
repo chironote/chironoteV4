@@ -65,5 +65,5 @@ Follow [Panels, editors, and long-form text](../development/STYLE.md#panels-edit
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Clipboard/README.md).
+Derived from [README.md](../../src/components/Clipboard/README.md).
 

@@ -20,6 +20,8 @@ Helpful resources:
 
 ## Patient release recovery policies
 
+The additive October 10 backend installation completed with features disabled. See [verified release evidence](../operations/patient-infrastructure-release.md) for live resources, deployment-profile requirements and rollback boundaries.
+
 `api/chironotev4/override.ts` is the source-managed model override created by the installed Amplify CLI 12.12.6. It retains the existing Notes table on stack deletion/replacement, enables table deletion protection, and keeps PITR enabled. Run `npm ci` from `amplify/backend`, then run `amplify build` from the repository root. The installed CLI's `api gql-compile` command compiles the schema without applying resource overrides. Likewise, `amplify build api chironotev4` is not recognized by this binary; use `amplify build`. Review the generated Notes table's identity/key/index and both Retain policies before any backend push; generated build files are not the editing source.
 
 The override also sets AppSync `PATIENT_WRITES_GUARDED` to the string `false` for the additive infrastructure stage. Only this exact value bypasses the two new post-auth clinical-write guards; owner authentication still runs. Missing or any other value enforces the guards. Keep this compatibility setting while the legacy generator/audio writers remain active and patient Save is disabled. At the reviewed cutover, change it to `true` with the new transactional writers and legacy retry quarantine. Never restore `false` after clinician saves exist. The live API had no environment variables before this change.
@@ -30,5 +32,5 @@ The AWS [API resource override guide](https://docs.amplify.aws/gen1/react/build-
 
 ## Provenance
 
-Derived from [`README.md`](../../amplify/README.md).
+Derived from [README.md](../../amplify/README.md).
 

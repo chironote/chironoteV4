@@ -64,4 +64,4 @@ The personal Codex skill `$healtech-oks` applies this method to other repositori
 
 ## Provenance
 
-Formalized from the knowledge-system refactor in this repository, the repository's [`AGENTS.md`](../../AGENTS.md), the [ChiroNote Knowledge Index](../index.md), the [ChiroNote Knowledge Update Log](../log.md), and the [Open Knowledge Format v0.1 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).
+Formalized from the knowledge-system refactor in this repository, the repository's [AGENTS.md](../../AGENTS.md), the [ChiroNote Knowledge Index](../index.md), the [ChiroNote Knowledge Update Log](../log.md), and the [Open Knowledge Format v0.1 specification](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/SPEC.md).

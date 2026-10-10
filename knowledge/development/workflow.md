@@ -50,4 +50,4 @@ Commit `62f4ec8` removed the former recording test harness. The 2026-07-15 safet
 
 ## Provenance
 
-Synthesized from [`AGENTS.md`](../../AGENTS.md), [`README.md`](../../README.md), [`package.json`](../../package.json), the active Jest inventory, commit `62f4ec8`, and the 2026-07-15 recording safety tests.
+Synthesized from [AGENTS.md](../../AGENTS.md), [README.md](../../README.md), [package.json](../../package.json), the active Jest inventory, commit `62f4ec8`, and the 2026-07-15 recording safety tests.

@@ -65,5 +65,5 @@ const POST_MAP = {
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Blog/README.md).
+Derived from [README.md](../../src/components/Blog/README.md).
 

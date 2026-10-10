@@ -16,4 +16,4 @@ Legacy `/app/feedback` redirects to `/app` and opens this modal.
 
 ## Provenance
 
-Derived from [`Feedback.jsx`](../../src/components/Feedback/Feedback.jsx), [`ProductDialog.jsx`](../../src/components/Dialog/ProductDialog.jsx), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx).
+Derived from [Feedback.jsx](../../src/components/Feedback/Feedback.jsx), [ProductDialog.jsx](../../src/components/Dialog/ProductDialog.jsx), and [AuthenticatedApp.jsx](../../src/components/AppShell/AuthenticatedApp.jsx).

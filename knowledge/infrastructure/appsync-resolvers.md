@@ -14,5 +14,5 @@ For more information, visit [https://docs.amplify.aws/cli/graphql-transformer/re
 
 ## Provenance
 
-Derived from [`README.md`](../../amplify/backend/api/chironotev4/resolvers/README.md).
+Derived from [README.md](../../amplify/backend/api/chironotev4/resolvers/README.md).
 

@@ -2,6 +2,8 @@
 
 ## 2026-10-10
 
+- **Verified infrastructure installation**: Installed additive patient schema/index/resolvers with legacy-writer compatibility, Retain/PITR/deletion protection and all preexisting physical IDs preserved. Recorded the completed deployment, federated-role rollback and successful existing-profile retry, disabled companions, unchanged runtime/prompt state and remaining owner-led activation work. Completed metadata/provenance and normalized source-link labels for OKS validation.
+
 - **Additive backend compatibility**: Added a default-strict AppSync environment gate for the create/update clinical-write restrictions, with explicit `false` during prompt deferral. Six synthetic AWS VTL evaluations pass. Corrected override validation to use `amplify build` after tracing the installed CLI; `api gql-compile` omits overrides. Emitted Notes Retain/PITR/deletion protection and API compatibility configuration were inspected successfully. No clinical prompt publication is included.
 
 - **Production preparation and recovery**: Merged patient source to `prod` via PR #16 (`dcd1e8c`), without website/backend publication. Clinical prompt release is deferred. Added the CLI-generated source override for Notes Retain policies, deletion protection and PITR so future stack changes preserve the retention/recovery decision. Documented legacy-writer compatibility and the pending coordinated cutover; automatic cleanup retirement and backup/PITR were separately verified in AWS.
