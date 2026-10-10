@@ -11,10 +11,15 @@ import {
 } from './recordingConstants';
 import { generateToken, getUserId } from './recordingAuth';
 import { parseLambdaErrorPayload } from './noteGenerationErrors';
+import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 
 const client = generateClient();
 
 function useNoteGeneration({
+  onGenerationStateChange,
+  onGenerationError,
+  onSavedNoteReady,
+  captureRef,
   timeStampRef,
   isDiscardingRef,
   noSleepRef,
@@ -25,6 +30,8 @@ function useNoteGeneration({
   onTextStreamUpdate,
   onTransitionToMainApp
 }) {
+  const runRef = useRef(0);
+  const previewRef = useRef('');
   const subscriptionRef = useRef(null);
   const generateTimeoutRef = useRef(null);
   const transcriptFallbackTimeoutRef = useRef(null);
@@ -38,6 +45,7 @@ function useNoteGeneration({
   };
 
   const cleanupNoteGeneration = () => {
+    runRef.current++;
     if (transcriptFallbackTimeoutRef.current) {
       clearTimeout(transcriptFallbackTimeoutRef.current);
       transcriptFallbackTimeoutRef.current = null;
@@ -66,13 +74,15 @@ function useNoteGeneration({
     }
 
     hasHandledNoteGenerationFailureRef.current = true;
-    console.error(`Note generation failed: ${reason}`, error);
+    console.warn('Note generation failed:', reason);
     if (generateAbortControllerRef.current) {
       generateAbortControllerRef.current.abort();
       generateAbortControllerRef.current = null;
     }
-    setTextStream(userMessage);
-    onTextStreamUpdate(userMessage);
+    const message = error?.safeMessage || userMessage;
+    setTextStream(previewRef.current);
+    onTextStreamUpdate(previewRef.current);
+    onGenerationError?.(previewRef.current ? `This preview was not saved. ${message}` : message);
     setIsGeneratingSummary(false);
     setIsPreparingTranscript(false);
     onTransitionToMainApp();
@@ -92,6 +102,11 @@ function useNoteGeneration({
     }
 
     hasStartedStreamingRef.current = true;
+    const run = ++runRef.current;
+    const active = () => run === runRef.current && !isDiscardingRef.current;
+    const capture = captureRef?.current;
+    const timestamp = timeStampRef.current;
+    onGenerationStateChange?.(true);
     hasHandledNoteGenerationFailureRef.current = false;
     if (transcriptFallbackTimeoutRef.current) {
       clearTimeout(transcriptFallbackTimeoutRef.current);
@@ -100,6 +115,8 @@ function useNoteGeneration({
 
     setIsGeneratingSummary(true);
     setIsPreparingTranscript(false);
+    previewRef.current = '';
+    onGenerationError?.('');
     onTextStreamUpdate('');
 
     if (generateAbortControllerRef.current) {
@@ -114,16 +131,18 @@ function useNoteGeneration({
 
     generateTimeoutRef.current = setTimeout(() => {
       console.warn(`Generating Note timeout (${generationTimeoutMs / 1000} seconds) - closing spinner and returning to main app`);
-      handleNoteGenerationFailure('timeout');
+      if (active()) handleNoteGenerationFailure('timeout');
     }, generationTimeoutMs);
 
     try {
-      const userId = await getUserId();
+      const userId = capture?.userId || await getUserId();
+      if (!active()) return;
       if (!userId) {
         handleNoteGenerationFailure('user_not_authenticated');
         return;
       }
       const accessToken = await generateToken();
+      if (!active()) return;
 
       const response = await fetch(NOTE_GENERATION_URL, {
         method: 'POST',
@@ -132,13 +151,15 @@ function useNoteGeneration({
         },
         body: JSON.stringify({
           userId,
-          timeStamp: timeStampRef.current,
+          timeStamp: timestamp,
           accessToken,
-          noteSettings: localStorage.getItem('noteSettings')
+          noteSettings: capture?.noteSettings ?? localStorage.getItem('noteSettings'),
+          ...(capture?.visitMetadata ? { visitMetadata: capture.visitMetadata } : {})
         }),
         signal: abortController.signal
       });
 
+      if (!active()) return;
       if (!response.ok) {
         handleNoteGenerationFailure(`http_${response.status}`);
         return;
@@ -167,7 +188,7 @@ function useNoteGeneration({
       onTransitionToMainApp();
 
       while (true) {
-        if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
+        if (!active() || hasHandledNoteGenerationFailureRef.current) {
           try {
             await reader.cancel();
           } catch (cancelError) {
@@ -177,7 +198,14 @@ function useNoteGeneration({
         }
 
         const chunk = await reader.read();
+        if (!active()) return;
         if (chunk.done) {
+          if (patientNotesEnabled && !hasHandledNoteGenerationFailureRef.current && !isDiscardingRef.current) {
+            const saved = await patientRequest('getSavedNote', { timestamp: String(timestamp) });
+            if (!active()) return;
+            if (!saved.note.ready) throw new Error('The complete note has not been saved.');
+            setTextStream(saved.note.note); onTextStreamUpdate(saved.note.note); onSavedNoteReady?.(saved.note);
+          }
           if (generateTimeoutRef.current) {
             clearTimeout(generateTimeoutRef.current);
             generateTimeoutRef.current = null;
@@ -205,17 +233,17 @@ function useNoteGeneration({
           break;
         }
 
-        setTextStream((prev) => {
-          const newText = prev + text;
-          onTextStreamUpdate(newText);
-          return newText;
-        });
+        previewRef.current = (previewRef.current + text).split('\u0000')[0];
+        setTextStream(previewRef.current);
+        onTextStreamUpdate(previewRef.current);
       }
     } catch (error) {
-      if (error?.name !== 'AbortError') {
+      if (active() && error?.name !== 'AbortError') {
         handleNoteGenerationFailure('streaming_exception', error);
       }
     } finally {
+      if (!active()) return;
+      onGenerationStateChange?.(false);
       setIsGeneratingSummary(false);
       setIsPreparingTranscript(false);
       if (generateTimeoutRef.current) {
@@ -251,11 +279,11 @@ function useNoteGeneration({
       variables: { owner: userId }
     }).subscribe({
       next: ({ data }) => {
-        console.log('Received data from notes subscription:', data);
+
         const updatedNote = data.onUpdateNotesByOwner;
 
         if (updatedNote.timestamp && updatedNote.timestamp.toString() === timestamp.toString()) {
-          console.log('Found matching note:', updatedNote);
+
 
           const transcriptError = parseLambdaErrorPayload(updatedNote.transcript || '');
           if (transcriptError) {

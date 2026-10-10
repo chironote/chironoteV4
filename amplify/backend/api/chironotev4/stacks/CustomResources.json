@@ -1,58 +1,1282 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "An auto-generated nested stack.",
-  "Metadata": {},
+  "Description": "Preserved Custom Instructions resources and additive patient notes API. Never deploy without staged release review.",
+  "Metadata": {
+    "CustomInstructionsContractVersion": 1
+  },
   "Parameters": {
     "AppSyncApiId": {
       "Type": "String",
       "Description": "The id of the AppSync API associated with this project."
     },
-    "AppSyncApiName": {
-      "Type": "String",
-      "Description": "The name of the AppSync API",
-      "Default": "AppSyncSimpleTransform"
-    },
     "env": {
       "Type": "String",
-      "Description": "The environment name. e.g. Dev, Test, or Production",
+      "Description": "The Amplify environment name.",
       "Default": "NONE"
     },
     "S3DeploymentBucket": {
       "Type": "String",
-      "Description": "The S3 bucket containing all deployment assets for the project."
+      "Description": "The S3 bucket containing deployment assets."
     },
     "S3DeploymentRootKey": {
       "Type": "String",
-      "Description": "An S3 key relative to the S3DeploymentBucket that points to the root\nof the deployment directory."
-    }
-  },
-  "Resources": {
-    "EmptyResource": {
-      "Type": "Custom::EmptyResource",
-      "Condition": "AlwaysFalse"
+      "Description": "The root key containing deployment assets."
+    },
+    "MetaPrompterFunctionName": {
+      "Type": "String",
+      "Description": "Existing companion Lambda function used for AppSync request mode and SQS worker mode.",
+      "Default": "SOATP-MetaPrompter"
     }
   },
   "Conditions": {
-    "HasEnvironmentParameter": {
-      "Fn::Not": [
+    "IsProduction": {
+      "Fn::Equals": [
         {
-          "Fn::Equals": [
-            {
+          "Ref": "env"
+        },
+        "prod"
+      ]
+    }
+  },
+  "Resources": {
+    "PromptProfilesTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": {
+          "Fn::Sub": "PromptProfiles-${AppSyncApiId}-${env}"
+        },
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "owner",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "owner",
+            "KeyType": "HASH"
+          }
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true
+        },
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        },
+        "DeletionProtectionEnabled": {
+          "Fn::If": [
+            "IsProduction",
+            true,
+            false
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": "ChiroNote"
+          },
+          {
+            "Key": "Feature",
+            "Value": "CustomInstructions"
+          },
+          {
+            "Key": "DataClassification",
+            "Value": "SensitiveConfiguration"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
               "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "CompileDeadLetterQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-Compile-DLQ-${env}.fifo"
+        },
+        "FifoQueue": true,
+        "ContentBasedDeduplication": false,
+        "MessageRetentionPeriod": 1209600,
+        "SqsManagedSseEnabled": true,
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": "ChiroNote"
+          },
+          {
+            "Key": "Feature",
+            "Value": "CustomInstructions"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "CompileQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-Compile-${env}.fifo"
+        },
+        "FifoQueue": true,
+        "ContentBasedDeduplication": false,
+        "MessageRetentionPeriod": 1209600,
+        "ReceiveMessageWaitTimeSeconds": 20,
+        "SqsManagedSseEnabled": true,
+        "VisibilityTimeout": 2520,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "CompileDeadLetterQueue",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        },
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": "ChiroNote"
+          },
+          {
+            "Key": "Feature",
+            "Value": "CustomInstructions"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "CompileQueueTransportPolicy": {
+      "Type": "AWS::SQS::QueuePolicy",
+      "Properties": {
+        "Queues": [
+          {
+            "Ref": "CompileQueue"
+          },
+          {
+            "Ref": "CompileDeadLetterQueue"
+          }
+        ],
+        "PolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "DenyInsecureTransportCompileQueue",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "sqs:*",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "CompileQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
             },
-            "NONE"
+            {
+              "Sid": "DenyInsecureTransportCompileDeadLetterQueue",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Action": "sqs:*",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "CompileDeadLetterQueue",
+                  "Arn"
+                ]
+              },
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false"
+                }
+              }
+            }
           ]
         }
-      ]
+      }
     },
-    "AlwaysFalse": {
-      "Fn::Equals": ["true", "false"]
+    "MetaPrompterExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Description": "Least-privilege execution role for the SOATP MetaPrompter request and worker modes.",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "PromptProfilesReadWrite",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem",
+                    "dynamodb:UpdateItem"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "PromptProfilesTable",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CompileQueueAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "sqs:SendMessage",
+                    "sqs:ReceiveMessage",
+                    "sqs:DeleteMessage",
+                    "sqs:ChangeMessageVisibility",
+                    "sqs:GetQueueAttributes",
+                    "sqs:GetQueueUrl"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "CompileQueue",
+                      "Arn"
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "FunctionLogAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "logs:CreateLogGroup",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": [
+                      "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${FunctionName}:*",
+                      {
+                        "FunctionName": {
+                          "Ref": "MetaPrompterFunctionName"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "CustomInstructionsMetrics",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "cloudwatch:PutMetricData",
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEquals": {
+                      "cloudwatch:namespace": "SOATP-MetaPrompter"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Application",
+            "Value": "ChiroNote"
+          },
+          {
+            "Key": "Feature",
+            "Value": "CustomInstructions"
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "env"
+            }
+          }
+        ]
+      }
+    },
+    "MetaPrompterAppSyncInvokeRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "Description": "Allows only this AppSync data source to invoke the SOATP MetaPrompter Lambda.",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "appsync.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "InvokeMetaPrompter",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "lambda:InvokeFunction",
+                  "Resource": {
+                    "Fn::Sub": [
+                      "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}",
+                      {
+                        "FunctionName": {
+                          "Ref": "MetaPrompterFunctionName"
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "MetaPrompterLambdaDataSource": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Name": "CustomInstructionsMetaPrompter",
+        "Description": "Cognito-owned Custom Instructions request-mode operations.",
+        "Type": "AWS_LAMBDA",
+        "ServiceRoleArn": {
+          "Fn::GetAtt": [
+            "MetaPrompterAppSyncInvokeRole",
+            "Arn"
+          ]
+        },
+        "LambdaConfig": {
+          "LambdaFunctionArn": {
+            "Fn::Sub": [
+              "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}",
+              {
+                "FunctionName": {
+                  "Ref": "MetaPrompterFunctionName"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "GetMyCustomInstructionsResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "MetaPrompterLambdaDataSource",
+            "Name"
+          ]
+        },
+        "TypeName": "Query",
+        "FieldName": "getMyCustomInstructions",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.getMyCustomInstructions.req.vtl"
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.getMyCustomInstructions.res.vtl"
+        }
+      }
+    },
+    "StartMyCustomInstructionsCompilationResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "MetaPrompterLambdaDataSource",
+            "Name"
+          ]
+        },
+        "TypeName": "Mutation",
+        "FieldName": "startMyCustomInstructionsCompilation",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.startMyCustomInstructionsCompilation.req.vtl"
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.startMyCustomInstructionsCompilation.res.vtl"
+        }
+      }
+    },
+    "DisableMyCustomInstructionsResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "MetaPrompterLambdaDataSource",
+            "Name"
+          ]
+        },
+        "TypeName": "Mutation",
+        "FieldName": "disableMyCustomInstructions",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.disableMyCustomInstructions.req.vtl"
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.disableMyCustomInstructions.res.vtl"
+        }
+      }
+    },
+    "CompileDeadLetterQueueAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-DLQ-${env}"
+        },
+        "AlarmDescription": "A Custom Instructions compile message reached the dead-letter queue.",
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateNumberOfMessagesVisible",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "CompileDeadLetterQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "CompileQueueAgeAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-QueueAge-${env}"
+        },
+        "AlarmDescription": "The oldest Custom Instructions compile message has waited longer than ten minutes.",
+        "Namespace": "AWS/SQS",
+        "MetricName": "ApproximateAgeOfOldestMessage",
+        "Dimensions": [
+          {
+            "Name": "QueueName",
+            "Value": {
+              "Fn::GetAtt": [
+                "CompileQueue",
+                "QueueName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 2,
+        "Threshold": 600,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "MetaPrompterErrorsAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-LambdaErrors-${env}"
+        },
+        "AlarmDescription": "The SOATP MetaPrompter Lambda returned an unhandled error.",
+        "Namespace": "AWS/Lambda",
+        "MetricName": "Errors",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "MetaPrompterFunctionName"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "MetaPrompterThrottlesAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-LambdaThrottles-${env}"
+        },
+        "AlarmDescription": "The SOATP MetaPrompter Lambda was throttled.",
+        "Namespace": "AWS/Lambda",
+        "MetricName": "Throttles",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "MetaPrompterFunctionName"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "MetaPrompterDurationAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-LambdaDuration-${env}"
+        },
+        "AlarmDescription": "The SOATP MetaPrompter Lambda approached its planned 420-second timeout.",
+        "Namespace": "AWS/Lambda",
+        "MetricName": "Duration",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "MetaPrompterFunctionName"
+            }
+          }
+        ],
+        "ExtendedStatistic": "p99",
+        "Period": 60,
+        "EvaluationPeriods": 1,
+        "Threshold": 390000,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "CompileFailureAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-CompileFailures-${env}"
+        },
+        "AlarmDescription": "Three or more safe compile failures were emitted in fifteen minutes.",
+        "Namespace": "SOATP-MetaPrompter",
+        "MetricName": "CustomCompileFailed",
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 1,
+        "Threshold": 3,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "StuckCompileAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "ChiroNote-CustomInstructions-Stuck-${env}"
+        },
+        "AlarmDescription": "A reconciler or operator emitted a stuck compile signal.",
+        "Namespace": "SOATP-MetaPrompter",
+        "MetricName": "CustomCompileStuck",
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "PatientsTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "TableName": {
+          "Fn::Sub": "Patients-${AppSyncApiId}-${env}"
+        },
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "owner",
+            "AttributeType": "S"
+          },
+          {
+            "AttributeName": "recordKey",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "owner",
+            "KeyType": "HASH"
+          },
+          {
+            "AttributeName": "recordKey",
+            "KeyType": "RANGE"
+          }
+        ],
+        "SSESpecification": {
+          "SSEEnabled": true
+        },
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        },
+        "DeletionProtectionEnabled": {
+          "Fn::If": [
+            "IsProduction",
+            true,
+            false
+          ]
+        }
+      }
+    },
+    "PatientNotesInvokeRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "appsync.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ScopedAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:ChiroNote-PatientNotesApi-${env}"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "PatientNotesApiDataSource": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Name": "PatientNotesApi",
+        "Type": "AWS_LAMBDA",
+        "ServiceRoleArn": {
+          "Fn::GetAtt": [
+            "PatientNotesInvokeRole",
+            "Arn"
+          ]
+        },
+        "LambdaConfig": {
+          "LambdaFunctionArn": {
+            "Fn::Sub": "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:ChiroNote-PatientNotesApi-${env}"
+          }
+        }
+      }
+    },
+    "ListPatientsResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "listPatients",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "GetPatientResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "getPatient",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "GetPatientVisitsResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "getPatientVisits",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "GetPatientContextResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "getPatientContext",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "GetSavedNoteResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "getSavedNote",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "GetSignatureResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Query",
+        "FieldName": "getSignature",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "CreatePatientResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "createPatient",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "UpdatePatientResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "updatePatient",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "AssignNoteToPatientResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "assignNoteToPatient",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "UpdateVisitMetadataResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "updateVisitMetadata",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "UpdateNoteLabelResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "updateNoteLabel",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "SaveNoteResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "saveNote",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "SaveSignatureResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "saveSignature",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "PatientNotesReadRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "appsync.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnEquals": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:appsync:${AWS::Region}:${AWS::AccountId}:apis/${AppSyncApiId}"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ScopedAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:GetItem"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Notes-${AppSyncApiId}-${env}"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "CommittedNotesDataSource": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Name": "CommittedNotes",
+        "Type": "AMAZON_DYNAMODB",
+        "ServiceRoleArn": {
+          "Fn::GetAtt": [
+            "PatientNotesReadRole",
+            "Arn"
+          ]
+        },
+        "DynamoDBConfig": {
+          "TableName": {
+            "Fn::Sub": "Notes-${AppSyncApiId}-${env}"
+          },
+          "AwsRegion": {
+            "Ref": "AWS::Region"
+          }
+        }
+      }
+    },
+    "PublishNoteUpdateResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "publishNoteUpdate",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "CommittedNotesDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": {
+          "Fn::Sub": "#if($ctx.identity.accountId != \"${AWS::AccountId}\" || !$util.matches(\"^arn:aws:(iam|sts)::${AWS::AccountId}:(role|assumed-role)/ChiroNote-PatientNotes-(Api|Generator|Retry|Audio|AudioRetry)-${env}(/.*)?$\", $ctx.identity.userArn))\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"GetItem\",\"key\":{\"owner\":$util.dynamodb.toDynamoDBJson($ctx.args.owner),\"timestamp\":$util.dynamodb.toDynamoDBJson($ctx.args.timestamp)},\"consistentRead\":true}"
+        },
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "PatientSubscriptionNoneDataSource": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Name": "PatientSubscriptionAuthorization",
+        "Type": "NONE"
+      }
+    },
+    "onCreateNotesByOwnerAuthorization": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Subscription",
+        "FieldName": "onCreateNotesByOwner",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientSubscriptionNoneDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#set($sub = $ctx.identity.sub)\n#set($username = $util.defaultIfNull($ctx.identity.claims.get(\"username\"), $ctx.identity.claims.get(\"cognito:username\")))\n#set($combined = \"${sub}::${username}\")\n#if(!$sub || ($ctx.args.owner != $sub && $ctx.args.owner != $username && $ctx.args.owner != $combined))\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"payload\":null}",
+        "ResponseMappingTemplate": "$util.toJson(null)"
+      }
+    },
+    "onUpdateNotesByOwnerAuthorization": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Subscription",
+        "FieldName": "onUpdateNotesByOwner",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientSubscriptionNoneDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#set($sub = $ctx.identity.sub)\n#set($username = $util.defaultIfNull($ctx.identity.claims.get(\"username\"), $ctx.identity.claims.get(\"cognito:username\")))\n#set($combined = \"${sub}::${username}\")\n#if(!$sub || ($ctx.args.owner != $sub && $ctx.args.owner != $username && $ctx.args.owner != $combined))\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"payload\":null}",
+        "ResponseMappingTemplate": "$util.toJson(null)"
+      }
+    },
+    "InitializeCaptureResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "initializeCapture",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
+    },
+    "ReviewProfileSuggestionsResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "TypeName": "Mutation",
+        "FieldName": "reviewProfileSuggestions",
+        "DataSourceName": {
+          "Fn::GetAtt": [
+            "PatientNotesApiDataSource",
+            "Name"
+          ]
+        },
+        "RequestMappingTemplate": "#if(!$ctx.identity.sub)\n  $util.unauthorized()\n#end\n{\"version\":\"2018-05-29\",\"operation\":\"Invoke\",\"payload\":{\"operation\":$util.toJson($ctx.info.fieldName),\"input\":$util.toJson($ctx.args.input),\"accessToken\":$util.toJson($ctx.request.headers.authorization)}}",
+        "ResponseMappingTemplate": "#if($ctx.error)\n  $util.error(\"Patient service unavailable\", \"ServiceUnavailable\")\n#end\n$util.toJson($ctx.result)"
+      }
     }
   },
   "Outputs": {
-    "EmptyOutput": {
-      "Description": "An empty output. You may delete this if you have at least one resource above.",
-      "Value": ""
+    "PromptProfilesTableName": {
+      "Description": "Set the MetaPrompter PROMPT_PROFILES_TABLE environment variable to this value.",
+      "Value": {
+        "Ref": "PromptProfilesTable"
+      }
+    },
+    "PromptProfilesTableArn": {
+      "Description": "PromptProfiles table ARN for approved runtime-consumer read policies.",
+      "Value": {
+        "Fn::GetAtt": [
+          "PromptProfilesTable",
+          "Arn"
+        ]
+      }
+    },
+    "CompileQueueUrl": {
+      "Description": "Set the MetaPrompter COMPILE_QUEUE_URL environment variable to this value.",
+      "Value": {
+        "Ref": "CompileQueue"
+      }
+    },
+    "CompileQueueArn": {
+      "Description": "Compile queue ARN for the separately approved Lambda event-source mapping.",
+      "Value": {
+        "Fn::GetAtt": [
+          "CompileQueue",
+          "Arn"
+        ]
+      }
+    },
+    "CompileQueueName": {
+      "Description": "Compile queue name for dashboards and runbooks.",
+      "Value": {
+        "Fn::GetAtt": [
+          "CompileQueue",
+          "QueueName"
+        ]
+      }
+    },
+    "CompileQueueMaxReceiveCount": {
+      "Description": "Set COMPILE_QUEUE_MAX_RECEIVE_COUNT to this exact value on the companion Lambda.",
+      "Value": "3"
+    },
+    "CompileDeadLetterQueueUrl": {
+      "Description": "Compile dead-letter queue URL.",
+      "Value": {
+        "Ref": "CompileDeadLetterQueue"
+      }
+    },
+    "CompileDeadLetterQueueArn": {
+      "Description": "Compile dead-letter queue ARN.",
+      "Value": {
+        "Fn::GetAtt": [
+          "CompileDeadLetterQueue",
+          "Arn"
+        ]
+      }
+    },
+    "MetaPrompterExecutionRoleArn": {
+      "Description": "Dedicated least-privilege role to assign before enabling the Lambda SQS mapping.",
+      "Value": {
+        "Fn::GetAtt": [
+          "MetaPrompterExecutionRole",
+          "Arn"
+        ]
+      }
+    },
+    "MetaPrompterFunctionArn": {
+      "Description": "Function ARN used by the AppSync data source.",
+      "Value": {
+        "Fn::Sub": [
+          "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${FunctionName}",
+          {
+            "FunctionName": {
+              "Ref": "MetaPrompterFunctionName"
+            }
+          }
+        ]
+      }
+    },
+    "MetaPrompterDataSourceName": {
+      "Description": "AppSync Lambda data source name.",
+      "Value": {
+        "Fn::GetAtt": [
+          "MetaPrompterLambdaDataSource",
+          "Name"
+        ]
+      }
+    },
+    "PatientsTableName": {
+      "Value": {
+        "Ref": "PatientsTable"
+      }
     }
   }
 }

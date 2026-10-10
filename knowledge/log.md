@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-10
+
+- **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Desktop web has persistent Save; mobile web keeps local edit/copy. The Patients route owns profiles, source diagnosis display and PDF selection. Settings owns Configure Signature. Local candidate only; no push, release or deployment.
+
 ## 2026-09-17
 
 - **Demo funnel and workflow display refinement**: Removed the redundant overview-video section from `/demo` while retaining it on `/`, preserved the three-step workflow lesson on both routes, corrected its desktop GIF frame to the native 3:2 composition, and delayed carousel autoplay until the lesson is actually visible.

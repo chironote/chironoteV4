@@ -7,6 +7,12 @@ import Feedback from '../Feedback/Feedback';
 import Navbar from '../Navbar/Navbar';
 import PriceTable from '../Billing/PriceTable';
 import Settings from '../Settings/Settings';
+import PatientsPage from '../Patients/PatientsPage';
+import SavedNoteEditor from '../Patients/SavedNoteEditor';
+import useDraftGuard from '../Patients/useDraftGuard';
+import { leaveDrafts } from '../Patients/draftNavigation';
+import useDesktopSave from '../Patients/useDesktopSave';
+import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 import IntroTour from '../IntroTour/IntroTour';
 import ErrorBanner from './ErrorBanner';
 import Dictation from '../Recording/Dictation';
@@ -21,7 +27,8 @@ import { applyDictationText, createDictationInsertion } from '../../utils/dictat
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 
-function AuthenticatedApp({ signOut, user }) {
+function ClinicalWorkspace({ signOut, user }) {
+  const desktopSave = useDesktopSave();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -34,6 +41,16 @@ function AuthenticatedApp({ signOut, user }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showPopupMenu, setShowPopupMenu] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
+  const [clipboardTarget, setClipboardTarget] = useState(null);
+  const [generationError, setGenerationError] = useState('');
+  const [saveDraft, setSaveDraft] = useState(null);
+  const clipboardSaveRef = useRef(null);
+  const clipboardGuard = useDraftGuard({
+    dirty: patientNotesEnabled && desktopSave && !saveDraft && clipboardTarget && clipboardContent !== clipboardTarget.note,
+    save: () => new Promise(resolve => { clipboardSaveRef.current = resolve; setSaveDraft({ note: clipboardTarget, text: clipboardContent }); }),
+    discard: () => setClipboardContent(clipboardTarget?.note || ''),
+  });
+  const [noteStreamActive, setNoteStreamActive] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
@@ -83,6 +100,9 @@ function AuthenticatedApp({ signOut, user }) {
   }, []);
 
   const recordingManager = RecordingManager({
+    onGenerationStateChange: setNoteStreamActive,
+    onGenerationError: setGenerationError,
+    onSavedNoteReady: (note) => { setClipboardTarget(note); },
     onTextStreamUpdate: handleTextStreamUpdate,
     onTransitionToMainApp: handleTransitionToMainApp
   });
@@ -181,7 +201,9 @@ function AuthenticatedApp({ signOut, user }) {
     if (!showEditPanel) setEditContent('');
   };
 
-  const toggleRecordingPopup = (type) => {
+  const toggleRecordingPopup = async (type) => {
+    if (!await leaveDrafts()) return;
+    if (!recordingManager.isRecording) setClipboardTarget(null);
     if (recordingManager.isRecording) {
       recordingManager.discardRecording();
     } else {
@@ -194,7 +216,8 @@ function AuthenticatedApp({ signOut, user }) {
     setShowDictationPopup(prev => !prev);
   };
 
-  const toggleContentPopup = (item) => {
+  const toggleContentPopup = async (item) => {
+    if (!await leaveDrafts()) return;
     setSelectedItem(item);
     setShowNotes(true);
     setSelectedContent(item.note || '');
@@ -244,9 +267,16 @@ function AuthenticatedApp({ signOut, user }) {
       .catch(() => alert('Failed to copy!'));
   };
 
-  const handleSendToClipboard = () => {
-    const plainText = extractPlainText(selectedContent);
-    setClipboardContent(plainText);
+  const handleSendToClipboard = async () => {
+    if (!await leaveDrafts()) return;
+    if (patientNotesEnabled && showNotes && selectedItem?.timestamp) {
+      try {
+        const { note } = await patientRequest('getSavedNote', { timestamp: selectedItem.timestamp });
+        setClipboardTarget(note); setClipboardContent(note.note || '');
+      } catch { setGenerationError('The saved note could not be opened for editing. Please retry.'); return; }
+    } else {
+      setClipboardTarget(null); setClipboardContent(extractPlainText(selectedContent));
+    }
     setShowPopupMenu(false);
     setShowContentPopup(false);
   };
@@ -310,7 +340,7 @@ function AuthenticatedApp({ signOut, user }) {
   }, []);
 
   const handleKeyDown = useCallback((event) => {
-    if (event.key === 'Escape') setShowContentPopup(false);
+    if (event.key === 'Escape' && !patientNotesEnabled) setShowContentPopup(false);
 
     if (window.innerWidth > 768) {
       if (event.ctrlKey && event.key === 'b') {
@@ -332,7 +362,7 @@ function AuthenticatedApp({ signOut, user }) {
 
       if (event.ctrlKey && event.key === 'Backspace') {
         event.preventDefault();
-        setClipboardContent('');
+        leaveDrafts(() => { setClipboardContent(''); setClipboardTarget(null); });
       }
 
       if (event.ctrlKey && event.key === '`') {
@@ -402,8 +432,7 @@ function AuthenticatedApp({ signOut, user }) {
     setIsMobileOverlayDragOver(false);
     const droppedText = event.dataTransfer.getData('text/plain');
     if (droppedText) {
-      setClipboardContent(droppedText);
-      setIsCollapsed(true);
+      leaveDrafts(() => { setClipboardTarget(null); setClipboardContent(droppedText); setIsCollapsed(true); });
     }
   };
 
@@ -416,12 +445,14 @@ function AuthenticatedApp({ signOut, user }) {
         <meta property="og:title" content="ChiroNote | Clinical Documentation App" />
         <meta property="og:description" content="AI-powered clinical documentation workspace for healthcare professionals." />
       </Helmet>
+      {clipboardGuard.dialog}
       <IntroTour />
       <Navbar
         username={user.username}
-        onSignOut={signOut}
+        onSignOut={() => leaveDrafts(signOut)}
         onFeedback={openFeedback}
       />
+      {generationError && <p className="patient-confirmation" role="alert">{generationError}</p>}
       <ErrorBanner isVisible={showErrorBanner} />
 
       <Routes>
@@ -443,6 +474,7 @@ function AuthenticatedApp({ signOut, user }) {
               clipboardTextareaRef,
               clipboardContent,
               setClipboardContent,
+              noteStreamActive,
               streamingText,
               setShowCopyMessage,
               showCopyMessage,
@@ -491,10 +523,21 @@ function AuthenticatedApp({ signOut, user }) {
         } />
         <Route path="/billing" element={<Billing />} />
         <Route path="/settings" element={<Settings />} />
+        {patientNotesEnabled && <Route path="/patients" element={<PatientsPage desktopSave={desktopSave} allowExport />} />}
         <Route path="/account" element={<Navigate to="/app/billing" replace />} />
         <Route path="/feedback" element={<LegacyFeedbackRoute onOpen={openFeedback} />} />
         <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>
+      {patientNotesEnabled && desktopSave && clipboardTarget && !saveDraft && <div className="patient-actions" style={{ justifyContent: 'center' }}>
+        <button type="button" disabled={!clipboardContent.trim()} onClick={() => setSaveDraft({ note: clipboardTarget, text: clipboardContent })}>Save clipboard changes to this note</button>
+      </div>}
+      {saveDraft && <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Save clipboard draft">
+        <SavedNoteEditor timestamp={saveDraft.note.timestamp} desktopSave initialNote={saveDraft.note} initialDraft={saveDraft.text}
+          onClose={() => { clipboardSaveRef.current?.(false); clipboardSaveRef.current = null; clipboardGuard.cancel(); setSaveDraft(null); }} onSaved={note => {
+            setClipboardTarget(note); setClipboardContent(note.note); notesHistory.refreshNotes();
+            if (clipboardSaveRef.current) { const resolve = clipboardSaveRef.current; clipboardSaveRef.current = null; setSaveDraft(null); resolve(true); }
+          }} />
+      </div></div>}
       <Feedback
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}
@@ -509,4 +552,7 @@ function LegacyFeedbackRoute({ onOpen }) {
   return <Navigate to="/app" replace />;
 }
 
+function AuthenticatedApp(props) {
+  return <ClinicalWorkspace key={props.user?.userId || props.user?.username || 'signed-out'} {...props} />;
+}
 export default AuthenticatedApp;

@@ -74,6 +74,15 @@ export const getNotes = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
@@ -102,6 +111,15 @@ export const listNotes = /* GraphQL */ `
         note
         isCompleted
         noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
         __typename
       }
       nextToken

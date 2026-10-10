@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
+import SignatureSettings from '../Patients/SignatureSettings';
+import { patientNotesEnabled } from '../../services/patientNotes';
 import { getUserSubscription } from '../../graphql/queries';
 import { getAmplifyClient } from '../../services/amplifyClient';
 import {
@@ -255,6 +257,7 @@ function Settings() {
   return (
     <main className="settings-page">
       <div className="settings-page__heading"><h1>Settings</h1><p>Manage your note preferences and view your lifetime impact.</p></div>
+      {patientNotesEnabled && <SignatureSettings />}
 
       <section className="settings-card settings-metric-card" aria-labelledby="hours-saved-title">
         <div><h2 id="hours-saved-title">Lifetime hours saved</h2><p>Estimated time ChiroNote has saved across your account.</p></div>

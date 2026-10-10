@@ -490,7 +490,7 @@ const Dictation = ({
             return;
           }
           
-          console.log('[Dictation] Turn received:', turn);
+          // Dictated clinical text stays out of application logs.
           
           const { transcript, turn_order, turn_is_formatted, end_of_turn } = turn;
           

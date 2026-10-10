@@ -72,3 +72,15 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 - Link to authoritative source files under a `Provenance` section instead of copying the source hierarchy into `knowledge/`.
 - Add every new concept to this index and link adjacent concepts where navigation benefits from it.
 - Record every meaningful concept or index change in [`log.md`](./log.md), grouped under the current ISO date with the newest date first.
+
+## Patient notes update
+
+- [Patient notes](architecture/patient-notes.md): capture, saved-note contracts, platform scope and rollout gates.
+
+## Patient notes update
+
+- [Patient data flow](security/patient-data-flow.md): clinical data boundaries, retention evidence and outstanding operational verification.
+
+## Maintenance
+
+Knowledge concepts synthesize domains. Update affected concepts and the dated knowledge log when implementation changes invalidate their facts; update this index when routing changes. Keep only index.md and log.md at the knowledge root and validate the shallow structure.
