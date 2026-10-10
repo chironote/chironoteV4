@@ -8,4 +8,8 @@ Networking is isolated in `src/services/customInstructions.js`. It imports the g
 
 Polling runs about every three seconds for 30 seconds, then every nine seconds, pauses with honest return-later guidance after five minutes, and resumes from persisted server state on window focus or progress-dialog reopen. Older overlapping reads cannot overwrite newer state, and status-refresh errors remain visible without converting approximate progress into success.
 
-The only browser configuration is `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED=true`. When it is off, the card renders a distinct non-interactive Unavailable state while the rest of Settings remains functional. Keep the flag off until the queue-to-worker event-source mapping exists, the provider/worker path has produced authenticated end-to-end terminal states, the reserved-concurrency constraint is resolved or explicitly accepted, and the intended runtime Amplify configuration has been verified.
+The Custom Instructions browser configuration is `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED=true`. When it is off, the card renders a distinct non-interactive Unavailable state while the rest of Settings remains functional. Keep the flag off until the queue-to-worker event-source mapping exists, the provider/worker path has produced authenticated end-to-end terminal states, the reserved-concurrency constraint is resolved or explicitly accepted, and the intended runtime Amplify configuration has been verified.
+
+## Patient notes integration
+
+When patient notes are enabled, Settings adds Configure Signature. `Patients/SignatureDialog` edits exactly the clinician name and NPI with Save/Cancel and uses `src/services/patientNotes.js`; only the authenticated patient API may persist these account fields. This is the printed name/NPI beneath each exported visit, not an electronic signature.

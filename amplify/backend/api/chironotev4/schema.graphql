@@ -3,6 +3,8 @@ type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) 
   tier: String!
   hoursleft: Float!
   notesleft: Int
+  signatureName: String
+  signatureNpi: String
   hoursSaved: Float        # Total hours saved by user (for Account page display)
   hoursSavedLifetime: Float # Total hours saved by user across all time (cumulative)
   isActivated: Boolean     # Controls tutorial visibility and sign_up event tracking
@@ -10,13 +12,36 @@ type UserSubscription @model(timestamps: null) @auth(rules: [{ allow: owner }]) 
   has5Notes: Boolean       # Tracks 5-note milestone completion (power user)
 }
 
-type Notes @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
-  owner: String! @primaryKey(sortKeyFields: ["timestamp"])
+type Notes @aws_iam @model(timestamps: null) @auth(rules: [{ allow: owner }]) {
+  owner: String! @primaryKey(sortKeyFields: ["timestamp"]) @index(name: "notesByOwnerPatient", sortKeyFields: ["patientLookup"], queryField: "notesByOwnerPatient")
   timestamp: String!
   transcript: String
   note: String
   isCompleted: Boolean
   noteLabel: String
+  patientId: ID
+  patientLookup: String
+  visitLabel: String
+  dateOfService: AWSDate
+  dateOfInjury: AWSDate
+  visitType: String
+  diagnosisState: AWSJSON
+  diagnosisReviewRequired: Boolean
+  lastEditedBy: String
+  updatedAt: AWSDateTime
+  lastSaveRequest: AWSJSON
+  profileSuggestions: AWSJSON
+  needsContextReview: Boolean
+  clinicalRevision: String
+  generationStatus: String
+  contextSummary: AWSJSON
+  patientAssignmentError: String
+  recordingJobId: String
+  recordingStatus: String
+  recordingErrorCode: String
+  transcriptionProvider: String
+  transcriptionRequestId: String
+  transcriptionAttempt: Int
 }
 
 type Subscription {
@@ -24,5 +49,65 @@ type Subscription {
     @aws_subscribe(mutations: ["createNotes"])
   
   onUpdateNotesByOwner(owner: String!): Notes
-    @aws_subscribe(mutations: ["updateNotes"])
+    @aws_subscribe(mutations: ["updateNotes", "publishNoteUpdate"])
+}
+type CustomInstructionsCompilationAccepted @aws_cognito_user_pools {
+  accepted: Boolean!
+  compileStatus: CustomInstructionsCompileStatus!
+  effectiveMode: EffectiveInstructionMode!
+  jobId: ID!
+}
+
+type CustomInstructionsView @aws_cognito_user_pools {
+  activeCompiledAt: AWSDateTime
+  compileJobId: ID
+  compileStatus: CustomInstructionsCompileStatus!
+  effectiveMode: EffectiveInstructionMode!
+  enableCustomInstructions: Boolean!
+  hasSavedInstructions: Boolean!
+  instructions: String
+  lastErrorCode: String
+  updatedAt: AWSDateTime
+}
+
+enum CustomInstructionsCompileStatus {
+  COMPILING
+  FAILED
+  NEVER
+  READY
+}
+
+enum EffectiveInstructionMode {
+  CUSTOM
+  DEFAULT
+}
+
+input StartCustomInstructionsCompilationInput {
+  clientRequestId: ID!
+  instructions: String!
+}
+
+type Query {
+  getMyCustomInstructions: CustomInstructionsView! @aws_cognito_user_pools
+  listPatients(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  getPatient(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  getPatientVisits(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  getPatientContext(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  getSavedNote(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  getSignature(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+}
+
+type Mutation {
+  disableMyCustomInstructions: CustomInstructionsView! @aws_cognito_user_pools
+  startMyCustomInstructionsCompilation(input: StartCustomInstructionsCompilationInput!): CustomInstructionsCompilationAccepted! @aws_cognito_user_pools
+  initializeCapture(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  reviewProfileSuggestions(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  createPatient(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  updatePatient(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  assignNoteToPatient(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  updateVisitMetadata(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  updateNoteLabel(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  saveNote(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  saveSignature(input: AWSJSON!): AWSJSON! @aws_cognito_user_pools
+  publishNoteUpdate(owner: String!, timestamp: String!): Notes @aws_iam
 }

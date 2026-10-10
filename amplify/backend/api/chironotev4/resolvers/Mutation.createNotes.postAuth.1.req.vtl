@@ -1,0 +1,11 @@
+## Installed audio clients may create an empty capture record. Clinical metadata
+## is initialized only by the verified capture service.
+#foreach($field in $ctx.args.input.keySet())
+  #if($field != "owner" && $field != "timestamp" && $field != "transcript" && $field != "isCompleted" && $field != "note" && $field != "noteLabel")
+    $util.error("Clinical fields require the patient notes service.", "GuardedClinicalWrite")
+  #end
+#end
+#if(($ctx.args.input.transcript && $ctx.args.input.transcript != "") || $ctx.args.input.isCompleted == true || ($ctx.args.input.note && $ctx.args.input.note != "") || ($ctx.args.input.noteLabel && $ctx.args.input.noteLabel != ""))
+  $util.error("Clinical fields require the patient notes service.", "GuardedClinicalWrite")
+#end
+{}

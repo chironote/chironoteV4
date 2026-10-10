@@ -1,0 +1,4 @@
+#if($ctx.error)
+  $util.error("Custom instructions request failed.", "CustomInstructionsServiceError")
+#end
+$util.toJson($ctx.result)

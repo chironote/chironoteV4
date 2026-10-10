@@ -1,9 +1,10 @@
 import React from 'react';
+import PatientName from '../Patients/PatientName';
 import { formatTimestamp, getFirstSentenceOrSubstring } from '../../utils/historyGrouping';
 
 function HistoryListItem({ item, onClick, onDragStart, isNew, onMouseEnter }) {
   const content = item.note || '';
-  const displayText = item.noteLabel || getFirstSentenceOrSubstring(content);
+  const displayText = item.visitLabel || item.noteLabel || getFirstSentenceOrSubstring(content);
   const { date, day, isToday, time } = formatTimestamp(item.timestamp);
 
   const handleDragStart = (event) => {
@@ -21,7 +22,7 @@ function HistoryListItem({ item, onClick, onDragStart, isNew, onMouseEnter }) {
       onMouseEnter={onMouseEnter}
     >
       <div className="history-item-body">
-        <div className="content">{displayText}</div>
+        <PatientName patientId={item.patientId} /><div className="content">{displayText}</div>
         <div className="timestamp">
           <span>{time}</span>
           <span className="timestamp-separator" aria-hidden="true" />

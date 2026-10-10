@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import usePatientNames from '../Patients/usePatientNames';
+import { patientNotesEnabled } from '../../services/patientNotes';
 import { groupItemsByWeek } from '../../utils/historyGrouping';
 import HistoryListItem from './HistoryListItem';
 
@@ -14,6 +16,10 @@ function HistorySidebar({
   onRemoveHighlight,
   onToggleWeek
 }) {
+  const [search, setSearch] = useState('');
+  const names = usePatientNames(notes);
+  const terms = search.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+  const visibleNotes = terms.length ? notes.filter(note => terms.every(term => `${names[note.patientId] || ''} ${note.visitLabel || ''} ${note.noteLabel || ''} ${note.note || ''}`.toLocaleLowerCase().includes(term))) : notes;
   const renderItems = () => {
     if (isLoading) {
       return <div className="loading-message">Loading recent history</div>;
@@ -27,13 +33,14 @@ function HistorySidebar({
       );
     }
 
-    return groupItemsByWeek(notes).map(week => (
+    if (!visibleNotes.length) return <p>No matching recent notes.</p>;
+    return groupItemsByWeek(visibleNotes).map(week => (
       <div key={week.weekStart} className="week-group">
         <button
           type="button"
           className="week-header"
           onClick={() => onToggleWeek(week.weekStart)}
-          aria-expanded={!collapsedWeeks.has(week.weekStart)}
+          aria-expanded={(terms.length > 0 || !collapsedWeeks.has(week.weekStart))}
         >
           <span className="week-label">Week of {week.weekLabel}</span>
           <span className="material-symbols-rounded collapse-icon" aria-hidden="true">
@@ -41,7 +48,7 @@ function HistorySidebar({
           </span>
         </button>
 
-        <div className={`week-items ${collapsedWeeks.has(week.weekStart) ? 'collapsed' : ''}`}>
+        <div className={`week-items ${!terms.length && collapsedWeeks.has(week.weekStart) ? 'collapsed' : ''}`}>
           {week.items.map(item => (
             <HistoryListItem
               key={item.timestamp}
@@ -85,6 +92,7 @@ function HistorySidebar({
           </button>
         </div>
         <div className="list-container">
+          {patientNotesEnabled && <label className="patient-history-search">Search recent notes<input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Patient, visit or note text" /></label>}
           {renderItems()}
         </div>
       </div>

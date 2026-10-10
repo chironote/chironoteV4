@@ -7,6 +7,9 @@ import EditPanel from '../Sidebar/EditPanel';
 import ContentPopup from '../Sidebar/ContentPopup';
 import HistorySidebar from '../Sidebar/HistorySidebar';
 import MobileHistoryToggle from '../Sidebar/MobileHistoryToggle';
+import SavedNoteEditor from '../Patients/SavedNoteEditor';
+import useDesktopSave from '../Patients/useDesktopSave';
+import { patientNotesEnabled } from '../../services/patientNotes';
 
 function MainWorkspace({
   user,
@@ -18,6 +21,7 @@ function MainWorkspace({
   dictation,
   contentPopup
 }) {
+  const desktopSave = useDesktopSave();
   const isHistoryToggleDisabled = recording.showRecordingPopup ||
     recording.manager.isRecording ||
     recording.manager.isPreparingTranscript ||
@@ -70,7 +74,7 @@ function MainWorkspace({
           setClipboardContent={clipboard.setClipboardContent}
           streamContent={clipboard.streamingText}
           setShowCopyMessage={clipboard.setShowCopyMessage}
-          isDisabled={dictation.isDictationLoading}
+          isDisabled={dictation.isDictationLoading || clipboard.noteStreamActive}
           isTranscribing={dictation.isTranscribing}
         />
       </section>
@@ -120,7 +124,12 @@ function MainWorkspace({
         />
       )}
 
-      {contentPopup.showContentPopup && (
+      {patientNotesEnabled && contentPopup.showContentPopup && contentPopup.selectedItem?.note && (
+        <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Saved note">
+          <SavedNoteEditor timestamp={contentPopup.selectedTimestamp} desktopSave={desktopSave} onClose={() => contentPopup.setShowContentPopup(false)} onSaved={() => notesHistory.refreshNotes()} />
+        </div></div>
+      )}
+      {contentPopup.showContentPopup && (!patientNotesEnabled || !contentPopup.selectedItem?.note) && (
         <ContentPopup
           setShowContentPopup={contentPopup.setShowContentPopup}
           setShowPopupMenu={contentPopup.setShowPopupMenu}

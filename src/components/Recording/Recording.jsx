@@ -4,6 +4,8 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
+import PatientCapturePicker from '../Patients/PatientCapturePicker';
+import { patientCaptureEnabled, localDate } from '../../services/patientNotes';
 import ConfirmationPopup from './ConfirmationPopup';
 import { trackRecordingStart } from '../../utils/analytics';
 
@@ -23,10 +25,7 @@ function Recording({
   resumeRecording,
 }) {
   const [userSubscription, setUserSubscription] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    const storedLanguage = localStorage.getItem('selectedLanguage');
-    return storedLanguage || 'auto';
-  });
+  const [visitMetadata, setVisitMetadata] = useState({ dateOfService: localDate(), visitType: null, contextMode: 'patient' });
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -69,7 +68,7 @@ function Recording({
       
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
-      startRecording();
+      startRecording(patientCaptureEnabled ? visitMetadata : undefined);
       
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
@@ -93,10 +92,6 @@ function Recording({
     currentSession();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('selectedLanguage', selectedLanguage);
-    console.log('Language changed:', selectedLanguage);
-  }, [selectedLanguage]);
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
@@ -142,11 +137,6 @@ function Recording({
     setShowConfirmation(false);
   };
 
-  const handleLanguageChange = (event) => {
-    const newLanguage = event.target.value;
-    setSelectedLanguage(newLanguage);
-    console.log('Language changed. localStorage selectedLanguage:', localStorage.getItem('selectedLanguage'));
-  };
 
   const handleCheckboxChange = (event) => {
     const { name, checked } = event.target;
@@ -180,29 +170,12 @@ function Recording({
           <>
             <h2>Recording Settings</h2>
             <div className="settings-container">
-              <div className="language-section">
-                <label htmlFor="language-select">Language:</label>
-                <select 
-                  id="language-select" 
-                  className="language-select" 
-                  value={selectedLanguage}
-                  onChange={handleLanguageChange}
-                  aria-label="Select language for SOAP chiropractic note"
-                >
-                  <option value="null">Auto</option>
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="zh">Chinese (Simplified)</option>
-                  <option value="sk">Korean</option>
-                  <option value="vi">Vietnamese</option>
-                  <option value="ru">Russian</option>
-                </select>
-              </div>
+              {patientCaptureEnabled ? <PatientCapturePicker value={visitMetadata} onChange={setVisitMetadata} /> : <p>Language is detected automatically.</p>}
 
               <div className="settings-options">
                 <label className="options-label">Options:</label>
                 <div className="checkbox-grid">
-                  <div className="checkbox-group">
+                  {!patientCaptureEnabled && <div className="checkbox-group">
                     <input 
                       type="checkbox" 
                       id="exam-layout-popup" 
@@ -211,7 +184,7 @@ function Recording({
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
-                  </div>
+                  </div>}
                   <div className="checkbox-group">
                     <input 
                       type="checkbox" 
