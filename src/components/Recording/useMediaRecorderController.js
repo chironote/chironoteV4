@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { captureSnapshot, recordingSettingsSnapshot } from '../../services/patientNotes';
+import { useEffect, useRef, useState } from 'react';
 import {
   AUDIO_CHUNK_INTERVAL_MS,
   MIN_AUDIO_BLOB_SIZE,
@@ -32,7 +33,11 @@ function useMediaRecorderController({
   setIsTranscriptCompleted,
   setTextStream
 }) {
+  const [isStarting, setIsStarting] = useState(false);
+  const generationRef = useRef(0);
+  const startingRef = useRef(false);
   const mediaRecorderRef = useRef(null);
+  const captureRef = useRef(null);
   const recordingIntervalRef = useRef(null);
   const lastUploadedChunkRef = useRef(0);
   const isRecordingRef = useRef(false);
@@ -44,6 +49,15 @@ function useMediaRecorderController({
   const streamRef = useRef(null);
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
   const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent)).current;
+
+  useEffect(() => () => {
+    generationRef.current++; startingRef.current = false; isDiscardingRef.current = true;
+    if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== 'inactive') recorder.stop();
+    streamRef.current?.getTracks().forEach(track => track.stop());
+    streamRef.current = null;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startChunkInterval = () => {
     if (!shouldUseExternalChunkRotation(isAndroid)) {
@@ -113,7 +127,7 @@ function useMediaRecorderController({
     mediaRecorderRef.current.start();
   };
 
-  const setupRecorder = async () => {
+  const setupRecorder = async (generation) => {
     try {
       setTextStream('');
 
@@ -128,6 +142,9 @@ function useMediaRecorderController({
             autoGainControl: false
           }
         });
+        if (generation !== generationRef.current || isDiscardingRef.current) {
+          stream.getTracks().forEach(track => track.stop()); return;
+        }
         streamRef.current = stream;
       } else {
         console.log('[RecordingManager] Reusing existing media stream');
@@ -147,6 +164,7 @@ function useMediaRecorderController({
       mediaRecorderRef.current = new MediaRecorder(stream, options);
 
       const handleDataAvailable = async (audioBlob, eventState) => {
+        if (generation !== generationRef.current || eventState.isDiscarding) return;
         const chunkType = classifyAudioChunk({
           blobSize: audioBlob.size,
           minimumBlobSize: MIN_AUDIO_BLOB_SIZE,
@@ -158,17 +176,17 @@ function useMediaRecorderController({
 
         if (chunkType === 'final') {
           hasQueuedFinalChunkRef.current = true;
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current;
-          const pathstamp = pathStampRef.current;
+          const userId = eventState.capture.userId;
+          const timestamp = eventState.timestamp;
+          const pathstamp = eventState.pathstamp;
           const finalPath = `protected/${userId}/${timestamp}_recording_final_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          queueUpload(audioBlob, finalPath);
+          queueUpload(audioBlob, finalPath, { ...eventState.capture, timestamp, userId });
         } else if (chunkType === 'regular') {
-          const userId = await getUserId();
-          const timestamp = timeStampRef.current;
-          const pathstamp = pathStampRef.current;
+          const userId = eventState.capture.userId;
+          const timestamp = eventState.timestamp;
+          const pathstamp = eventState.pathstamp;
           const chunkPath = `protected/${userId}/${timestamp}_recording_chunk_${pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-          queueUpload(audioBlob, chunkPath);
+          queueUpload(audioBlob, chunkPath, { ...eventState.capture, timestamp, userId });
         } else if (audioBlob.size > 0 && !eventState.isDiscarding) {
           console.warn(`[RecordingManager] Skipping small audio blob (${audioBlob.size} bytes) - likely header-only, no audio frames`);
         }
@@ -178,6 +196,9 @@ function useMediaRecorderController({
         // Snapshot lifecycle state synchronously. A queued earlier chunk may still
         // be resolving auth when MediaRecorder dispatches the final stop event.
         const eventState = {
+          capture: captureRef.current,
+          timestamp: timeStampRef.current,
+          pathstamp: pathStampRef.current,
           isDiscarding: isDiscardingRef.current,
           isFinalizing: isFinalizingRecordingRef.current,
           isRecorderInactive: event.target?.state === 'inactive'
@@ -191,6 +212,7 @@ function useMediaRecorderController({
       };
 
       mediaRecorderRef.current.onstop = () => {
+        if (generation !== generationRef.current) return;
         if (isFinalizingRecordingRef.current) {
           isRecordingRef.current = false;
           isFinalizingRecordingRef.current = false;
@@ -205,6 +227,9 @@ function useMediaRecorderController({
           isFinalizing: isFinalizingRecordingRef.current,
           isRecording: isRecordingRef.current,
           isPaused: isPausedRef.current,
+          capture: captureRef.current,
+          timestamp: timeStampRef.current,
+          pathstamp: pathStampRef.current,
           isDiscarding: isDiscardingRef.current,
           recorderState: mediaRecorderRef.current?.state
         })) {
@@ -212,11 +237,15 @@ function useMediaRecorderController({
         }
       };
     } catch (error) {
-      console.error('Error accessing microphone', error);
+      throw error;
     }
   };
 
-  const startRecording = async () => {
+  const startRecording = async (metadata) => {
+    if (startingRef.current || isRecordingRef.current) return;
+    startingRef.current = true; setIsStarting(true);
+    const generation = ++generationRef.current;
+    captureRef.current = Object.freeze({ visitMetadata: captureSnapshot(metadata), noteSettings: recordingSettingsSnapshot() });
     lastUploadedChunkRef.current = 0;
     isFinalizingRecordingRef.current = false;
     hasQueuedFinalChunkRef.current = false;
@@ -233,7 +262,13 @@ function useMediaRecorderController({
       RECORDING_PROTOCOL_VERSION
     ].join('_');
 
-    await setupRecorder();
+    try {
+    const setup = setupRecorder(generation); // calls getUserMedia before network work
+    const identity = getUserId();
+    const [, userId] = await Promise.all([setup, identity]);
+    if (generation !== generationRef.current || isDiscardingRef.current) return;
+    if (!userId) throw new Error('Sign in again before recording.');
+    captureRef.current = Object.freeze({ ...captureRef.current, userId });
     if (mediaRecorderRef.current) {
       setIsRecording(true);
       isRecordingRef.current = true;
@@ -247,6 +282,11 @@ function useMediaRecorderController({
       }
 
       startChunkInterval();
+    }
+    } catch (error) {
+      if (generation === generationRef.current) { discardRecording(); console.warn('Microphone startup failed.'); }
+    } finally {
+      if (generation === generationRef.current) { startingRef.current = false; setIsStarting(false); }
     }
   };
 
@@ -286,6 +326,7 @@ function useMediaRecorderController({
   const stopRecording = () => finalizeRecorder();
 
   const discardRecording = () => {
+    generationRef.current++; startingRef.current = false; setIsStarting(false);
     isDiscardingRef.current = true;
 
     finalizeRecorder({ discard: true, prepareTranscript: false });
@@ -314,9 +355,7 @@ function useMediaRecorderController({
 
     cleanupNoteGeneration();
 
-    setTimeout(() => {
-      isDiscardingRef.current = false;
-    }, 100);
+
   };
 
   const pauseRecording = () => {
@@ -368,6 +407,7 @@ function useMediaRecorderController({
   };
 
   const cleanupRecorder = () => {
+    generationRef.current++; startingRef.current = false;
     isDiscardingRef.current = true;
     finalizeRecorder({ discard: true, prepareTranscript: false });
     if (streamRef.current) {
@@ -377,6 +417,7 @@ function useMediaRecorderController({
   };
 
   return {
+    isStarting,
     startRecording,
     stopRecording,
     discardRecording,

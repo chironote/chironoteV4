@@ -69,6 +69,46 @@ describe('NativeAuthContainer', () => {
     expect(await screen.findByText('Manual sign-in')).toBeInTheDocument();
   });
 
+  it('keeps the sign-in form hidden until provider state cleanup completes', async () => {
+    let finishCleanup;
+    clearCredentialState.mockImplementation(
+      () => new Promise((resolve) => { finishCleanup = resolve; }),
+    );
+
+    render(
+      <NativeAuthContainer>
+        <AuthenticatedContent />
+      </NativeAuthContainer>,
+    );
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(clearCredentialState).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('Manual sign-in')).not.toBeInTheDocument();
+
+    finishCleanup({ cleared: true });
+    expect(await screen.findByText('Manual sign-in')).toBeInTheDocument();
+  });
+
+  it('does not sign out when Amplify reports a temporary refresh network error', async () => {
+    let authListener;
+    Hub.listen.mockImplementation((channel, listener) => {
+      authListener = listener;
+      return jest.fn();
+    });
+
+    render(
+      <NativeAuthContainer>
+        <AuthenticatedContent />
+      </NativeAuthContainer>,
+    );
+
+    await screen.findByRole('button', { name: 'Sign out' });
+    authListener({ payload: { event: 'tokenRefresh_failure', data: { error: { name: 'NetworkError' } } } });
+
+    expect(signOut).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+  });
+
   it('falls back to manual sign-in when no Cognito session exists', async () => {
     getCurrentUser.mockRejectedValue({ name: 'UserUnAuthenticatedException' });
 

@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-10
+
+- **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Android keeps native edit/copy behavior with no new clinical-body Save. The original checkout’s four focused AuthUI files were ported to preserve restored-session cleanup and safe error handling. Version/signing/release changes were not imported. Local candidate only; no push, release or deployment.
+
 ## 2026-09-05
 
 - **Production release 29 submitted**: Submitted the exact Internal-tested `29 (1.29)` bundle for the existing full United States Production rollout with managed publishing off. Both production reviews confirmed package `com.chironote.app`, API 22+, target SDK 36, unchanged supported-device counts, accurate release notes, and the understood missing-deobfuscation-file warning. Google Play currently shows `Changes in review` while automated checks continue; the release is not yet available on Google Play. Production `27 (1.27)` remains rollback evidence.

@@ -24,6 +24,8 @@ function NativeAuthContainer({ children }) {
   }, []);
 
   const handleSignOut = useCallback(async () => {
+    setAuthState('signingOut');
+
     try {
       await signOut();
     } catch (signOutError) {
@@ -55,10 +57,12 @@ function NativeAuthContainer({ children }) {
           break;
         case 'signedOut':
           setUser(null);
-          setAuthState('signedOut');
+          setAuthState((state) => (state === 'signingOut' ? state : 'signedOut'));
           break;
         case 'tokenRefresh_failure':
-          handleSignOut();
+          if (payload.data?.error?.name !== 'NetworkError') {
+            handleSignOut();
+          }
           break;
         default:
           break;
@@ -68,7 +72,7 @@ function NativeAuthContainer({ children }) {
     return stopListening;
   }, [checkAuthState, handleSignOut]);
 
-  if (authState === 'loading') {
+  if (authState === 'loading' || authState === 'signingOut') {
     return (
       <main className="auth-container" aria-live="polite">
         <div className="auth-loading">

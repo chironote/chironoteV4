@@ -162,7 +162,7 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
       variables: { owner: username }
     }).subscribe({
       next: ({ data }) => {
-        console.log('Received data from subscription:', data);
+        // Clinical subscription payloads must never be logged.
         const updatedData = data.onUpdateNotesByOwner;
 
         if (updatedData.note && updatedData.note.trim() !== '') {

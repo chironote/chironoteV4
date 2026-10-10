@@ -129,7 +129,8 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     expect(props.queueUpload).toHaveBeenNthCalledWith(
       1,
       expect.any(Blob),
-      expect.stringMatching(/_recording_chunk_.+_rc2_0\.webm$/)
+      expect.stringMatching(/_recording_chunk_.+_rc2_0\.webm$/),
+      expect.objectContaining({ userId: 'user-id', noteSettings: { examLayout: false, PILayout: false } })
     );
 
     act(() => controller.resumeRecording());
@@ -144,7 +145,8 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     expect(props.queueUpload).toHaveBeenNthCalledWith(
       2,
       expect.any(Blob),
-      expect.stringMatching(/_recording_final_.+_rc2_1\.webm$/)
+      expect.stringMatching(/_recording_final_.+_rc2_1\.webm$/),
+      expect.objectContaining({ userId: 'user-id', noteSettings: { examLayout: false, PILayout: false } })
     );
   });
 
@@ -177,7 +179,8 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     expect(props.queueUpload).toHaveBeenNthCalledWith(
       1,
       expect.any(Blob),
-      expect.stringMatching(/_recording_chunk_.+_rc2_0\.webm$/)
+      expect.stringMatching(/_recording_chunk_.+_rc2_0\.webm$/),
+      expect.objectContaining({ userId: 'user-id', noteSettings: { examLayout: false, PILayout: false } })
     );
 
     act(() => controller.stopRecording());
@@ -186,7 +189,22 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
     expect(props.queueUpload).toHaveBeenNthCalledWith(
       2,
       expect.any(Blob),
-      expect.stringMatching(/_recording_final_.+_rc2_1\.webm$/)
+      expect.stringMatching(/_recording_final_.+_rc2_1\.webm$/),
+      expect.objectContaining({ userId: 'user-id', noteSettings: { examLayout: false, PILayout: false } })
     );
   });
+  it.each(['discard', 'unmount'])('stops microphone tracks when pending permission resolves after %s', async action => {
+    const props = createProps(); let resolvePermission; let start;
+    const stop = jest.fn();
+    navigator.mediaDevices.getUserMedia.mockReturnValue(new Promise(resolve => { resolvePermission = resolve; }));
+    const Harness = () => { controller = useMediaRecorderController(props); return null; };
+    await act(async () => root.render(<Harness />));
+    await act(async () => { start = controller.startRecording(); });
+    expect(controller.isStarting).toBe(true);
+    act(() => { if (action === 'discard') controller.discardRecording(); else root.render(null); });
+    await act(async () => { resolvePermission({ active: true, getTracks: () => [{ stop }] }); await start; });
+    expect(stop).toHaveBeenCalledTimes(1); expect(props.queueUpload).not.toHaveBeenCalled();
+    expect(props.setIsRecording).not.toHaveBeenCalledWith(true);
+  });
+
 });

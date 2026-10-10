@@ -4,29 +4,28 @@ import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
+import PatientCapturePicker from '../Patients/PatientCapturePicker';
+import { patientCaptureEnabled, localDate } from '../../services/patientNotes';
 import ConfirmationPopup from './ConfirmationPopup';
 import { trackRecordingStart } from '../../utils/analytics';
 
 const client = generateClient();
 
-function Recording({ 
-  toggleRecordingPopup, 
-  recordingType, 
-  isRecording, 
+function Recording({ isStarting = false,
+  toggleRecordingPopup,
+  recordingType,
+  isRecording,
   isPaused,
   isPreparingTranscript,
   isGeneratingSummary,
-  startRecording, 
-  stopRecording, 
+  startRecording,
+  stopRecording,
   discardRecording,
-  pauseRecording, 
+  pauseRecording,
   resumeRecording,
 }) {
   const [userSubscription, setUserSubscription] = useState(null);
-  const [selectedLanguage, setSelectedLanguage] = useState(() => {
-    const storedLanguage = localStorage.getItem('selectedLanguage');
-    return storedLanguage || 'auto';
-  });
+  const [visitMetadata, setVisitMetadata] = useState({ dateOfService: localDate(), visitType: null, contextMode: 'patient' });
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
@@ -56,8 +55,8 @@ function Recording({
   // Function for refreshing the auth session
   const currentSession = async () => {
     try {
-      const { tokens } = await fetchAuthSession({ forceRefresh: true });
-      console.log(tokens);
+      await fetchAuthSession({ forceRefresh: true });
+
     } catch (err) {
       console.log(err);
     }
@@ -67,25 +66,25 @@ function Recording({
     try {
       // Track the start recording action
       trackRecordingStart();
-      
+
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
-      startRecording();
-      
+      startRecording(patientCaptureEnabled ? visitMetadata : undefined);
+
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
-      
+
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
         // Stop the recording we just started
-        stopRecording();
+        discardRecording();
         setShowCreditPopup(true);
         return;
       }
     } catch (error) {
       console.error("Error in handleStartRecording:", error);
-      // Stop recording on error
-      stopRecording();
+      discardRecording();
+
     }
   };
 
@@ -94,10 +93,6 @@ function Recording({
     currentSession();
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('selectedLanguage', selectedLanguage);
-    console.log('Language changed:', selectedLanguage);
-  }, [selectedLanguage]);
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
@@ -114,7 +109,7 @@ function Recording({
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
@@ -126,16 +121,14 @@ function Recording({
 
   const handleOuterClick = () => {
     // Remove previous cancellation logic - only close if not in any active state
-    if (!isRecording && !isPreparingTranscript && !isGeneratingSummary) {
+    if (!isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary) {
       toggleRecordingPopup();
     }
   };
 
   const handleConfirmDiscard = () => {
     setShowConfirmation(false);
-    if (isRecording) {
-      discardRecording();
-    }
+    discardRecording();
     toggleRecordingPopup();
   };
 
@@ -143,11 +136,6 @@ function Recording({
     setShowConfirmation(false);
   };
 
-  const handleLanguageChange = (event) => {
-    const newLanguage = event.target.value;
-    setSelectedLanguage(newLanguage);
-    console.log('Language changed. localStorage selectedLanguage:', localStorage.getItem('selectedLanguage'));
-  };
 
   const handleCheckboxChange = (event) => {
     const { name, checked } = event.target;
@@ -177,47 +165,30 @@ function Recording({
         )}
         {showCreditPopup ? (
           <CreditPopup onClose={handleCloseCreditPopup} />
-        ) : !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
+        ) : !isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
             <h2>Recording Settings</h2>
             <div className="settings-container">
-              <div className="language-section">
-                <label htmlFor="language-select">Language:</label>
-                <select 
-                  id="language-select" 
-                  className="language-select" 
-                  value={selectedLanguage}
-                  onChange={handleLanguageChange}
-                  aria-label="Select language for SOAP chiropractic note"
-                >
-                  <option value="null">Auto</option>
-                  <option value="en">English</option>
-                  <option value="es">Spanish</option>
-                  <option value="zh">Chinese (Simplified)</option>
-                  <option value="sk">Korean</option>
-                  <option value="vi">Vietnamese</option>
-                  <option value="ru">Russian</option>
-                </select>
-              </div>
+              {patientCaptureEnabled ? <PatientCapturePicker value={visitMetadata} onChange={setVisitMetadata} /> : <p>Language is detected automatically.</p>}
 
               <div className="settings-options">
                 <label className="options-label">Options:</label>
                 <div className="checkbox-grid">
-                  <div className="checkbox-group">
-                    <input 
-                      type="checkbox" 
-                      id="exam-layout-popup" 
-                      name="examLayout" 
+                  {!patientCaptureEnabled && <div className="checkbox-group">
+                    <input
+                      type="checkbox"
+                      id="exam-layout-popup"
+                      name="examLayout"
                       checked={noteSettings.examLayout}
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
-                  </div>
+                  </div>}
                   <div className="checkbox-group">
-                    <input 
-                      type="checkbox" 
-                      id="pi-layout-popup" 
-                      name="PILayout" 
+                    <input
+                      type="checkbox"
+                      id="pi-layout-popup"
+                      name="PILayout"
                       checked={noteSettings.PILayout}
                       onChange={handleCheckboxChange}
                     />
@@ -231,13 +202,13 @@ function Recording({
             </div>
 
             <div className="button-container">
-              <button 
+              <button
                 className="recording-start-button"
                 onClick={handleStartRecording}
               >
                 Start Recording
               </button>
-              <button 
+              <button
                 className="close-button"
                 onClick={() => toggleRecordingPopup()}
               >
@@ -245,7 +216,7 @@ function Recording({
               </button>
             </div>
           </>
-        ) : isPreparingTranscript ? (
+        ) : isStarting ? <div role="status"><p>Opening microphone…</p><button type="button" onClick={handleConfirmDiscard}>Cancel recording</button></div> : isPreparingTranscript ? (
           <div className="preparing-transcript">
             <h2>Preparing Transcript</h2>
             <div className="loading-spinner" aria-label="Preparing SOAP note transcript"></div>
@@ -257,7 +228,7 @@ function Recording({
           </div>
         ) : (
           <div className="recording-content">
-            <button 
+            <button
               className="close-x-button"
               onClick={handleCancelRecording}
               aria-label="Cancel recording"

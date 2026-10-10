@@ -10,6 +10,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isTranscriptCompleted, setIsTranscriptCompleted] = useState(false);
+  const [generationError, setGenerationError] = useState('');
   const [textStream, setTextStream] = useState('');
 
   const timeStampRef = useRef(null);
@@ -27,6 +28,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     resetNoteGenerationState,
     cleanupNoteGeneration
   } = useNoteGeneration({
+    onGenerationError: setGenerationError,
     timeStampRef,
     isDiscardingRef,
     noSleepRef,
@@ -44,13 +46,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   } = useAudioUploadQueue({
     timeStampRef,
     filePathRef,
-    onFinalAudioQueued: (userId, timestamp) => {
+    onFinalAudioQueued: (userId, timestamp, capture) => {
       setIsTranscriptCompleted(false);
-      subscribeToNoteCompletion(userId, timestamp);
+      subscribeToNoteCompletion(userId, timestamp, capture);
     }
   });
 
   const {
+    isStarting,
     startRecording,
     stopRecording,
     discardRecording,
@@ -109,6 +112,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   }, []);
 
   return {
+    generationError,
+    isStarting,
     isRecording,
     isPaused,
     isPreparingTranscript,
