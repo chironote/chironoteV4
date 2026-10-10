@@ -1,3 +1,4 @@
+import PatientName from './components/Patients/PatientName';
 import React, { useState, useEffect, useRef, useCallback } from 'react'; 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import './App.css';
@@ -11,6 +12,8 @@ import ClipboardButtons from './components/ClipboardButtons';
 import EditPanel from './components/EditPanel';
 import Clipboard from './components/Clipboard';
 import ContentPopup from './components/ContentPopup';
+import SavedNoteEditor from './components/Patients/SavedNoteEditor';
+import { patientNotesEnabled } from './services/patientNotes';
 import TextStream from './components/Recording/TextStream';
 import RecordingManager from './components/Recording/RecordingManager';
 import CreditPopup from './components/Recording/CreditLimit';
@@ -154,7 +157,7 @@ const groupItemsByWeek = (items) => {
 // Component to render list items (Notes or Transcripts)
 const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) => {
   const content = (isNote ? item.note : item.transcript) || '';
-  const displayText = item.noteLabel || getFirstSentenceOrSubstring(content);
+  const displayText = item.visitLabel || item.noteLabel || getFirstSentenceOrSubstring(content);
 
   const handleDragStart = (e) => {
     e.dataTransfer.setData('text/plain', content);
@@ -177,7 +180,7 @@ const ListItem = ({ item, onClick, isNote, onDragStart, isNew, onMouseEnter }) =
         <span className="day">{day}</span>
         <span className="time">{time}</span>
       </div>
-      <div className="content">{displayText}</div>
+      <div className="content"><PatientName patientId={item.patientId} /><span>{displayText}</span></div>
     </div>
   );
 };
@@ -443,7 +446,7 @@ function AuthenticatedApp({ signOut, user }) {
   };
 
   const toggleRecordingPopup = (type) => {
-    if (recordingManager.isRecording) {
+    if (recordingManager.isRecording || recordingManager.isStarting) {
       recordingManager.discardRecording();
     } else {
       setRecordingType(type);
@@ -778,6 +781,7 @@ function AuthenticatedApp({ signOut, user }) {
         onSignOut={signOut}
       />
       <ErrorBanner isVisible={showErrorBanner} />
+      {recordingManager.generationError && <p className="patient-confirmation" role="alert">{recordingManager.generationError}</p>}
 
       <Routes>
         <Route path="/" element={
@@ -844,6 +848,7 @@ function AuthenticatedApp({ signOut, user }) {
               <Recording
                 toggleRecordingPopup={toggleRecordingPopup}
                 recordingType={recordingType}
+                isStarting={recordingManager.isStarting}
                 isRecording={recordingManager.isRecording}
                 isPaused={recordingManager.isPaused}
                 isPreparingTranscript={recordingManager.isPreparingTranscript}
@@ -874,7 +879,12 @@ function AuthenticatedApp({ signOut, user }) {
               </div>
             )}
 
-            {showContentPopup && (
+            {patientNotesEnabled && showContentPopup && selectedItem?.note && (
+              <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Saved note">
+                <SavedNoteEditor timestamp={selectedTimestamp} onClose={() => setShowContentPopup(false)} />
+              </div></div>
+            )}
+            {showContentPopup && (!patientNotesEnabled || !selectedItem?.note) && (
               <ContentPopup 
                 setShowContentPopup={setShowContentPopup} 
                 setShowPopupMenu={setShowPopupMenu} 

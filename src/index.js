@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import './ios.css';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 import config from './amplifyconfiguration.json';
@@ -22,7 +23,7 @@ if (Capacitor.isNativePlatform()) {
   
   // Configure status bar
   StatusBar.setStyle({ style: Style.Light });
-  StatusBar.setBackgroundColor({ color: '#ffffff' });
+  StatusBar.setBackgroundColor({ color: '#1e4620' });
   
   // Add a class to the document body to enable native-only CSS overrides
   if (typeof document !== 'undefined' && document.body) {

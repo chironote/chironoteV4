@@ -1,0 +1,290 @@
+/*
+ * Native iOS presentation layer. This intentionally scopes every rule to the
+ * Capacitor body class so the web UI and application behavior stay unchanged.
+ * Values follow knowledge/development/STYLE.md on production.
+ */
+@media (max-width: 768px) {
+  body.native-mobile {
+    color: var(--color-text);
+    background: var(--color-canvas, var(--off-white));
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.native-mobile .navbar {
+    min-height: 64px;
+    padding: 8px 16px;
+    background: var(--dark-green);
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 14px rgba(12, 32, 14, 0.14);
+  }
+
+  body.native-mobile .app-main {
+    background: var(--off-white);
+    overscroll-behavior: contain;
+  }
+
+  body.native-mobile .left-panel {
+    width: min(88vw, 360px) !important;
+    max-width: min(88vw, 360px) !important;
+    padding: 12px 10px;
+    box-sizing: border-box;
+    background: var(--color-surface-soft);
+    border: 1px solid var(--color-border-strong);
+    border-left: 0;
+    border-radius: 0 14px 14px 0;
+    box-shadow: var(--shadow-drawer);
+    overscroll-behavior: contain;
+  }
+
+  body.native-mobile .left-panel .fade-content {
+    min-height: 0;
+  }
+
+  body.native-mobile .list-container {
+    margin: 0;
+    padding: 8px 2px 12px;
+    gap: 8px;
+    overscroll-behavior: contain;
+  }
+
+  body.native-mobile .week-group {
+    margin-bottom: 8px;
+    background: var(--pure-white);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-group);
+    overflow: hidden;
+  }
+
+  body.native-mobile .week-header {
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 8px;
+    color: var(--color-text);
+    background: var(--color-surface-soft);
+    border-bottom: 1px solid var(--color-divider);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+
+  body.native-mobile .list-item {
+    min-height: 60px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 10px 12px;
+    color: var(--color-text);
+    background: var(--pure-white);
+    border: 0;
+    border-bottom: 1px solid var(--color-divider);
+    border-radius: 0;
+    box-shadow: none;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    transition: background-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+  }
+
+  body.native-mobile .list-item:last-child {
+    border-bottom: 0;
+  }
+
+  body.native-mobile .list-item:active {
+    background: var(--color-pressed);
+  }
+
+  body.native-mobile .list-item.highlight {
+    background: #d9f2dc;
+    border-color: var(--color-divider);
+    box-shadow: inset 4px 0 0 var(--medium-green);
+    animation: none;
+  }
+
+  body.native-mobile .timestamp {
+    flex-basis: 24%;
+    margin-right: 8px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  body.native-mobile .timestamp .day {
+    color: var(--color-text-muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  body.native-mobile .timestamp .time {
+    color: var(--color-text-soft);
+    font-size: 12px;
+  }
+
+  body.native-mobile .content {
+    color: var(--color-text);
+  }
+
+  body.native-mobile .clipboard-container,
+  body.native-mobile .edit-panel {
+    background: var(--pure-white);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+  }
+
+  body.native-mobile .clipboard-container {
+    margin: 0;
+    border-radius: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  body.native-mobile .panel-header {
+    margin: 0;
+    padding: 16px 20px;
+    color: var(--color-text);
+    background: var(--pure-white);
+    border-bottom: 1px solid var(--color-divider);
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 24px;
+  }
+
+  body.native-mobile .clipboard-toolbar,
+  body.native-mobile .editor-toolbar {
+    min-height: 52px;
+    padding: 6px 12px;
+    background: var(--color-surface-soft);
+    border-bottom: 1px solid var(--color-divider);
+    gap: 8px;
+  }
+
+  body.native-mobile .toolbar-button,
+  body.native-mobile .edit-panel-button,
+  body.native-mobile .recording-controls button,
+  body.native-mobile .recording-start-button,
+  body.native-mobile .start-recording-btn,
+  body.native-mobile .credit-popup-button {
+    min-height: 44px;
+    border-radius: var(--radius-control);
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color var(--motion-fast) ease, border-color var(--motion-fast) ease;
+  }
+
+  body.native-mobile .toolbar-button {
+    min-width: 44px;
+    height: 44px;
+  }
+
+  body.native-mobile .toolbar-button:not(.new-note-button):not(.primary-button) {
+    color: var(--dark-green);
+    background: var(--pure-white);
+    border: 1px solid var(--color-border-strong);
+  }
+
+  body.native-mobile .toolbar-button.new-note-button,
+  body.native-mobile .toolbar-button.primary-button,
+  body.native-mobile .recording-start-button,
+  body.native-mobile .start-recording-btn,
+  body.native-mobile .credit-popup-button {
+    color: var(--pure-white);
+    background: var(--medium-green);
+  }
+
+  body.native-mobile .clipboard-textarea,
+  body.native-mobile .edit-textarea,
+  body.native-mobile .dictation-textarea,
+  body.native-mobile .language-select,
+  body.native-mobile input[type='text'] {
+    color: var(--color-text);
+    background: var(--pure-white);
+    border-color: var(--color-border);
+    border-radius: var(--radius-control);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  body.native-mobile .clipboard-textarea:focus,
+  body.native-mobile .edit-textarea:focus,
+  body.native-mobile .dictation-textarea:focus,
+  body.native-mobile .language-select:focus,
+  body.native-mobile input[type='text']:focus {
+    border-color: var(--medium-green);
+    box-shadow: 0 0 0 3px rgba(46, 105, 48, 0.14);
+  }
+
+  body.native-mobile .popup-content,
+  body.native-mobile .confirmation-content,
+  body.native-mobile .content-popup-inner {
+    box-sizing: border-box;
+    color: var(--color-text);
+    background: var(--pure-white);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
+  }
+
+  body.native-mobile .popup-content {
+    width: min(calc(100vw - 32px), 420px);
+    margin: 16px;
+    padding: 24px;
+  }
+
+  body.native-mobile .popup-content h2,
+  body.native-mobile .confirmation-content h3 {
+    color: var(--color-text);
+    font-family: 'Montserrat', Arial, sans-serif;
+    font-weight: 600;
+  }
+
+  body.native-mobile .popup-content p,
+  body.native-mobile .confirmation-content p,
+  body.native-mobile .popup-date {
+    color: var(--color-text-muted);
+  }
+
+  body.native-mobile .popup-copy-button,
+  body.native-mobile .popup-close-button,
+  body.native-mobile .close-x-button {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: var(--radius-control);
+  }
+
+  body.native-mobile .account-container {
+    padding: 24px 16px;
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  body.native-mobile .account-container h1,
+  body.native-mobile .account-container h2,
+  body.native-mobile .account-container h3 {
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  body.native-mobile .usage-card,
+  body.native-mobile .subscription-option {
+    color: var(--color-text);
+    background: var(--pure-white);
+    border-color: var(--color-border);
+    border-radius: var(--radius-panel);
+    box-shadow: var(--shadow-panel);
+  }
+
+  body.native-mobile .usage-card:hover,
+  body.native-mobile .subscription-option:hover,
+  body.native-mobile .popup-edit-button:hover,
+  body.native-mobile .credit-popup-button:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.native-mobile *,
+  body.native-mobile *::before,
+  body.native-mobile *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

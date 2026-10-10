@@ -31,9 +31,9 @@ describe('TogglePanel history refresh', () => {
     });
 
     const button = screen.getByRole('button', { name: 'Refreshing…' });
-    expect(button).toBeDisabled();
-    expect(button).toHaveAttribute('aria-busy', 'true');
-    expect(screen.getByRole('status')).toHaveTextContent('Fetching the latest notes and transcripts.');
-    expect(screen.getByRole('alert')).toHaveTextContent('Could not refresh recent history. Please try again.');
+    expect(button).toHaveProperty('disabled', true);
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(screen.getByRole('status').textContent).toContain('Fetching the latest notes and transcripts.');
+    expect(screen.getByRole('alert').textContent).toContain('Could not refresh recent history. Please try again.');
   });
 });

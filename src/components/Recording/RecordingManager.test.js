@@ -265,4 +265,29 @@ describe('RecordingManager iPhone lifecycle', () => {
     expect(uploadData).not.toHaveBeenCalled();
     expect(unmounted.recorder.startCalls).toHaveLength(1);
   });
+
+  it('keeps a new microphone request pending when a cancelled request resolves late', async () => {
+    let resolveOld; let resolveNew;
+    navigator.mediaDevices.getUserMedia
+      .mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+      .mockImplementationOnce(() => new Promise(resolve => { resolveNew = resolve; }));
+    const managerRef = { current: null };
+    const view = render(<RecordingHarness managerRef={managerRef} />);
+    let oldStart; let newStart;
+    await act(async () => { oldStart = managerRef.current.startRecording(); await Promise.resolve(); });
+    act(() => managerRef.current.discardRecording());
+    await act(async () => { newStart = managerRef.current.startRecording(); await Promise.resolve(); });
+    const oldStream = createStream();
+    await act(async () => { resolveOld(oldStream); await oldStart; });
+    expect(oldStream.track.stop).toHaveBeenCalledTimes(1);
+    expect(managerRef.current.isStarting).toBe(true);
+    expect(FakeMediaRecorder.instances).toHaveLength(0);
+    const newStream = createStream();
+    await act(async () => { resolveNew(newStream); await newStart; });
+    expect(managerRef.current.isStarting).toBe(false);
+    expect(managerRef.current.isRecording).toBe(true);
+    expect(FakeMediaRecorder.instances).toHaveLength(1);
+    expect(FakeMediaRecorder.instances[0].stream).toBe(newStream);
+    view.unmount();
+  });
 });

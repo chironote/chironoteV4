@@ -48,7 +48,7 @@ const AuthContainer = ({ children }) => {
     try {
       setIsLoading(true);
       const currentUser = await getCurrentUser();
-      console.log('Current user:', currentUser);
+      console.log('Authenticated session restored');
       setUser(currentUser);
       setAuthState('signedIn');
     } catch (error) {
@@ -119,6 +119,7 @@ const AuthContainer = ({ children }) => {
 
   // Show authenticated app
   return React.cloneElement(children, { 
+    key: user.userId || user.username,
     user: user, 
     signOut: handleSignOut 
   });

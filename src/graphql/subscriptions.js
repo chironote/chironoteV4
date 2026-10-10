@@ -10,6 +10,15 @@ export const onCreateNotesByOwner = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
@@ -23,6 +32,15 @@ export const onUpdateNotesByOwner = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
@@ -81,6 +99,15 @@ export const onCreateNotes = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
@@ -97,6 +124,15 @@ export const onUpdateNotes = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
@@ -113,6 +149,15 @@ export const onDeleteNotes = /* GraphQL */ `
       note
       isCompleted
       noteLabel
+      patientId
+      visitLabel
+      dateOfService
+      dateOfInjury
+      visitType
+      clinicalRevision
+      generationStatus
+      needsContextReview
+      diagnosisReviewRequired
       __typename
     }
   }
