@@ -49,7 +49,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Operations
 
-- [Patient infrastructure installation](./operations/patient-infrastructure-release.md): verified AWS resources, disabled feature state, deployment recovery and remaining activation work.
+- [Patient infrastructure cutover](./operations/patient-infrastructure-release.md): verified live AppSync guard, preserved Notes resources/recovery, active runtime cutover and pending acceptance/publication.
 
 | Concept | Use it to understand |
 | --- | --- |
@@ -75,13 +75,10 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 - Add every new concept to this index and link adjacent concepts where navigation benefits from it.
 - Record every meaningful concept or index change in [`log.md`](./log.md), grouped under the current ISO date with the newest date first.
 
-## Patient notes update
+## Patient notes and data
 
-- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and rollout gates.
-
-## Patient notes update
-
-- [Patient data flow](security/patient-data-flow.md): clinical data boundaries, retention evidence and outstanding operational verification.
+- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and current release gates.
+- [Patient data flow](security/patient-data-flow.md): clinical data boundaries, deployed retention protections and outstanding operational verification.
 
 ## Maintenance
 

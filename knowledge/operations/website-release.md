@@ -12,7 +12,7 @@ Only the repository owner publishes the website. This concept records evidence a
 
 ## Current patient update — 2026-10-10
 
-Patient source and compatibility/retention corrections are merged to prod. The additive backend is installed with all patient/export features and new retry mappings disabled; [installation evidence](patient-infrastructure-release.md) records exact live scope and remaining prompt/writer/testing gates. The owner has not published this website update. The older fingerprints and dependency observations below remain dated historical evidence and do not describe the October release.
+Patient source and compatibility/retention corrections are merged to prod. The existing production Amplify API stack update completed, with the AppSync clinical-write guard enabled and Notes identity/recovery protections preserved; runtime cutover is complete. The first authenticated synthetic capture succeeded; audio/transcription and remaining workflow acceptance are pending. A feature-enabled production website build from the merged source passed locally, but the owner has not published it. See [cutover evidence](patient-infrastructure-release.md). The older fingerprints and dependency observations below remain dated historical evidence and do not describe the October release.
 
 ## Historical state as reviewed on 2026-07-15
 
@@ -42,6 +42,7 @@ The live and local `manifest.json` are identical, so manifest drift is not part 
 
 The unpublished delta includes:
 
+- the patient capture/history, saved-note, export and compatible audio/generator UI, built with the patient, capture and export flags enabled; the first authenticated synthetic capture succeeded, while audio/transcription and remaining workflow acceptance are pending;
 - the March 15 note-generation Lambda endpoint switch;
 - March 7 landing/conversion UI changes if they were not in the last deployment;
 - the May 18 app-shell decomposition and RecordingManager split into focused hooks;
