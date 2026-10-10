@@ -2,6 +2,9 @@
 
 ## 2026-10-10
 
+- Prepared strict clinical-writer guard source for coordinated runtime cutover, preserving Notes identity/recovery settings. Documented legacy prompt preservation and the separately approved Decisions diagnosis review; no additional data schema migration.
+
+- **Saved-note diagnosis corrections**: Added desktop-only per-visit ICD code correction with whole-token replacement, visible note preview, code descriptions/status, and one version-checked save of body plus explicit diagnosis list. Invalid codes, collisions and partial-only matches are blocked; drafts survive failed/conflicting saves. Documented the clinician-edit boundary and re-exam-only AI reconciliation scope in [Patient notes](./architecture/patient-notes.md).
 - **Verified infrastructure installation**: Installed additive patient schema/index/resolvers with legacy-writer compatibility, Retain/PITR/deletion protection and all preexisting physical IDs preserved. Recorded the completed deployment, federated-role rollback and successful existing-profile retry, disabled companions, unchanged runtime/prompt state and remaining owner-led activation work. Completed metadata/provenance and normalized source-link labels for OKS validation.
 
 - **Additive backend compatibility**: Added a default-strict AppSync environment gate for the create/update clinical-write restrictions, with explicit `false` during prompt deferral. Six synthetic AWS VTL evaluations pass. Corrected override validation to use `amplify build` after tracing the installed CLI; `api gql-compile` omits overrides. Emitted Notes Retain/PITR/deletion protection and API compatibility configuration were inspected successfully. No clinical prompt publication is included.

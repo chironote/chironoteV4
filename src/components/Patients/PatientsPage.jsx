@@ -3,6 +3,7 @@ import { patientRequest, localDate } from '../../services/patientNotes';
 import SavedNoteEditor from './SavedNoteEditor';
 import ExportPatientDialog from './ExportPatientDialog';
 import PatientDialog from './PatientDialog';
+import { diagnosisStatusLabel } from './diagnosisCodes';
 import './Patients.css';
 
 export default function PatientsPage({ desktopSave = false, allowExport = false }) {
@@ -42,7 +43,7 @@ export default function PatientsPage({ desktopSave = false, allowExport = false 
         <div className="patient-actions"><button disabled={busy} type="submit">Save profile</button><button type="button" disabled={busy} onClick={() => setEditingProfile(false)}>Cancel</button></div>
       </form></PatientDialog>}
       <aside className="patient-confirmation"><h2>Established diagnoses</h2>
-        {diagnosis?.reviewRequired ? <p>An earlier diagnosis change needs review before this list can be used.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.length ? <ul>{diagnosis.state.icdCodes.map(item => <li key={item.code}>{item.code} — {item.description}</li>)}</ul> : <p>No active diagnoses (established empty list).</p>}<p>Established on {diagnosis.sourceDateOfService}.</p></> : <p>No established diagnosis list yet.</p>}
+        {diagnosis?.reviewRequired ? <p>An earlier diagnosis change needs review before this list can be used.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.length ? <ul>{diagnosis.state.icdCodes.map(item => <li key={item.code}>{item.code} — {item.description} <small>{diagnosisStatusLabel(item.status)}</small></li>)}</ul> : <p>No active diagnoses (established empty list).</p>}<p>Established on {diagnosis.sourceDateOfService}.</p></> : <p>No established diagnosis list yet.</p>}
         {diagnosis?.sourceTimestamp && <button type="button" onClick={() => setSelected(diagnosis.sourceTimestamp)}>Open source note</button>}
       </aside>
       {exportOpen && <ExportPatientDialog patient={patient} desktopSave={desktopSave} onClose={() => setExportOpen(false)} />}

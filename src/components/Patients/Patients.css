@@ -22,6 +22,17 @@
 .patient-directory small { display: block; color: #506359; }
 .patient-note-text { width: 100%; box-sizing: border-box; min-height: 430px; font: inherit; font-size: 16px; line-height: 1.7; padding: 18px; border: 1px solid #9bada5; border-radius: 8px; resize: vertical; white-space: pre-wrap; }
 .patient-note-read { white-space: pre-wrap; line-height: 1.7; overflow-wrap: anywhere; }
+.patient-diagnoses { border-top: 1px solid #cfdbd4; margin: 20px 0; padding-top: 16px; }
+.patient-diagnoses h3 { margin: 0 0 10px; }
+.patient-diagnosis-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.patient-diagnosis-row { border: 1px solid #cfdbd4; border-radius: 8px; padding: 12px; min-width: 0; }
+.patient-diagnosis-current { margin: 0; overflow-wrap: anywhere; }
+.patient-diagnosis-current span,.patient-diagnosis-list small { color: #506359; font-size: 14px; }
+.patient-diagnosis-correction { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 10px; margin-top: 12px; }
+.patient-diagnosis-correction .patient-actions { grid-column: 1 / -1; margin: 0; }
+.patient-diagnosis-preview { border: 1px solid #cfdbd4; border-radius: 8px; padding: 12px; margin-top: 12px; }
+.patient-diagnosis-preview summary { cursor: pointer; font-weight: 700; }
+.patient-diagnosis-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 55vh; overflow: auto; font: inherit; line-height: 1.6; }
 .patient-confirmation { background: #fff8e8; color: #4f3b0c; border: 1px solid #b79646; border-radius: 8px; padding: 16px; margin: 12px 0; }
 .patient-note-editor [role=alert],.patients-page [role=alert],.patient-capture [role=alert] { color: #9b2929; }
 @media(max-width:600px) { .patients-page,.patient-note-editor { padding: 16px; } .patient-directory li button { align-items: flex-start; flex-direction: column; } .patient-note-text { min-height: 350px; padding: 12px; } }

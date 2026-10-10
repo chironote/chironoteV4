@@ -32,7 +32,7 @@ Original live templates/schema and five Lambda ZIP/configuration snapshots are p
 
 ## Remaining activation work
 
-Review and publish the protected clinical blueprint; deploy the new generator/audio/compiler versions and matching role/environment configuration; quarantine legacy body-writing retries; set the clinical-write guard true in that coordinated cutover; then run authenticated synthetic capture, Save/conflict/reassignment and saved-data PDF acceptance on testing@chironote.ai. Luna's three fictional patients/five visits are prepared, but not inserted. Website publication is owner-operated; extension/native publication and physical-device acceptance remain later steps.
+Keep the live schema-2 clinical blueprint and compiler unchanged per the owner’s prompt deferral. Deploy the reviewed generator/audio versions, independent re-exam diagnosis Decisions classifier, and matching role/environment configuration; quarantine legacy body-writing retries; set the clinical-write guard true in that coordinated cutover; then run authenticated synthetic capture, Save/conflict/reassignment and saved-data PDF acceptance on testing@chironote.ai. Luna's three fictional patients/five visits are prepared, but not inserted. Website publication is owner-operated; extension/native publication and physical-device acceptance remain later steps.
 
 Before activation, rollback consists of leaving companion features and queue mappings off while preserving additive data. After clinician edits exist, never restore an unconditional old writer or disable the clinical-write guard. Automatic deletion remains retired through any rollback.
 

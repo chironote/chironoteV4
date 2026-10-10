@@ -77,7 +77,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Patient notes update
 
-- [Patient notes](architecture/patient-notes.md): capture, saved-note contracts, platform scope and rollout gates.
+- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and rollout gates.
 
 ## Patient notes update
 
