@@ -2,6 +2,8 @@
 
 ## 2026-10-10
 
+- **Production API cutover verified**: The existing Amplify root/API/Notes/CustomResources stacks completed their updates; Notes physical/table identity, owner/timestamp key, patient GSI, Retain policies, deletion protection and 35-day PITR were preserved. The processed API environment and active post-auth functions confirm `PATIENT_WRITES_GUARDED=true`; runtime flags are active. The first authenticated synthetic capture succeeded; audio/transcription and remaining workflow acceptance are pending. The feature-enabled website build remains unpublished. Clinical prompt text was unchanged and no patient data was written during infrastructure verification. See [cutover evidence](./operations/patient-infrastructure-release.md).
+
 - Prepared strict clinical-writer guard source for coordinated runtime cutover, preserving Notes identity/recovery settings. Documented legacy prompt preservation and the separately approved Decisions diagnosis review; no additional data schema migration.
 
 - **Saved-note diagnosis corrections**: Added desktop-only per-visit ICD code correction with whole-token replacement, visible note preview, code descriptions/status, and one version-checked save of body plus explicit diagnosis list. Invalid codes, collisions and partial-only matches are blocked; drafts survive failed/conflicting saves. Documented the clinician-edit boundary and re-exam-only AI reconciliation scope in [Patient notes](./architecture/patient-notes.md).
