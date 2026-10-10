@@ -72,5 +72,5 @@ Follow [Recent Notes and dense navigation](../development/STYLE.md#recent-notes-
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Sidebar/README.md).
+Derived from [README.md](../../src/components/Sidebar/README.md).
 

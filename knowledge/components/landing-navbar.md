@@ -46,5 +46,5 @@ The sign-in link points to `/app` and can emit analytics through `handleButtonCl
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/LandingNavbar/README.md).
+Derived from [README.md](../../src/components/LandingNavbar/README.md).
 

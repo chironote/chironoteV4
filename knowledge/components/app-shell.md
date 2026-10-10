@@ -76,5 +76,5 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AppShell/README.md), [`useNotesHistory.js`](../../src/components/AppShell/useNotesHistory.js), and [`HistorySidebar.jsx`](../../src/components/Sidebar/HistorySidebar.jsx).
+Derived from [README.md](../../src/components/AppShell/README.md), [useNotesHistory.js](../../src/components/AppShell/useNotesHistory.js), and [HistorySidebar.jsx](../../src/components/Sidebar/HistorySidebar.jsx).
 

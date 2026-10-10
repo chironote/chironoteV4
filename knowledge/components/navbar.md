@@ -48,5 +48,5 @@ Follow [Authenticated navigation](../development/STYLE.md#authenticated-navigati
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Navbar/README.md).
+Derived from [README.md](../../src/components/Navbar/README.md).
 

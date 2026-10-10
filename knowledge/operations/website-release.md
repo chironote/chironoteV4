@@ -10,7 +10,11 @@ tags: [release, publish, amplify, production, validation, risk]
 
 Only the repository owner publishes the website. This concept records evidence and a safe decision path; it does not authorize an agent to deploy.
 
-## State as Reviewed on 2026-07-15
+## Current patient update — 2026-10-10
+
+Patient source and compatibility/retention corrections are merged to prod. The additive backend is installed with all patient/export features and new retry mappings disabled; [installation evidence](patient-infrastructure-release.md) records exact live scope and remaining prompt/writer/testing gates. The owner has not published this website update. The older fingerprints and dependency observations below remain dated historical evidence and do not describe the October release.
+
+## Historical state as reviewed on 2026-07-15
 
 - Local branch: `prod` at `5083517`.
 - Remote branch: `origin/prod` at the same commit after a fresh fetch.
@@ -91,4 +95,4 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 
 ## Provenance
 
-Synthesized from Git branch and commit history; [`package.json`](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; the generated local `build/asset-manifest.json` (historical build evidence, excluded from Git); the public `https://chironote.ai/asset-manifest.json`, `manifest.json`, and compiled JavaScript; the current recording implementation; and the read-only 2026-08-16 production CloudFormation/AppSync contract review. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.
+Synthesized from Git branch and commit history; [package.json](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; the generated local build/asset-manifest.json (historical build evidence, excluded from Git); the public `https://chironote.ai/asset-manifest.json`, manifest.json, and compiled JavaScript; the current recording implementation; and the read-only 2026-08-16 production CloudFormation/AppSync contract review. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.

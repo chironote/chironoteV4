@@ -46,5 +46,5 @@ Follow [Third-party and Amplify UI](../development/STYLE.md#third-party-and-ampl
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AuthUI/README.md).
+Derived from [README.md](../../src/components/AuthUI/README.md).
 
