@@ -67,6 +67,8 @@ Follow [Panels, editors, and long-form text](../development/STYLE.md#panels-edit
 
 Desktop patient-note Save is the classic save icon immediately right of Edit in the existing toolbar. AppShell supplies dirty, disabled, saving and accessible status. The direct versioned save does not send diagnosisCodes implicitly; conflicts retain the draft, and server-required diagnosis/context review uses the existing guarded editor. There is no standalone bottom Save container.
 
+The existing thin toolbar divider separates Smart Editor and Save only when Save is visible. Source: [Clipboard toolbar](../../src/components/Clipboard/ClipboardButtons.jsx).
+
 ## Provenance
 
 Derived from [README.md](../../src/components/Clipboard/README.md).
