@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { HelmetProvider } from 'react-helmet-async';
 import DemoLandingPage from './DemoLandingPage';
+import LandingPage from './LandingPage';
+import overviewVideo from '../../assets/ambient-scribe-overview.mp4';
+import overviewPoster from '../../assets/ambient-scribe-poster.webp';
 
 jest.mock('../../utils/analytics', () => ({
   getAnalyticsConsent: jest.fn(() => false),
@@ -35,12 +38,24 @@ const renderClientDemoLandingPage = (root) => {
 };
 
 describe('DemoLandingPage', () => {
+  test('canonical landing retains the owner overview with deferred loading', () => {
+    document.body.innerHTML = renderToStaticMarkup(
+      <HelmetProvider><LandingPage /></HelmetProvider>
+    );
+    const video = document.querySelector('.marketing-video video');
+    expect(video).not.toBeNull();
+    expect(video.getAttribute('preload')).toBe('none');
+    expect(video.getAttribute('poster')).toBe(overviewPoster);
+    expect(video.querySelector('source').getAttribute('src')).toBe(overviewVideo);
+    expect(document.querySelector('#features')).not.toBeNull();
+  });
+
   test('uses the scheduler as its main conversion path and omits pricing', () => {
     renderDemoLandingPage();
 
     expect(document.querySelector('.marketing-pricing')).toBeNull();
     expect(document.querySelector('a[href="#prices"]')).toBeNull();
-    expect(document.querySelectorAll('a[href="#scheduler"]').length).toBeGreaterThanOrEqual(4);
+    expect(document.querySelectorAll('a[href="#scheduler"]').length).toBeGreaterThanOrEqual(2);
     expect(Array.from(document.querySelectorAll('a[href="#scheduler"]')).every((link) => link.textContent.includes('Schedule a walkthrough') || link.textContent.includes('Walkthrough'))).toBe(true);
   });
 
@@ -87,7 +102,8 @@ describe('DemoLandingPage', () => {
     expect(document.body.textContent).toContain("LET'S CHAT");
     expect(document.body.textContent).toContain('Have a Human explain it');
     expect(document.body.textContent).not.toContain('Have a Human explain ChiroNote');
-    expect(document.querySelector('.marketing-video h2').textContent).toBe('Watch our explainer video');
+    expect(document.querySelector('.marketing-video')).toBeNull();
+    expect(document.querySelector('#features')).not.toBeNull();
     expect(document.body.textContent).not.toContain('Join Nikita on Zoom.');
     expect(document.body.textContent).not.toContain('Get a quick introduction, then see the steps for yourself in a personal walkthrough.');
     expect(document.querySelector('.marketing-scheduler__details')).toBeNull();

@@ -1,6 +1,6 @@
 # Settings Components
 
-`Settings.jsx` displays the server-backed `hoursSavedLifetime` metric and owns the feature-flagged Custom Instructions card, persisted-state loading, focus refresh, and job-aware polling. It does not display current-period `hoursSaved` or any generated SOATP prompt fields.
+`Settings.jsx` displays the server-backed `hoursSavedLifetime` metric and owns the Custom Instructions card, persisted-state loading, focus refresh, and job-aware polling. It does not display current-period `hoursSaved` or any generated SOATP prompt fields.
 
 `CustomInstructionsDialog.jsx` uses `ProductDialog`, edits only the original natural-language source, protects dirty text, blocks dismissal and duplicate submission during the initial deliberate compile period, and labels progress messages as approximate. The user can leave after roughly 30 seconds, but success appears only after AppSync reports `READY` for the server's current job and remains visible until the user closes it. Validation errors are associated with the textarea; compilation and transport failures are announced as form-level errors. Focus returns to the card action after dismissal.
 
@@ -8,8 +8,8 @@ Networking is isolated in `src/services/customInstructions.js`. It imports the g
 
 Polling runs about every three seconds for 30 seconds, then every nine seconds, pauses with honest return-later guidance after five minutes, and resumes from persisted server state on window focus or progress-dialog reopen. Older overlapping reads cannot overwrite newer state, and status-refresh errors remain visible without converting approximate progress into success.
 
-The Custom Instructions browser configuration is `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED=true`. When it is off, the card renders a distinct non-interactive Unavailable state while the rest of Settings remains functional. Keep the flag off until the queue-to-worker event-source mapping exists, the provider/worker path has produced authenticated end-to-end terminal states, the reserved-concurrency constraint is resolved or explicitly accepted, and the intended runtime Amplify configuration has been verified.
+Custom Instructions is available by default, including builds with no `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED` setting. An explicit `false` (case-insensitive, whitespace-trimmed) is the emergency opt-out and renders the non-interactive Unavailable state without issuing Custom Instructions requests. The previous opt-in default hid the editor in production despite the working backend. On 2026-09-26, the production Cognito/AppSync/queue/provider path reached READY with a synthetic account, verified source preservation and disable behavior, and the temporary login was removed. The production note consumer's custom-profile flag and the queue worker mapping were both confirmed enabled. See the release knowledge for evidence and rollback.
 
 ## Patient notes integration
 
-When patient notes are enabled, Settings adds Configure Signature. `Patients/SignatureDialog` edits exactly the clinician name and NPI with Save/Cancel and uses `src/services/patientNotes.js`; only the authenticated patient API may persist these account fields. This is the printed name/NPI beneath each exported visit, not an electronic signature.
+When patient notes are enabled, Settings adds Configure Signature. `Patients/SignatureSettings.jsx` edits exactly the clinician name and NPI with Save/Cancel and uses `src/services/patientNotes.js`; only the authenticated patient API may persist these account fields. This is the printed name/NPI beneath each exported visit, not an electronic signature.

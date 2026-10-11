@@ -2,6 +2,8 @@
 
 ## 2026-10-10
 
+- **Original local website reconciliation**: Preserved local overview/workflow videos and default-available Custom Instructions with emergency opt-out alongside the patient release. Corrected stale Custom Instructions blockers and superseded alternate-worktree instructions in [Website release](./operations/website-release.md), retained both dated evidence histories, and documented production build defaults in [Development workflow](./development/workflow.md). Private capture/tooling remains local with an independent recovery snapshot. No hosting/backend publication or clinical prompt changes.
+
 - **Synthetic patient release acceptance completed**: Recorded successful authenticated acceptance for four fictional patients and seven visits, including one synthetic WAV through the normal audio/transcription path, initial/follow-up saves, exact-code correction, conflict and generic-write guard checks, retry, reassignment, re-exam reconciliation, and saved-note PDF verification. The owner has not published the feature-enabled website; post-publication microphone/screen review, physical-device/native checks, and broad clinical prompt review remain separate. Updated [Patient notes](./architecture/patient-notes.md), [Patient infrastructure cutover](./operations/patient-infrastructure-release.md), [Website release](./operations/website-release.md), and the index.
 
 - **Earlier infrastructure checkpoint**: The existing Amplify root/API/Notes/CustomResources stacks completed their updates; Notes physical/table identity, owner/timestamp key, patient GSI, Retain policies, deletion protection and 35-day PITR were preserved. The processed API environment and active post-auth functions confirm `PATIENT_WRITES_GUARDED=true`; runtime flags are active. At this checkpoint the first authenticated synthetic capture had succeeded and later workflow checks were pending; the acceptance entry above records their completion. The feature-enabled website build remains unpublished. Clinical prompt text was unchanged, and the infrastructure verification itself did not write patient data. See [cutover evidence](./operations/patient-infrastructure-release.md).
@@ -16,6 +18,19 @@
 - **Production preparation and recovery**: Merged patient source to `prod` via PR #16 (`dcd1e8c`), without website/backend publication. Clinical prompt release is deferred. Added the CLI-generated source override for Notes Retain policies, deletion protection and PITR so future stack changes preserve the retention/recovery decision. Documented legacy-writer compatibility and the pending coordinated cutover; automatic cleanup retirement and backup/PITR were separately verified in AWS.
 
 - **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Desktop web has persistent Save; mobile web keeps local edit/copy. The Patients route owns profiles, source diagnosis display and PDF selection. Settings owns Configure Signature. Local candidate only; no push, release or deployment.
+
+## 2026-10-09
+
+- **Landing overview video replacement**: Replaced the canonical `/` overview with the owner-supplied 58-second ambient-scribe video and an opening-scene WebP poster. Preserved deferred playback and the `/demo` overview exclusion. Updated LandingPage ownership, [Public Landing Pages](./components/landing-page.md), and the index; source: `LandingPage.jsx` and the new overview assets.
+
+## 2026-09-26
+
+- **Custom Instructions restoration**: Replaced the missing-build-flag opt-in with default availability and an explicit emergency opt-out. Verified the production Cognito/AppSync/SQS/Astra path with a disposable login: idempotent acceptance, READY/CUSTOM, source round-trip, and disable preservation all passed. Updated Settings ownership and [Billing and User Settings](./components/billing-settings.md); superseded stale August backend blockers and recorded narrow frontend release/rollback evidence in [Website Publish State and Release Checklist](./operations/website-release.md). Existing landing-page changes are preserved.
+
+## 2026-09-24
+
+- **Recording clip polish**: Recaptured the first workflow step with a visible pointer, deliberate cadence between New Note, Exam Layout, and Start Recording, and a hold on the live recording state; aligned carousel timing with the new clip in [Public Landing Pages](./components/landing-page.md).
+- **Workflow media recapture**: Documented real ScreenCLI footage of a fictional recording and the completed SOAP generation/review sequence, plus a native two-window drag of the note into the fictional Rosewood EHR chart. All three clips now have MP4 playback that starts at the beginning of each selected step, matching carousel timing, and GIF fallbacks in [Public Landing Pages](./components/landing-page.md).
 
 ## 2026-09-17
 

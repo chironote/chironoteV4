@@ -20,6 +20,8 @@ Use npm with the checked-in `package-lock.json`.
 | Build production assets | `npm run build` | Builds into `build/`, then runs `defer-css.js`. |
 | Eject CRA | `npm run eject` | Irreversible; do not run without explicit agreement. |
 
+Production builds load public patient feature defaults and the PDF endpoint from [.env.production](../../.env.production). Shell variables and `.env.production.local` take priority; confirm them when preparing a release. The owner publishes from the original website folder. See [Website release](../operations/website-release.md) for preservation and publication steps. Custom Instructions remains default-available with an explicit emergency opt-out.
+
 ## Code Conventions
 
 - Use JavaScript and JSX with ES module imports, 2-space indentation, single quotes, and semicolons.

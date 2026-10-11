@@ -8,7 +8,34 @@ tags: [release, publish, amplify, production, validation, risk]
 
 # Website Publish State and Release Checklist
 
-Only the repository owner publishes the website. This concept records evidence and a safe decision path; it does not authorize an agent to deploy.
+Publishing requires repository-owner authorization. The 2026-09-26 Custom Instructions restoration was explicitly requested by the owner; the historical checklist below is not authorization for unrelated deployments.
+
+## Original-folder reconciliation: 2026-10-10
+
+The owner publishes from `C:/Users/nikit/ChiroNote/website/chironoteV4`. This folder's local overview/workflow media and September Custom Instructions restoration are reconciled with the October patient release. The earlier alternate-clean-worktree publishing instructions omit important local work and are superseded. Private `.agents/` recordings/tooling remain local and outside Git, preserved independently with the original build and local configuration.
+
+The checked-in [.env.production](../../.env.production) makes ordinary `npm run build` (also Amplify's configured build command) enable patient notes, patient capture and the deployed HTTPS PDF endpoint. CRA process variables and `.env.production.local` can override these public defaults; verify them before building. Custom Instructions remains available by default with explicit `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED=false` as the emergency opt-out. Do not disable it because older patient-release documentation called it disabled. No compiler, clinical prompt, backend, or hosting update is part of this reconciliation.
+
+The owner reported publishing and successfully generating a simple note. That is owner-reported functional evidence, not proof of the patient-enabled artifact's identity. The dispatcher still observed `main.174f2ef8.js` on both live aliases afterward. Treat this combined build as pending owner publication until its manifest matches the live site. Rebuild from reconciled source; the pre-existing `build/` is historical output.
+
+## Custom Instructions restoration: 2026-09-26
+
+The live editor was hidden because the frontend build omitted `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED`, and the service required an explicit true value. The service now defaults to available; explicit `false` remains an emergency opt-out. Existing users' saved source and profiles were not changed.
+
+Fresh production verification superseded the August launch-blocker notes: the SQS worker mapping is enabled at batch size 1, `SOATP-MetaPrompter` is Active/Successful on Astra, and `transcriptToNoteV2` has `CUSTOM_INSTRUCTIONS_RUNTIME_ENABLED=true`. A synthetic Cognito login exercised authenticated AppSync acceptance, idempotency, queue/provider compilation to READY/CUSTOM in about 103 seconds, source round-trip, and disable preservation. Its profile remains disabled and its login was deleted. A second disposable login confirmed the actual configured Amplify client and generated query. No provider keys, real user preferences, or note-generation configuration were changed.
+
+The production build succeeded with existing lint/Browserslist warnings. All 24 focused Settings, service, and current workflow tests passed. The full isolated-tip suite had 79 passing tests and two pre-existing `DemoLandingPage.test.jsx` failures: it still expects four scheduler links and the overview video intentionally removed from `/demo`. Those assertions and the landing implementation were left unchanged.
+
+Production hosting is S3 bucket `chironote4-20240825113940-hostingbucket-prod`, served by CloudFront `E34RPJ5SU5J7IX`; the Amplify console branches are not the live custom-domain hosting path. A frontend-only publish uploaded four new immutable JS/source-map objects, then conditionally replaced the manifest and index against their backed-up ETags. It did not run Amplify push or modify the backend. CloudFront invalidation `I7DVAZ5382BCGD9MKZJRBZ33C8` completed.
+
+- Previous main/authenticated bundles: `main.01200898.js`, `982.27c37cce.chunk.js`.
+- Restored main/authenticated bundles: `main.74aa16ed.js`, `982.bd1a2e25.chunk.js`.
+- The other 68 manifest assets, including landing bundles, styles, and workflow media, are unchanged. Thirteen pre-existing landing source/media files were hash-checked and preserved. The release was built in the original checkout to include the already-live but uncommitted workflow-media changes; rebuilding only Git HEAD would regress them.
+- The live Settings route serves the new main bundle. After an initial transient session-verification failure, the signed-in browser loaded the enabled profile and displayed the Update dialog with saved text. No edit was submitted on the user's account.
+
+Release evidence, candidate artifacts, backend checks, build/test output, screenshot, pre-release index/manifest, and guarded rollback script are outside Git at `C:/Users/nikit/.codex/release-evidence/custom-instructions-20260926/`. Rollback runs `node rollback-frontend.cjs` from that directory only on an authorized rollback request. It verifies that the current index and manifest still match this release before restoring the originals and invalidating CloudFront; old immutable assets were retained.
+
+The July/August sections below are historical evidence, not the current live feature state.
 
 ## Current patient release state — 2026-10-10
 
@@ -16,7 +43,7 @@ The patient web source and required compatibility/retention updates are merged. 
 
 Clinical prose/coding prompts and the Custom Instructions compiler remain unchanged; broad prompt review is deferred. The accepted scope includes only the approved re-exam diagnosis classifier and speaker-role integration. After the owner publishes, run a real-microphone smoke test and review the live patient screens. Physical iPhone/Android coverage and native/extension publication remain separate later work; the synthetic browser checks do not claim those devices were tested.
 
-The live website publish route was verified from the current hosting backup and configuration: CloudFront distribution `E34RPJ5SU5J7IX` for `chironote.ai` and `www.chironote.ai`, backed by S3 bucket `chironote4-20240825113940-hostingbucket-prod` in `us-east-2`. Do not infer the live host from a separate Amplify app's branch listing. The owner should build from a clean checkout of merged `origin/prod`, explicitly set the patient UI/export build flags, confirm the AWS account and destination, sync without deleting unrelated objects, then invalidate CloudFront. The pre-publication recovery archive and exact hash are recorded below.
+The live website publish route was verified from the current hosting backup and configuration: CloudFront distribution `E34RPJ5SU5J7IX` for `chironote.ai` and `www.chironote.ai`, backed by S3 bucket `chironote4-20240825113940-hostingbucket-prod` in `us-east-2`. Do not infer the live host from a separate Amplify app's branch listing. The owner should build from the reconciled original local folder at merged `origin/prod`, verify the patient UI/export build flags, confirm the AWS account and destination, sync without deleting unrelated objects, then invalidate CloudFront. The pre-publication recovery archive and exact hash are recorded below.
 
 ## Historical state as reviewed on 2026-07-15
 
@@ -54,7 +81,7 @@ The unpublished delta includes:
 - cursor-aware dictation insertion in Clipboard and Smart Editor;
 - the July 1 Strict-Mode-safe insertion snapshot, green caret, textarea locking, and five regression tests;
 - repository and component documentation plus the Healtech knowledge system.
-- the asynchronous Custom Instructions Settings flow and installed backend control plane. It remains feature-flagged off because the queue-to-worker event-source mapping, reserved-concurrency decision, authenticated provider end-to-end test, and runtime configuration verification are not complete.
+- the asynchronous Custom Instructions Settings flow and installed backend control plane. At that historical checkpoint it remained feature-flagged off because the queue-to-worker event-source mapping, reserved-concurrency decision, authenticated provider end-to-end test, and runtime configuration verification are not complete.
 
 The UI refactor is large in file movement but intended to preserve behavior. The recording implementation is not behavior-neutral: it changes where cleanup, upload, fallback, and generation responsibilities live.
 
@@ -62,7 +89,7 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 
 The authenticated synthetic release checks and local tests/build are complete. The prepared website build remains unpublished; publication follows the existing owner-operated release process. This record does not add an approval gate. During that publish step, use the intended merged commit and feature-enabled build, verify the origin and consult the [recovery evidence](#rollback-evidence-and-recovery-copy).
 
-1. Start from a clean worktree at the intended merged `origin/prod` commit. Run `npm ci`, the test suite and production build with `REACT_APP_PATIENT_NOTES_ENABLED=true`, `REACT_APP_PATIENT_CAPTURE_ENABLED=true` and the configured HTTPS PDF export URL.
+1. In `C:/Users/nikit/ChiroNote/website/chironoteV4`, verify `prod` matches the intended merged `origin/prod` commit. Preserve private local files. Run the test suite and `npm run build`; `.env.production` supplies `REACT_APP_PATIENT_NOTES_ENABLED=true`, `REACT_APP_PATIENT_CAPTURE_ENABLED=true` and `REACT_APP_PATIENT_EXPORT_URL=https://g6irrdqen2ig24qnenisyxvwre0mihei.lambda-url.us-east-2.on.aws/`. Check higher-priority environment/local-file overrides. Use `npm ci` if dependencies need installation.
 2. Confirm the signed-in website points at the intended production AppSync API and the export endpoint. Confirm the AWS identity is in account `026090532772`, and verify the target CloudFront distribution aliases and S3 origin before uploading.
 3. Publish through the verified S3/CloudFront route. Preserve unrelated bucket keys; do not use a bucket-wide delete. Invalidate CloudFront after upload.
 4. After publication, compare the live `/asset-manifest.json` with the release build, sign in, review patient screens, and run one short real-microphone recording through note save. Check transcription and saved-note acknowledgments without exposing transcripts in logs.
@@ -70,13 +97,13 @@ The authenticated synthetic release checks and local tests/build are complete. T
 
 ## Separate validation boundaries
 
-Clinical-quality approval and the planned prompt review were not part of this release. The exact live synthetic cases do not establish language accuracy/latency for every provider configuration. Physical iPhone/Android permission/background/rotation/auth flows, and native or extension publication, remain outside this website acceptance. Custom Instructions and broad clinical prompts were not enabled or changed by this patient release.
+Clinical-quality approval and the planned prompt review were not part of this release. The exact live synthetic cases do not establish language accuracy/latency for every provider configuration. Physical iPhone/Android permission/background/rotation/auth flows, and native or extension publication, remain outside this website acceptance. The patient release did not change the compiler or broad clinical prompts. This reconciliation preserves the separately verified September Custom Instructions restoration.
 
 ## Separate known risks from the July 2026 review
 
 The July 15 review recorded 89 `npm audit --omit=dev` findings (including 2 critical and 28 high) and hook dependency warnings in Dictation, Clipboard and Smart Editor. This patient release did not rerun that audit or resolve those items; they are not established as cleared here. They remain separate maintenance risks, not patient-acceptance results.
 
-The same earlier review required a FIFO queue-to-worker check, a reserved-concurrency decision, an authenticated provider-backed terminal-state test and confirmation of the intended AppSync target before enabling Custom Instructions. This patient release did not change or verify those separate gates. Do not infer Custom Instructions enablement from the patient website build.
+The same earlier review required a FIFO queue-to-worker check, a reserved-concurrency decision, an authenticated provider-backed terminal-state test and confirmation of the intended AppSync target before enabling Custom Instructions. Those historical gates are superseded by the September 26 restoration evidence above; they are not current blockers. This reconciliation does not repeat authenticated production testing or change the compiler.
 
 ## Rollback evidence and recovery copy
 

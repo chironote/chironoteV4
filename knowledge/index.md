@@ -29,12 +29,12 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Recording, Dictation, and Note Generation](./components/recording.md) | Current recording architecture, its 2026 history, browser behavior, failure risks, and required release matrix. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, clickable SOAP/Treatment popup copy controls, and the visually paired Smart Editor workspace. |
-| [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the installed-contract but feature-gated asynchronous AppSync Custom Instructions experience. |
+| [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the restored, default-available asynchronous AppSync Custom Instructions experience. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
 | [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
 | [User Feedback](./components/feedback.md) | Accessible authenticated feedback modal behavior and fixed submission contract. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
-| [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; testimonial provenance; the autoplaying record/review/copy screenshot lesson; app-store destinations; proposed Zoom copy; mobile presentation; confirmed-booking measurement; HIPAA/BAA trust content; and analytics. |
+| [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; the ambient-scribe overview video; testimonial provenance; the timed record/review/EHR workflow lesson and media; app-store destinations; proposed Zoom copy; mobile presentation; confirmed-booking measurement; HIPAA/BAA trust content; and analytics. |
 | [Public Landing Navigation](./components/landing-navbar.md) | Desktop/mobile public navigation modes and behavior. |
 | [Blog Publishing](./components/blog.md) | Blog post contract, registration, routes, and metadata. |
 | [Cookie Consent and Analytics](./components/cookie-consent.md) | Consent persistence, Google attribution, and the enforced Meta marketing-route/document boundary. |
@@ -53,7 +53,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 | Concept | Use it to understand |
 | --- | --- |
-| [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
+| [Website Publish State and Release Checklist](./operations/website-release.md) | Original-folder reconciliation, production build defaults, live-versus-local evidence, owner publication steps, and rollback. |
 
 ## Security
 
