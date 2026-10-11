@@ -216,8 +216,8 @@ const ContentPopup = ({
                 </span>
               </button>
             </div>
+            <PatientName patientId={patientId} />
             <div className="label-container">
-              <PatientName patientId={patientId} />
               {isEditingLabel ? (
                 <input
                   type="text"
