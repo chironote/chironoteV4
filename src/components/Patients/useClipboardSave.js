@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { patientRequest } from '../../services/patientNotes';
 import { diagnosisReviewForDraft } from './clipboardDiagnoses';
-import { DIAGNOSIS_STATUSES } from './diagnosisCodes';
 
 export default function useClipboardSave({ note, draft, onSaved, onError, onCancelReview }) {
   const [busy, setBusy] = useState(false);
@@ -31,8 +30,8 @@ export default function useClipboardSave({ note, draft, onSaved, onError, onCanc
         return 'confirmation';
       }
     }
-    if (approved?.kind === 'local' && approved.icdCodes?.some(item => !DIAGNOSIS_STATUSES.includes(item.status) || !item.description.trim())) {
-      onError?.('Add a description and choose a status for each diagnosis before confirming.'); return false;
+    if (approved?.kind === 'local' && approved.icdCodes?.some(item => !item.description.trim())) {
+      onError?.('Add a description for each diagnosis before confirming.'); return false;
     }
     const diagnosisCodes = approved?.kind === 'local' ? approved.icdCodes : undefined;
     const key = JSON.stringify([draftKey, diagnosisCodes]);

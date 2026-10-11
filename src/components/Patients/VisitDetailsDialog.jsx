@@ -18,7 +18,7 @@ export default function VisitDetailsDialog({ timestamp, onClose, onSaved, onOpen
   }, [timestamp]);
   const saveMetadata = async (confirmed = false, deleteEmptyPatient = false) => {
     if (note.patientId && note.patientId !== (metadata.patientId || null) && !deleteEmptyPatient) {
-      if (!window.confirm("Changing the patient does not rewrite this note. If this is the original patient's last visit, their empty profile will be permanently deleted. This cannot be undone. Continue?")) return;
+      if (!window.confirm("Changing the patient replaces this note's diagnosis codes with the selected patient's latest codes, or clears them if none are saved. If this is the original patient's last visit, their empty profile will be permanently deleted. This cannot be undone. Continue?")) return;
       return saveMetadata(true, true);
     }
     setBusy(true); setMessage('');
@@ -26,6 +26,7 @@ export default function VisitDetailsDialog({ timestamp, onClose, onSaved, onOpen
       let patientId = metadata.patientId || null;
       if (patientId && metadata.patientName) await patientRequest('createPatient', { patientId, name: metadata.patientName });
       const result = await patientRequest('updateVisitMetadata', { timestamp, expectedVersion: note.version, patientId,
+        ...(patientId !== (note.patientId || null) ? { copyPatientDiagnoses: true } : {}),
         dateOfService: metadata.dateOfService || null, dateOfInjury: metadata.dateOfInjury || null, visitType: metadata.visitType || null, contextMode: metadata.contextMode || 'patient',
         ...(metadata.visitLabel?.trim() ? { visitLabel: metadata.visitLabel.trim() } : {}), confirmContextReview: confirmed, ...(deleteEmptyPatient ? { deleteEmptyPatient: true } : {}) });
       if (result.status === 'CONTEXT_REVIEW_REQUIRED') {

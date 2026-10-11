@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Simplified diagnosis continuity (source candidate)**: Retained the clipboard code preview and removed user-facing status controls. Confirmed code changes on any visit type establish a chronological diagnosis source; other saved notes stay unchanged. Documented destination-code copying during reassignment, unknown/empty handling and retained deletion warnings. Updated Patients ownership, patient-notes/clipboard concepts and index. Requires PatientNotesApi release before website publication.
+
 - **Label, deletion and export corrections**: Documented clickable descriptor/pencil, explicit permanent patient deletion and last-visit cleanup warnings, local state clearing, history pagination past deletion markers, and actionable PDF blockers/development configuration. Backend deletion requires the coordinated audio replay guard before release.
 
 - **History patient reassignment**: Updated Sidebar, AppShell and patient-notes concepts for clickable patient identity, compact assignment, version protection and history/clipboard synchronization. Sources: ContentPopup, ReassignPatientDialog, AuthenticatedApp.

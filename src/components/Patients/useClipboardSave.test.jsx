@@ -65,7 +65,7 @@ test('a signed server confirmation reuses the request id and does not substitute
   const onSaved = jest.fn();
   patientRequest.mockResolvedValueOnce({ status: 'CONFIRMATION_REQUIRED', confirmationToken: 'token', icdCodes: [{ code: 'M54.2', description: 'Cervicalgia', status: 'continuing' }] })
     .mockResolvedValueOnce({ status: 'SAVED', note: { ...firstVisit, version: 'v2' } });
-  act(() => root.render(<Harness note={{ ...firstVisit, visitType: 'reExam' }} draft={corrected} onSaved={onSaved} />));
+  act(() => root.render(<Harness note={{ ...firstVisit, visitType: 'reExam' }} draft={firstVisit.note + ' Updated plan.'} onSaved={onSaved} />));
   await act(async () => hook.save());
   expect(patientRequest.mock.calls[0][1].diagnosisCodes).toBeUndefined();
   await act(async () => hook.confirm(hook.review));

@@ -27,11 +27,12 @@ jest.mock('./MainWorkspace', () => ({ clipboard }) => <main>
 </main>);
 
 global.IS_REACT_ACT_ENVIRONMENT = true;
-test('Patients loads exact visit into clipboard and a first-visit addition saves body and diagnoses together', async () => {
+test.each(['initialExam', 'followUp', 'reExam'])('Patients opens %s in clipboard and saves changed codes without status controls', async visitType => {
+  patientRequest.mockClear();
   jest.useFakeTimers();
   Object.defineProperty(global, 'crypto', { configurable: true, value: { randomUUID: () => 'synthetic-request' } });
   const patient = { patientId: 'synthetic', name: 'Jordan Example', visitCount: 1 };
-  let saved = { timestamp: '123', version: 'v1', patientId: patient.patientId, visitType: 'initialExam', visitLabel: 'Initial visit', dateOfService: '2026-10-01',
+  let saved = { timestamp: '123', version: 'v1', patientId: patient.patientId, visitType, visitLabel: 'Initial visit', dateOfService: '2026-10-01',
     note: 'Subjective: Synthetic fixture.\nAssessment:\nM54.2 — Cervicalgia\nPlan: Recheck.', diagnosisState: { icdCodes: [{ code: 'M54.2', description: 'Cervicalgia', status: 'new' }] } };
   patientRequest.mockImplementation(async (operation, input) => {
     if (operation === 'listPatients') return { items: [patient] };
@@ -61,6 +62,8 @@ test('Patients loads exact visit into clipboard and a first-visit addition saves
   });
   await click('Save note');
   expect(container.textContent).toContain('Confirm diagnosis changes');
+  expect(container.querySelector('.clipboard-save-review select')).toBeNull();
+  expect(container.textContent).not.toMatch(/Choose status|Continuing|Status not recorded/);
   expect(patientRequest.mock.calls.filter(([op]) => op === 'saveNote')).toHaveLength(0);
   await click('Confirm and save');
   expect(saved.note).toBe(corrected);
