@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Removed Recent Notes counter**: Removed the loaded-note count badge and unused CSS; history loading, search and Refresh remain unchanged. Updated Sidebar README, [Sidebar](./components/sidebar.md), [visual style](./development/STYLE.md) and index.
+
 - **Removed Patients visit-details entry**: Visit rows now only open the saved note in the shared clipboard; removed the separate Visit details button and page-level dialog state/wiring. Documented the retained export date-correction helper, History reassignment/label editing, and unchanged backend/save behavior in [Patient notes](./architecture/patient-notes.md), feature README and index.
 
 - **Clinical-information export acknowledgment**: Corrected the earlier dates-only copy to “I acknowledge that the clinical information herein is accurate.” Updated accessible label/blocker, local state naming, selectors, Patients README and [Patient notes](./architecture/patient-notes.md), and index. The local export gate now resets its clinical acknowledgment for selection/range/date changes, refreshed visit details and saved signatures, while keeping per-note review separate; no backend assent persistence or legal-terms change.
