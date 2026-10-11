@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { stripMarkdown } from '../../utils/markdownStripper';
+import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 const Clipboard = ({
   clipboardTextareaRef,
   clipboardContent,
   setClipboardContent,
+  onSavedNoteDrop,
+  onTextDrop,
   streamContent,
   setShowCopyMessage,
   isDisabled,
@@ -36,8 +39,15 @@ const Clipboard = ({
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDraggingOver(false);
+    if (isDisabled || isTranscribing || isWebSocketConnecting) return;
+    const timestamp = e.dataTransfer.getData(SAVED_NOTE_DRAG_TYPE);
+    if (timestamp && onSavedNoteDrop) {
+      onSavedNoteDrop(timestamp);
+      return;
+    }
     const droppedText = e.dataTransfer.getData('text/plain');
-    setClipboardContent(droppedText);
+    if (onTextDrop) onTextDrop(droppedText);
+    else setClipboardContent(droppedText);
   };
 
   const copySection = (section) => {

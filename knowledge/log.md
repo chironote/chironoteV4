@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Saved-note drop parity**: History drops reload the authoritative record and use the Patients clipboard-opening path, including identity/version, draft guards and blocked pending-save replacement. Documented mobile overlay parity, superseded-fetch protection and preserved external text behavior in [Clipboard](./components/clipboard.md), [Sidebar](./components/sidebar.md), [App shell](./components/app-shell.md) and [Patient notes](./architecture/patient-notes.md); updated feature READMEs and index routing. Fictional local fixtures only; no deployment.
+
 - **Simplified diagnosis continuity (source candidate)**: Retained the clipboard code preview and removed user-facing status controls. Confirmed code changes on any visit type establish a chronological diagnosis source; other saved notes stay unchanged. Documented destination-code copying during reassignment, unknown/empty handling and retained deletion warnings. Updated Patients ownership, patient-notes/clipboard concepts and index. Requires PatientNotesApi release before website publication.
 
 - **Label, deletion and export corrections**: Documented clickable descriptor/pencil, explicit permanent patient deletion and last-visit cleanup warnings, local state clearing, history pagination past deletion markers, and actionable PDF blockers/development configuration. Backend deletion requires the coordinated audio replay guard before release.
