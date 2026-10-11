@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { patientRequest, localDate } from '../../services/patientNotes';
-import SavedNoteEditor from './SavedNoteEditor';
+import VisitDetailsDialog from './VisitDetailsDialog';
 import ExportPatientDialog from './ExportPatientDialog';
 import PatientDialog from './PatientDialog';
 import { diagnosisStatusLabel } from './diagnosisCodes';
 import './Patients.css';
 
-export default function PatientsPage({ desktopSave = false, allowExport = false }) {
+export default function PatientsPage({ desktopSave = false, allowExport = false, onOpenNote }) {
   const [search, setSearch] = useState(''); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null);
   const [patient, setPatient] = useState(null); const [visits, setVisits] = useState([]); const [visitCursor, setVisitCursor] = useState(null);
   const [selected, setSelected] = useState(null); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
@@ -23,7 +23,17 @@ export default function PatientsPage({ desktopSave = false, allowExport = false 
   } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
   const saveProfile = async event => { event.preventDefault(); setBusy(true); try { const result = await patientRequest('updatePatient', { patientId: patient.patientId, name: profileDraft.name, sex: profileDraft.sex, dateOfBirth: profileDraft.dateOfBirth || null, dateOfInjury: profileDraft.dateOfInjury || null }); setPatient(result.patient); setEditingProfile(false); setMessage('Patient profile saved. Existing clinical notes are unchanged.'); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
   const add = async () => { if (!search.trim()) return; setBusy(true); try { const result = await patientRequest('createPatient', { patientId: crypto.randomUUID(), name: search.trim() }); await open(result.patient); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
-  if (selected) return <SavedNoteEditor timestamp={selected} desktopSave={desktopSave} onClose={() => { setSelected(null); if (patient) open(patient); }} onSaved={saved => setVisits(old => old.map(note => note.timestamp === saved.timestamp ? saved : note))} />;
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const openVisit = async timestamp => {
+    if (busy) return;
+    setBusy(true); setMessage('');
+    try {
+      const result = await patientRequest('getSavedNote', { timestamp });
+      if (mounted.current) await onOpenNote?.(result.note);
+    } catch (error) { if (mounted.current) setMessage(error.message); }
+    finally { if (mounted.current) setBusy(false); }
+  };
   return <main className="patients-page" aria-busy={busy}><div className="patient-toolbar patient-page-heading"><h1>{patient ? patient.name : 'Patients'}</h1>{patient && <button onClick={() => { setPatient(null); setEditingProfile(false); setExportOpen(false); }}>All patients</button>}</div>
     {message && <p role="alert">{message}</p>}{busy && <p role="status">Working…</p>}
     {!patient ? <><label>Search patients<input type="search" value={search} onChange={e => setSearch(e.target.value)} /></label>
@@ -44,11 +54,13 @@ export default function PatientsPage({ desktopSave = false, allowExport = false 
       </form></PatientDialog>}
       <aside className={`patient-card patient-diagnosis-summary${diagnosis?.reviewRequired ? ' patient-confirmation' : ''}`}><h2>Established diagnoses</h2>
         {diagnosis?.reviewRequired ? <p>An earlier diagnosis change needs review before this list can be used.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.length ? <ul>{diagnosis.state.icdCodes.map(item => <li key={item.code}>{item.code} — {item.description} <small>{diagnosisStatusLabel(item.status)}</small></li>)}</ul> : <p>No active diagnoses (established empty list).</p>}<p>Established on {diagnosis.sourceDateOfService}.</p></> : <p>No established diagnosis list yet.</p>}
-        {diagnosis?.sourceTimestamp && <button type="button" onClick={() => setSelected(diagnosis.sourceTimestamp)}>Open source note</button>}
+        {diagnosis?.sourceTimestamp && <button type="button" disabled={busy} onClick={() => openVisit(diagnosis.sourceTimestamp)}>Open source note</button>}
       </aside>
       {exportOpen && <ExportPatientDialog patient={patient} desktopSave={desktopSave} onClose={() => setExportOpen(false)} />}
-      <h2>Visits</h2><ul className="patient-directory">{visits.map(visit => <li key={visit.timestamp}><button disabled={busy} onClick={() => setSelected(visit.timestamp)}><span><strong>{visit.visitLabel || visit.noteLabel || 'Untitled visit'}</strong><small>{visit.dateOfService || 'Date not confirmed'} · {visit.visitType || 'Type not set'}</small></span><small>{visit.needsContextReview || visit.diagnosisReviewRequired ? 'Review needed' : visit.generationStatus === 'PENDING' ? 'Pending' : 'View note'}</small></button></li>)}</ul>
+      <h2>Visits</h2><ul className="patient-directory">{visits.map(visit => <li key={visit.timestamp}><button disabled={busy} onClick={() => openVisit(visit.timestamp)}><span><strong>{visit.visitLabel || visit.noteLabel || 'Untitled visit'}</strong><small>{visit.dateOfService || 'Date not confirmed'} · {visit.visitType || 'Type not set'}</small></span><small>{visit.needsContextReview || visit.diagnosisReviewRequired ? 'Review needed' : visit.generationStatus === 'PENDING' ? 'Pending' : 'Open in clipboard'}</small></button><button className="visit-details-link" disabled={busy} aria-label={`Visit details for ${visit.visitLabel || visit.noteLabel || visit.dateOfService || 'visit'}`} onClick={() => setSelected(visit.timestamp)}>Visit details</button></li>)}</ul>
       {!visits.length && <p>No visits have been assigned to this patient yet.</p>}{visitCursor && <button disabled={busy} onClick={more}>More visits</button>}
     </>}
+    {selected && <VisitDetailsDialog timestamp={selected} onClose={() => { setSelected(null); if (patient) open(patient); }}
+      onOpenNote={openVisit} onSaved={saved => setVisits(old => old.map(note => note.timestamp === saved.timestamp ? saved : note))} />}
   </main>;
 }

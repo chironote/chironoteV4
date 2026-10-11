@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { patientRequest, exportPatientNotes, localDate } from '../../services/patientNotes';
 import PatientDialog from './PatientDialog';
-import { leaveDrafts } from './draftNavigation';
-import SavedNoteEditor from './SavedNoteEditor';
+import VisitDetailsDialog from './VisitDetailsDialog';
 import { SignatureDialog } from './SignatureSettings';
 
 const ready = note => note.ready === true;
@@ -71,6 +70,6 @@ export default function ExportPatientDialog({ patient, desktopSave, onClose }) {
     {conflicts.length > 0 && <p role="alert">The injury date conflicts with {conflicts.length} selected visit(s): {conflicts.map(note => dateLabel(note.dateOfService)).join(', ')}. Change the export date or deselect those visits.</p>}
     <div className="patient-actions"><button type="button" disabled={busy || !loaded || !selected.size || !datesConfirmed || !signatureReady || missingService || conflicts.length > 0 || unreviewed} onClick={create}>Create PDF</button><button disabled={busy} onClick={() => load(true)}>Reload saved inventory</button><button disabled={busy} onClick={onClose}>Cancel</button></div>
     {configure && <SignatureDialog onClose={() => setConfigure(false)} onSaved={saved => setSignature(saved)} />}
-    {editTimestamp && <PatientDialog title="Confirm saved visit details" onClose={() => leaveDrafts(() => { setEditTimestamp(null); load(true); })}><SavedNoteEditor timestamp={editTimestamp} desktopSave={desktopSave} onClose={() => { setEditTimestamp(null); load(true); }} /></PatientDialog>}
+    {editTimestamp && <VisitDetailsDialog timestamp={editTimestamp} onClose={() => { setEditTimestamp(null); load(true); }} />}
   </PatientDialog>;
 }

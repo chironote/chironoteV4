@@ -71,3 +71,7 @@ Desktop patient-note Save is the classic save icon immediately right of Edit in 
 
 Derived from [README.md](../../src/components/Clipboard/README.md).
 
+
+## Saved patient visits
+
+Selecting a visit in Patients opens the same clipboard textarea with its authoritative patient, date and loaded version. Desktop Save handles required diagnosis/context review inline above that textarea, never through a second clinical editor. Changed explicit Assessment code sets on initial/follow-up notes require approval of the full structured list before an atomic note/list save; ordinary re-exam edits retain server reconciliation. See [Patient notes](../architecture/patient-notes.md) for the contract.

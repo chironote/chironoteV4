@@ -94,6 +94,8 @@
 .patient-capture .patient-selection { margin: 0 0 12px; }
 .patient-capture .patient-help { margin: 8px 0; }
 .patient-capture .patient-actions:empty { display: none; }
+.patient-recording-search::placeholder { font-size: 14px; font-weight: 400; }
+.patient-picker-error { font-size: 14px; line-height: 1.5; color: var(--color-text); }
 .patient-capture-selected { position: relative; padding: 20px 64px 20px 20px; }
 .patient-selected-name { font-size: 18px; line-height: 28px; font-weight: 600; overflow-wrap: anywhere; }
 .patient-capture .patient-clear-selection { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; font-size: 32px; line-height: 1; font-weight: 400; }
@@ -101,6 +103,7 @@
 .signature-preview strong { display: block; font-size: 18px; }
 .signature-preview p { margin: 4px 0 0; }
 @media(max-width:600px) {
+  .patient-recording-search::placeholder { font-size: 10px; }
   .patients-page, .patient-note-editor { padding: 24px 16px; }
   .patient-card { padding: 16px; }
   .patient-profile-details { grid-template-columns: 1fr; gap: 12px; }
@@ -108,3 +111,19 @@
   .patient-capture-selected { padding: 20px 60px 20px 16px; }
   .patient-field-grid { grid-template-columns: 1fr; }
 }
+
+/* Saved visits share the clipboard; reveal diagnosis confirmation only on Save. */
+.clipboard-visit-identity { margin: 10px 20px 0; color: var(--color-text-muted); font-size: 14px; line-height: 1.5; }
+.clipboard-visit-identity .history-patient-name { color: var(--dark-green); font-size: 16px; }
+.clipboard-save-review { margin: 12px 20px; padding: 16px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-hover); color: var(--color-text); font-size: 14px; }
+.clipboard-save-review h3 { margin: 0 0 8px; font-size: 16px; }
+.clipboard-save-review p { margin: 8px 0; }
+.clipboard-save-review ul { padding: 0; list-style: none; }
+.clipboard-save-review li { display: flex; gap: 12px; align-items: center; justify-content: space-between; margin: 8px 0; }
+.clipboard-save-review button,.clipboard-save-review select,.clipboard-save-review input:not([type="checkbox"]) { min-height: 44px; padding: 8px 12px; border: 1px solid var(--color-border-strong); border-radius: 6px; font: inherit; background: white; color: var(--dark-green); }
+.clipboard-save-review button:first-child { background: var(--dark-green); color: white; }
+.clipboard-save-review button:disabled { opacity: .6; cursor: not-allowed; }
+.clipboard-save-review :focus-visible { outline: 3px solid var(--medium-green); outline-offset: 2px; }
+.patient-directory li .visit-details-link { width: auto; min-height: 44px; padding: 6px 2px; border: 0; text-decoration: underline; background: transparent; font-size: 14px; }
+.visit-details-fields { margin: 0; padding: 0; border: 0; min-width: 0; }
+@media(max-width:600px) { .clipboard-save-review { margin: 10px; } .clipboard-save-review li { align-items: flex-start; flex-direction: column; } }

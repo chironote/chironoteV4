@@ -2,17 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { localDate, patientRequest } from '../../services/patientNotes';
 import './Patients.css';
 
+const normalizedName = name => name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+
 export default function PatientCapturePicker({ value, onChange, showVisitDetails = false }) {
   const [search, setSearch] = useState(''); const [patients, setPatients] = useState([]);
   const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [cursor, setCursor] = useState(null);
   const requestRef = useRef(0);
-  const query = search.trim();
+  const checkingRef = useRef(false);
+  const [checking, setChecking] = useState(false);
+  const query = search.trim().replace(/\s+/g, ' ');
   const current = value || { dateOfService: localDate(), visitType: null, contextMode: 'patient' };
   useEffect(() => {
     let active = true; const request = ++requestRef.current;
     setPatients([]); setCursor(null); setError(''); setLoading(false);
     if (!query) return undefined;
     const timer = setTimeout(async () => {
+      if (!active || request !== requestRef.current) return;
       setLoading(true); setError('');
       try { const page = await patientRequest('listPatients', { search: query, limit: 25 });
         if (active && request === requestRef.current) { setPatients(page.items); setCursor(page.nextCursor); }
@@ -34,23 +39,46 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     } catch (failure) { if (request === requestRef.current) setError(failure.message); }
     finally { if (request === requestRef.current) setLoading(false); }
   };
+  const addNew = async () => {
+    if (checkingRef.current || !query) return;
+    checkingRef.current = true; setChecking(true); setError('');
+    const request = ++requestRef.current; setLoading(false);
+    try {
+      let nextCursor;
+      do {
+        const page = await patientRequest('listPatients', { search: query, limit: 25, ...(nextCursor ? { cursor: nextCursor } : {}) });
+        if (request !== requestRef.current) return;
+        const existing = page.items.find(patient => normalizedName(patient.name) === normalizedName(query));
+        if (existing) {
+          setPatients(old => old.some(patient => patient.patientId === existing.patientId) ? old : [existing, ...old]);
+          setError('A patient with this name already exists. Select their name from the results below.');
+          return;
+        }
+        nextCursor = page.nextCursor;
+      } while (nextCursor);
+      change({ patientId: crypto.randomUUID(), patientName: query, displayName: query, dateOfInjury: null, visitType: showVisitDetails ? null : 'initialExam', contextMode: 'patient' });
+      setSearch('');
+    } catch {
+      if (request === requestRef.current) setError('We could not check whether this patient already exists. Please try Add New again, or select an existing patient.');
+    } finally { checkingRef.current = false; setChecking(false); }
+  };
   if (current.patientId && !showVisitDetails) return <div className="patient-capture patient-capture-selected">
     <div className="patient-selected-name">{selected}</div>
     <button type="button" className="patient-clear-selection" aria-label="Clear patient selection" title="Choose another patient" onClick={clearPatient}>×</button>
   </div>;
-  return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient'}</legend>
-    <p className="patient-selection">{selected}</p>
-    <label>Find a patient<input value={search} placeholder="Type a patient name" onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
-    {!query && <p className="patient-help">Search by name, or leave this visit unassigned.</p>}
+  return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient Name'}</legend>
+    {showVisitDetails && <p className="patient-selection">{selected}</p>}
+    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned'} onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
+    {showVisitDetails && !query && <p className="patient-help">Search by name, or leave this visit unassigned.</p>}
     {loading && <p role="status">Loading patients…</p>}
-    {error && <p role="alert">{error} You can record an unassigned visit and assign it later.</p>}
+    {error && <p className="patient-picker-error" role="alert">{error}</p>}
     {query && <div className="patient-picker-list" aria-label="Matching patients">
       {patients.map(patient => <button type="button" key={patient.patientId} aria-pressed={current.patientId === patient.patientId}
         onClick={() => { change({ patientId: patient.patientId, patientName: undefined, displayName: patient.name, dateOfInjury: patient.dateOfInjury, visitType: showVisitDetails ? null : 'followUp', contextMode: 'patient' }); setSearch(''); }}>{patient.name}<small>{patient.visitCount} visits</small></button>)}
     </div>}
     {query && cursor && <button type="button" disabled={loading} onClick={more}>More patients</button>}
     <div className="patient-actions">
-      {query && <button type="button" onClick={() => { change({ patientId: crypto.randomUUID(), patientName: query, displayName: query, dateOfInjury: null, visitType: showVisitDetails ? null : 'initialExam', contextMode: 'patient' }); setSearch(''); }}>Use new patient “{query}”</button>}
+      {query && <button type="button" disabled={checking} onClick={addNew}>{checking ? 'Checking patient…' : `Add New “${query}”`}</button>}
       {current.patientId && <button type="button" onClick={clearPatient}>Unassigned visit</button>}
     </div>
     {showVisitDetails && <div className="patient-field-grid">

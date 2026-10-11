@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { Helmet } from 'react-helmet-async';
 import Billing from '../Billing/Billing';
@@ -8,7 +8,7 @@ import Navbar from '../Navbar/Navbar';
 import PriceTable from '../Billing/PriceTable';
 import Settings from '../Settings/Settings';
 import PatientsPage from '../Patients/PatientsPage';
-import SavedNoteEditor from '../Patients/SavedNoteEditor';
+import ClipboardSaveReview from '../Patients/ClipboardSaveReview';
 import useDraftGuard from '../Patients/useDraftGuard';
 import { leaveDrafts } from '../Patients/draftNavigation';
 import useDesktopSave from '../Patients/useDesktopSave';
@@ -30,6 +30,7 @@ import { stripMarkdown } from '../../utils/markdownStripper';
 
 function ClinicalWorkspace({ signOut, user }) {
   const desktopSave = useDesktopSave();
+  const navigate = useNavigate();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -44,7 +45,6 @@ function ClinicalWorkspace({ signOut, user }) {
   const [clipboardContent, setClipboardContent] = useState('');
   const [clipboardTarget, setClipboardTarget] = useState(null);
   const [generationError, setGenerationError] = useState('');
-  const [saveDraft, setSaveDraft] = useState(null);
   const [noteStreamActive, setNoteStreamActive] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
@@ -76,15 +76,22 @@ function ClinicalWorkspace({ signOut, user }) {
   const clipboardDirty = Boolean(clipboardTarget && clipboardContent !== clipboardTarget.note);
   const clipboardSave = useClipboardSave({
     note: clipboardTarget, draft: clipboardContent,
-    onSaved: note => { setClipboardTarget(note); setGenerationError(''); notesHistory.refreshNotes(); },
-    onReview: setSaveDraft,
+    onSaved: note => { setClipboardTarget(note); setClipboardContent(note.note); setGenerationError(''); notesHistory.refreshNotes(); clipboardGuard.saved(); },
+    onCancelReview: () => clipboardGuard.cancel(),
     onError: setGenerationError,
   });
   const clipboardGuard = useDraftGuard({
-    dirty: patientNotesEnabled && desktopSave && !saveDraft && clipboardDirty,
+    dirty: patientNotesEnabled && desktopSave && clipboardDirty,
     busy: clipboardSave.busy,
     save: () => clipboardSave.save(),
     discard: () => setClipboardContent(clipboardTarget?.note || ''),
+  });
+
+  const openPatientNote = note => leaveDrafts(() => {
+    setClipboardTarget(note); setClipboardContent(note.note || ''); setGenerationError('');
+    setShowContentPopup(false); setShowEditPanel(false); setStreamingText('');
+    navigate('/app');
+    requestAnimationFrame(() => clipboardTextareaRef.current?.focus());
   });
 
   const handleTextStreamUpdate = useCallback(async (newText) => {
@@ -483,6 +490,8 @@ function ClinicalWorkspace({ signOut, user }) {
               clipboardContent,
               setClipboardContent,
               noteStreamActive,
+              target: patientNotesEnabled ? clipboardTarget : null,
+              review: clipboardSave.review && <ClipboardSaveReview review={clipboardSave.review} busy={clipboardSave.busy} onConfirm={clipboardSave.confirm} onCancel={clipboardSave.cancelReview} />,
               streamingText,
               setShowCopyMessage,
               showCopyMessage,
@@ -491,9 +500,9 @@ function ClinicalWorkspace({ signOut, user }) {
               save: {
                 visible: patientNotesEnabled && desktopSave && Boolean(clipboardTarget),
                 dirty: clipboardDirty, busy: clipboardSave.busy,
-                disabled: !clipboardDirty || !clipboardContent.trim() || noteStreamActive || isTranscribing || isDictationLoading || Boolean(saveDraft),
+                disabled: (!clipboardDirty && !clipboardTarget?.diagnosisReviewRequired && !clipboardTarget?.needsContextReview) || !clipboardContent.trim() || noteStreamActive || isTranscribing || isDictationLoading || Boolean(clipboardSave.review),
                 onSave: clipboardSave.save,
-                message: clipboardDirty ? 'Unsaved note changes' : 'Note saved',
+                message: clipboardDirty ? 'Unsaved note changes' : clipboardTarget?.diagnosisReviewRequired || clipboardTarget?.needsContextReview ? 'Note needs review' : 'Note saved',
               }
             }}
             editPanel={{
@@ -538,18 +547,11 @@ function ClinicalWorkspace({ signOut, user }) {
         } />
         <Route path="/billing" element={<Billing />} />
         <Route path="/settings" element={<Settings />} />
-        {patientNotesEnabled && <Route path="/patients" element={<PatientsPage desktopSave={desktopSave} allowExport />} />}
+        {patientNotesEnabled && <Route path="/patients" element={<PatientsPage desktopSave={desktopSave} allowExport onOpenNote={openPatientNote} />} />}
         <Route path="/account" element={<Navigate to="/app/billing" replace />} />
         <Route path="/feedback" element={<LegacyFeedbackRoute onOpen={openFeedback} />} />
         <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>
-      {saveDraft && <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Save clipboard draft">
-        <SavedNoteEditor timestamp={saveDraft.note.timestamp} desktopSave initialNote={saveDraft.note} initialDraft={saveDraft.text}
-          onClose={() => { clipboardGuard.cancel(); setSaveDraft(null); }} onSaved={note => {
-            setClipboardTarget(note); setClipboardContent(note.note); notesHistory.refreshNotes();
-            setSaveDraft(null); clipboardGuard.saved();
-          }} />
-      </div></div>}
       <Feedback
         isOpen={isFeedbackOpen}
         onClose={() => setIsFeedbackOpen(false)}

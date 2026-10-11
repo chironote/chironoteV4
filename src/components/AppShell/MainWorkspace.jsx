@@ -1,4 +1,5 @@
 import React from 'react';
+import PatientName from '../Patients/PatientName';
 import Recording from '../Recording/Recording';
 import DictationPopup from '../Recording/DictationPopup';
 import ClipboardButtons from '../Clipboard/ClipboardButtons';
@@ -65,6 +66,8 @@ function MainWorkspace({
           dictationReady={dictation.main.isInitialized}
           save={clipboard.save}
         />
+        {clipboard.target && <div className="clipboard-visit-identity"><PatientName patientId={clipboard.target.patientId} /><span>{clipboard.target.dateOfService || 'Undated visit'} · {clipboard.target.visitLabel || clipboard.target.noteLabel || 'Saved note'}</span></div>}
+        {clipboard.review}
         <Clipboard
           clipboardTextareaRef={clipboard.clipboardTextareaRef}
           clipboardContent={clipboard.clipboardContent}
