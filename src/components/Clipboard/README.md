@@ -51,3 +51,5 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 ## Patient UI correction
 
 Desktop patient-note Save is an icon-only action immediately after Smart Editor in the existing toolbar. Its accessible title/label, dirty highlight, disabled state and live saving feedback come from AppShell. No separate bottom Save container is rendered; versioned save and review gates remain in the patient service workflow.
+
+History drags include a saved-note timestamp in a custom drag format alongside plain text. With patient features enabled, `Clipboard` delegates saved-key drops to AppShell, which reloads the authoritative note and runs the same guarded opening as Patients selection. External text retains direct replacement behavior and remains an edit of an already loaded saved note. Drops cannot change text during saving, generation or active dictation.

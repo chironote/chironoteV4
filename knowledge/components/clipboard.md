@@ -75,3 +75,5 @@ Derived from [README.md](../../src/components/Clipboard/README.md).
 ## Saved patient visits
 
 Selecting a visit in Patients opens the same clipboard textarea with its patient, date and loaded version. Changed explicit Assessment codes on any visit type show the code/description list and Confirm and save, without new/continuing/resolved controls. Atomic note/list saving makes the visit eligible to supply future diagnoses without a Re-Exam; ordinary edits retain server reconciliation. See [Patient notes](../architecture/patient-notes.md) for source chronology and reassignment copying.
+
+Dragging a saved History note into the clipboard reloads the current saved record by its timestamp and uses the same guarded opening as Patients selection. The history display body is not used as the draft. Failed loads retain existing content; saving, generation and dictation block drops. External plain-text drops remain replacements and edits of an existing loaded target. Source: [Clipboard drop handling](../../src/components/Clipboard/Clipboard.jsx) and [shell orchestration](../../src/components/AppShell/AuthenticatedApp.jsx).

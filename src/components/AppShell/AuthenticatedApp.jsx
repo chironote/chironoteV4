@@ -27,6 +27,7 @@ import { trackRecordingCompleted } from '../../utils/analytics';
 import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
+import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 function ClinicalWorkspace({ signOut, user }) {
   const desktopSave = useDesktopSave();
@@ -64,6 +65,8 @@ function ClinicalWorkspace({ signOut, user }) {
   const copyMessageTimeoutRef = useRef(null);
   const mobileOverlayRef = useRef(null);
   const feedbackTriggerRef = useRef(null);
+  const savedNoteDropRequestRef = useRef(0);
+  useEffect(() => () => { savedNoteDropRequestRef.current += 1; }, []);
 
   const openFeedback = useCallback((event) => {
     feedbackTriggerRef.current = event?.currentTarget || document.activeElement;
@@ -105,12 +108,33 @@ function ClinicalWorkspace({ signOut, user }) {
     discard: () => setClipboardContent(clipboardTarget?.note || ''),
   });
 
-  const openPatientNote = note => leaveDrafts(() => {
+  const openPatientNote = (note, isCurrent = () => true) => leaveDrafts(() => {
+    if (!isCurrent()) return;
+    savedNoteDropRequestRef.current += 1;
     setClipboardTarget(note); setClipboardContent(note.note || ''); setGenerationError('');
     setShowContentPopup(false); setShowEditPanel(false); setStreamingText('');
     navigate('/app');
     requestAnimationFrame(() => clipboardTextareaRef.current?.focus());
   });
+
+  const handleSavedNoteDrop = async timestamp => {
+    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    const request = ++savedNoteDropRequestRef.current;
+    const isCurrent = () => request === savedNoteDropRequestRef.current;
+    try {
+      const { note } = await patientRequest('getSavedNote', { timestamp });
+      if (!isCurrent()) return;
+      if (!note || String(note.timestamp) !== timestamp || typeof note.note !== 'string') throw new Error('Unavailable saved note');
+      return await openPatientNote(note, isCurrent);
+    } catch {
+      if (isCurrent()) setGenerationError('The saved note could not be opened for editing. Please retry.');
+    }
+  };
+
+  const handleClipboardTextDrop = text => {
+    savedNoteDropRequestRef.current += 1;
+    setClipboardContent(text);
+  };
 
   const handleTextStreamUpdate = useCallback(async (newText) => {
     const cleanedText = stripMarkdown(newText);
@@ -476,6 +500,13 @@ function ClinicalWorkspace({ signOut, user }) {
   const handleMobileOverlayDrop = (event) => {
     event.preventDefault();
     setIsMobileOverlayDragOver(false);
+    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    const timestamp = event.dataTransfer.getData(SAVED_NOTE_DRAG_TYPE);
+    if (patientNotesEnabled && timestamp) {
+      handleSavedNoteDrop(timestamp).then(opened => { if (opened) setIsCollapsed(true); });
+      return;
+    }
+    savedNoteDropRequestRef.current += 1;
     const droppedText = event.dataTransfer.getData('text/plain');
     if (droppedText) {
       leaveDrafts(() => { setClipboardTarget(null); setClipboardContent(droppedText); setIsCollapsed(true); });
@@ -522,6 +553,8 @@ function ClinicalWorkspace({ signOut, user }) {
               setClipboardContent,
               noteStreamActive,
               target: patientNotesEnabled ? clipboardTarget : null,
+              onSavedNoteDrop: patientNotesEnabled ? handleSavedNoteDrop : undefined,
+              onTextDrop: handleClipboardTextDrop,
               review: clipboardSave.review && <ClipboardSaveReview review={clipboardSave.review} busy={clipboardSave.busy} onConfirm={clipboardSave.confirm} onCancel={clipboardSave.cancelReview} />,
               streamingText,
               setShowCopyMessage,

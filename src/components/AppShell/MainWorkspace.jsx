@@ -73,6 +73,8 @@ function MainWorkspace({
           clipboardContent={clipboard.clipboardContent}
           setClipboardContent={clipboard.setClipboardContent}
           streamContent={clipboard.streamingText}
+          onSavedNoteDrop={clipboard.onSavedNoteDrop}
+          onTextDrop={clipboard.onTextDrop}
           setShowCopyMessage={clipboard.setShowCopyMessage}
           isDisabled={dictation.isDictationLoading || clipboard.noteStreamActive || clipboard.save?.busy}
           isTranscribing={dictation.isTranscribing}
