@@ -2,6 +2,10 @@
 
 ## 2026-10-11
 
+- **Export date acknowledgment copy**: Updated [Patient notes](./architecture/patient-notes.md) and the Patients README for the export checkbox acknowledgment of date verification responsibility and intentional blank dates. Accessible label, checked state and export requirements are unchanged; no backend or legal-terms change.
+
+- **Stable authenticated navigation order**: Corrected [Authenticated Navigation](./components/navbar.md) and the Navbar README for Home first when shown on subroutes, followed by gated Patients, Billing and Settings on desktop/mobile; Home remains omitted on the dashboard. Feedback and Logout retain their existing controls and position; updated index routing and source/test provenance. No website publication.
+
 - **Simplified PDF selection**: Documented default-all selection, inclusive custom service-date ranges with on-demand calendar helpers, individual exclusions, compact note rows and PDF details, automatic refresh/retry, and preserved date/signature/review checks in [Patient notes](./architecture/patient-notes.md). Updated feature README and index. No backend contract or website deployment change.
 
 - **Clipboard toolbar divider**: Documented the existing thin divider between Smart Editor and Save, conditional on Save visibility, in [Clipboard](./components/clipboard.md), its feature README and index. Visual markup correction only; no website deployment.

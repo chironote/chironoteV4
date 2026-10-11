@@ -31,7 +31,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, restored note/transcript popup with clickable patient reassignment, clickable SOAP/Treatment copy controls, and the visually paired Smart Editor workspace. |
 | [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the restored, default-available asynchronous AppSync Custom Instructions experience. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
-| [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
+| [Authenticated Navigation](./components/navbar.md) | Home-first route order when shown, dashboard Home omission, Patients gating, accessible state, and the 64px desktop/mobile product-header contract. |
 | [User Feedback](./components/feedback.md) | Accessible authenticated feedback modal behavior and fixed submission contract. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |
 | [Public Landing Pages](./components/landing-page.md) | Canonical, demo, and tutorial marketing structures; the ambient-scribe overview video; testimonial provenance; the timed record/review/EHR workflow lesson and media; app-store destinations; proposed Zoom copy; mobile presentation; confirmed-booking measurement; HIPAA/BAA trust content; and analytics. |

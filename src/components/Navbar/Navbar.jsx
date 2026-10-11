@@ -15,8 +15,8 @@ export default function Navbar({ username, onSignOut, onFeedback }) {
   const isOnDashboard = location.pathname === '/app';
 
   const links = [
-    ...(patientNotesEnabled ? [{ name: 'Patients', path: '/app/patients', icon: 'folder_shared' }] : []),
     ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
+    ...(patientNotesEnabled ? [{ name: 'Patients', path: '/app/patients', icon: 'folder_shared' }] : []),
     { name: 'Billing', path: '/app/billing', icon: 'credit_card' },
     { name: 'Settings', path: '/app/settings', icon: 'settings' }
   ];
