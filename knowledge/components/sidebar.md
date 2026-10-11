@@ -70,6 +70,10 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 
 Follow [Recent Notes and dense navigation](../development/STYLE.md#recent-notes-and-dense-navigation) for the panel's exact sizing, spacing, grouping, row, metadata, responsive-drawer, and interaction rules. Shared editor and popup work also follows [Panels, editors, and long-form text](../development/STYLE.md#panels-editors-and-long-form-text) and [Dialogs, drawers, menus, and overlays](../development/STYLE.md#dialogs-drawers-menus-and-overlays).
 
+## Frontend correction — 2026-10-11
+
+History always uses its original ContentPopup, including View Transcript / View Note for both legacy and patient-linked notes. Only the read-only current patient name is added above the existing label. Profile, visit and diagnosis editing stay in the Patients route. Rename uses the existing noteLabel mutation and clears local visitLabel in the same way as its resolver.
+
 ## Provenance
 
 Derived from [README.md](../../src/components/Sidebar/README.md).

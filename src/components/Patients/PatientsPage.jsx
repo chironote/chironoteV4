@@ -24,15 +24,15 @@ export default function PatientsPage({ desktopSave = false, allowExport = false 
   const saveProfile = async event => { event.preventDefault(); setBusy(true); try { const result = await patientRequest('updatePatient', { patientId: patient.patientId, name: profileDraft.name, sex: profileDraft.sex, dateOfBirth: profileDraft.dateOfBirth || null, dateOfInjury: profileDraft.dateOfInjury || null }); setPatient(result.patient); setEditingProfile(false); setMessage('Patient profile saved. Existing clinical notes are unchanged.'); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
   const add = async () => { if (!search.trim()) return; setBusy(true); try { const result = await patientRequest('createPatient', { patientId: crypto.randomUUID(), name: search.trim() }); await open(result.patient); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
   if (selected) return <SavedNoteEditor timestamp={selected} desktopSave={desktopSave} onClose={() => { setSelected(null); if (patient) open(patient); }} onSaved={saved => setVisits(old => old.map(note => note.timestamp === saved.timestamp ? saved : note))} />;
-  return <main className="patients-page" aria-busy={busy}><div className="patient-toolbar"><h1>{patient ? patient.name : 'Patients'}</h1>{patient && <button onClick={() => { setPatient(null); setEditingProfile(false); setExportOpen(false); }}>All patients</button>}</div>
+  return <main className="patients-page" aria-busy={busy}><div className="patient-toolbar patient-page-heading"><h1>{patient ? patient.name : 'Patients'}</h1>{patient && <button onClick={() => { setPatient(null); setEditingProfile(false); setExportOpen(false); }}>All patients</button>}</div>
     {message && <p role="alert">{message}</p>}{busy && <p role="status">Working…</p>}
     {!patient ? <><label>Search patients<input type="search" value={search} onChange={e => setSearch(e.target.value)} /></label>
       {search.trim() && <button disabled={busy} onClick={add}>Create “{search.trim()}”</button>}
       <ul className="patient-directory">{items.map(item => <li key={item.patientId}><button disabled={busy} onClick={() => open(item)}><strong>{item.name}</strong><small>{item.visitCount} saved visits · {item.lastVisitDate || 'No dated visit'}</small></button></li>)}</ul>
       {!busy && !items.length && <p>No patients match this search.</p>}{cursor && <button disabled={busy} onClick={more}>More patients</button>}
     </> : <>
-      <div className="patient-actions"><button disabled={busy} onClick={() => { setProfileDraft({ ...patient }); setEditingProfile(true); }}>Edit patient profile</button>{allowExport && <button disabled={busy} onClick={() => setExportOpen(true)}>Export patient</button>}</div>
-      <p className="patient-help">Date of birth: {patient.dateOfBirth || 'Not set'} · Sex: {patient.sex || 'Not set'} · Date of injury: {patient.dateOfInjury || 'Not set'}</p>
+      <section className="patient-card" aria-labelledby="patient-details-title"><div className="patient-toolbar"><h2 id="patient-details-title">Patient details</h2><div className="patient-actions"><button disabled={busy} onClick={() => { setProfileDraft({ ...patient }); setEditingProfile(true); }}>Edit patient profile</button>{allowExport && <button disabled={busy} onClick={() => setExportOpen(true)}>Export patient</button>}</div></div>
+      <dl className="patient-profile-details"><div><dt>Date of birth</dt><dd>{patient.dateOfBirth || 'Not set'}</dd></div><div><dt>Sex</dt><dd>{patient.sex || 'Not set'}</dd></div><div><dt>Date of injury</dt><dd>{patient.dateOfInjury || 'Not set'}</dd></div></dl></section>
       {editingProfile && <PatientDialog title="Edit patient profile" busy={busy} onClose={() => setEditingProfile(false)}><form onSubmit={saveProfile}>
         {message && <p role="alert">{message}</p>}
         <div className="patient-field-grid"><label>Patient name<input required value={profileDraft.name} onChange={e => setProfileDraft({ ...profileDraft, name: e.target.value })} /></label>
@@ -42,7 +42,7 @@ export default function PatientsPage({ desktopSave = false, allowExport = false 
         <p>These details apply to the patient profile. Existing clinical notes remain as saved.</p>
         <div className="patient-actions"><button disabled={busy} type="submit">Save profile</button><button type="button" disabled={busy} onClick={() => setEditingProfile(false)}>Cancel</button></div>
       </form></PatientDialog>}
-      <aside className="patient-confirmation"><h2>Established diagnoses</h2>
+      <aside className={`patient-card patient-diagnosis-summary${diagnosis?.reviewRequired ? ' patient-confirmation' : ''}`}><h2>Established diagnoses</h2>
         {diagnosis?.reviewRequired ? <p>An earlier diagnosis change needs review before this list can be used.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.length ? <ul>{diagnosis.state.icdCodes.map(item => <li key={item.code}>{item.code} — {item.description} <small>{diagnosisStatusLabel(item.status)}</small></li>)}</ul> : <p>No active diagnoses (established empty list).</p>}<p>Established on {diagnosis.sourceDateOfService}.</p></> : <p>No established diagnosis list yet.</p>}
         {diagnosis?.sourceTimestamp && <button type="button" onClick={() => setSelected(diagnosis.sourceTimestamp)}>Open source note</button>}
       </aside>

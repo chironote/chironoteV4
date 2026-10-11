@@ -13,3 +13,7 @@ Custom Instructions is available by default, including builds with no `REACT_APP
 ## Patient notes integration
 
 When patient notes are enabled, Settings adds Configure Signature. `Patients/SignatureSettings.jsx` edits exactly the clinician name and NPI with Save/Cancel and uses `src/services/patientNotes.js`; only the authenticated patient API may persist these account fields. This is the printed name/NPI beneath each exported visit, not an electronic signature.
+
+## Patient UI correction
+
+SignatureSettings matches the existing settings-card surface, previews the configured name and only the NPI last four digits, and provides an explicit unset/loading/error state. Configure Signature still opens the name/NPI form; successful saves refresh the masked preview. Full NPI is confined to the configuration form, not the card preview.

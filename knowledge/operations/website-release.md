@@ -109,6 +109,10 @@ The same earlier review required a FIFO queue-to-worker check, a reserved-concur
 
 The verified pre-publication website copy is `work/release/backups/website-live/website-before.zip`, SHA-256 `712678340f427161d523aaaa86b6a8f694daa4d6b2eb05c957651b3fe43f70dc`; its adjacent `manifest.json` contains per-object hashes, `ContentType` and `Metadata` fields (no `CacheControl` values were captured). The archive has 80 selected current assets and public objects (27,706,511 bytes uncompressed). ETags were checked during capture, the inventory was unchanged across the backup, ZIP integrity passed, and bucket versioning is disabled. Restore only the captured keys with their recorded metadata, retain other bucket objects, then invalidate CloudFront. The copy is a task-local Windows artifact, not a Git file; the owner must confirm it is available and its hash matches before using it.
 
+## Frontend correction — 2026-10-11
+
+The October 11 frontend correction restores the original History popup/transcript controls, bounds recording layout, makes patient lookup type-to-search, keeps visit fields on Patients, moves Save to the existing toolbar and aligns patient/signature styling with the product. It preserves the October 10 reconciliation and patient backend contracts. Local generated GraphQL/editor settings predate the correction and remain uncommitted/preserved. This source correction does not publish the website or modify AWS, schema, prompts or patient data. The owner guide records the new merged commit separately.
+
 ## Provenance
 
 Synthesized from Git branch and commit history; [package.json](../../package.json); the dated July 2026 website fingerprint and dependency review; current patient-notes and recording implementations; October 10 read-only hosting/runtime verification; the feature-enabled build and authenticated synthetic acceptance evidence kept in the release task; and the website recovery manifest. Website publication remains a separate owner action; this documentation records evidence but does not publish.

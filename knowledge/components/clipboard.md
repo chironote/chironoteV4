@@ -63,6 +63,10 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 
 Follow [Panels, editors, and long-form text](../development/STYLE.md#panels-editors-and-long-form-text), [Buttons and controls](../development/STYLE.md#buttons-and-controls), and [Forms](../development/STYLE.md#forms) when changing the clipboard, its toolbar, or Smart Editor handoff states.
 
+## Frontend correction — 2026-10-11
+
+Desktop patient-note Save is the classic save icon immediately right of Edit in the existing toolbar. AppShell supplies dirty, disabled, saving and accessible status. The direct versioned save does not send diagnosisCodes implicitly; conflicts retain the draft, and server-required diagnosis/context review uses the existing guarded editor. There is no standalone bottom Save container.
+
 ## Provenance
 
 Derived from [README.md](../../src/components/Clipboard/README.md).

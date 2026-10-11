@@ -47,3 +47,7 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
 - The Clipboard uses the shared dashboard panel contract: `12px` shell radius, soft-green `52px` toolbar, `40px` desktop actions, and a `10px` inset clinical-text surface with a green focus ring.
 - Preserve explicit accessible names on icon actions and `aria-pressed` on the Smart Editor toggle.
+
+## Patient UI correction
+
+Desktop patient-note Save is an icon-only action immediately after Smart Editor in the existing toolbar. Its accessible title/label, dirty highlight, disabled state and live saving feedback come from AppShell. No separate bottom Save container is rendered; versioned save and review gates remain in the patient service workflow.

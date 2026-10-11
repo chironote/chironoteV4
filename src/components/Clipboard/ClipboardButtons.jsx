@@ -15,7 +15,8 @@ const ClipboardButtons = ({
   startDictation,
   dictationButtonStatus,
   dictationReady,
-  isWebSocketConnecting
+  isWebSocketConnecting,
+  save
 }) => {
   const handleDictationClick = () => {
     // Track the dictation button click
@@ -96,6 +97,19 @@ const ClipboardButtons = ({
         >
           <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
         </button>
+        {save?.visible && <button
+          type="button"
+          id="save-note-btn"
+          className={`toolbar-button ${save.dirty ? 'has-unsaved-changes' : ''}`}
+          onClick={save.onSave}
+          disabled={save.disabled || save.busy}
+          aria-label={save.busy ? 'Saving note' : save.dirty ? 'Save note changes' : 'Note saved'}
+          title={save.busy ? 'Saving note…' : save.dirty ? 'Save note changes' : 'Note saved'}
+          aria-busy={save.busy}
+        >
+          <span className="material-symbols-rounded toolbar-icon" aria-hidden="true">save</span>
+        </button>}
+        {save?.visible && <span className="clipboard-save-status" role="status" aria-live="polite">{save.busy ? 'Saving note…' : save.message}</span>}
         
       </div>
       {/* Added media query to hide elements on mobile */}
@@ -104,6 +118,9 @@ const ClipboardButtons = ({
         .toolbar-button {
           -webkit-tap-highlight-color: transparent;
         }
+        .toolbar-button.has-unsaved-changes { background-color: var(--pale-green); }
+        .toolbar-button:disabled { opacity: .5; cursor: not-allowed; }
+        .clipboard-save-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         .toolbar-icon, .material-symbols-rounded.toolbar-icon {
           color: var(--dark-green) !important;
         }

@@ -1,0 +1,30 @@
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import PatientsPage from './PatientsPage';
+import { patientRequest } from '../../services/patientNotes';
+jest.mock('../../services/patientNotes', () => ({ patientRequest: jest.fn(), localDate: () => '2026-10-11' }));
+global.IS_REACT_ACT_ENVIRONMENT = true;
+test('patient profile editing lives in Patients and normal diagnoses use a neutral card', async () => {
+  jest.useFakeTimers();
+  const patient = { patientId: 'p', name: 'Jordan Example', dateOfBirth: '1980-01-01', sex: 'unknown', dateOfInjury: '2026-09-01', visitCount: 1 };
+  patientRequest.mockImplementation(async (operation, input) => {
+    if (operation === 'listPatients') return { items: [patient] };
+    if (operation === 'getPatientVisits') return { patient, notes: [] };
+    if (operation === 'getPatient') return { patient, diagnosis: { state: { icdCodes: [{ code: 'M54.2', description: 'Synthetic fixture', status: 'new' }] }, sourceDateOfService: '2026-09-01' } };
+    if (operation === 'updatePatient') return { patient: { ...patient, ...input } };
+    throw new Error('Unexpected operation');
+  });
+  const container = document.createElement('div'); document.body.append(container); const root = createRoot(container);
+  await act(async () => root.render(<PatientsPage desktopSave allowExport />));
+  await act(async () => jest.advanceTimersByTime(250));
+  await act(async () => container.querySelector('.patient-directory button').click());
+  expect(container.querySelector('.patient-profile-details').textContent).toContain('1980-01-01');
+  expect(container.querySelector('.patient-diagnosis-summary').classList.contains('patient-confirmation')).toBe(false);
+  await act(async () => [...container.querySelectorAll('button')].find(b => b.textContent === 'Edit patient profile').click());
+  expect(container.querySelector('[role=dialog]')).not.toBeNull();
+  expect(container.querySelectorAll('input[type=date]')).toHaveLength(2);
+  await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(patientRequest).toHaveBeenCalledWith('updatePatient', { patientId: 'p', name: 'Jordan Example', sex: 'unknown', dateOfBirth: '1980-01-01', dateOfInjury: '2026-09-01' });
+  expect(container.querySelector('[role=dialog]')).toBeNull();
+  act(() => root.unmount()); container.remove(); jest.useRealTimers();
+});
