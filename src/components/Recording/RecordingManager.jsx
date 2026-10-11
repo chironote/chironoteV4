@@ -9,7 +9,7 @@ import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 
 
-function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
+function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerationStateChange, onGenerationError, onSavedNoteReady }) {
   const [isStarting, setIsStarting] = useState(false);
   const startingRef = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -49,7 +49,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const { subscribeToNoteCompletion, resetNoteGenerationState, cleanupNoteGeneration } = useNoteGeneration({
     timeStampRef, isDiscardingRef, noSleepRef, setTextStream, setIsPreparingTranscript,
     setIsGeneratingSummary, setIsTranscriptCompleted, onTextStreamUpdate, onTransitionToMainApp,
-    onGenerationError: setGenerationError,
+    onGenerationStateChange, onSavedNoteReady,
+    onGenerationError: error => { setGenerationError(error); onGenerationError?.(error); },
   });
 
   const clearRecordingInterval = () => {

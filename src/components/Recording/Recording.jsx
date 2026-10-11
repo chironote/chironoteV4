@@ -11,7 +11,7 @@ import { trackRecordingStart } from '../../utils/analytics';
 
 const client = generateClient();
 
-function Recording({ isStarting = false,
+function Recording({
   toggleRecordingPopup,
   recordingType,
   isRecording,
@@ -57,7 +57,7 @@ function Recording({ isStarting = false,
     try {
       await fetchAuthSession({ forceRefresh: true });
     } catch (err) {
-      console.error('Error refreshing auth session', err);
+      console.log(err);
     }
   };
 
@@ -66,20 +66,28 @@ function Recording({ isStarting = false,
       // Track the start recording action
       trackRecordingStart();
 
-      // Check user subscription
-      startRecording(patientCaptureEnabled ? visitMetadata : undefined);
+      // CRITICAL: Start recording FIRST (synchronously in user gesture)
+      // Safari blocks getUserMedia() if called after async operations
+      if (patientCaptureEnabled) {
+        // RecordingManager snapshots these settings synchronously at capture start.
+        const examLayout = Boolean(visitMetadata.patientName) || visitMetadata.visitType === 'reExam';
+        localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
+      }
+      startRecording(patientCaptureEnabled ? { ...visitMetadata, contextMode: 'patient' } : undefined);
+
+      // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
 
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
+        // Cancel without uploading the recording we just started.
         discardRecording();
         setShowCreditPopup(true);
         return;
       }
-
-
     } catch (error) {
       console.error("Error in handleStartRecording:", error);
+      // Cancel without uploading when subscription validation fails.
       discardRecording();
     }
   };
@@ -117,14 +125,16 @@ function Recording({ isStarting = false,
 
   const handleOuterClick = () => {
     // Remove previous cancellation logic - only close if not in any active state
-    if (!isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary) {
+    if (!isRecording && !isPreparingTranscript && !isGeneratingSummary) {
       toggleRecordingPopup();
     }
   };
 
   const handleConfirmDiscard = () => {
     setShowConfirmation(false);
-    discardRecording();
+    if (isRecording) {
+      discardRecording();
+    }
     toggleRecordingPopup();
   };
 
@@ -152,7 +162,7 @@ function Recording({ isStarting = false,
 
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
-      <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+      <div className="recording-dialog" role="dialog" aria-modal="true" aria-label="Recording" onClick={(e) => e.stopPropagation()}>
         {showConfirmation && (
           <ConfirmationPopup
             onConfirm={handleConfirmDiscard}
@@ -161,7 +171,7 @@ function Recording({ isStarting = false,
         )}
         {showCreditPopup ? (
           <CreditPopup onClose={handleCloseCreditPopup} />
-        ) : !isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
+        ) : !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
             <h2>Recording Settings</h2>
             <div className="settings-container">
@@ -179,6 +189,11 @@ function Recording({ isStarting = false,
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
+                  </div>}
+                  {patientCaptureEnabled && visitMetadata.patientId && !visitMetadata.patientName && <div className="checkbox-group">
+                    <input type="checkbox" id="re-exam-popup" checked={visitMetadata.visitType === 'reExam'}
+                      onChange={event => setVisitMetadata(current => ({ ...current, visitType: event.target.checked ? 'reExam' : 'followUp' }))} />
+                    <label htmlFor="re-exam-popup">Re-Exam</label>
                   </div>}
                   <div className="checkbox-group">
                     <input
@@ -212,7 +227,7 @@ function Recording({ isStarting = false,
               </button>
             </div>
           </>
-        ) : isStarting ? <div role="status"><p>Opening microphone…</p><button type="button" onClick={handleConfirmDiscard}>Cancel recording</button></div> : isPreparingTranscript ? (
+        ) : isPreparingTranscript ? (
           <div className="preparing-transcript">
             <h2>Preparing Transcript</h2>
             <div className="loading-spinner" aria-label="Preparing SOAP note transcript"></div>

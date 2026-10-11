@@ -1,87 +1,75 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { getCurrentUser, signOut } from 'aws-amplify/auth';
 import SignInForm from './SignInForm';
 import { Hub } from 'aws-amplify/utils';
+import { clearLegacyCredentials } from './credentialStorage';
 
 const AuthContainer = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [authState, setAuthState] = useState('loading'); // 'loading', 'signedOut', 'signedIn'
+  const [authState, setAuthState] = useState('loading');
+  const mounted = useRef(false);
+  const revision = useRef(0);
+  const signingOut = useRef(false);
 
-  // Check authentication status on mount
-  useEffect(() => {
-    checkAuthState();
-  }, []);
-
-  // Listen to auth events
-  useEffect(() => {
-    const hubListener = Hub.listen('auth', (data) => {
-      const { event } = data.payload;
-      console.log('Auth event:', event);
-      
-      switch (event) {
-        case 'signedIn':
-          checkAuthState();
-          break;
-        case 'signedOut':
-          setUser(null);
-          setAuthState('signedOut');
-          break;
-        case 'tokenRefresh':
-          // Token refresh is handled automatically
-          break;
-        case 'tokenRefresh_failure':
-          console.error('Token refresh failed');
-          handleSignOut();
-          break;
-        default:
-          break;
-      }
-    });
-
-    return () => {
-      hubListener();
-    };
-  }, []);
-
-  const checkAuthState = async () => {
+  const checkAuthState = useCallback(async () => {
+    if (signingOut.current) return;
+    const current = ++revision.current;
     try {
-      setIsLoading(true);
       const currentUser = await getCurrentUser();
-      console.log('Authenticated session restored');
+      if (!mounted.current || current !== revision.current) return;
       setUser(currentUser);
       setAuthState('signedIn');
-    } catch (error) {
-      console.log('No authenticated user:', error);
+    } catch {
+      if (!mounted.current || current !== revision.current) return;
       setUser(null);
       setAuthState('signedOut');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleSignInSuccess = (authenticatedUser) => {
-    console.log('Sign in successful:', authenticatedUser);
+  const handleSignOut = useCallback(async () => {
+    if (signingOut.current) return;
+    signingOut.current = true;
+    revision.current += 1;
+    setUser(null);
+    setAuthState('signingOut');
+    clearLegacyCredentials();
+    try { await signOut(); } catch { /* End the local authenticated view even if remote cleanup fails. */ }
+    finally {
+      signingOut.current = false;
+      if (mounted.current) setAuthState('signedOut');
+    }
+  }, []);
+
+  useEffect(() => {
+    mounted.current = true;
+    clearLegacyCredentials();
+    const stopListening = Hub.listen('auth', ({ payload }) => {
+      switch (payload.event) {
+        case 'signedIn': checkAuthState(); break;
+        case 'signedOut':
+          revision.current += 1;
+          setUser(null);
+          setAuthState(signingOut.current ? 'signingOut' : 'signedOut');
+          break;
+        case 'tokenRefresh_failure':
+          // Same narrow Amplify NetworkError exemption as the Android client.
+          if (payload.data?.error?.name !== 'NetworkError') handleSignOut();
+          break;
+        default: break;
+      }
+    });
+    checkAuthState();
+    return () => { mounted.current = false; revision.current += 1; stopListening(); };
+  }, [checkAuthState, handleSignOut]);
+
+  const handleSignInSuccess = authenticatedUser => {
+    if (!mounted.current || signingOut.current) return;
+    revision.current += 1;
     setUser(authenticatedUser);
     setAuthState('signedIn');
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      setUser(null);
-      setAuthState('signedOut');
-      console.log('Sign out successful');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      // Force sign out even if there's an error
-      setUser(null);
-      setAuthState('signedOut');
-    }
-  };
-
-  // Show loading spinner while checking auth state
-  if (authState === 'loading' || isLoading) {
+  if (authState === 'loading' || authState === 'signingOut') {
     return (
       <div style={{
         minHeight: '100vh',
@@ -112,16 +100,13 @@ const AuthContainer = ({ children }) => {
     );
   }
 
-  // Show sign in form if not authenticated
   if (authState === 'signedOut' || !user) {
     return <SignInForm onSignInSuccess={handleSignInSuccess} />;
   }
-
-  // Show authenticated app
-  return React.cloneElement(children, { 
+  return React.cloneElement(children, {
     key: user.userId || user.username,
-    user: user, 
-    signOut: handleSignOut 
+    user,
+    signOut: handleSignOut,
   });
 };
 

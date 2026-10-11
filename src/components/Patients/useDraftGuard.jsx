@@ -5,19 +5,20 @@ import { registerDraftGuard } from './draftNavigation';
 export default function useDraftGuard({ dirty, save, busy = false, discard = () => {} }) {
   const [open, setOpen] = useState(false);
   const pending = useRef(null);
-  const latest = useRef({ dirty, save, discard });
-  latest.current = { dirty, save, discard };
+  const latest = useRef({ dirty, save, discard, busy });
+  latest.current = { dirty, save, discard, busy };
   const finish = allowed => {
     const resolve = pending.current; pending.current = null; setOpen(false); resolve?.(allowed);
   };
   const confirm = () => {
+    if (latest.current.busy) return Promise.resolve(false);
     if (!latest.current.dirty) return Promise.resolve(true);
     if (pending.current) return Promise.resolve(false);
     setOpen(true);
     return new Promise(resolve => { pending.current = resolve; });
   };
   useEffect(() => {
-    const unregister = registerDraftGuard({ dirty: () => latest.current.dirty, confirm });
+    const unregister = registerDraftGuard({ dirty: () => latest.current.dirty || latest.current.busy, confirm });
     return () => { unregister(); pending.current?.(false); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {

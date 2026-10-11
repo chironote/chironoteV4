@@ -1,5 +1,8 @@
 /* AuthUI Styles */
 .auth-container {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   min-height: 100vh;
   background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
   display: flex;
@@ -33,6 +36,7 @@
 }
 
 .auth-content {
+  box-sizing: border-box;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px;
@@ -40,7 +44,7 @@
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  min-width: 320px;
+  min-width: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
