@@ -5,21 +5,14 @@ This folder owns the authenticated app navigation bar.
 ## Files
 
 - `Navbar.jsx` renders desktop and mobile authenticated navigation.
+- `Navbar.test.jsx` covers dashboard/subroute order, Patients gating, desktop/mobile parity, current-page semantics, Feedback and Logout.
 - `Navbar.css` styles the app nav, logos, links, mobile menu, and logout states.
 
 ## Behavior
 
 `Navbar` receives `onSignOut` and `onFeedback` from `AuthenticatedApp`. Feedback is a semantic button that opens a modal without navigation.
 
-The link list depends on the current route. On `/app`, the Home link is omitted:
-
-```js
-const links = [
-  ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
-  { name: 'Billing', path: '/app/billing', icon: 'credit_card' },
-  { name: 'Settings', path: '/app/settings', icon: 'settings' }
-];
-```
+Desktop and mobile share one route list: Home, Patients (when `patientNotesEnabled`), Billing, Settings. Home is omitted on the dashboard (`/app`); on subroutes it appears first, before Patients. Feedback keeps its existing position after Settings, followed by Logout. The exact current route receives `aria-current="page"`.
 
 The mobile menu closes on outside clicks using refs for the menu and menu button.
 

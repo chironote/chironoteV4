@@ -1,38 +1,17 @@
 ---
 type: component-readme
-title: "Navbar Components"
-description: "Authenticated navigation behavior and route-link maintenance guidance."
+title: "Authenticated Navigation"
+description: "Stable authenticated route order, feature gating, accessible state and desktop/mobile navigation behavior."
 resource: "../../src/components/Navbar/README.md"
 tags: [chironote, component, navbar]
 ---
 
 
-> Source: [`README.md`](../../src/components/Navbar/README.md)
+# Authenticated Navigation
 
-# Navbar Components
+Desktop and mobile navigation share the same route list: Home, Patients (when `patientNotesEnabled`), Billing, Settings. Home is omitted on the dashboard (`/app`); on subroutes it appears first, before Patients. Disabling Patients leaves Home (on subroutes), Billing, Settings in that order. Feedback retains its position after Settings, followed by Logout.
 
-This folder owns the authenticated app navigation bar.
-
-## Files
-
-- `Navbar.jsx` renders desktop and mobile authenticated navigation.
-- `Navbar.css` styles the app nav, logos, links, mobile menu, and logout states.
-
-## Behavior
-
-`Navbar` receives `username` and `onSignOut` from `AuthenticatedApp`, though the current render only uses `onSignOut`.
-
-The link list depends on the current route. On `/app`, the Home link is omitted:
-
-```js
-const links = [
-  ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
-  { name: 'Billing', path: '/app/billing', icon: 'credit_card' },
-  { name: 'Settings', path: '/app/settings', icon: 'settings' }
-];
-```
-
-Feedback is a nav-styled semantic button that opens a modal without navigation and never receives `aria-current`. The mobile menu closes on outside clicks using refs for the menu and menu button.
+`Navbar` receives `onSignOut` and `onFeedback` from `AuthenticatedApp`. Routes use `Link` inside the application data router so the shared dirty-note guard can hold transitions; sign-out delegates to the guarded shell callback. Only an exact current route receives `aria-current="page"`. Feedback is a semantic button that opens a modal without navigation and never receives `aria-current`. The mobile menu closes on route selection and outside clicks; Feedback and Logout retain their existing menu-close behavior.
 
 ## Maintenance Notes
 
@@ -48,5 +27,8 @@ Follow [Authenticated navigation](../development/STYLE.md#authenticated-navigati
 
 ## Provenance
 
-Derived from [README.md](../../src/components/Navbar/README.md).
+- [Navbar implementation](../../src/components/Navbar/Navbar.jsx): shared route list, active state and handlers.
+- [Navbar tests](../../src/components/Navbar/Navbar.test.jsx): dashboard/subroute order, Patients gating and desktop/mobile parity.
+- [Navbar feature README](../../src/components/Navbar/README.md): ownership and maintenance guidance.
+- [Authenticated shell](../../src/components/AppShell/AuthenticatedApp.jsx): guarded route/sign-out integration.
 
