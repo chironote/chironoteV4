@@ -25,8 +25,6 @@ export function assessmentCodes(body) {
 }
 
 export function diagnosisReviewForDraft(note, draft) {
-  // Re-exams retain server reconciliation and its signed confirmation flow.
-  if (note.visitType === 'reExam' && !note.diagnosisReviewRequired) return null;
   const before = assessmentCodes(note.note);
   const after = assessmentCodes(draft);
   const key = entries => entries.map(item => item.code).sort().join('|');
@@ -34,7 +32,12 @@ export function diagnosisReviewForDraft(note, draft) {
   const prior = diagnosisCodesForNote(note) || [];
   const icdCodes = after.map(item => {
     const existing = prior.find(saved => normalizeDiagnosisCode(saved.code) === item.code);
-    return { ...item, description: item.description || existing?.description || '', status: existing?.status || (note.visitType === 'initialExam' ? 'new' : '') };
+    const restored = existing?.status === 'resolved' && !before.some(entry => entry.code === item.code);
+    return { ...item, description: item.description || existing?.description || '', status: restored ? 'continuing' : existing?.status || 'new' };
   });
-  return { icdCodes, removed: prior.filter(item => !after.some(entry => entry.code === normalizeDiagnosisCode(item.code))) };
+  // Keep resolved history internal unless the clinician explicitly restores its code.
+  for (const item of prior.filter(entry => entry.status === 'resolved' && !after.some(code => code.code === normalizeDiagnosisCode(entry.code)))) {
+    icdCodes.push({ code: item.code, description: item.description, status: item.status });
+  }
+  return { icdCodes, removed: prior.filter(item => item.status !== 'resolved' && !after.some(entry => entry.code === normalizeDiagnosisCode(item.code))) };
 }

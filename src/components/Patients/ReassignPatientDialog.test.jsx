@@ -29,14 +29,14 @@ async function selectPatient() {
   const warning = container.querySelector('.patient-delete-warning input');
   if (warning) await act(async () => warning.click());
 }
-test.each(['old', null])('reassigns %s association without changing body or visit details', async patientId => {
+test.each(['old', null])('reassigns %s with destination-code copying delegated to the server', async patientId => {
   patientRequest.mockImplementationOnce(async () => ({ note: { ...note, patientId } }));
   const assigned = jest.fn();
   await act(async () => root.render(<ReassignPatientDialog timestamp="123" onClose={() => {}} onAssigned={assigned} />));
   expect(button('Re-Assign').disabled).toBe(true);
   await selectPatient();
   await act(async () => button('Re-Assign').click());
-  expect(patientRequest).toHaveBeenCalledWith('assignNoteToPatient', { timestamp: '123', expectedVersion: 'v1', patientId: 'new', confirmContextReview: true, ...(patientId ? { deleteEmptyPatient: true } : {}) });
+  expect(patientRequest).toHaveBeenCalledWith('assignNoteToPatient', { timestamp: '123', expectedVersion: 'v1', patientId: 'new', copyPatientDiagnoses: true, ...(patientId ? { deleteEmptyPatient: true } : {}) });
   expect(assigned).toHaveBeenCalledWith(expect.objectContaining({ patientId: 'new', note: note.note, version: 'v2' }));
 });
 test('Cancel never writes a selection', async () => {

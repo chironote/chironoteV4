@@ -27,7 +27,7 @@ export default function ReassignPatientDialog({ timestamp, onClose, onAssigned }
       if (selection.patientName) await patientRequest('createPatient', { patientId: selection.patientId, name: selection.patientName });
       const result = await patientRequest('assignNoteToPatient', {
         timestamp: note.timestamp, expectedVersion: note.version,
-        patientId: selection.patientId, confirmContextReview: true,
+        patientId: selection.patientId, copyPatientDiagnoses: true,
         ...(note.patientId ? { deleteEmptyPatient: true } : {}),
       });
       if (result.status !== 'UPDATED' || !result.note) throw new Error('Re-assignment was not confirmed. Please try again.');
@@ -48,7 +48,7 @@ export default function ReassignPatientDialog({ timestamp, onClose, onAssigned }
       <fieldset className="visit-details-fields" disabled={busy}>
         <PatientCapturePicker value={selection} onChange={setSelection} searchPlaceholder="Select Existing Patient or Add New" />
       </fieldset>
-      <p className="patient-help">The note text stays the same. Review it for the correct patient before using it as patient history.</p>
+      <p className="patient-help">This note will use the selected patient’s latest diagnosis codes. If they have no saved codes, the old codes will be cleared. You can edit diagnoses in the clipboard afterward.</p>
       {note.patientId && <label className="patient-check patient-delete-warning"><input type="checkbox" disabled={busy} checked={deleteConfirmed} onChange={event => setDeleteConfirmed(event.target.checked)} /> If this is the original patient's last visit, permanently delete their empty profile. This cannot be undone.</label>}
     </>}
     <div className="patient-actions patient-reassign-actions"><button type="button" disabled={busy || loading || !note || !selection?.patientId || selection.patientId === note.patientId || (note.patientId && !deleteConfirmed)} onClick={assign}>{busy ? 'Re-assigning…' : 'Re-Assign'}</button><button type="button" disabled={busy} onClick={onClose}>Cancel</button></div>

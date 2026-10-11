@@ -4,7 +4,6 @@ import VisitDetailsDialog from './VisitDetailsDialog';
 import ExportPatientDialog from './ExportPatientDialog';
 import PatientDialog from './PatientDialog';
 import DeletePatientDialog from './DeletePatientDialog';
-import { diagnosisStatusLabel } from './diagnosisCodes';
 import './Patients.css';
 
 export default function PatientsPage({ desktopSave = false, allowExport = false, onOpenNote }) {
@@ -60,8 +59,8 @@ export default function PatientsPage({ desktopSave = false, allowExport = false,
         <p>These details apply to the patient profile. Existing clinical notes remain as saved.</p>
         <div className="patient-actions"><button disabled={busy} type="submit">Save profile</button><button type="button" disabled={busy} onClick={() => setEditingProfile(false)}>Cancel</button></div>
       </form></PatientDialog>}
-      <aside className={`patient-card patient-diagnosis-summary${diagnosis?.reviewRequired ? ' patient-confirmation' : ''}`}><h2>Established diagnoses</h2>
-        {diagnosis?.reviewRequired ? <p>An earlier diagnosis change needs review before this list can be used.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.length ? <ul>{diagnosis.state.icdCodes.map(item => <li key={item.code}>{item.code} — {item.description} <small>{diagnosisStatusLabel(item.status)}</small></li>)}</ul> : <p>No active diagnoses (established empty list).</p>}<p>Established on {diagnosis.sourceDateOfService}.</p></> : <p>No established diagnosis list yet.</p>}
+      <aside className={`patient-card patient-diagnosis-summary${diagnosis?.reviewRequired ? ' patient-confirmation' : ''}`}><h2>Diagnoses</h2>
+        {diagnosis?.reviewRequired ? <p>Open the latest note to review its diagnosis changes.</p> : diagnosis?.state ? <>{diagnosis.state.icdCodes.some(item => item.status !== 'resolved') ? <ul>{diagnosis.state.icdCodes.filter(item => item.status !== 'resolved').map(item => <li key={item.code}>{item.code} — {item.description}</li>)}</ul> : <p>No active diagnosis codes.</p>}<p>From the visit on {diagnosis.sourceDateOfService}.</p></> : <p>No saved diagnosis codes yet.</p>}
         {diagnosis?.sourceTimestamp && <button type="button" disabled={busy} onClick={() => openVisit(diagnosis.sourceTimestamp)}>Open source note</button>}
       </aside>
       {exportOpen && <ExportPatientDialog patient={patient} desktopSave={desktopSave} onClose={() => setExportOpen(false)} />}
