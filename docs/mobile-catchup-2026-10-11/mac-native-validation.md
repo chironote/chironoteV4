@@ -17,6 +17,9 @@ and its existing Amplify/Xcode edits were preserved.
   script emitted its missing-output/dependency-analysis warning.
 - `ChiroNote.app/PrivacyInfo.xcprivacy` exists in the built simulator product;
   Capacitor and Cordova framework privacy manifests are present as well.
+- Installed and launched `ai.chironote.app` in a fresh iPhone 17 simulator on
+  iOS 26.5. The app reached its sign-in screen with visible email/password fields
+  and sign-in control. No credentials were entered and no clinical workflow was run.
 
 This is an unsigned simulator build. A signed archive, Apple app-record/build-number
 verification, and physical-device recording, background, autofill and PDF-share
