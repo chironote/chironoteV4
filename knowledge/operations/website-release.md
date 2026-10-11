@@ -1,7 +1,7 @@
 ---
 type: release-operations
 title: "Website Publish State and Release Checklist"
-description: "What is currently deployed, what differs locally, which checks pass, and what must be decided before the owner publishes the website."
+description: "Current live-versus-unpublished state, synthetic acceptance, owner publication gate and website recovery evidence."
 resource: "../../package.json"
 tags: [release, publish, amplify, production, validation, risk]
 ---
@@ -10,9 +10,13 @@ tags: [release, publish, amplify, production, validation, risk]
 
 Only the repository owner publishes the website. This concept records evidence and a safe decision path; it does not authorize an agent to deploy.
 
-## Current patient update — 2026-10-10
+## Current patient release state — 2026-10-10
 
-Patient source and compatibility/retention corrections are merged to prod. The existing production Amplify API stack update completed, with the AppSync clinical-write guard enabled and Notes identity/recovery protections preserved; runtime cutover is complete. The first authenticated synthetic capture succeeded; audio/transcription and remaining workflow acceptance are pending. A feature-enabled production website build from the merged source passed locally, but the owner has not published it. See [cutover evidence](patient-infrastructure-release.md). The older fingerprints and dependency observations below remain dated historical evidence and do not describe the October release.
+The patient web source and required compatibility/retention updates are merged. The existing production API update and runtime cutover completed with the AppSync clinical-write guard enabled, Notes identity/recovery protections preserved, intended new services active, and both legacy dispatcher mappings disabled. A feature-enabled website build passed locally but remains unpublished; only the owner publishes. Authenticated synthetic acceptance passed across four fictional patients and seven visits: audio/transcription, initial/follow-up save, diagnosis correction, stale-conflict protection, missing-patient handling, generic-write guard, retry, reassignment, re-exam reconciliation and PDF export. The exported PDF text was checked against saved bodies and each page visually reviewed. See [cutover and acceptance evidence](patient-infrastructure-release.md).
+
+Clinical prose/coding prompts and the Custom Instructions compiler remain unchanged; broad prompt review is deferred. The accepted scope includes only the approved re-exam diagnosis classifier and speaker-role integration. After the owner publishes, run a real-microphone smoke test and review the live patient screens. Physical iPhone/Android coverage and native/extension publication remain separate later work; the synthetic browser checks do not claim those devices were tested.
+
+The live website publish route was verified from the current hosting backup and configuration: CloudFront distribution `E34RPJ5SU5J7IX` for `chironote.ai` and `www.chironote.ai`, backed by S3 bucket `chironote4-20240825113940-hostingbucket-prod` in `us-east-2`. Do not infer the live host from a separate Amplify app's branch listing. The owner should build from a clean checkout of merged `origin/prod`, explicitly set the patient UI/export build flags, confirm the AWS account and destination, sync without deleting unrelated objects, then invalidate CloudFront. The pre-publication recovery archive and exact hash are recorded below.
 
 ## Historical state as reviewed on 2026-07-15
 
@@ -25,7 +29,7 @@ Patient source and compatibility/retention corrections are merged to prod. The e
 - Dependency audit: `npm audit --omit=dev` reports 89 findings (2 critical, 28 high, 45 moderate, 14 low). Many are transitive CRA/tooling findings, but current AWS/Amplify and runtime packages also appear; triage is required rather than an automatic forced fix.
 - Browserslist data: seven months old at build time.
 
-## Live Website Fingerprint
+## Historical Live Website Fingerprint (reviewed 2026-07-15)
 
 The live site and local build do not contain the same compiled assets:
 
@@ -38,11 +42,12 @@ The live JavaScript contains the February retry behavior, the 1,000-byte blob fi
 
 The live and local `manifest.json` are identical, so manifest drift is not part of this pending web release.
 
-## Changes Waiting Behind Production
+## Earlier unpublished changes observed on 2026-07-15
+
+The list below describes the older deployment gap as reviewed on that date; it is not today's acceptance checklist. The October patient acceptance is complete, while the website remains unpublished.
 
 The unpublished delta includes:
 
-- the patient capture/history, saved-note, export and compatible audio/generator UI, built with the patient, capture and export flags enabled; the first authenticated synthetic capture succeeded, while audio/transcription and remaining workflow acceptance are pending;
 - the March 15 note-generation Lambda endpoint switch;
 - March 7 landing/conversion UI changes if they were not in the last deployment;
 - the May 18 app-shell decomposition and RecordingManager split into focused hooks;
@@ -53,47 +58,30 @@ The unpublished delta includes:
 
 The UI refactor is large in file movement but intended to preserve behavior. The recording implementation is not behavior-neutral: it changes where cleanup, upload, fallback, and generation responsibilities live.
 
-## Publish Blockers and Decisions
+## Owner publication and post-publication checks
 
-### Resolved in the 2026-07-15 safety pass
+The authenticated synthetic release checks and local tests/build are complete. The prepared website build remains unpublished; publication follows the existing owner-operated release process. This record does not add an approval gate. During that publish step, use the intended merged commit and feature-enabled build, verify the origin and consult the [recovery evidence](#rollback-evidence-and-recovery-copy).
 
-1. Removed complete Cognito access-token logging.
-2. Added recording-session invalidation, active Amplify upload cancellation, SQS abort, and late-callback suppression for discard, fatal failure, replacement sessions, and unmount.
-3. Converted upload/SQS failures into a single fatal controller path with a user-visible retry message and clean UI/resource teardown.
-4. Made audio extensions and S3 content types format-aware, including Safari MP4.
-5. Changed unmount cleanup from finalization to cancellation, serialized emitted chunks before asynchronous queueing, and added focused regression tests.
-6. Changed failed and zero-credit subscription checks from finalization to discard so they cannot submit audio.
+1. Start from a clean worktree at the intended merged `origin/prod` commit. Run `npm ci`, the test suite and production build with `REACT_APP_PATIENT_NOTES_ENABLED=true`, `REACT_APP_PATIENT_CAPTURE_ENABLED=true` and the configured HTTPS PDF export URL.
+2. Confirm the signed-in website points at the intended production AppSync API and the export endpoint. Confirm the AWS identity is in account `026090532772`, and verify the target CloudFront distribution aliases and S3 origin before uploading.
+3. Publish through the verified S3/CloudFront route. Preserve unrelated bucket keys; do not use a bucket-wide delete. Invalidate CloudFront after upload.
+4. After publication, compare the live `/asset-manifest.json` with the release build, sign in, review patient screens, and run one short real-microphone recording through note save. Check transcription and saved-note acknowledgments without exposing transcripts in logs.
+5. Record the commit, build asset hashes, distribution invalidation and smoke-test result in this concept and `knowledge/log.md`.
 
-### Validate or explicitly accept
+## Separate validation boundaries
 
-1. Test iPhone/iPad capture and backend transcription with the corrected `.mp4`/emitted-MP4-MIME contract.
-2. Extend recording tests to real/fake MediaRecorder chunk rotation, AppSync transcript fallback, and generation streaming. Session cancellation, SQS failure, media metadata, and teardown are now covered.
-3. Triage runtime-relevant dependency advisories and upgrade without using `npm audit fix --force` blindly.
-4. Review the hook dependency warnings in Dictation, Clipboard, and Smart Editor for stale closures before relying on a manual smoke test.
-5. Confirm that the new note-generation Lambda is deployed, compatible with the current request/error-stream contract, and expected to replace the old live endpoint.
-6. Keep Custom Instructions disabled until its FIFO queue invokes the worker, an authenticated browser request reaches a provider-backed terminal state, the reserved-concurrency quota issue is resolved or accepted, and the deployed frontend is verified against the intended AppSync API. This gate does not authorize changing the existing note-generation endpoint.
+Clinical-quality approval and the planned prompt review were not part of this release. The exact live synthetic cases do not establish language accuracy/latency for every provider configuration. Physical iPhone/Android permission/background/rotation/auth flows, and native or extension publication, remain outside this website acceptance. Custom Instructions and broad clinical prompts were not enabled or changed by this patient release.
 
-## Owner-run Release Checklist
+## Separate known risks from the July 2026 review
 
-1. Start from a clean worktree or deliberately exclude the two environment-sensitive Amplify files.
-2. Confirm `prod` and `origin/prod` point to the intended commit.
-3. Run `npm test -- --watchAll=false` and `npm run build`.
-4. Complete the browser/device matrix in [Recording, Dictation, and Note Generation](../components/recording.md).
-5. Smoke-test public routes, sign-in, note history, account/billing links, feedback, analytics consent, and PWA `/app` redirect.
-6. Confirm the new Lambda endpoint and SQS queue against the production AWS environment.
-7. Record the release commit and live asset hashes before publishing so rollback does not depend on memory.
-8. Publish only through the owner's established Amplify process.
-9. After publish, compare `/asset-manifest.json`, run one short real recording and dictation session, and confirm CloudWatch/AppSync/SQS behavior.
-10. Record the deployment date, commit, asset hashes, validation, and rollback target in this concept and `knowledge/log.md`.
+The July 15 review recorded 89 `npm audit --omit=dev` findings (including 2 critical and 28 high) and hook dependency warnings in Dictation, Clipboard and Smart Editor. This patient release did not rerun that audit or resolve those items; they are not established as cleared here. They remain separate maintenance risks, not patient-acceptance results.
 
-## Rollback Evidence to Capture
+The same earlier review required a FIFO queue-to-worker check, a reserved-concurrency decision, an authenticated provider-backed terminal-state test and confirmation of the intended AppSync target before enabling Custom Instructions. This patient release did not change or verify those separate gates. Do not infer Custom Instructions enablement from the patient website build.
 
-- Previous deployed commit or build artifact, if available.
-- Previous and new `asset-manifest.json` hashes.
-- Old and new note-generation Lambda URLs and versions.
-- SQS queue and Amplify environment identifiers without copying credentials.
-- Results of the minimum recording matrix.
+## Rollback evidence and recovery copy
+
+The verified pre-publication website copy is `work/release/backups/website-live/website-before.zip`, SHA-256 `712678340f427161d523aaaa86b6a8f694daa4d6b2eb05c957651b3fe43f70dc`; its adjacent `manifest.json` contains per-object hashes, `ContentType` and `Metadata` fields (no `CacheControl` values were captured). The archive has 80 selected current assets and public objects (27,706,511 bytes uncompressed). ETags were checked during capture, the inventory was unchanged across the backup, ZIP integrity passed, and bucket versioning is disabled. Restore only the captured keys with their recorded metadata, retain other bucket objects, then invalidate CloudFront. The copy is a task-local Windows artifact, not a Git file; the owner must confirm it is available and its hash matches before using it.
 
 ## Provenance
 
-Synthesized from Git branch and commit history; [package.json](../../package.json); the 2026-07-15 outputs of `npm test -- --watchAll=false`, `npm run build`, and `npm audit --omit=dev`; the generated local build/asset-manifest.json (historical build evidence, excluded from Git); the public `https://chironote.ai/asset-manifest.json`, manifest.json, and compiled JavaScript; the current recording implementation; and the read-only 2026-08-16 production CloudFormation/AppSync contract review. No deploy action was performed. Amplify console history was not used, so the live asset fingerprint still outranks guesses based on Git dates.
+Synthesized from Git branch and commit history; [package.json](../../package.json); the dated July 2026 website fingerprint and dependency review; current patient-notes and recording implementations; October 10 read-only hosting/runtime verification; the feature-enabled build and authenticated synthetic acceptance evidence kept in the release task; and the website recovery manifest. Website publication remains a separate owner action; this documentation records evidence but does not publish.
