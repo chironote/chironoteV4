@@ -198,31 +198,6 @@ const ContentPopup = ({
       <div className="content-popup-inner" onClick={(e) => e.stopPropagation()}>
         <div className="popup-header">
           <div className="popup-header-left">
-            <div className="popup-header-top">
-              <button
-                className={`popup-edit-button ${isEditingLabel ? 'editing' : ''}`}
-                onMouseDown={(e) => {
-                  // Prevent blur from firing when clicking this button
-                  if (isEditingLabel) {
-                    e.preventDefault();
-                  }
-                }}
-                onClick={() => {
-                  if (isEditingLabel) {
-                    handleSaveLabel();
-                  } else {
-                    setEditedLabel(getDisplayLabel());
-                    setIsEditingLabel(true);
-                  }
-                }}
-                aria-label={isEditingLabel ? "Save label" : "Edit label"}
-                title={isEditingLabel ? "Save label (Enter)" : "Edit label"}
-              >
-                <span className="edit-button-text">
-                  {isEditingLabel ? 'Save' : 'Rename'}
-                </span>
-              </button>
-            </div>
             <PatientName patientId={patientId} unassignedLabel="Unassigned" onClick={timestamp ? () => leaveDrafts(() => { setAssignmentMessage(''); setReassignOpen(true); }) : undefined} />
             {assignmentMessage && <p role="status" className="patient-help">{assignmentMessage}</p>}
             <div className="label-container">
@@ -233,8 +208,10 @@ const ContentPopup = ({
                   onChange={(e) => setEditedLabel(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
+                      e.preventDefault();
                       handleSaveLabel();
                     } else if (e.key === 'Escape') {
+                      e.stopPropagation();
                       handleCancelEdit();
                     }
                   }}
@@ -246,7 +223,13 @@ const ContentPopup = ({
                 />
               ) : (
                 <h2 className="label-title">
-                  {getDisplayLabel()}
+                  <button type="button" className="label-edit-trigger" aria-label="Edit label" title="Edit label" onClick={() => {
+                    setEditedLabel(getDisplayLabel());
+                    setIsEditingLabel(true);
+                  }}>
+                    <span>{getDisplayLabel()}</span>
+                    <svg className="label-pencil" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="m16 3 5 5L8 21H3v-5L16 3Z" /><path d="m14 5 5 5" /></svg>
+                  </button>
                 </h2>
               )}
             </div>

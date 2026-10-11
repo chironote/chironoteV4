@@ -21,15 +21,19 @@ function useNotesHistory(username, setIsWebSocketConnecting) {
 
     setIsLoading(true);
     try {
-      const notesData = await client.graphql({
-        query: queries.listNotes,
-        variables: {
-          owner: username,
-          sortDirection: 'DESC',
-          limit: 120
-        }
-      });
-      const fetchedNotes = notesData.data.listNotes.items;
+      const fetchedNotes = [];
+      let nextToken;
+      const seenTokens = new Set();
+      do {
+        const notesData = await client.graphql({
+          query: queries.listNotes,
+          variables: { owner: username, sortDirection: 'DESC', limit: 120, ...(nextToken ? { nextToken } : {}) }
+        });
+        fetchedNotes.push(...notesData.data.listNotes.items.filter(item => item && item.generationStatus !== 'DELETED'));
+        nextToken = notesData.data.listNotes.nextToken;
+        if (nextToken && seenTokens.has(nextToken)) throw new Error('History pagination repeated. Please refresh.');
+        if (nextToken) seenTokens.add(nextToken);
+      } while (nextToken && fetchedNotes.filter(item => item.note?.trim()).length < 100);
 
       const filteredNotes = fetchedNotes.filter(item => item.note && item.note.trim() !== '');
       const filteredTranscripts = fetchedNotes.filter(item => item.transcript && item.transcript.trim() !== '');

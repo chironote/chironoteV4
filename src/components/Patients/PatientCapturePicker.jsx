@@ -20,7 +20,7 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
       if (!active || request !== requestRef.current) return;
       setLoading(true); setError('');
       try { const page = await patientRequest('listPatients', { search: query, limit: 25 });
-        if (active && request === requestRef.current) { setPatients(page.items); setCursor(page.nextCursor); }
+        if (active && request === requestRef.current) { setPatients(page.items.filter(patient => !patient.deletionPending)); setCursor(page.nextCursor); }
       } catch (failure) { if (active && request === requestRef.current) setError(failure.message); }
       finally { if (active && request === requestRef.current) setLoading(false); }
     }, 200);
@@ -35,7 +35,7 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
   const more = async () => {
     const request = requestRef.current; setLoading(true);
     try { const page = await patientRequest('listPatients', { search: query, cursor, limit: 25 });
-      if (request === requestRef.current) { setPatients(old => [...old, ...page.items]); setCursor(page.nextCursor); }
+      if (request === requestRef.current) { setPatients(old => [...old, ...page.items.filter(patient => !patient.deletionPending)]); setCursor(page.nextCursor); }
     } catch (failure) { if (request === requestRef.current) setError(failure.message); }
     finally { if (request === requestRef.current) setLoading(false); }
   };

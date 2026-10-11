@@ -10,6 +10,7 @@ export default function ReassignPatientDialog({ timestamp, onClose, onAssigned }
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const pending = useRef(false);
   useEffect(() => {
     let active = true;
@@ -20,13 +21,14 @@ export default function ReassignPatientDialog({ timestamp, onClose, onAssigned }
     return () => { active = false; };
   }, [timestamp]);
   const assign = async () => {
-    if (pending.current || !note || !selection?.patientId || selection.patientId === note.patientId) return;
+    if (pending.current || !note || !selection?.patientId || selection.patientId === note.patientId || (note.patientId && !deleteConfirmed)) return;
     pending.current = true; setBusy(true); setError('');
     try {
       if (selection.patientName) await patientRequest('createPatient', { patientId: selection.patientId, name: selection.patientName });
       const result = await patientRequest('assignNoteToPatient', {
         timestamp: note.timestamp, expectedVersion: note.version,
         patientId: selection.patientId, confirmContextReview: true,
+        ...(note.patientId ? { deleteEmptyPatient: true } : {}),
       });
       if (result.status !== 'UPDATED' || !result.note) throw new Error('Re-assignment was not confirmed. Please try again.');
       onAssigned(result.note);
@@ -47,7 +49,8 @@ export default function ReassignPatientDialog({ timestamp, onClose, onAssigned }
         <PatientCapturePicker value={selection} onChange={setSelection} searchPlaceholder="Select Existing Patient or Add New" />
       </fieldset>
       <p className="patient-help">The note text stays the same. Review it for the correct patient before using it as patient history.</p>
+      {note.patientId && <label className="patient-check patient-delete-warning"><input type="checkbox" disabled={busy} checked={deleteConfirmed} onChange={event => setDeleteConfirmed(event.target.checked)} /> If this is the original patient's last visit, permanently delete their empty profile. This cannot be undone.</label>}
     </>}
-    <div className="patient-actions patient-reassign-actions"><button type="button" disabled={busy || loading || !note || !selection?.patientId || selection.patientId === note.patientId} onClick={assign}>{busy ? 'Re-assigning…' : 'Re-Assign'}</button><button type="button" disabled={busy} onClick={onClose}>Cancel</button></div>
+    <div className="patient-actions patient-reassign-actions"><button type="button" disabled={busy || loading || !note || !selection?.patientId || selection.patientId === note.patientId || (note.patientId && !deleteConfirmed)} onClick={assign}>{busy ? 'Re-assigning…' : 'Re-Assign'}</button><button type="button" disabled={busy} onClick={onClose}>Cancel</button></div>
   </PatientDialog>;
 }

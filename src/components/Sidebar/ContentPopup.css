@@ -67,13 +67,6 @@
   color: var(--dark-green); /* Use app's dark green for icons */
 }
 
-/* New layout for header top section (rename button only) */
-.content-popup .popup-header-top {
-  display: flex;
-  align-items: center;
-  margin-bottom: 8px; /* Space between rename button and title */
-}
-
 /* Container for label/input positioned below buttons */
 .content-popup .label-container {
   flex: 1;
@@ -82,70 +75,12 @@
   align-items: flex-start; /* Align to top for better text positioning */
 }
 
-/* Edit button styling - text-based design */
-.content-popup .popup-edit-button {
-  background: white;
-  border: 1px solid var(--dark-green, #2d5a27);
-  cursor: pointer;
-  padding: 6px 10px; /* Slightly smaller padding */
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease-in-out;
-  color: var(--dark-green, #2d5a27);
-  min-height: 28px; /* Smaller height */
-  flex-shrink: 0;
-  font-family: inherit; /* Use app's font family */
-  font-size: 13px; /* Slightly smaller font */
-  font-weight: 500; /* Medium weight for clarity */
-  letter-spacing: 0.3px;
-  white-space: nowrap; /* Prevent text wrapping */
-}
-
-.content-popup .popup-edit-button:hover {
-  background-color: var(--light-green, #4caf50);
-  color: white;
-  border-color: var(--light-green, #4caf50);
-  transform: translateY(-1px); /* Subtle lift effect */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Active editing state for button */
-.content-popup .popup-edit-button.editing {
-  background-color: var(--dark-green, #2d5a27);
-  color: white;
-  border-color: var(--dark-green, #2d5a27);
-  font-weight: 600; /* Slightly bolder when active */
-}
-
-.content-popup .popup-edit-button.editing:hover {
-  background-color: #1e3d1a;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-}
-
-/* Text button styling */
-.content-popup .edit-button-text {
-  font-size: 0.9em; 
-  transition: opacity 0.2s ease-in-out;
-  line-height: 1;
-  position: relative;
-  top: 1.2px;
-  
-}
-
-/* Focus state for accessibility */
-.content-popup .popup-edit-button:focus {
-  outline: 2px solid var(--light-green, #4caf50);
-  outline-offset: 2px;
-}
-
-/* Active/pressed state */
-.content-popup .popup-edit-button:active {
-  transform: translateY(0);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
+/* The label itself is the edit control; the pencil remains subtly visible. */
+.content-popup .label-edit-trigger { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.content-popup .label-pencil { width: 18px; height: 18px; flex-shrink: 0; opacity: .45; }
+.content-popup .label-edit-trigger:hover .label-pencil,
+.content-popup .label-edit-trigger:focus-visible .label-pencil { opacity: 1; }
+.content-popup .label-edit-trigger:focus-visible { outline: 2px solid var(--medium-green); outline-offset: 3px; border-radius: 3px; }
 
 /* Input field for editing labels */
 .content-popup .label-edit-input {

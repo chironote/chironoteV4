@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Label, deletion and export corrections**: Documented clickable descriptor/pencil, explicit permanent patient deletion and last-visit cleanup warnings, local state clearing, history pagination past deletion markers, and actionable PDF blockers/development configuration. Backend deletion requires the coordinated audio replay guard before release.
+
 - **History patient reassignment**: Updated Sidebar, AppShell and patient-notes concepts for clickable patient identity, compact assignment, version protection and history/clipboard synchronization. Sources: ContentPopup, ReassignPatientDialog, AuthenticatedApp.
 
 - **Single clipboard editor**: Patients visit/source selection now loads the exact saved note into the [Clipboard](./components/clipboard.md). Retired the duplicate clinical editor; retained metadata/suggestions/retry in Patients. Documented inline explicit diagnosis-list approval, server re-exam confirmation, version/draft safety and synthetic initial-visit correction in [Patient notes](./architecture/patient-notes.md) and [App shell](./components/app-shell.md). Corrected the prior incomplete description of reconciliation during saved-note edits. No deployment or real-patient write.

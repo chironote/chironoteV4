@@ -116,3 +116,5 @@ The October 11 frontend correction restores the original History popup/transcrip
 ## Provenance
 
 Synthesized from Git branch and commit history; [package.json](../../package.json); the dated July 2026 website fingerprint and dependency review; current patient-notes and recording implementations; October 10 read-only hosting/runtime verification; the feature-enabled build and authenticated synthetic acceptance evidence kept in the release task; and the website recovery manifest. Website publication remains a separate owner action; this documentation records evidence but does not publish.
+
+October 11 source update: .env.development supplies the same public patient flags and HTTPS export endpoint as .env.production for plain npm start. Restart the development server to load changed environment defaults. Local export calls the existing authenticated production export service; validation uses fictional fixtures only. Patient deletion requires the coordinated audio replay guard and patient API release before user acceptance.
