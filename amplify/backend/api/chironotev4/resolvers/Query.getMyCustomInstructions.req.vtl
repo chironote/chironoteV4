@@ -1,0 +1,18 @@
+#if($util.isNullOrEmpty($ctx.identity.sub))
+  $util.unauthorized()
+#end
+{
+  "version": "2018-05-29",
+  "operation": "Invoke",
+  "payload": {
+    "contractVersion": 1,
+    "invocationMode": "APPSYNC",
+    "identity": {
+      "sub": $util.toJson($ctx.identity.sub)
+    },
+    "info": {
+      "fieldName": $util.toJson($ctx.info.fieldName)
+    },
+    "arguments": $util.toJson($ctx.arguments)
+  }
+}

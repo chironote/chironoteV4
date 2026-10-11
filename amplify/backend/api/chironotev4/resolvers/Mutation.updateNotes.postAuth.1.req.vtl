@@ -1,0 +1,14 @@
+## All clinical body/state writes must use the guarded server transaction.
+#if($ctx.env.PATIENT_WRITES_GUARDED != "false")
+#foreach($field in $ctx.args.input.keySet())
+  #if($field != "owner" && $field != "timestamp" && $field != "noteLabel")
+    $util.error("Use the patient notes service to update this field.", "GuardedClinicalWrite")
+  #end
+#end
+#if($ctx.args.input.containsKey("noteLabel"))
+  $util.qr($ctx.args.input.put("visitLabel", null))
+  $util.qr($ctx.args.input.put("clinicalRevision", $util.autoId()))
+  $util.qr($ctx.args.input.put("updatedAt", $util.time.nowISO8601()))
+#end
+#end
+{}

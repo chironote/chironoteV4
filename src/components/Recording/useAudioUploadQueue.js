@@ -13,6 +13,7 @@ const createUploadError = (stage, error) => {
 };
 
 function useAudioUploadQueue({
+  captureRef,
   filePathRef,
   onFinalAudioQueued,
   onUploadError
@@ -121,17 +122,17 @@ function useAudioUploadQueue({
       }
 
       filePathRef.current = filePath;
-      console.log(`Successfully uploaded recording audio to: ${filePath}`);
+      console.log('Recording audio uploaded');
 
-      const selectedLanguage = localStorage.getItem('selectedLanguage');
       const messageBody = JSON.stringify({
         userId,
         timestamp,
         path: filePath,
-        language: selectedLanguage === 'null' ? null : selectedLanguage,
+        language: 'auto',
         isFinalAudio,
         accessToken,
-        noteSettings: localStorage.getItem('noteSettings')
+        noteSettings: item.capture?.noteSettings ?? localStorage.getItem('noteSettings'),
+        ...(item.capture?.visitMetadata ? { visitMetadata: item.capture.visitMetadata } : {})
       });
 
       const filenameParts = filePath.split('/');
@@ -232,6 +233,7 @@ function useAudioUploadQueue({
     }
 
     uploadQueueRef.current.push({
+      capture: captureRef?.current,
       audioBlob,
       contentType,
       filePath,

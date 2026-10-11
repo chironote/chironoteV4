@@ -37,4 +37,4 @@ Google Ads click IDs (`gclid`, `gbraid`, and `wbraid`) remain memory-only before
 
 ## Provenance
 
-Derived from [`src/components/Analytics/README.md`](../../src/components/Analytics/README.md), [`GoogleAnalytics.jsx`](../../src/components/Analytics/GoogleAnalytics.jsx), [`CookieConsent.jsx`](../../src/components/CookieConsent/CookieConsent.jsx), [`utils/analytics.js`](../../src/utils/analytics.js), and [`utils/metaPixel.js`](../../src/utils/metaPixel.js).
+Derived from [src/components/Analytics/README.md](../../src/components/Analytics/README.md), [GoogleAnalytics.jsx](../../src/components/Analytics/GoogleAnalytics.jsx), [CookieConsent.jsx](../../src/components/CookieConsent/CookieConsent.jsx), [utils/analytics.js](../../src/utils/analytics.js), and [utils/metaPixel.js](../../src/utils/metaPixel.js).

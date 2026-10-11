@@ -30,3 +30,7 @@ The mobile menu closes on outside clicks using refs for the menu and menu button
 - Any new authenticated route exposed in nav should also be added to `AuthenticatedApp` routes.
 - Keep the header at `64px`, links and the mobile trigger at least `44px` high, and current-page/focus semantics visible.
 - The mobile menu is a white product surface with the standard border, `12px` radius, and menu shadow.
+
+## Patient notes integration
+
+`patientNotesEnabled` adds a Patients link at `/app/patients`. Navigation remains inside the application data router so the shared dirty-note guard can hold a route transition; sign-out remains delegated to the guarded shell callback.

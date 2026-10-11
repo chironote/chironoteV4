@@ -4,8 +4,9 @@ import useAudioUploadQueue from './useAudioUploadQueue';
 import useMediaRecorderController from './useMediaRecorderController';
 import useNoteGeneration from './useNoteGeneration';
 import { AUDIO_UPLOAD_FAILURE_MESSAGE } from './recordingConstants';
+import { captureSnapshot, recordingSettingsSnapshot } from '../../services/patientNotes';
 
-function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
+function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onSavedNoteReady, onGenerationStateChange, onGenerationError }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
@@ -14,6 +15,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   const [textStream, setTextStream] = useState('');
 
   const timeStampRef = useRef(null);
+  const captureRef = useRef(null);
   const pathStampRef = useRef(null);
   const filePathRef = useRef(null);
   const noSleepRef = useRef(null);
@@ -30,6 +32,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     resetNoteGenerationState,
     cleanupNoteGeneration
   } = useNoteGeneration({
+    onGenerationStateChange,
+    onGenerationError,
+    onSavedNoteReady,
+    captureRef,
     timeStampRef,
     isDiscardingRef,
     noSleepRef,
@@ -46,6 +52,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     startUploadSession,
     cancelUploadSession
   } = useAudioUploadQueue({
+    captureRef,
     filePathRef,
     onFinalAudioQueued: (userId, timestamp) => {
       setIsTranscriptCompleted(false);
@@ -62,7 +69,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
   });
 
   const {
-    startRecording,
+    startRecording: startRecorder,
     stopRecording,
     discardRecording,
     pauseRecording,
@@ -128,7 +135,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     isPreparingTranscript,
     isGeneratingSummary,
     isTranscriptCompleted,
-    startRecording,
+    startRecording: (metadata) => {
+      captureRef.current = Object.freeze({ visitMetadata: captureSnapshot(metadata), noteSettings: recordingSettingsSnapshot() });
+      return startRecorder();
+    },
     stopRecording,
     discardRecording,
     pauseRecording,

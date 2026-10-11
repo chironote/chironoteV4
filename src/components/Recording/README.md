@@ -8,7 +8,7 @@ This folder owns the core recording, dictation, audio upload, transcript waiting
 - `useMediaRecorderController.js` owns microphone access, `MediaRecorder`, chunking, pause/resume, discard, and cleanup.
 - `useAudioUploadQueue.js` owns session-scoped ordered S3 upload and SQS dispatch, including cancellation and fatal submission errors.
 - `useNoteGeneration.js` waits for transcript completion and streams generated note text from Lambda.
-- `Recording.jsx` renders the new-note popup, recording settings, language/options persistence, and active recording controls.
+- `Recording.jsx` renders the new-note popup, recording settings, patient selection and recording options, and active recording controls.
 - `Dictation.jsx` owns AssemblyAI realtime dictation into clipboard/editor text.
 - `DictationPopup.jsx`, `ConfirmationPopup.jsx`, `CreditLimit.jsx`, and `TextStream.jsx` are support UI.
 - `recordingConstants.js`, `recordingAuth.js`, `recordingMedia.js`, and `noteGenerationErrors.js` hold shared constants, auth, media metadata, and error helpers.
@@ -81,3 +81,9 @@ Chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-only blob
 - Never log Cognito access tokens or temporary AWS credentials.
 - Always clean up media tracks, intervals, subscriptions, and abort controllers when changing this folder.
 - `CreditLimit.jsx` sends online users to `/app/billing`; keep that destination aligned with the authenticated billing route and legacy `/account` redirect.
+
+## Patient notes integration
+
+With patient capture enabled, `Recording` uses `Patients/PatientCapturePicker` for an existing patient, new patient, or Skip. It freezes patient/date/visit-type metadata independently of noteSettings and starts microphone access within the user gesture before asynchronous auth or network work. `RecordingManager` and the upload queue retain that snapshot for the complete session; cancellation and account changes invalidate late callbacks. Updated captures request automatic transcription language selection. `useNoteGeneration` associates the stream with the exact Notes key and obtains a durable saved-note acknowledgement before treating the preview as saved. A partial or unconfirmed stream remains visible with recovery guidance.
+
+`REACT_APP_PATIENT_NOTES_ENABLED` enables patient features; `REACT_APP_PATIENT_CAPTURE_ENABLED=false` independently stops new patient capture. Do not log transcripts, generated notes, patient metadata, auth tokens, or upload paths. Patient service contracts and draft guards are maintained in `Patients` and `src/services/patientNotes.js`.

@@ -75,4 +75,4 @@ Once those are explicit, shared React logic can live in platform-neutral modules
 
 ## Provenance
 
-Synthesized from current branch `prod`; remote branches `origin/cap-and`, `origin/cap-ios`, and `origin/mobile`; native preparation commit `e999551`; Android tip `8c68a8c`; iPhone tip `9ac5a58`; [`manifest.json`](../../public/manifest.json); and native-branch versions of `capacitor.config.json`, `package.json`, `AndroidManifest.xml`, `MainActivity.java`, `Info.plist`, `AppDelegate.swift`, and `RecordingManager.jsx`. Empty sibling checkout folders were treated as unavailable rather than as evidence of deleted projects.
+Synthesized from current branch `prod`; remote branches origin/cap-and, origin/cap-ios, and origin/mobile; native preparation commit `e999551`; Android tip `8c68a8c`; iPhone tip `9ac5a58`; [manifest.json](../../public/manifest.json); and native-branch versions of capacitor.config.json, package.json, AndroidManifest.xml, MainActivity.java, Info.plist, AppDelegate.swift, and RecordingManager.jsx. Empty sibling checkout folders were treated as unavailable rather than as evidence of deleted projects.

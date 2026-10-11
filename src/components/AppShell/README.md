@@ -63,3 +63,7 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 - Be careful with keyboard shortcuts in `AuthenticatedApp`: `Ctrl+B`, `Ctrl+Backspace`, `Ctrl+\``, and `Escape` are handled globally.
 - Keep Feedback as shell state rather than a routed page so it overlays the current authenticated destination.
 - `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners.
+
+## Patient notes integration
+
+`AuthenticatedApp` keys the clinical workspace by the authenticated principal so account changes discard in-memory patient and note state. `MainWorkspace` integrates the patient-aware saved-note view and recording selection; `useNotesHistory` resolves current directory names and carries note revisions, diagnosis review, and patient metadata without logging clinical payloads. Patient requests and bounded per-owner caching live in `src/services/patientNotes.js`. The website also owns `/app/patients`, exact saved-note clipboard loading, and dirty-draft guards around routes, history selection, recording, and sign-out. Desktop Save belongs to `Patients/SavedNoteEditor`; mobile has no new body Save control.

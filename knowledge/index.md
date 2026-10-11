@@ -49,6 +49,8 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Operations
 
+- [Patient infrastructure cutover](./operations/patient-infrastructure-release.md): verified live AppSync guard, preserved Notes resources/recovery, active runtime cutover and synthetic acceptance; website publication remains owner-operated.
+
 | Concept | Use it to understand |
 | --- | --- |
 | [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
@@ -72,3 +74,12 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 - Link to authoritative source files under a `Provenance` section instead of copying the source hierarchy into `knowledge/`.
 - Add every new concept to this index and link adjacent concepts where navigation benefits from it.
 - Record every meaningful concept or index change in [`log.md`](./log.md), grouped under the current ISO date with the newest date first.
+
+## Patient notes and data
+
+- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and the passed synthetic acceptance with owner publication boundary.
+- [Patient data flow](security/patient-data-flow.md): clinical data boundaries, deployed retention protections and outstanding operational verification.
+
+## Maintenance
+
+Knowledge concepts synthesize domains. Update affected concepts and the dated knowledge log when implementation changes invalidate their facts; update this index when routing changes. Keep only index.md and log.md at the knowledge root and validate the shallow structure.

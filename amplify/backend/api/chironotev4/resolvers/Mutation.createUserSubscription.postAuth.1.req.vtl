@@ -1,0 +1,5 @@
+## Signature configuration uses the dedicated verified account operation.
+#if($ctx.args.input.containsKey("signatureName") || $ctx.args.input.containsKey("signatureNpi"))
+  $util.error("Use Configure Signature to change these fields.", "GuardedSignatureWrite")
+#end
+{}

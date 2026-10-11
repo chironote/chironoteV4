@@ -52,5 +52,5 @@ Changing those ids or class names can break onboarding.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/IntroTour/README.md).
+Derived from [README.md](../../src/components/IntroTour/README.md).
 

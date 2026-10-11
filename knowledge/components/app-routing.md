@@ -36,4 +36,4 @@ Inside `/app/*`, `AuthenticatedApp` owns the dashboard plus `/billing`, `/settin
 
 ## Provenance
 
-Derived from [`src/components/AppRouting/README.md`](../../src/components/AppRouting/README.md), [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx), [`PWARedirect.jsx`](../../src/components/AppRouting/PWARedirect.jsx), and [`GoogleAnalytics.jsx`](../../src/components/Analytics/GoogleAnalytics.jsx).
+Derived from [src/components/AppRouting/README.md](../../src/components/AppRouting/README.md), [AppRoutes.jsx](../../src/components/AppRouting/AppRoutes.jsx), [PWARedirect.jsx](../../src/components/AppRouting/PWARedirect.jsx), and [GoogleAnalytics.jsx](../../src/components/Analytics/GoogleAnalytics.jsx).
