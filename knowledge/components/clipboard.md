@@ -7,9 +7,11 @@ tags: [chironote, component, clipboard]
 ---
 
 
-> Source: [`README.md`](../../src/components/Clipboard/README.md)
+> Source: [README.md](../../src/components/Clipboard/README.md)
 
 # Clipboard Components
+
+The clipboard is also the sole saved-note editor. Patients and saved-note drops fetch the exact server record, preserving its identity/version. Save supports installed phones and desktop web, with a divider after Edit and confirmation for explicit diagnosis changes. Mobile web retains its prior Save gate. Coarse-pointer toolbar targets are 48px. Native copy remains in the shared adapter; drafts stay memory-only. See [patient notes](../architecture/patient-notes.md).
 
 This folder owns the central clipboard panel and the toolbar above it. The clipboard is the main text handoff point between recording, dictation, note history, smart edits, and copy actions.
 
@@ -63,5 +65,5 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Clipboard/README.md), [`Clipboard.jsx`](../../src/components/Clipboard/Clipboard.jsx), and [`nativePlatform.js`](../../src/services/nativePlatform.js).
+Derived from [README.md](../../src/components/Clipboard/README.md), [Clipboard.jsx](../../src/components/Clipboard/Clipboard.jsx), and [nativePlatform.js](../../src/services/nativePlatform.js).
 

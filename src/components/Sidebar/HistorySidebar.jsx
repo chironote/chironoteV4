@@ -11,11 +11,11 @@ function HistorySidebar({
   fetchError,
   collapsedWeeks,
   newItems,
+  onRefresh,
   onItemClick,
   onDragStart,
   onRemoveHighlight,
-  onToggleWeek,
-  onRefresh
+  onToggleWeek
 }) {
   const [search, setSearch] = useState('');
   const names = usePatientNames(notes);
@@ -76,26 +76,19 @@ function HistorySidebar({
             <h2 id="recent-notes-title" className="left-panel-title">Recent Notes</h2>
             <p className="recent-notes-subtitle">Your latest generated notes</p>
           </div>
-          <div className="recent-notes-header-actions">
-            {!isLoading && notes.length > 0 && (
-              <span className="recent-notes-count" aria-label={`${notes.length} recent notes`}>
-                {notes.length}
-              </span>
-            )}
-            <button
-              type="button"
-              className="recent-notes-refresh"
-              onClick={onRefresh}
-              disabled={isLoading}
-              aria-label={isLoading ? 'Refreshing recent notes' : 'Refresh recent notes'}
-            >
-              <span className="material-symbols-rounded" aria-hidden="true">refresh</span>
-              <span>{isLoading ? 'Refreshing' : 'Refresh'}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className="recent-notes-refresh"
+            onClick={onRefresh}
+            disabled={isLoading}
+            aria-label={isLoading ? 'Refreshing recent notes' : 'Refresh recent notes'}
+            title="Refresh recent notes"
+          >
+            <span className="material-symbols-rounded" aria-hidden="true">refresh</span>
+          </button>
         </div>
-        {fetchError && <p className="recent-notes-error" role="alert">{fetchError}</p>}
         <div className="list-container">
+          {fetchError && <p className="recent-notes-error" role="alert">{fetchError}</p>}
           {patientNotesEnabled && <label className="patient-history-search">Search recent notes<input type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Patient, visit or note text" /></label>}
           {renderItems()}
         </div>

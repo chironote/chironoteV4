@@ -1,5 +1,16 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-11
+
+- **Local candidate validation**: 37 Jest suites / 147 tests, production web build, full OKS validation, Android-only sync and Gradle clean assembleDebug bundleRelease passed. Verified signed unpublished31/1.31 AAB SHA-256 8743FE92106A9558754C7B8CD08ECF5664F7D4575BAC2F1252F8620C226FE46B. Build and signing evidence is distinct from installed-device acceptance and Play publication, neither performed. Preserved the debug APK and signed AAB outside the managed worktree.
+
+- Corrected mobile clipboard/landscape navigation layout after synthetic overflow evidence: wrap toolbar while keeping visible Edit/Save together, widen the established section-copy rail for 44px targets, and bound/scroll the compact navigation menu. Documented older-WebView crypto and array-index compatibility without claiming device verification.
+
+- **Validation follow-up**: Corrected legacy provenance link labels for OKS path parsing, documented Windows test discovery and actual Router7 CommonJS mappings for CRA/Jest, and added secure-byte UUID compatibility for older WebViews. The PDF test creates its own jsdom crypto fixture instead of assuming a global. Validation rerun remains coordinator-owned.
+
+- **Android workflow catch-up candidate**: Ported the final patient workflow from web 142383e while preserving native authentication, billing/analytics restrictions, clipboard, foreground history refresh and finalized-container recorder. Updated [patient notes](./architecture/patient-notes.md), [Android architecture](./architecture/capacitor-android.md), shell/clipboard/sidebar/navigation/routing/recording/account concepts and feature READMEs. Installed phones now use authoritative clipboard Save and draft/diagnosis guards; mobile web retains prior eligibility. Added native Cache/Share PDF delivery, bounded cleanup and synthetic review fixture. No backend or store changes.
+- **Release provenance**: Read-only Play inspection verified 30 (1.30) highest/live on Production and Internal testing. Prepared isolated 31 (1.31) as an unpublished candidate; prior local release-30 submission evidence remains historical. Existing AuthUI fixes from 718a02b are retained. Validation and hardware acceptance must be recorded separately; implementation does not establish device acceptance.
+
 ## 2026-10-10
 
 - **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Android keeps native edit/copy behavior with no new clinical-body Save. The original checkout’s four focused AuthUI files were ported to preserve restored-session cleanup and safe error handling. Version/signing/release changes were not imported. Local candidate only; no push, release or deployment.
@@ -16,7 +27,7 @@
 ## 2026-08-31
 
 - **Android Internal release 28**: Published `28 (1.28)` to the one-person `Early Beta` Internal testing track at 6:51 PM PDT. The signed bundle restores secure Android password saving and autofill; Play confirmed package `com.chironote.app`, target SDK 36, API 22+, zero supported-device loss, and availability to Internal testers. The sole warning remains the expected absence of a deobfuscation file. The release AAB SHA-256 is `DA8C08513E5D2EAC05402C1397DB82949C6F00942D66C8356F7E8299D833485E`. Production was untouched.
-- **Android credential restoration**: Ported the reviewed AndroidX Credential Manager sign-in behavior from the unmerged `codex/android-login-credentials` branch into the current `cap-and` architecture. Android now uses a native-only Cognito form that retrieves provider passwords, offers manual passwords only after confirmed authentication, clears legacy plaintext WebView keys, and preserves the website's Amplify Authenticator flow.
+- **Android credential restoration**: Ported the reviewed AndroidX Credential Manager sign-in behavior from the unmerged codex/android-login-credentials branch into the current `cap-and` architecture. Android now uses a native-only Cognito form that retrieves provider passwords, offers manual passwords only after confirmed authentication, clears legacy plaintext WebView keys, and preserves the website's Amplify Authenticator flow.
 - **Recovered authentication history**: Expanded [Authentication UI](./components/auth-ui.md) with the previously unlogged sequence from the 2025 WebView `localStorage` “Remember me” attempt through the 2026 reviewed Credential Manager branch and the branch-lineage failure that kept it out of later Android releases.
 - **Credential association follow-up**: Recorded that the manifest's `chironote.ai` Digital Asset Links endpoint still serves the SPA HTML shell rather than association JSON, so app/site credential sharing remains externally blocked even though app-scoped Android provider behavior is restored.
 

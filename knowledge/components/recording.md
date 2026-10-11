@@ -7,9 +7,11 @@ tags: [chironote, component, recording]
 ---
 
 
-> Source: [`README.md`](../../src/components/Recording/README.md)
+> Source: [README.md](../../src/components/Recording/README.md)
 
 # Recording Components
+
+Compact capture defaults existing patients to follow-up (with Re-Exam) and new names to initial exam, always using saved history. RecordingManager forwards saved-record and generation-state callbacks to the clipboard. Generation cleanup releases editor busy state. Android finalized containers, four-minute rotation, permission-start cancellation, pause/resume/background ordering and upload serialization remain unchanged by the patient port.
 
 This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.
 
@@ -96,5 +98,5 @@ Google Play Production `24 (1.24)` and Internal testing `27 (1.27)` use the same
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Recording/README.md), [`useMediaRecorderController.js`](../../src/components/Recording/useMediaRecorderController.js), [`recordingLifecycle.js`](../../src/components/Recording/recordingLifecycle.js), [`useAudioUploadQueue.js`](../../src/components/Recording/useAudioUploadQueue.js), [`nativePlatform.js`](../../src/services/nativePlatform.js), and [`MainActivity.java`](../../android/app/src/main/java/com/chironote/app/MainActivity.java).
+Derived from [README.md](../../src/components/Recording/README.md), [useMediaRecorderController.js](../../src/components/Recording/useMediaRecorderController.js), [recordingLifecycle.js](../../src/components/Recording/recordingLifecycle.js), [useAudioUploadQueue.js](../../src/components/Recording/useAudioUploadQueue.js), [nativePlatform.js](../../src/services/nativePlatform.js), and [MainActivity.java](../../android/app/src/main/java/com/chironote/app/MainActivity.java).
 

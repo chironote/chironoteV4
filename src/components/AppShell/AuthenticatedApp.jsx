@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { fetchUserAttributes } from 'aws-amplify/auth';
 import { Helmet } from 'react-helmet-async';
 import Billing from '../Billing/Billing';
@@ -7,6 +7,13 @@ import Feedback from '../Feedback/Feedback';
 import Navbar from '../Navbar/Navbar';
 import PriceTable from '../Billing/PriceTable';
 import Settings from '../Settings/Settings';
+import PatientsPage from '../Patients/PatientsPage';
+import ClipboardSaveReview from '../Patients/ClipboardSaveReview';
+import useDraftGuard from '../Patients/useDraftGuard';
+import { leaveDrafts } from '../Patients/draftNavigation';
+import useDesktopSave from '../Patients/useDesktopSave';
+import useClipboardSave from '../Patients/useClipboardSave';
+import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 import IntroTour from '../IntroTour/IntroTour';
 import ErrorBanner from './ErrorBanner';
 import Dictation from '../Recording/Dictation';
@@ -21,9 +28,12 @@ import { trackRecordingCompleted } from '../../utils/analytics';
 import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
+import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 function ClinicalWorkspace({ signOut, user }) {
   const isNative = isNativePlatform();
+  const desktopSave = useDesktopSave();
+  const navigate = useNavigate();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
@@ -36,6 +46,9 @@ function ClinicalWorkspace({ signOut, user }) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showPopupMenu, setShowPopupMenu] = useState(false);
   const [clipboardContent, setClipboardContent] = useState('');
+  const [clipboardTarget, setClipboardTarget] = useState(null);
+  const [generationError, setGenerationError] = useState('');
+  const [noteStreamActive, setNoteStreamActive] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
@@ -54,6 +67,8 @@ function ClinicalWorkspace({ signOut, user }) {
   const copyMessageTimeoutRef = useRef(null);
   const mobileOverlayRef = useRef(null);
   const feedbackTriggerRef = useRef(null);
+  const savedNoteDropRequestRef = useRef(0);
+  useEffect(() => () => { savedNoteDropRequestRef.current += 1; }, []);
 
   const openFeedback = useCallback((event) => {
     feedbackTriggerRef.current = event?.currentTarget || document.activeElement;
@@ -63,6 +78,65 @@ function ClinicalWorkspace({ signOut, user }) {
   useUserAnalytics(user.username);
 
   const notesHistory = useNotesHistory(user.username, setIsWebSocketConnecting);
+  const clipboardDirty = Boolean(clipboardTarget && clipboardContent !== clipboardTarget.note);
+  const { setNotes: setHistoryNotes, setTranscripts: setHistoryTranscripts, refreshNotes: refreshSavedHistory } = notesHistory;
+  useEffect(() => {
+    const deleted = event => {
+      const patientId = event.detail?.patientId;
+      if (!patientId) return;
+      setHistoryNotes(items => items.filter(item => item.patientId !== patientId));
+      setHistoryTranscripts(items => items.filter(item => item.patientId !== patientId));
+      if (clipboardTarget?.patientId === patientId) {
+        setClipboardTarget(null); setClipboardContent(''); setStreamingText(''); setShowEditPanel(false);
+      }
+      if (selectedItem?.patientId === patientId) {
+        setSelectedItem(null); setSelectedContent(''); setShowContentPopup(false);
+      }
+      refreshSavedHistory();
+    };
+    window.addEventListener('patient-deleted', deleted);
+    return () => window.removeEventListener('patient-deleted', deleted);
+  }, [clipboardTarget?.patientId, selectedItem?.patientId, setHistoryNotes, setHistoryTranscripts, refreshSavedHistory]);
+  const clipboardSave = useClipboardSave({
+    note: clipboardTarget, draft: clipboardContent,
+    onSaved: note => { setClipboardTarget(note); setClipboardContent(note.note); setGenerationError(''); notesHistory.refreshNotes(); clipboardGuard.saved(); },
+    onCancelReview: () => clipboardGuard.cancel(),
+    onError: setGenerationError,
+  });
+  const clipboardGuard = useDraftGuard({
+    dirty: patientNotesEnabled && desktopSave && clipboardDirty,
+    busy: clipboardSave.busy,
+    save: () => clipboardSave.save(),
+    discard: () => setClipboardContent(clipboardTarget?.note || ''),
+  });
+
+  const openPatientNote = (note, isCurrent = () => true) => leaveDrafts(() => {
+    if (!isCurrent()) return;
+    savedNoteDropRequestRef.current += 1;
+    setClipboardTarget(note); setClipboardContent(note.note || ''); setGenerationError('');
+    setShowContentPopup(false); setShowEditPanel(false); setStreamingText('');
+    navigate('/app');
+    requestAnimationFrame(() => clipboardTextareaRef.current?.focus());
+  });
+
+  const handleSavedNoteDrop = async timestamp => {
+    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    const request = ++savedNoteDropRequestRef.current;
+    const isCurrent = () => request === savedNoteDropRequestRef.current;
+    try {
+      const { note } = await patientRequest('getSavedNote', { timestamp });
+      if (!isCurrent()) return;
+      if (!note || String(note.timestamp) !== timestamp || typeof note.note !== 'string') throw new Error('Unavailable saved note');
+      return await openPatientNote(note, isCurrent);
+    } catch {
+      if (isCurrent()) setGenerationError('The saved note could not be opened for editing. Please retry.');
+    }
+  };
+
+  const handleClipboardTextDrop = text => {
+    savedNoteDropRequestRef.current += 1;
+    setClipboardContent(text);
+  };
 
   const handleTextStreamUpdate = useCallback(async (newText) => {
     const cleanedText = stripMarkdown(newText);
@@ -85,6 +159,9 @@ function ClinicalWorkspace({ signOut, user }) {
   }, []);
 
   const recordingManager = RecordingManager({
+    onGenerationStateChange: setNoteStreamActive,
+    onGenerationError: setGenerationError,
+    onSavedNoteReady: (note) => { setClipboardTarget(note); },
     onTextStreamUpdate: handleTextStreamUpdate,
     onTransitionToMainApp: handleTransitionToMainApp
   });
@@ -183,7 +260,9 @@ function ClinicalWorkspace({ signOut, user }) {
     if (!showEditPanel) setEditContent('');
   };
 
-  const toggleRecordingPopup = (type) => {
+  const toggleRecordingPopup = async (type) => {
+    if (!await leaveDrafts()) return;
+    if (!recordingManager.isRecording && !recordingManager.isStarting) setClipboardTarget(null);
     if (recordingManager.isRecording || recordingManager.isStarting) {
       recordingManager.discardRecording();
     } else {
@@ -196,13 +275,27 @@ function ClinicalWorkspace({ signOut, user }) {
     setShowDictationPopup(prev => !prev);
   };
 
-  const toggleContentPopup = (item) => {
+  const toggleContentPopup = async (item) => {
+    if (!await leaveDrafts()) return;
     setSelectedItem(item);
     setShowNotes(true);
     setSelectedContent(item.note || '');
     setSelectedTimestamp(item.timestamp);
     setShowContentPopup(prev => !prev);
     setShowPopupMenu(false);
+  };
+
+  const handlePatientAssigned = note => {
+    setSelectedItem(item => ({ ...item, ...note }));
+    if (showNotes) setSelectedContent(note.note || '');
+    const replaceNote = items => items.map(item => item.timestamp === note.timestamp ? { ...item, ...note } : item);
+    notesHistory.setNotes(replaceNote);
+    notesHistory.setTranscripts(replaceNote);
+    if (clipboardTarget?.timestamp === note.timestamp && !clipboardDirty) {
+      setClipboardTarget(note);
+      setClipboardContent(note.note || '');
+    }
+    notesHistory.refreshNotes();
   };
 
   const togglePopupMenu = (event) => {
@@ -246,9 +339,16 @@ function ClinicalWorkspace({ signOut, user }) {
       .catch(() => alert('Failed to copy!'));
   };
 
-  const handleSendToClipboard = () => {
-    const plainText = extractPlainText(selectedContent);
-    setClipboardContent(plainText);
+  const handleSendToClipboard = async () => {
+    if (!await leaveDrafts()) return;
+    if (patientNotesEnabled && showNotes && selectedItem?.timestamp) {
+      try {
+        const { note } = await patientRequest('getSavedNote', { timestamp: selectedItem.timestamp });
+        setClipboardTarget(note); setClipboardContent(note.note || '');
+      } catch { setGenerationError('The saved note could not be opened for editing. Please retry.'); return; }
+    } else {
+      setClipboardTarget(null); setClipboardContent(extractPlainText(selectedContent));
+    }
     setShowPopupMenu(false);
     setShowContentPopup(false);
   };
@@ -265,7 +365,7 @@ function ClinicalWorkspace({ signOut, user }) {
         notesHistory.setNotes(prevNotes =>
           prevNotes.map(note =>
             (note.owner + note.timestamp) === uniqueId
-              ? { ...note, noteLabel: newLabel }
+              ? { ...note, noteLabel: newLabel, visitLabel: null }
               : note
           )
         );
@@ -275,13 +375,13 @@ function ClinicalWorkspace({ signOut, user }) {
         notesHistory.setTranscripts(prevTranscripts =>
           prevTranscripts.map(transcript =>
             (transcript.owner + transcript.timestamp) === uniqueId
-              ? { ...transcript, noteLabel: newLabel }
+              ? { ...transcript, noteLabel: newLabel, visitLabel: null }
               : transcript
           )
         );
       }
 
-      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
+      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel, visitLabel: null }));
     };
 
     try {
@@ -334,7 +434,7 @@ function ClinicalWorkspace({ signOut, user }) {
 
       if (event.ctrlKey && event.key === 'Backspace') {
         event.preventDefault();
-        setClipboardContent('');
+        leaveDrafts(() => { setClipboardContent(''); setClipboardTarget(null); });
       }
 
       if (event.ctrlKey && event.key === '`') {
@@ -402,10 +502,16 @@ function ClinicalWorkspace({ signOut, user }) {
   const handleMobileOverlayDrop = (event) => {
     event.preventDefault();
     setIsMobileOverlayDragOver(false);
+    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    const timestamp = event.dataTransfer.getData(SAVED_NOTE_DRAG_TYPE);
+    if (patientNotesEnabled && timestamp) {
+      handleSavedNoteDrop(timestamp).then(opened => { if (opened) setIsCollapsed(true); });
+      return;
+    }
+    savedNoteDropRequestRef.current += 1;
     const droppedText = event.dataTransfer.getData('text/plain');
     if (droppedText) {
-      setClipboardContent(droppedText);
-      setIsCollapsed(true);
+      leaveDrafts(() => { setClipboardTarget(null); setClipboardContent(droppedText); setIsCollapsed(true); });
     }
   };
 
@@ -418,14 +524,15 @@ function ClinicalWorkspace({ signOut, user }) {
         <meta property="og:title" content="ChiroNote | Clinical Documentation App" />
         <meta property="og:description" content="AI-powered clinical documentation workspace for healthcare professionals." />
       </Helmet>
+      {clipboardGuard.dialog}
       <IntroTour />
       <Navbar
         username={user.username}
-        onSignOut={signOut}
+        onSignOut={() => leaveDrafts(signOut)}
         onFeedback={openFeedback}
       />
+      {generationError && <p className="patient-confirmation" role="alert">{generationError}</p>}
       <ErrorBanner isVisible={showErrorBanner} />
-      {recordingManager.generationError && <p className="patient-confirmation" role="alert">{recordingManager.generationError}</p>}
 
       <Routes>
         <Route path="/" element={
@@ -446,11 +553,23 @@ function ClinicalWorkspace({ signOut, user }) {
               clipboardTextareaRef,
               clipboardContent,
               setClipboardContent,
+              noteStreamActive,
+              target: patientNotesEnabled ? clipboardTarget : null,
+              onSavedNoteDrop: patientNotesEnabled ? handleSavedNoteDrop : undefined,
+              onTextDrop: handleClipboardTextDrop,
+              review: clipboardSave.review && <ClipboardSaveReview review={clipboardSave.review} busy={clipboardSave.busy} onConfirm={clipboardSave.confirm} onCancel={clipboardSave.cancelReview} />,
               streamingText,
               setShowCopyMessage,
               showCopyMessage,
               handleCopy,
-              handleTextStreamUpdate
+              handleTextStreamUpdate,
+              save: {
+                visible: patientNotesEnabled && desktopSave && Boolean(clipboardTarget),
+                dirty: clipboardDirty, busy: clipboardSave.busy,
+                disabled: (!clipboardDirty && !clipboardTarget?.diagnosisReviewRequired && !clipboardTarget?.needsContextReview) || !clipboardContent.trim() || noteStreamActive || isTranscribing || isDictationLoading || Boolean(clipboardSave.review),
+                onSave: clipboardSave.save,
+                message: clipboardDirty ? 'Unsaved note changes' : clipboardTarget?.diagnosisReviewRequired || clipboardTarget?.needsContextReview ? 'Note needs review' : 'Note saved',
+              }
             }}
             editPanel={{
               showEditPanel,
@@ -488,12 +607,14 @@ function ClinicalWorkspace({ signOut, user }) {
               selectedItem,
               handleLabelUpdate,
               handlePopupViewModeChange,
+              onPatientAssigned: handlePatientAssigned,
               onOpen: toggleContentPopup
             }}
           />
         } />
         <Route path="/billing" element={<Billing />} />
         <Route path="/settings" element={<Settings />} />
+        {patientNotesEnabled && <Route path="/patients" element={<PatientsPage desktopSave={desktopSave} allowExport onOpenNote={openPatientNote} />} />}
         <Route path="/account" element={<Navigate to="/app/billing" replace />} />
         <Route path="/feedback" element={<LegacyFeedbackRoute onOpen={openFeedback} />} />
         <Route path="/pricingplans" element={isNative ? <Navigate to="/app/billing" replace /> : <PriceTable />} />

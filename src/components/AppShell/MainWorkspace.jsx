@@ -1,6 +1,5 @@
 import React from 'react';
-import SavedNoteEditor from '../Patients/SavedNoteEditor';
-import { patientNotesEnabled } from '../../services/patientNotes';
+import PatientName from '../Patients/PatientName';
 import Recording from '../Recording/Recording';
 import DictationPopup from '../Recording/DictationPopup';
 import ClipboardButtons from '../Clipboard/ClipboardButtons';
@@ -21,6 +20,7 @@ function MainWorkspace({
   contentPopup
 }) {
   const isHistoryToggleDisabled = recording.showRecordingPopup ||
+    recording.manager.isStarting ||
     recording.manager.isRecording ||
     recording.manager.isPreparingTranscript ||
     recording.manager.isGeneratingSummary;
@@ -34,11 +34,11 @@ function MainWorkspace({
         fetchError={notesHistory.fetchError}
         collapsedWeeks={notesHistory.collapsedWeeks}
         newItems={notesHistory.newItems}
+        onRefresh={notesHistory.refreshNotes}
         onItemClick={contentPopup.onOpen}
         onDragStart={() => {}}
         onRemoveHighlight={notesHistory.removeHighlight}
         onToggleWeek={notesHistory.toggleWeekCollapse}
-        onRefresh={notesHistory.refreshNotes}
       />
       <MobileHistoryToggle
         isCollapsed={sidebar.isCollapsed}
@@ -66,14 +66,19 @@ function MainWorkspace({
           isWebSocketConnecting={dictation.isWebSocketConnecting}
           startDictation={dictation.main.toggleDictation}
           dictationReady={dictation.main.isInitialized}
+          save={clipboard.save}
         />
+        {clipboard.target && <div className="clipboard-visit-identity"><PatientName patientId={clipboard.target.patientId} /><span>{clipboard.target.dateOfService || 'Undated visit'} · {clipboard.target.visitLabel || clipboard.target.noteLabel || 'Saved note'}</span></div>}
+        {clipboard.review}
         <Clipboard
           clipboardTextareaRef={clipboard.clipboardTextareaRef}
           clipboardContent={clipboard.clipboardContent}
           setClipboardContent={clipboard.setClipboardContent}
           streamContent={clipboard.streamingText}
+          onSavedNoteDrop={clipboard.onSavedNoteDrop}
+          onTextDrop={clipboard.onTextDrop}
           setShowCopyMessage={clipboard.setShowCopyMessage}
-          isDisabled={dictation.isDictationLoading}
+          isDisabled={dictation.isDictationLoading || clipboard.noteStreamActive || clipboard.save?.busy}
           isTranscribing={dictation.isTranscribing}
         />
       </section>
@@ -124,12 +129,7 @@ function MainWorkspace({
         />
       )}
 
-      {patientNotesEnabled && contentPopup.showContentPopup && contentPopup.selectedItem?.note && (
-        <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Saved note">
-          <SavedNoteEditor timestamp={contentPopup.selectedTimestamp} onClose={() => contentPopup.setShowContentPopup(false)} onSaved={() => notesHistory.refreshNotes()} />
-        </div></div>
-      )}
-      {contentPopup.showContentPopup && (!patientNotesEnabled || !contentPopup.selectedItem?.note) && (
+      {contentPopup.showContentPopup && (
         <ContentPopup
           setShowContentPopup={contentPopup.setShowContentPopup}
           setShowPopupMenu={contentPopup.setShowPopupMenu}
@@ -141,7 +141,9 @@ function MainWorkspace({
           selectedContent={contentPopup.selectedContent}
           showPopupCopyMessage={contentPopup.showPopupCopyMessage}
           timestamp={contentPopup.selectedTimestamp}
-          noteLabel={contentPopup.selectedItem?.noteLabel}
+          noteLabel={contentPopup.selectedItem?.visitLabel || contentPopup.selectedItem?.noteLabel}
+          patientId={contentPopup.selectedItem?.patientId}
+          onPatientAssigned={contentPopup.onPatientAssigned}
           onLabelUpdate={contentPopup.handleLabelUpdate}
           onViewModeChange={contentPopup.handlePopupViewModeChange}
           hasTranscript={Boolean(contentPopup.selectedItem?.transcript && contentPopup.selectedItem.transcript.trim() !== '')}

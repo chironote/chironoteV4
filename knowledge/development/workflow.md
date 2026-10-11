@@ -12,6 +12,8 @@ tags: [chironote, development, testing, maintenance]
 
 Use npm with the checked-in `package-lock.json`.
 
+On Windows, the checked-in Jest `testMatch` is a relative glob so CRA's absolute drive path does not prevent discovery. Run `npm test -- --watchAll=false --runInBand`; an explicit equivalent is `npm test -- --watchAll=false --runInBand --testMatch '**/?(*.)+(spec|test).[jt]s?(x)'`. Jest27 does not honor Router7's modern exports and the package's legacy `main` names a missing file, so `moduleNameMapper` points to its real installed CommonJS entry and `react-router/dom` export. `src/setupTests.js` supplies jsdom's missing encoders/fetch browser globals. These are real router implementations, not router mocks or a dependency downgrade.
+
 | Task | Command | Notes |
 | --- | --- | --- |
 | Install dependencies | `npm install` | Preserve the lockfile. |
@@ -53,4 +55,4 @@ See [Capacitor Android Application](../architecture/capacitor-android.md) before
 
 ## Provenance
 
-Synthesized from [`AGENTS.md`](../../AGENTS.md), [`README.md`](../../README.md), and [`package.json`](../../package.json).
+Synthesized from [AGENTS.md](../../AGENTS.md), [README.md](../../README.md), and [package.json](../../package.json).

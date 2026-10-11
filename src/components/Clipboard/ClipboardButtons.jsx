@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import captureIcon from '../../assets/conversation.svg';
+import React from 'react';
 import { trackDictationStart } from '../../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
@@ -16,15 +15,9 @@ const ClipboardButtons = ({
   startDictation,
   dictationButtonStatus,
   dictationReady,
-  isWebSocketConnecting
+  isWebSocketConnecting,
+  save
 }) => {
-  const [isDictationActive, setIsDictationActive] = useState(false);
-
-  // Update the dictation active state based on props
-  useEffect(() => {
-    setIsDictationActive(isDictationLoading || isTranscribing || isWebSocketConnecting);
-  }, [isDictationLoading, isTranscribing, isWebSocketConnecting]);
-
   const handleDictationClick = () => {
     // Track the dictation button click
     trackDictationStart();
@@ -40,6 +33,7 @@ const ClipboardButtons = ({
           id="new-note-btn"
           className="toolbar-button new-note-button"
           onClick={() => toggleRecordingPopup('conversation')}
+          aria-label="Create a new note"
         >
           <span className="plus-icon">+</span>
           <span className="button-text">New Note</span>
@@ -54,6 +48,8 @@ const ClipboardButtons = ({
             ${isTranscribing ? 'button-recording' : ''}`
           }
           onClick={handleDictationClick}
+          aria-label={dictationButtonStatus || 'Start dictation'}
+          title={dictationButtonStatus || 'Start dictation'}
           // Remove the disabled attribute to allow clicks during loading
         >
           <span className="material-symbols-rounded toolbar-icon">mic</span>
@@ -67,6 +63,7 @@ const ClipboardButtons = ({
             className="toolbar-button"
             onClick={() => handleCopy(false)}
             title="Copy text"
+            aria-label="Copy clipboard text"
           >
             <span className="material-symbols-rounded toolbar-icon">
               {showCopyMessage ? 'check' : 'content_copy'}
@@ -83,27 +80,51 @@ const ClipboardButtons = ({
           className="toolbar-button"
           onClick={() => setClipboardContent("")}
           title="Clear text"
+          aria-label="Clear clipboard text"
         >
           <span className="material-symbols-rounded toolbar-icon">delete</span>
         </button>
 
         <div className="toolbar-divider hide-on-mobile"></div>
         
+        <div className="toolbar-edit-actions">
         <button
           id="edit-panel-btn"
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
           onClick={toggleEditPanel}
+          aria-label={showEditPanel ? 'Close Smart Editor' : 'Open Smart Editor'}
+          title={showEditPanel ? 'Close Smart Editor' : 'Open Smart Editor'}
+          aria-pressed={showEditPanel}
         >
-          <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
+          <span className="material-symbols-rounded toolbar-icon">edit</span>
         </button>
+        {save?.visible && <div className="toolbar-divider" aria-hidden="true" />}
+        {save?.visible && <button
+          type="button"
+          id="save-note-btn"
+          className={`toolbar-button ${save.dirty ? 'has-unsaved-changes' : ''}`}
+          onClick={save.onSave}
+          disabled={save.disabled || save.busy}
+          aria-label={save.busy ? 'Saving note' : save.dirty ? 'Save note changes' : 'Note saved'}
+          title={save.busy ? 'Saving note…' : save.dirty ? 'Save note changes' : 'Note saved'}
+          aria-busy={save.busy}
+        >
+          <span className="material-symbols-rounded toolbar-icon" aria-hidden="true">save</span>
+        </button>}
+        </div>
+        {save?.visible && <span className="clipboard-save-status" role="status" aria-live="polite">{save.busy ? 'Saving note…' : save.message}</span>}
         
       </div>
       {/* Added media query to hide elements on mobile */}
-      <style jsx>{`
+      <style>{`
         /* Fix iOS/Safari blue tap highlight and force icon color */
         .toolbar-button {
           -webkit-tap-highlight-color: transparent;
         }
+        .toolbar-button.has-unsaved-changes { background-color: var(--pale-green); }
+        .toolbar-button:disabled { opacity: .5; cursor: not-allowed; }
+        @media (pointer: coarse) { .toolbar-button { min-width: 48px; min-height: 48px; } }
+        .clipboard-save-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         .toolbar-icon, .material-symbols-rounded.toolbar-icon {
           color: var(--dark-green) !important;
         }

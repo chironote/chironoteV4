@@ -7,7 +7,7 @@ tags: [chironote, context, architecture, recording, dictation]
 ---
 
 
-> Source: [`Context.md`](../../src/components/Recording/Context.md)
+> Source: [Context.md](../../src/components/Recording/Context.md)
 
 # Recording and Dictation Context
 
@@ -97,5 +97,5 @@ The recording lifecycle and upload-queue tests cover Android container renewal a
 
 ## Provenance
 
-Derived from [`Context.md`](../../src/components/Recording/Context.md).
+Derived from [Context.md](../../src/components/Recording/Context.md).
 

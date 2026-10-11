@@ -12,8 +12,10 @@
     "@capacitor/app": "^6.0.2",
     "@capacitor/clipboard": "^6.0.2",
     "@capacitor/core": "^6.2.1",
+    "@capacitor/filesystem": "6.0.2",
     "@capacitor/ios": "^6.2.1",
     "@capacitor/keyboard": "^6.0.3",
+    "@capacitor/share": "6.0.2",
     "@capacitor/splash-screen": "^6.0.3",
     "@capacitor/status-bar": "^6.0.2",
     "amplify": "^0.0.11",
@@ -46,6 +48,13 @@
     "cap:run:android": "cap run android",
     "build:mobile": "npm run build && cap sync",
     "clean-build": "powershell -ExecutionPolicy Bypass -File ./clean-build.ps1"
+  },
+  "jest": {
+    "testMatch": ["**/?(*.)+(spec|test).[jt]s?(x)"],
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
   },
   "eslintConfig": {
     "extends": [

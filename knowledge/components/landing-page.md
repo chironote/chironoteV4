@@ -7,7 +7,7 @@ tags: [chironote, component, landing-page]
 ---
 
 
-> Source: [`README.md`](../../src/components/LandingPage/README.md)
+> Source: [README.md](../../src/components/LandingPage/README.md)
 
 # LandingPage Components
 
@@ -63,5 +63,5 @@ const [activeSlide, setActiveSlide] = useState(0);
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/LandingPage/README.md).
+Derived from [README.md](../../src/components/LandingPage/README.md).
 

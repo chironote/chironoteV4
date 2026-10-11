@@ -7,7 +7,7 @@ tags: [chironote, component, recording, dictation, legacy]
 ---
 
 
-> Source: [`Dictation.md`](../../src/components/Recording/Dictation.md)
+> Source: [Dictation.md](../../src/components/Recording/Dictation.md)
 
 # Dictation.jsx Context
 
@@ -973,5 +973,5 @@ audioStream.pipeTo(transcriberRef.current.stream()).catch(error => {
 
 ## Provenance
 
-Derived from [`Dictation.md`](../../src/components/Recording/Dictation.md).
+Derived from [Dictation.md](../../src/components/Recording/Dictation.md).
 

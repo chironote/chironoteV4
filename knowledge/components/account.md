@@ -7,9 +7,11 @@ tags: [chironote, component, billing, settings, capacitor]
 ---
 
 
-> Source: [`Billing README`](../../src/components/Billing/README.md) and [`Settings README`](../../src/components/Settings/README.md)
+> Source: [Billing README](../../src/components/Billing/README.md) and [Settings README](../../src/components/Settings/README.md)
 
 # Billing and Settings
+
+Settings now includes the patient PDF signature name/NPI card when patient notes are enabled. The NPI is masked outside Configure Signature. Native billing remains usage-only and `/app/pricingplans` redirects to Billing. The patient catch-up does not replace the existing Custom Instructions implementation.
 
 The authenticated account experience is split between Billing and Settings. Billing is mounted at `/app/billing`, Settings is mounted at `/app/settings`, and `/app/account` is a compatibility redirect to Billing.
 
@@ -57,5 +59,5 @@ Billing and purchasing are web-only. In a Capacitor runtime, `Billing.jsx` shows
 
 ## Provenance
 
-Derived from [`Billing README`](../../src/components/Billing/README.md), [`Billing.jsx`](../../src/components/Billing/Billing.jsx), [`Settings.jsx`](../../src/components/Settings/Settings.jsx), and [`AuthenticatedApp.jsx`](../../src/components/AppShell/AuthenticatedApp.jsx).
+Derived from [Billing README](../../src/components/Billing/README.md), [Billing.jsx](../../src/components/Billing/Billing.jsx), [Settings.jsx](../../src/components/Settings/Settings.jsx), and [AuthenticatedApp.jsx](../../src/components/AppShell/AuthenticatedApp.jsx).
 

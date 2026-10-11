@@ -7,7 +7,7 @@ tags: [chironote, component, cookie-consent]
 ---
 
 
-> Source: [`README.md`](../../src/components/CookieConsent/README.md)
+> Source: [README.md](../../src/components/CookieConsent/README.md)
 
 # CookieConsent Components
 
@@ -45,5 +45,5 @@ Declining stores `false` and does not initialize analytics from this component.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/CookieConsent/README.md).
+Derived from [README.md](../../src/components/CookieConsent/README.md).
 

@@ -1,5 +1,7 @@
 # Recording Components
 
+Capture now collapses a selected patient to their name and × reset. Existing selections default to follow-up with a Re-Exam option; a new name uses initial exam, and capture automatically includes saved history. `RecordingManager` forwards durable saved-note and generation-state callbacks to the shared clipboard. This port preserves Android's microphone-start cancellation, four-minute finalized containers, pause-flush/resume-new-container, foreground rotation and serialized uploads. Generation cleanup releases the clipboard busy state without accepting preview text as saved.
+
 This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.
 
 ## Files
@@ -85,6 +87,6 @@ This preserves the established WebView implementation and does not add a native 
 
 ## Patient notes integration
 
-With patient capture enabled, `Recording` uses `Patients/PatientCapturePicker` for an existing patient, new patient, or Skip. It freezes patient/date/visit-type metadata independently of noteSettings and starts microphone access within the user gesture before asynchronous auth or network work. `RecordingManager` and the upload queue retain that snapshot for the complete session; cancellation and account changes invalidate late callbacks. Updated captures request automatic transcription language selection. `useNoteGeneration` associates the stream with the exact Notes key and obtains a durable saved-note acknowledgement before treating the preview as saved. A partial or unconfirmed stream remains visible with recovery guidance.
+With patient capture enabled, `Recording` uses `Patients/PatientCapturePicker` for an existing patient, new patient, or unassigned visit. It freezes patient/date/visit-type metadata independently of noteSettings and starts microphone access within the user gesture before asynchronous auth or network work. `RecordingManager` and the upload queue retain that snapshot for the complete session; cancellation and account changes invalidate late callbacks. Updated captures request automatic transcription language selection. `useNoteGeneration` associates the stream with the exact Notes key and obtains a durable saved-note acknowledgement before treating the preview as saved. A partial or unconfirmed stream remains visible with recovery guidance.
 
 `REACT_APP_PATIENT_NOTES_ENABLED` enables patient features; `REACT_APP_PATIENT_CAPTURE_ENABLED=false` independently stops new patient capture. Do not log transcripts, generated notes, patient metadata, auth tokens, or upload paths. Patient service contracts and draft guards are maintained in `Patients` and `src/services/patientNotes.js`.

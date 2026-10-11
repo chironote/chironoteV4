@@ -1,6 +1,7 @@
 import React from 'react';
 import PatientName from '../Patients/PatientName';
 import { formatTimestamp, getFirstSentenceOrSubstring } from '../../utils/historyGrouping';
+import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 function HistoryListItem({ item, onClick, onDragStart, isNew, onMouseEnter }) {
   const content = item.note || '';
@@ -9,6 +10,7 @@ function HistoryListItem({ item, onClick, onDragStart, isNew, onMouseEnter }) {
 
   const handleDragStart = (event) => {
     event.dataTransfer.setData('text/plain', content);
+    if (item.timestamp) event.dataTransfer.setData(SAVED_NOTE_DRAG_TYPE, String(item.timestamp));
     onDragStart(content);
   };
 

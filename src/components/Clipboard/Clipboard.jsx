@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { writeClipboardText } from '../../services/nativePlatform';
 import { stripMarkdown } from '../../utils/markdownStripper';
+import { writeClipboardText } from '../../services/nativePlatform';
+import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 const Clipboard = ({
   clipboardTextareaRef,
   clipboardContent,
   setClipboardContent,
+  onSavedNoteDrop,
+  onTextDrop,
   streamContent,
   setShowCopyMessage,
   isDisabled,
@@ -37,8 +40,15 @@ const Clipboard = ({
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDraggingOver(false);
+    if (isDisabled || isTranscribing || isWebSocketConnecting) return;
+    const timestamp = e.dataTransfer.getData(SAVED_NOTE_DRAG_TYPE);
+    if (timestamp && onSavedNoteDrop) {
+      onSavedNoteDrop(timestamp);
+      return;
+    }
     const droppedText = e.dataTransfer.getData('text/plain');
-    setClipboardContent(droppedText);
+    if (onTextDrop) onTextDrop(droppedText);
+    else setClipboardContent(droppedText);
   };
 
   const copySection = (section) => {
@@ -190,7 +200,7 @@ const Clipboard = ({
 
   return (
     <div className="clipboard">
-      <div className="soap-buttons">
+      <div className="soap-buttons" role="group" aria-label="Copy note sections">
         {Object.entries(soapPositions).map(([section, position]) => (
           position !== undefined && position > 0 && (
             <button
@@ -199,6 +209,7 @@ const Clipboard = ({
               style={{ top: `${position}px` }}
               onClick={() => copySection(section)}
               disabled={isDisabled || isTranscribing}
+              aria-label={`Copy ${section} section`}
             >
               {section}
             </button>
@@ -220,9 +231,10 @@ const Clipboard = ({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           aria-readonly={isTranscribing || isWebSocketConnecting}
+          aria-label="Clipboard note text"
         />
       </div>
-      <style jsx>{`
+      <style>{`
         .clipboard-textarea.dictation-active {
           background-color: rgba(0, 0, 0, 0.03);
           pointer-events: none;

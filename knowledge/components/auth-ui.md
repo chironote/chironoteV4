@@ -7,7 +7,7 @@ tags: [chironote, component, auth-ui]
 ---
 
 
-> Source: [`README.md`](../../src/components/AuthUI/README.md)
+> Source: [README.md](../../src/components/AuthUI/README.md)
 
 # Authentication UI
 
@@ -34,7 +34,7 @@ The previous knowledge log did not record the credential work. Git history suppl
 
 - Commit `24f3cd4` on 2025-09-11 added a native “Remember me” checkbox that wrote `saved_email` and `saved_password` directly to WebView `localStorage`. It remembered credentials but created the security/compliance problem later flagged in the data-safety map.
 - Commits `ef3f2a4` and `b9a2a52` on 2026-08-15 replaced plaintext storage with AndroidX Credential Manager, added safe failure handling, delayed provider saves until after confirmed Cognito authentication, avoided redundant saves for provider-selected passwords, and added focused tests.
-- Those reviewed commits remained only on `codex/android-login-credentials`, which forked before the maintained `cap-and` architecture and was never merged. Installing a later `cap-and` build therefore removed both the native provider behavior and the older fallback even though no rollback commit explicitly deleted them.
+- Those reviewed commits remained only on codex/android-login-credentials, which forked before the maintained `cap-and` architecture and was never merged. Installing a later `cap-and` build therefore removed both the native provider behavior and the older fallback even though no rollback commit explicitly deleted them.
 - The 2026-08-31 port adapted the reviewed behavior to current `cap-and` by creating a native-only auth boundary and retaining Amplify Authenticator unchanged on the website.
 
 ## App/Site Association
@@ -50,5 +50,5 @@ The Android manifest declares `https://chironote.ai/.well-known/assetlinks.json`
 
 ## Provenance
 
-Synthesized from [`AuthUI README`](../../src/components/AuthUI/README.md), [`AuthWrapper.jsx`](../../src/components/AppShell/AuthWrapper.jsx), [`NativeAuthContainer.jsx`](../../src/components/AuthUI/NativeAuthContainer.jsx), [`SignInForm.jsx`](../../src/components/AuthUI/SignInForm.jsx), [`CredentialManager.js`](../../src/plugins/CredentialManager.js), [`CredentialManagerPlugin.java`](../../android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java), [`AndroidManifest.xml`](../../android/app/src/main/AndroidManifest.xml), [`DataSafetyDisclosuresMap.md`](../../src/DataSafetyDisclosuresMap.md), the `codex/android-login-credentials`/`cap-and` Git history, and the app-association endpoint checked on 2026-08-31.
+Synthesized from [AuthUI README](../../src/components/AuthUI/README.md), [AuthWrapper.jsx](../../src/components/AppShell/AuthWrapper.jsx), [NativeAuthContainer.jsx](../../src/components/AuthUI/NativeAuthContainer.jsx), [SignInForm.jsx](../../src/components/AuthUI/SignInForm.jsx), [CredentialManager.js](../../src/plugins/CredentialManager.js), [CredentialManagerPlugin.java](../../android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java), [AndroidManifest.xml](../../android/app/src/main/AndroidManifest.xml), [DataSafetyDisclosuresMap.md](../../src/DataSafetyDisclosuresMap.md), the codex/android-login-credentials/`cap-and` Git history, and the app-association endpoint checked on 2026-08-31.
 
