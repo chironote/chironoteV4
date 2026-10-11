@@ -1,0 +1,11 @@
+# Native application shell
+
+`AuthenticatedApp` owns the principal-keyed clinical workspace, exact saved-note identity/version, in-memory clipboard drafts, recording, dictation and popup state. `MainWorkspace` renders the grouped props. `useNotesHistory` loads and paginates owner history, omits deleted markers, keeps the latest 100 non-empty notes, subscribes to updates and refreshes manually, on visibility and on native foreground. Failed refresh preserves history with an inline retry message; older fetch completions are ignored. Foreground also expires temporary PDF files.
+
+`src/App.jsx` uses a data router with DraftRouteGuard while retaining the existing AuthContainer/sign-in flow. Home, Patients, Billing and Settings are protected. Billing renders the existing native Account usage view; account/pricingplans are compatibility redirects to it. No Stripe checkout, marketing scripts, user analytics or milestone writes are included. Feedback is a controlled modal with a compatibility route.
+
+Patients selections, source-note links, popup clipboard actions and saved-history drops retrieve exact saved records and use the shared draft guard before opening the clipboard. Save is enabled on Capacitor phones/tablets and fine-pointer desktop; browser-mobile retains local editing. useClipboardSave binds the loaded version and preserves failed/conflicting drafts. Required diagnosis/context confirmation is inline. Reassignment refreshes matching clean clipboard identity; dirty drafts retain their original version. Confirmed deletion clears matching patient history, popup and clipboard.
+
+RecordingManager remains the iOS lifecycle implementation; the shell receives generation/error/saved-note callbacks without altering WebKit stop ordering. Dictation snapshots the selected textarea range before starting and applies revised transcripts through pure dictationInsertion helpers. Whole-note and section copies use nativePlatform. Flat legacy Clipboard/ContentPopup/EditPanel/ErrorBanner modules are compatibility re-exports, not additional editors.
+
+Source provenance: imported shared workflow from web prod `142383e`; native integration preserves cap-ios `2326d34`. Tests cover saved identity, draft navigation, diagnosis changes and native route restrictions. Changes to this folder require updating this README and the app-shell knowledge concept.

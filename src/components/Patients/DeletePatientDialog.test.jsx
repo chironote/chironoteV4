@@ -1,0 +1,34 @@
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import DeletePatientDialog from './DeletePatientDialog';
+import { patientRequest } from '../../services/patientNotes';
+jest.mock('../../services/patientNotes', () => ({ patientRequest: jest.fn() }));
+global.IS_REACT_ACT_ENVIRONMENT = true;
+let container, root;
+beforeEach(() => { patientRequest.mockReset(); container = document.createElement('div'); document.body.append(container); root = createRoot(container); });
+afterEach(() => { act(() => root.unmount()); container.remove(); });
+const button = name => [...container.querySelectorAll('button')].find(item => item.textContent === name);
+test('permanent deletion requires warning acknowledgment and finishes every batch', async () => {
+  patientRequest.mockResolvedValueOnce({ deletionSummary: { version: 'p1', visitCount: 73 } }).mockResolvedValueOnce({ status: 'DELETING' }).mockResolvedValueOnce({ status: 'DELETED' });
+  const deleted = jest.fn();
+  await act(async () => root.render(<DeletePatientDialog patient={{ patientId: 'p', name: 'Synthetic' }} onClose={() => {}} onDeleted={deleted} />));
+  expect(button('Delete Patient').disabled).toBe(true);
+  expect(container.textContent).toContain('73 linked visits');
+  await act(async () => container.querySelector('input[type=checkbox]').click());
+  await act(async () => button('Delete Patient').click());
+  expect(deleted).toHaveBeenCalledWith('p');
+  expect(patientRequest.mock.calls.filter(([op]) => op === 'updatePatient')).toHaveLength(2);
+  expect(patientRequest).toHaveBeenLastCalledWith('updatePatient', { patientId: 'p', action: 'delete', expectedVersion: 'p1', confirmPermanentDeletion: true });
+});
+test('Cancel does not delete and failures remain visible for retry', async () => {
+  patientRequest.mockResolvedValueOnce({ deletionSummary: { version: 'p1', visitCount: 0 } });
+  const close = jest.fn(); const deleted = jest.fn();
+  await act(async () => root.render(<DeletePatientDialog patient={{ patientId: 'p', name: 'Synthetic' }} onClose={close} onDeleted={deleted} />));
+  await act(async () => button('Cancel').click()); expect(close).toHaveBeenCalledTimes(1);
+  expect(patientRequest).toHaveBeenCalledTimes(1);
+  patientRequest.mockRejectedValueOnce(new Error('The patient changed. Reopen deletion.'));
+  await act(async () => container.querySelector('input[type=checkbox]').click());
+  await act(async () => button('Delete Patient').click());
+  expect(container.querySelector('[role=alert]').textContent).toContain('patient changed');
+  expect(deleted).not.toHaveBeenCalled();
+});

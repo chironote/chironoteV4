@@ -1,10 +1,10 @@
+import { cleanupPatientPdfCache } from './services/patientPdfDelivery';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import './ios.css';
 import { Amplify } from 'aws-amplify';
-import { generateClient } from 'aws-amplify/api';
 import config from './amplifyconfiguration.json';
 
 // Capacitor imports for mobile functionality
@@ -14,10 +14,11 @@ import { SplashScreen } from '@capacitor/splash-screen';
 
 Amplify.configure(config);
 
-const client = generateClient();
+
 
 // Initialize Capacitor plugins when running on mobile
 if (Capacitor.isNativePlatform()) {
+  cleanupPatientPdfCache();
   // Hide splash screen
   SplashScreen.hide();
   

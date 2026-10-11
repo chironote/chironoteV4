@@ -17,6 +17,7 @@
     "@capacitor/haptics": "^6.0.1",
     "@capacitor/ios": "^6.1.2",
     "@capacitor/keyboard": "^6.0.2",
+    "@capacitor/share": "6.0.2",
     "@capacitor/splash-screen": "^6.0.2",
     "@capacitor/status-bar": "^6.0.1",
     "@testing-library/jest-dom": "^5.17.0",
@@ -75,5 +76,14 @@
   "description": "Final version",
   "main": "index.js",
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "jest": {
+    "testMatch": [
+      "**/?(*.)+(spec|test).[jt]s?(x)"
+    ],
+    "moduleNameMapper": {
+      "^react-router-dom$": "<rootDir>/node_modules/react-router-dom/dist/index.js",
+      "^react-router/dom$": "<rootDir>/node_modules/react-router/dist/development/dom-export.js"
+    }
+  }
 }

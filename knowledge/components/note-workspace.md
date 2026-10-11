@@ -1,43 +1,24 @@
 ---
 type: user-workspace-component
 title: "Note Workspace and Section Actions"
-description: "How clipboard editing, history popups, section copy controls, streaming text, and note labels behave in the V4 client."
-resource: "../../src/components/Clipboard.jsx"
-tags: [clipboard, notes, transcripts, editing, copy, sections]
+description: "Shared clipboard identity, editing, native copy, history reassignment and save review."
+resource: "../../src/components/Clipboard/Clipboard.jsx"
+tags: [clipboard, editing, copy, patients]
 ---
 
 # Note Workspace and Section Actions
 
-The central clipboard is a controlled textarea. It accepts manual edits and
-drag-and-drop text, receives recording and dictation streams, and exposes copy
-controls for the hard-coded `Subjective:`, `Objective:`, `Assessment:`, and
-`Plan:` headers. The buttons locate headers with string searches and position
-themselves from a hidden measuring element; they copy only the text between the
-current and next recognized header. The main app and history popup use the
-Capacitor Clipboard plugin on native platforms and the browser clipboard API on
-the web, after converting HTML-like content to plain text.
+The main clipboard is the only clinical editor. Patients visits, source links, saved-note drops and popup send-to-clipboard retrieve exact saved identity/version and pass draft guards. Native Capacitor phones/tablets and fine-pointer desktop can Save; browser-mobile remains local editing. Save conflicts retain the draft. Explicit Assessment code changes require full code/description confirmation, with no internal status selectors. Smart Editor updates this same draft and does not independently persist it.
 
-History items open in `ContentPopup`, where the same four literal headers are
-made clickable for section copy. A note label can be renamed through
-`updateNotes`; the app updates local state immediately and shows an alert if the
-backend write fails, so a visible rename can be locally ahead of persistence.
-The popup can copy all content and send selected content back to the clipboard.
+Whole-note and recognized S/O/A/P/T section copies use nativePlatform (Capacitor Clipboard on native, browser API on web). Revised dictation text preserves the immutable before/after selection snapshot. Clinical drafts remain memory-only.
 
-Smart Editor accepts natural-language edit instructions, sends `noteInput` and
-`editInput` to its dedicated Lambda URL, streams returned text into the main
-clipboard, and decrements the authenticated subscription's `notesleft` after
-completion. It does not save the resulting clipboard text through the notes
-mutation in this checkout. Existing saved notes are loaded and updated through
-GraphQL history operations.
+History uses ContentPopup for note/transcript reading. Current patient name opens compact Re-Assign/Cancel. The separate descriptor label has a pencil edit affordance; rename uses the existing GraphQL resolver and warns if only the local change succeeded. Reassignment requires destructive empty-source acknowledgment when applicable and updates a matching clean clipboard to the returned version. Explicit patient deletion clears linked workspace state.
 
 ## Provenance
 
-- [Clipboard](../../src/components/Clipboard.jsx)
-- [Content popup](../../src/components/ContentPopup.jsx)
-- [Smart Editor](../../src/components/EditPanel.jsx)
-- [App state](../../src/App.jsx)
-- [Clipboard toolbar](../../src/components/ClipboardButtons.jsx)
-- [GraphQL mutations](../../src/graphql/mutations.js)
-
-The section grammar is an observed legacy client convention. It is not a
-general parser for arbitrary headings.
+- [Clipboard](../../src/components/Clipboard/Clipboard.jsx)
+- [Popup](../../src/components/Sidebar/ContentPopup.jsx)
+- [Save](../../src/components/Patients/useClipboardSave.js)
+- [Shell](../../src/components/AppShell/AuthenticatedApp.jsx)
+- [Native clipboard adapter](../../src/services/nativePlatform.js)
+- [Insertion helper](../../src/utils/dictationInsertion.js)

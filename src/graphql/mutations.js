@@ -11,6 +11,11 @@ export const createUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }
@@ -25,6 +30,11 @@ export const updateUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
       __typename
     }
   }
@@ -39,6 +49,40 @@ export const deleteUserSubscription = /* GraphQL */ `
       tier
       hoursleft
       notesleft
+      hoursSaved
+      hoursSavedLifetime
+      isActivated
+      has3Notes
+      has5Notes
+      __typename
+    }
+  }
+`;
+export const startMyCustomInstructionsCompilation = /* GraphQL */ `
+  mutation StartMyCustomInstructionsCompilation(
+    $input: StartCustomInstructionsCompilationInput!
+  ) {
+    startMyCustomInstructionsCompilation(input: $input) {
+      accepted
+      jobId
+      compileStatus
+      effectiveMode
+      __typename
+    }
+  }
+`;
+export const disableMyCustomInstructions = /* GraphQL */ `
+  mutation DisableMyCustomInstructions {
+    disableMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
       __typename
     }
   }

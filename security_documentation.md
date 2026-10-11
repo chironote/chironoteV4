@@ -196,3 +196,6 @@ ChiroNote uses two DynamoDB tables:
 ### 11.12 AppSync
 
 The GraphQL schema is set to auth:owner, therefore the application by it's very structure only allows the user to see any notes or transcripts belonging to them.
+## Client credential handling update — 2026-10-11
+
+The cap-ios sign-in form no longer stores raw email/password pairs in localStorage. Upgrade/startup removes only historical saved_email and saved_password keys, without reading/logging their values. Entered credentials stay in React memory; standard username/current-password autocomplete remains available to the platform. This is not an implementation of iOS Keychain saving. Cognito session storage remains managed by Amplify. Raw authenticated-user and error-object logging is removed from this authentication boundary. A transient Amplify NetworkError during refresh keeps the session; other refresh failures and explicit sign-out remove the clinical view, with stale async restoration rejected. Synthetic tests validate client behavior; live identity-provider and device validation remain separate.

@@ -11,7 +11,7 @@ the documentation or generated-file tree.
 ## Architecture
 
 - [Authenticated App Shell](./architecture/app-shell.md): routing, auth gate,
-  central state, history refresh, recording, dictation, and panel ownership.
+  responsive sign-in, central state, history refresh, recording, dictation, and panel ownership.
 - [Amplify and Lambda Data Integration](./architecture/data-integration.md):
   GraphQL records/subscriptions, usage counters, storage/SQS, and direct Lambda
   streaming boundaries.
@@ -23,7 +23,7 @@ the documentation or generated-file tree.
 - [Recording Lifecycle](./components/recording-lifecycle.md): MediaRecorder
   segmentation, iPhone WebKit stop ordering, cancellation, and upload ordering.
 - [Note Workspace and Section Actions](./components/note-workspace.md):
-  clipboard behavior, legacy SOAP section controls, history popups, labels, and
+  versioned native Save, draft guards, SOAP copy, history reassignment, labels, and
   Smart Editor streaming.
 - [Live Dictation Streaming](./components/dictation-streaming.md): AudioWorklet
   conversion, AssemblyAI turns, token refresh, usage accounting, and cleanup.
@@ -31,18 +31,18 @@ the documentation or generated-file tree.
 ## Operations
 
 - [Capacitor Mobile Build](./operations/mobile-build.md): web-to-native sync,
-  iOS/Android project settings, permissions, and build preparation.
+  iOS/Android project settings, permissions, app-cache privacy manifest, and build preparation.
 
 ## Security
 
 - [Clinical Data and Credential Boundaries](./security/privacy-boundaries.md):
-  PHI movement, authentication, token and credential handling, and privacy-review
+  PHI movement, auth/session lifecycle, retired plaintext credential storage, and privacy-review
   boundaries.
 
 ## Development
 
 - [Frontend and Native Verification Workflow](./development/workflow.md): local
-  scripts, focused tests, generated artifacts, and release verification.
+  scripts, focused tests, Router 7.2 CommonJS test context, generated artifacts, and release verification.
 
 ## Maintenance
 
@@ -54,4 +54,4 @@ tokens, audio, notes, transcripts, or patient data in knowledge files.
 
 ## Patient notes update
 
-- [Patient notes](architecture/patient-notes.md): capture, saved-note contracts, platform scope and rollout gates.
+- [Patient notes](architecture/patient-notes.md): compact capture, native Save/diagnosis review, deletion/reassignment, PDF sharing and rollout gates.

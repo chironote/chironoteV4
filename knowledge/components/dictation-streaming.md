@@ -28,6 +28,8 @@ dictation connection is initializing or active. The AssemblyAI service and token
 Lambda are external boundaries, so this repository documents the caller and
 wire assumptions only.
 
+The native dictation controller accepts selection lifecycle callbacks from AppShell. When present, startup leaves existing text intact, every revised turn updates the captured insertion and stop finalizes that insertion instead of replacing the note. The native AudioWorklet/token path remains unchanged.
+
 ## Provenance
 
 - [Dictation controller](../../src/components/Recording/Dictation.jsx)
@@ -37,5 +39,5 @@ wire assumptions only.
 - [Subscription mutations](../../src/graphql/mutations.js)
 - [Application context](../../Context.md)
 
-The current component outranks the longer design-style `Dictation.md` when they
+The current component outranks the longer design-style context linked above when they
 describe different behavior.

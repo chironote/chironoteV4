@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { signIn, getCurrentUser } from 'aws-amplify/auth';
-import { Capacitor } from '@capacitor/core';
+import { clearLegacyCredentials } from './credentialStorage';
 import textLogo from '../../assets/fulllogo.svg';
 import './AuthUI.css';
 
@@ -10,77 +10,36 @@ const SignInForm = ({ onSignInSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-
-  // Load saved credentials on component mount
+  const mounted = useRef(false);
+  const submitting = useRef(false);
   useEffect(() => {
-    if (Capacitor.isNativePlatform()) {
-      loadSavedCredentials();
-    }
+    mounted.current = true;
+    clearLegacyCredentials();
+    return () => { mounted.current = false; };
   }, []);
-
-  const loadSavedCredentials = () => {
-    try {
-      const savedEmail = localStorage.getItem('saved_email');
-      const savedPassword = localStorage.getItem('saved_password');
-      
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setRememberMe(true);
-      }
-      if (savedPassword) {
-        setPassword(savedPassword);
-      }
-    } catch (error) {
-      console.log('No saved credentials found:', error);
-    }
-  };
-
-  const saveCredentials = () => {
-    if (Capacitor.isNativePlatform() && rememberMe) {
-      try {
-        localStorage.setItem('saved_email', email);
-        localStorage.setItem('saved_password', password);
-      } catch (error) {
-        console.log('Failed to save credentials:', error);
-      }
-    }
-  };
-
-  const clearCredentials = () => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        localStorage.removeItem('saved_email');
-        localStorage.removeItem('saved_password');
-      } catch (error) {
-        console.log('Failed to clear credentials:', error);
-      }
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
     setIsLoading(true);
     setError('');
 
     try {
-      const user = await signIn({
+      const result = await signIn({
         username: email,
         password: password
       });
       
-      // Save credentials if remember me is checked
-      if (rememberMe) {
-        saveCredentials();
-      } else {
-        clearCredentials();
+      if (!result.isSignedIn) {
+        if (mounted.current) setError('Complete your account verification or password recovery on the ChiroNote website, then try again.');
+        return;
       }
-      
+
       // Get current user details after successful sign in
       const currentUser = await getCurrentUser();
-      onSignInSuccess(currentUser);
+      if (mounted.current) { setPassword(''); onSignInSuccess(currentUser); }
     } catch (error) {
-      console.error('Sign in error:', error);
       let errorMessage = 'Sign in failed. Please try again.';
       
       if (error.name === 'NotAuthorizedException') {
@@ -89,13 +48,14 @@ const SignInForm = ({ onSignInSuccess }) => {
         errorMessage = 'Please check your email and confirm your account.';
       } else if (error.name === 'UserNotFoundException') {
         errorMessage = 'No account found with this email address.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      } else if (error.name === 'NetworkError') {
+        errorMessage = 'Check your connection and try signing in again.';
       }
       
-      setError(errorMessage);
+      if (mounted.current) setError(errorMessage);
     } finally {
-      setIsLoading(false);
+      submitting.current = false;
+      if (mounted.current) setIsLoading(false);
     }
   };
 
@@ -130,7 +90,7 @@ const SignInForm = ({ onSignInSuccess }) => {
                 required
                 disabled={isLoading}
                 className="auth-input"
-                autoComplete="email"
+                autoComplete="username"
               />
               <span className="input-icon error-icon">!</span>
             </div>
@@ -155,6 +115,7 @@ const SignInForm = ({ onSignInSuccess }) => {
               <button
                 type="button"
                 className="password-toggle"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isLoading}
               >
@@ -165,21 +126,8 @@ const SignInForm = ({ onSignInSuccess }) => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label className="remember-me-container">
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                disabled={isLoading}
-                className="remember-me-checkbox"
-              />
-              <span className="remember-me-text">Remember me on this device</span>
-            </label>
-          </div>
-
           {error && (
-            <div className="error-message">
+            <div className="error-message" role="alert">
               {error}
             </div>
           )}

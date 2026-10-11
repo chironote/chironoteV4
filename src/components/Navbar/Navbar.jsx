@@ -4,8 +4,9 @@ import './Navbar.css';
 import logo from '../../assets/logo.svg';
 import textlogo from '../../assets/textlogo.svg';
 import menu from '../../assets/menu.svg';
+import { patientNotesEnabled } from '../../services/patientNotes';
 
-export default function Navbar({ username, onSignOut }) {
+export default function Navbar({ username, onSignOut, onFeedback }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const menuRef = useRef(null);
@@ -15,8 +16,9 @@ export default function Navbar({ username, onSignOut }) {
 
   const links = [
     ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
-    { name: 'Account', path: '/app/account', icon: 'person' },
-    { name: 'Feedback', path: '/app/feedback', icon: 'feedback' }
+    ...(patientNotesEnabled ? [{ name: 'Patients', path: '/app/patients', icon: 'folder_shared' }] : []),
+    { name: 'Billing', path: '/app/billing', icon: 'credit_card' },
+    { name: 'Settings', path: '/app/settings', icon: 'settings' }
   ];
 
   const handleLogout = () => {
@@ -61,12 +63,22 @@ export default function Navbar({ username, onSignOut }) {
         <ul className="nav-list">
           {links.map((link) => (
             <li key={link.path} className="nav-item">
-              <Link to={link.path} className="nav-link" aria-current={location.pathname === link.path ? 'page' : undefined}>
+              <Link
+                to={link.path}
+                className="nav-link"
+                aria-current={location.pathname === link.path ? 'page' : undefined}
+              >
                 <span className="material-symbols-rounded">{link.icon}</span>
                 {link.name}
               </Link>
             </li>
           ))}
+          <li key="feedback" className="nav-item">
+            <button type="button" onClick={onFeedback} className="nav-link">
+              <span className="material-symbols-rounded">feedback</span>
+              Feedback
+            </button>
+          </li>
           <li key="logout" className="nav-item">
             <button type="button" onClick={handleLogout} className="nav-link logout-link">
               <span className="material-symbols-rounded">logout</span>
@@ -104,6 +116,19 @@ export default function Navbar({ username, onSignOut }) {
                   </Link>
                 </li>
               ))}
+              <li key="feedback" className="nav-item">
+                <button
+                  type="button"
+                  className="nav-link"
+                  onClick={() => {
+                    onFeedback({ currentTarget: menuButtonRef.current });
+                    setIsMenuOpen(false);
+                  }}
+                >
+                  <span className="material-symbols-rounded">feedback</span>
+                  Feedback
+                </button>
+              </li>
               <li key="logout" className="nav-item">
                 <button
                   type="button"

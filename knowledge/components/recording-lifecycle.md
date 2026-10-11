@@ -16,6 +16,8 @@ Each media event captures its recording identity and stop intent synchronously. 
 
 iPhone records `video/mp4`, but uploads retain the established `.webm` object name and `audio/webm` metadata used by the current backend ingestion contract. This intentional label mismatch is not changed by recorder lifecycle work; a media-format migration requires coordinated backend validation.
 
+The 2026-10-11 workflow port changes only callback forwarding in RecordingManager: generation state/error and authoritative saved-note readiness reach AppShell. Media stop ordering, background handling, identity cancellation and upload media labels are unchanged. Compact capture lives in Recording.jsx; insertion callbacks preserve dictation text around the selected range.
+
 ## Provenance
 
 - [Recording manager](../../src/components/Recording/RecordingManager.jsx) (current implementation)

@@ -288,3 +288,46 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Patient workflow parity: safe-area insets and touch targets apply only in the native shell. */
+body.native-mobile .patient-modal-backdrop,
+body.native-mobile .product-dialog-scrim {
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+body.native-mobile .patient-modal,
+body.native-mobile .product-dialog {
+  max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+}
+body.native-mobile .patients-page,
+body.native-mobile .settings-page {
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+body.native-mobile .patient-form input:not([type="checkbox"]),
+body.native-mobile .patient-form select,
+body.native-mobile .patient-form textarea,
+body.native-mobile .patient-capture input,
+body.native-mobile .label-edit-input { font-size: 16px; }
+body.native-mobile .patient-form button,
+body.native-mobile .patient-capture button,
+body.native-mobile .patient-name-link,
+body.native-mobile .label-edit-trigger,
+body.native-mobile .clipboard-buttons button,
+body.native-mobile .recent-notes-refresh,
+body.native-mobile .week-header { min-width: 44px; min-height: 44px; }
+body.native-mobile .patient-form button:active,
+body.native-mobile .patients-page button:active { background: var(--color-hover); }
+body.native-mobile .clipboard-visit-identity { flex-wrap: wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  body.native-mobile .patients-page { padding-inline: 16px; }
+  body.native-mobile .patient-card { padding: 16px; }
+  body.native-mobile .patient-page-heading h1 { font-size: 28px; overflow-wrap: anywhere; }
+  body.native-mobile .patient-field-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body.native-mobile *, body.native-mobile *::before, body.native-mobile *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

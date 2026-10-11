@@ -4,6 +4,9 @@ import RecordingManager from './RecordingManager';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
 
+// PDF delivery is unrelated to microphone/WebKit lifecycle; its own suite tests native plugins.
+jest.mock('../../services/patientPdfDelivery', () => ({ deliverPatientPdf: jest.fn() }));
+
 jest.mock('aws-amplify/auth', () => ({
   getCurrentUser: jest.fn(),
   fetchAuthSession: jest.fn(),

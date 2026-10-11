@@ -79,7 +79,7 @@ class AudioProcessor extends AudioWorkletProcessor {
 registerProcessor('audio-processor', AudioProcessor);
 `;
 
-const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
+const Dictation = ({ onTextStreamUpdate, setClipboardContent, username, onDictationStart, onDictationTextUpdate, onDictationStop }) => {
   // Status state object
   const [status, setStatus] = useState({
     isLoading: false,
@@ -519,7 +519,8 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
           const newText = sortedTurns.join(' ');
 
           setTranscription(newText);
-          setClipboardContent(newText);
+          if (onDictationTextUpdate) onDictationTextUpdate(newText);
+          else setClipboardContent(newText);
         });
 
         console.log('[Dictation] Attempting to connect StreamingTranscriber');
@@ -618,7 +619,8 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     try {
       setStatus(prev => ({ ...prev, isLoading: true }));
       setTranscription('');
-      setClipboardContent('');
+      if (onDictationStart) onDictationStart();
+      else setClipboardContent('');
       turnsRef.current = {};
       currentTurnOrderRef.current = -1;
       
@@ -663,7 +665,7 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
         isQueued: false
       }));
       
-      setClipboardContent(' ');
+      if (!onDictationTextUpdate) setClipboardContent(' ');
     } catch (error) {
       console.error('[Dictation] Start error:', error);
       setStatus(prev => ({ ...prev, isLoading: false, isQueued: false }));
@@ -714,9 +716,11 @@ const Dictation = ({ onTextStreamUpdate, setClipboardContent, username }) => {
     
     // Send final transcription to parent
     if (finalTranscription) {
-      onTextStreamUpdate(finalTranscription);
+      if (onDictationTextUpdate) onDictationTextUpdate(finalTranscription);
+      else onTextStreamUpdate(finalTranscription);
     }
     
+    onDictationStop?.();
     setStatus(prev => ({ 
       ...prev, 
       isTranscribing: false,

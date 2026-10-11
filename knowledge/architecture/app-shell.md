@@ -1,42 +1,28 @@
 ---
 type: application-architecture
 title: "Authenticated App Shell"
-description: "How the React SPA routes authentication, the authenticated workspace, history state, recording, dictation, and panel interactions."
-resource: "../../src/App.jsx"
-tags: [react, routing, authentication, workspace, state]
+description: "Native authentication, guarded routes and central clinical workspace ownership."
+resource: "../../src/components/AppShell/AuthenticatedApp.jsx"
+tags: [react, routing, authentication, workspace]
 ---
 
 # Authenticated App Shell
 
-The app is a React single-page application wrapped in a Capacitor shell. The
-outer router redirects `/` to `/app`; `/app/*` enters `AuthContainer`, which
-checks the current Cognito user and renders either the custom sign-in form or
-the authenticated application. Inside the protected app, `/` is the main
-workspace and `/account` and `/feedback` render their dedicated views.
+App routes use a data router and DraftRouteGuard, retaining the existing native sign-in presentation. AuthContainer purges obsolete plaintext credential keys on startup, preserves transient NetworkError refresh failures and invalidates stale session reads after logout. Sign-out removes the clinical view immediately; provider cleanup completes before the form reopens. The authenticated workspace remounts on principal changes. AppShell owns clipboard identity/version, in-memory drafts, recording, dictation and popup state. Patients and saved-history/popup actions open authoritative getSavedNote results through the same guard. Save/Discard/Keep editing protects route changes, sign-out and replacement operations.
 
-`AuthenticatedApp` owns the central clipboard text, note and transcript history,
-selected history item, recording and dictation state, edit panel, popups, and
-responsive left/right panel state. It loads up to 120 records through the
-owner-scoped `listNotes` query, keeps the first 100 non-empty notes and
-transcripts, groups them by week, and refreshes on document visibility and native
-app resume. An owner-scoped `onUpdateNotesByOwner` subscription prepends updated
-records and marks them as new.
+Home is omitted on /app, followed by Patients, Billing and Settings with Logout last. Billing remains the native Account usage view; account/pricingplans redirect to it. No web checkout or marketing/user analytics is imported. Feedback is a controlled modal. The native analytics module remains a no-op.
 
-Recording and dictation are separate controllers. `RecordingManager` uploads
-audio through the existing transcription queue and then streams generated notes;
-`Dictation` writes live speech text directly into the clipboard. The app shell
-passes their state into the clipboard toolbar and disables conflicting controls
-while capture or generation is active.
+The unauthenticated container/card use border-box sizing and allow the card to shrink within narrow viewports, preserving its existing appearance without horizontal overflow from padding. Offline production-bootstrap viewport checks are distinct from native device or live authentication validation.
+
+Recording uses the preserved iOS manager. Its generation/error/saved-note callbacks update the shell. Dictation snapshots selection before capture and applies revised turns with pure insertion helpers. Manual input is rejected during dictation while the selection remains focusable.
 
 ## Provenance
 
-- [App shell](../../src/App.jsx)
-- [Auth container](../../src/components/AuthUI/AuthContainer.jsx)
-- [Sign-in form](../../src/components/AuthUI/SignInForm.jsx)
-- [Recording manager](../../src/components/Recording/RecordingManager.jsx)
-- [Dictation controller](../../src/components/Recording/Dictation.jsx)
-- [History toggle](../../src/components/TogglePanel.jsx)
-- [Application context](../../Context.md)
+- [App routes](../../src/App.jsx)
+- [Native auth](../../src/components/AuthUI/AuthContainer.jsx)
+- [Auth layout](../../src/components/AuthUI/AuthUI.css)
+- [Shell](../../src/components/AppShell/AuthenticatedApp.jsx)
+- [Shell ownership](../../src/components/AppShell/README.md)
+- [Native account](../../src/components/Account/Account.jsx)
 
-The current React source is the strongest evidence for routing and state behavior;
-the older context document is retained as supporting architecture history.
+Shared workflow source is prod142383e; native baseline is cap-ios2326d34. This describes the source candidate, not an App Store release.
