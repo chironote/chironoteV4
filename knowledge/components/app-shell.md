@@ -76,7 +76,7 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 
 ## Frontend correction — 2026-10-11
 
-MainWorkspace restores the original History ContentPopup with transcript switching. ClipboardButtons receives an icon-only Save after Edit; useClipboardSave owns body-only conditional saves with the loaded version and stable retry ID. Failed/conflicting saves preserve drafts, while server-required confirmation/context review retains the guarded saved-note editor. Patient editing stays under the Patients route.
+MainWorkspace restores the original History ContentPopup with transcript switching. ClipboardButtons receives an icon-only Save after Edit; useClipboardSave owns conditional saves with the loaded version and stable retry ID. Patients selections load the exact saved visit into the shared clipboard; MainWorkspace displays patient/visit identity and compact inline diagnosis/context confirmation. Failed/conflicting saves preserve drafts. Patient profiles and visit metadata stay under Patients; the separate clinical note editor is retired.
 
 ## Provenance
 
