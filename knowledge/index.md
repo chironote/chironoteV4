@@ -53,7 +53,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 | Concept | Use it to understand |
 | --- | --- |
-| [Website Publish State and Release Checklist](./operations/website-release.md) | The live-versus-local deployment gap, current validation, publish blockers, owner-only release steps, and rollback evidence. |
+| [Website Publish State and Release Checklist](./operations/website-release.md) | Original-folder reconciliation, production build defaults, live-versus-local evidence, owner publication steps, and rollback. |
 
 ## Security
 

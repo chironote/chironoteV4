@@ -1,5 +1,7 @@
 # LandingPage Components
 
+Reconciliation checks in `DemoLandingPage.test.jsx` cover the scheduler conversion path and overview exclusion on `/demo`, and the deferred owner overview/poster on `/`. `WorkflowDemo.test.jsx` covers the shared media carousel.
+
 This folder owns the main public marketing page, its demo-focused variant, an intermediate educational funnel page, and the standalone tutorial page.
 
 ## Files
