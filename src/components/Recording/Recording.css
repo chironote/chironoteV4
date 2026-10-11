@@ -13,15 +13,16 @@
 }
 
 /* Popup content styling */
-.popup-content {
+.recording-dialog {
   position: relative;
   padding: 25px;
   margin: 0 10px;
   border-radius: 8px;
-  max-width: 400px;
-  width: 100%;
-  min-width: 350px;
-  height: 300px;
+  box-sizing: border-box;
+  width: min(520px, calc(100% - 32px));
+  min-width: 0;
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
   text-align: center;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   background-color: var(--off-white);
@@ -31,14 +32,14 @@
 }
 
 /* Popup heading */
-.popup-content h2 {
+.recording-dialog h2 {
   margin-bottom: 20px;
   color: var(--dark-green);
   font-size: 24px;
 }
 
-.settings-container {
-  flex: 0.5;
+.recording-dialog .settings-container {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -491,3 +492,17 @@
 .recording-start-button:hover {
   background-color: var(--dark-green);
 }
+
+/* Scope the recording surface so credit-limit popup rules cannot resize it. */
+.recording-dialog { background: var(--pure-white); border: 1px solid var(--color-border-strong); border-radius: 16px; box-shadow: 0 18px 46px rgba(12,32,14,.2); padding: 24px; }
+.recording-dialog > * { flex-shrink: 0; }
+.recording-dialog h2 { margin: 0 0 20px; font-size: 24px; line-height: 30px; }
+.recording-dialog .settings-options { margin-top: 20px; text-align: left; }
+.recording-dialog .checkbox-grid { justify-content: flex-start; }
+.recording-dialog .checkbox-group { align-items: center; min-height: 44px; }
+.recording-dialog .options-label { font-size: 14px; font-weight: 600; }
+.recording-dialog .button-container { margin-top: 20px; gap: 12px; }
+.recording-dialog .close-button { min-height: 44px; }
+.recording-dialog .recording-start-button { min-height: 44px; border-radius: 8px; }
+@media(max-width:600px) { .recording-dialog { padding: 16px; } }
+@media(pointer:coarse) { .recording-dialog button,.recording-dialog .checkbox-group { min-height: 48px; } }

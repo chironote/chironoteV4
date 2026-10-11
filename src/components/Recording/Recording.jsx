@@ -69,7 +69,11 @@ function Recording({ isStarting = false,
 
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
-      startRecording(patientCaptureEnabled ? visitMetadata : undefined);
+      if (patientCaptureEnabled) {
+        const examLayout = Boolean(visitMetadata.patientName) || visitMetadata.visitType === 'reExam';
+        localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
+      }
+      startRecording(patientCaptureEnabled ? { ...visitMetadata, contextMode: 'patient' } : undefined);
 
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
@@ -156,7 +160,7 @@ function Recording({ isStarting = false,
 
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
-      <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+      <div className="recording-dialog" role="dialog" aria-modal="true" aria-label="Recording" onClick={(e) => e.stopPropagation()}>
         {showConfirmation && (
           <ConfirmationPopup
             onConfirm={handleConfirmDiscard}
@@ -183,6 +187,11 @@ function Recording({ isStarting = false,
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
+                  </div>}
+                  {patientCaptureEnabled && visitMetadata.patientId && !visitMetadata.patientName && <div className="checkbox-group">
+                    <input type="checkbox" id="re-exam-popup" checked={visitMetadata.visitType === 'reExam'}
+                      onChange={event => setVisitMetadata(current => ({ ...current, visitType: event.target.checked ? 'reExam' : 'followUp' }))} />
+                    <label htmlFor="re-exam-popup">Re-Exam</label>
                   </div>}
                   <div className="checkbox-group">
                     <input

@@ -7,7 +7,7 @@ tags: [chironote, security, hipaa, policy, draft]
 ---
 
 
-> Source: [`security_documentation.md`](../../security_documentation.md)
+> Source: [security_documentation.md](../../security_documentation.md)
 
 # Company Security Policy
 
@@ -210,5 +210,5 @@ The GraphQL schema is set to auth:owner, therefore the application by it's very 
 
 ## Provenance
 
-Derived from [`security_documentation.md`](../../security_documentation.md).
+Derived from [security_documentation.md](../../security_documentation.md).
 

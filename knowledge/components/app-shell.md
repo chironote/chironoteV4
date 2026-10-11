@@ -7,9 +7,11 @@ tags: [chironote, component, app-shell]
 ---
 
 
-> Source: [`README.md`](../../src/components/AppShell/README.md)
+> Source: [README.md](../../src/components/AppShell/README.md)
 
 # AppShell Components
+
+The 2026-10-11 native candidate replaces the separate saved-note editor with authoritative Patients/history loading into the clipboard. Installed phones can Save with exact timestamp/version and diagnosis confirmation. The data router and memory-only draft guard protect navigation/back/sign-out; generation callbacks bind only durable saved results. Native pricing restrictions, clipboard adaptation, principal remounting and foreground history refresh remain. See [patient notes](../architecture/patient-notes.md) for the workflow contract.
 
 This folder owns the authenticated application shell: authentication wrapping, main workspace composition, note history state, and app-wide authenticated analytics.
 
@@ -79,5 +81,5 @@ On Capacitor, `useNotesHistory` subscribes to native app-state changes through `
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AppShell/README.md), [`useNotesHistory.js`](../../src/components/AppShell/useNotesHistory.js), and [`nativePlatform.js`](../../src/services/nativePlatform.js).
+Derived from [README.md](../../src/components/AppShell/README.md), [useNotesHistory.js](../../src/components/AppShell/useNotesHistory.js), and [nativePlatform.js](../../src/services/nativePlatform.js).
 

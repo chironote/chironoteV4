@@ -56,4 +56,4 @@ Realtime dictation is a separate AssemblyAI streaming path. It captures an immut
 
 ## Provenance
 
-Synthesized from [`Context.md`](../../Context.md), [`AGENTS.md`](../../AGENTS.md), current implementation, and the feature documentation linked above. Feature and platform concepts take precedence when an older general description conflicts with current code.
+Synthesized from [Context.md](../../Context.md), [AGENTS.md](../../AGENTS.md), current implementation, and the feature documentation linked above. Feature and platform concepts take precedence when an older general description conflicts with current code.

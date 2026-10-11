@@ -1821,3 +1821,40 @@
     transition-delay: 0ms !important;
   }
 }
+
+/* Keep clipboard actions reachable on phones and compact tablet/landscape views. */
+.clipboard-toolbar .toolbar-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+@media (max-width: 900px) {
+  .clipboard-toolbar .toolbar-group {
+    flex-wrap: wrap;
+    min-width: 0;
+    max-width: 100%;
+    padding-inline: 0;
+    row-gap: 8px;
+  }
+  .clipboard-toolbar .toolbar-button {
+    min-width: 44px;
+    min-height: 44px;
+    height: auto;
+    flex: 0 0 auto;
+  }
+  .clipboard-toolbar .toolbar-button.new-note-button { min-width: 120px; }
+  .clipboard-toolbar .toolbar-button-wrapper { flex: 0 0 auto; }
+  .clipboard-toolbar .toolbar-divider { flex-shrink: 0; }
+  .clipboard .soap-buttons { width: 52px; }
+  .clipboard .soap-button {
+    box-sizing: border-box;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 8px;
+    left: 4px;
+  }
+
+}

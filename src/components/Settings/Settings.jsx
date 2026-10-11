@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUserAttributes } from 'aws-amplify/auth';
+import SignatureSettings from '../Patients/SignatureSettings';
+import { patientNotesEnabled } from '../../services/patientNotes';
 import { getUserSubscription } from '../../graphql/queries';
 import { getAmplifyClient } from '../../services/amplifyClient';
 import ProductDialog from '../Dialog/ProductDialog';
@@ -255,6 +257,7 @@ function Settings() {
         </div>
       </section>
 
+      {patientNotesEnabled && <SignatureSettings />}
       <CustomInstructionsDialog
         isOpen={isDialogOpen}
         settings={customSettings}

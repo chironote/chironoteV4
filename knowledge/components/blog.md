@@ -7,7 +7,7 @@ tags: [chironote, component, blog]
 ---
 
 
-> Source: [`README.md`](../../src/components/Blog/README.md)
+> Source: [README.md](../../src/components/Blog/README.md)
 
 # Blog Components
 
@@ -65,5 +65,5 @@ const POST_MAP = {
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Blog/README.md).
+Derived from [README.md](../../src/components/Blog/README.md).
 

@@ -7,9 +7,11 @@ tags: [chironote, component, sidebar]
 ---
 
 
-> Source: [`README.md`](../../src/components/Sidebar/README.md)
+> Source: [README.md](../../src/components/Sidebar/README.md)
 
 # Sidebar Components
+
+Recent Notes has no count badge in the catch-up candidate. Names are directory-backed, descriptor labels remain editable, and clicking the popup patient opens Re-Assign/Cancel. Reassignment carries destination diagnosis codes and asks explicitly before deleting an empty former patient. Saved-note drops resolve their timestamp through the authoritative service. Manual/foreground refresh keeps existing notes visible and reports retryable errors. See [patient notes](../architecture/patient-notes.md).
 
 This folder owns the note-history sidebar, mobile history toggle, content popup, and smart editor panel.
 
@@ -67,5 +69,5 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Sidebar/README.md), [`HistoryListItem.jsx`](../../src/components/Sidebar/HistoryListItem.jsx), and [`historyGrouping.js`](../../src/utils/historyGrouping.js).
+Derived from [README.md](../../src/components/Sidebar/README.md), [HistoryListItem.jsx](../../src/components/Sidebar/HistoryListItem.jsx), and [historyGrouping.js](../../src/utils/historyGrouping.js).
 

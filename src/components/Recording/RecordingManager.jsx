@@ -4,7 +4,7 @@ import useAudioUploadQueue from './useAudioUploadQueue';
 import useMediaRecorderController from './useMediaRecorderController';
 import useNoteGeneration from './useNoteGeneration';
 
-function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
+function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onSavedNoteReady, onGenerationStateChange, onGenerationError }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
@@ -28,7 +28,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp }) {
     resetNoteGenerationState,
     cleanupNoteGeneration
   } = useNoteGeneration({
-    onGenerationError: setGenerationError,
+    onGenerationError: message => { setGenerationError(message); onGenerationError?.(message); },
+    onGenerationStateChange,
+    onSavedNoteReady,
     timeStampRef,
     isDiscardingRef,
     noSleepRef,

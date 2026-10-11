@@ -7,9 +7,11 @@ tags: [chironote, component, app-routing]
 ---
 
 
-> Source: [`README.md`](../../src/components/AppRouting/README.md)
+> Source: [README.md](../../src/components/AppRouting/README.md)
 
 # AppRouting Components
+
+`App.jsx` now mounts a data router and `DraftRouteGuard` for saved-note navigation/back guards. Its native route, authentication and analytics exclusions remain. Startup and foreground also trigger expired native PDF cache cleanup. See [patient notes](../architecture/patient-notes.md).
 
 This folder owns top-level route selection and cross-route side effects. It sits above the authenticated app shell and public marketing pages.
 
@@ -55,5 +57,5 @@ captureGclid();
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/AppRouting/README.md), [`App.jsx`](../../src/App.jsx), and [`AppRoutes.jsx`](../../src/components/AppRouting/AppRoutes.jsx).
+Derived from [README.md](../../src/components/AppRouting/README.md), [App.jsx](../../src/App.jsx), and [AppRoutes.jsx](../../src/components/AppRouting/AppRoutes.jsx).
 

@@ -1,5 +1,7 @@
 # Navbar Components
 
+Home is first except on `/app`, followed by Patients (when enabled), Billing, Settings and Logout; the existing Feedback action remains available. All route transitions use the app-level draft guard. Coarse-pointer navigation targets are at least 48px.
+
 This folder owns the authenticated app navigation bar.
 
 ## Files
@@ -30,3 +32,5 @@ The mobile menu closes on outside clicks using refs for the menu and menu button
 - Any new authenticated route exposed in nav should also be added to `AuthenticatedApp` routes.
 - Keep the header at `64px`, links and the mobile trigger at least `44px` high, and current-page/focus semantics visible.
 - The mobile menu is a white product surface with the standard border, `12px` radius, and menu shadow.
+
+The compact navigation menu is used through 1024px so all destinations, including Logout, fit in landscape. Its height is bounded by the dynamic viewport and scrolls when necessary rather than clipping the final action.

@@ -1,5 +1,7 @@
 # Clipboard Components
 
+Saved patient visits share this editor. The toolbar has an Edit/Save divider and enables Save on installed native phones or desktop web; mobile web remains local-only. The shell owns exact identity/version, draft guards and diagnosis confirmation. Saved-note drops carry only an opaque timestamp and load the authoritative record; ordinary text drops remain local text. Native copy still uses `writeClipboardText`. Coarse-pointer toolbar targets are at least 48px.
+
 This folder owns the central clipboard panel and the toolbar above it. The clipboard is the main text handoff point between recording, dictation, note history, smart edits, and copy actions.
 
 ## Files
@@ -49,3 +51,5 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - Toolbar CSS is partially inline via `style jsx`; check both component code and global CSS before styling changes.
 - The workspace keeps one white clipboard canvas. The textarea begins directly after the SOAP rail with a 12px top inset; its border, rather than a second colored surface, defines the writing sheet on desktop and mobile.
 - Keep platform detection out of clipboard components; extend the shared native adapter when clipboard behavior changes.
+
+Compact layouts up to 900px wrap toolbar controls instead of clipping Save. Edit and its Save divider/button remain a single adjacent group, and the Smart Editor icon stays visible. Section-copy controls retain their established header-aligned vertical rail, widened to fit 44px touch targets without clipping.

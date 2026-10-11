@@ -1,5 +1,7 @@
 # Settings Components
 
+When patient notes are enabled, Configure Signature saves the name/NPI used for PDF exports through `Patients/SignatureSettings`. The card masks the NPI outside the edit dialog. Custom Instructions behavior is unchanged by this patient-workflow port.
+
 `Settings.jsx` displays the server-backed `hoursSavedLifetime` metric and the feature-flagged Custom Instructions experience. It does not display current-period `hoursSaved` or any generated SOATP prompt fields.
 
 Custom Instructions uses `ProductDialog`, edits only the original natural-language instructions, protects dirty text, blocks dismissal and duplicate submission during apply, provides approximate elapsed-time stages, and waits for server confirmation before reporting Enabled. Reset requires confirmation and preserves the prior state on failure.

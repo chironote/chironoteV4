@@ -7,7 +7,7 @@ tags: [chironote, component, intro-tour]
 ---
 
 
-> Source: [`README.md`](../../src/components/IntroTour/README.md)
+> Source: [README.md](../../src/components/IntroTour/README.md)
 
 # IntroTour Components
 
@@ -52,5 +52,5 @@ Changing those ids or class names can break onboarding.
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/IntroTour/README.md).
+Derived from [README.md](../../src/components/IntroTour/README.md).
 

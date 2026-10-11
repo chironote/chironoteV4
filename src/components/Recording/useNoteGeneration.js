@@ -46,6 +46,7 @@ function useNoteGeneration({
 
   const cleanupNoteGeneration = () => {
     runRef.current++;
+    onGenerationStateChange?.(false);
     if (transcriptFallbackTimeoutRef.current) {
       clearTimeout(transcriptFallbackTimeoutRef.current);
       transcriptFallbackTimeoutRef.current = null;

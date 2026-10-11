@@ -7,7 +7,7 @@ tags: [chironote, component, landing-page, plan]
 ---
 
 
-> Source: [`LandingUpgrade.md`](../../src/components/LandingPage/LandingUpgrade.md)
+> Source: [LandingUpgrade.md](../../src/components/LandingPage/LandingUpgrade.md)
 
 # Landing Page Upgrade Notes
 
@@ -47,5 +47,5 @@ tags: [chironote, component, landing-page, plan]
 
 ## Provenance
 
-Derived from [`LandingUpgrade.md`](../../src/components/LandingPage/LandingUpgrade.md).
+Derived from [LandingUpgrade.md](../../src/components/LandingPage/LandingUpgrade.md).
 

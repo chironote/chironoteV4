@@ -4,6 +4,7 @@ import './Navbar.css';
 import logo from '../../assets/logo.svg';
 import textlogo from '../../assets/textlogo.svg';
 import menu from '../../assets/menu.svg';
+import { patientNotesEnabled } from '../../services/patientNotes';
 
 export default function Navbar({ username, onSignOut, onFeedback }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function Navbar({ username, onSignOut, onFeedback }) {
 
   const links = [
     ...(isOnDashboard ? [] : [{ name: 'Home', path: '/app', icon: 'home' }]),
+    ...(patientNotesEnabled ? [{ name: 'Patients', path: '/app/patients', icon: 'folder_shared' }] : []),
     { name: 'Billing', path: '/app/billing', icon: 'credit_card' },
     { name: 'Settings', path: '/app/settings', icon: 'settings' }
   ];

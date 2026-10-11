@@ -7,7 +7,7 @@ tags: [chironote, amplify, backend, hooks]
 ---
 
 
-> Source: [`README.md`](../../amplify/hooks/README.md)
+> Source: [README.md](../../amplify/hooks/README.md)
 
 # Command Hooks
 
@@ -19,5 +19,5 @@ Learn more about the script file naming convention, hook parameters, third party
 
 ## Provenance
 
-Derived from [`README.md`](../../amplify/hooks/README.md).
+Derived from [README.md](../../amplify/hooks/README.md).
 

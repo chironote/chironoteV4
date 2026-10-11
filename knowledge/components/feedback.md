@@ -7,7 +7,7 @@ tags: [chironote, component, feedback]
 ---
 
 
-> Source: [`README.md`](../../src/components/Feedback/README.md)
+> Source: [README.md](../../src/components/Feedback/README.md)
 
 # Feedback Components
 
@@ -45,5 +45,5 @@ await fetch('https://xmryti2hkkvg5tosvv3p6lehsa0lysic.lambda-url.us-east-2.on.aw
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Feedback/README.md).
+Derived from [README.md](../../src/components/Feedback/README.md).
 

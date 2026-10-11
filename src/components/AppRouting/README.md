@@ -1,5 +1,7 @@
 # AppRouting Components
 
+`App.jsx` uses a data router so `Patients/DraftRouteGuard` can block route/back transitions with unsaved clipboard changes. Native direct entry, public-route suppression, authentication and analytics boundaries remain unchanged. It also cleans expired native PDF cache files on startup and foreground using the shared delivery service.
+
 This folder owns top-level route selection and cross-route side effects. It sits above the authenticated app shell and public marketing pages.
 
 ## Files

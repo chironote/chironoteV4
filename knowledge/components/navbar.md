@@ -7,9 +7,11 @@ tags: [chironote, component, navbar]
 ---
 
 
-> Source: [`README.md`](../../src/components/Navbar/README.md)
+> Source: [README.md](../../src/components/Navbar/README.md)
 
 # Navbar Components
+
+Home is first except on `/app`; Patients, Billing, Settings and Logout follow, and the established Feedback action remains. Patients requires the feature flag. Route/back navigation uses the app-level draft guard, and native coarse-pointer targets are 48px.
 
 This folder owns the authenticated app navigation bar.
 
@@ -42,5 +44,5 @@ The mobile menu closes on outside clicks using refs for the menu and menu button
 
 ## Provenance
 
-Derived from [`README.md`](../../src/components/Navbar/README.md).
+Derived from [README.md](../../src/components/Navbar/README.md).
 
