@@ -94,6 +94,9 @@
 .patient-capture .patient-selection { margin: 0 0 12px; }
 .patient-capture .patient-help { margin: 8px 0; }
 .patient-capture .patient-actions:empty { display: none; }
+.patient-capture-selected { position: relative; padding: 20px 64px 20px 20px; }
+.patient-selected-name { font-size: 18px; line-height: 28px; font-weight: 600; overflow-wrap: anywhere; }
+.patient-capture .patient-clear-selection { position: absolute; top: 8px; right: 8px; width: 44px; height: 44px; padding: 0; border: 0; background: transparent; font-size: 32px; line-height: 1; font-weight: 400; }
 .signature-preview { margin-top: 20px; }
 .signature-preview strong { display: block; font-size: 18px; }
 .signature-preview p { margin: 4px 0 0; }
@@ -102,5 +105,6 @@
   .patient-card { padding: 16px; }
   .patient-profile-details { grid-template-columns: 1fr; gap: 12px; }
   .patient-capture { padding: 12px; }
+  .patient-capture-selected { padding: 20px 60px 20px 16px; }
   .patient-field-grid { grid-template-columns: 1fr; }
 }

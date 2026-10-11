@@ -111,7 +111,7 @@ Before publishing a build with recording changes, verify:
 
 ## Frontend correction — 2026-10-11
 
-The recording dialog has a scoped, content-sized surface with viewport-bounded scrolling so credit-limit popup rules cannot shrink it. Patient lookup is type-to-search: empty input neither fetches nor displays a patient roster. Recording does not expose service/injury dates or visit type; today/automatic defaults and the selected patient context are still captured. Date and visit metadata editing remain in the Patients saved-visit editor.
+The recording dialog has a scoped, content-sized surface with viewport-bounded scrolling so credit-limit popup rules cannot shrink it. Patient lookup is type-to-search: empty input neither fetches nor displays a patient roster. Recording hides service/injury dates and collapses the selected patient to a name-only panel with an × reset control. Existing patients default to followUp and expose Re-Exam on the left of PI; new patients request initialExam without a checkbox. Capture always requests patient history, and examLayout is synchronized before RecordingManager freezes its settings. Date and full visit metadata editing remain in the Patients saved-visit editor.
 
 ## Provenance
 
