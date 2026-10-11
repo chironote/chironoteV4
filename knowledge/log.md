@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Mac native validation**: CocoaPods 1.16.2 resolved Share 6.0.2; committed the generated lockfile with no other pod version changes. Capacitor sync preserved the Xcode project, and Xcode 26.6 built the unsigned simulator app with the app privacy manifest included. Updated mobile-build guidance and native validation evidence. Signed archive, registered Apple identity and physical-device acceptance remain open; no store submission occurred.
+
 - **Local source validation**: 33 Jest suites / 140 tests passed. Production web build and actual offline /app bootstrap passed; the subsequent CSS-only auth-card correction was rebuilt and verified at375px and812px without horizontal overflow or router/page errors. Synthetic patient workflow evidence is preserved in docs/mobile-catchup-2026-10-11. Static privacy/plist/resource and Share dependency checks passed. Mac Podfile.lock resolution, Xcode archive/signing and device acceptance remain pending; no Apple submission or backend change occurred.
 
 - Corrected auth container/card box sizing and removed the fixed card minimum after offline production bootstrap measured horizontal overflow at 375px. Retained sign-in presentation; rebuild and portrait/landscape validation are delegated, without live authentication.
