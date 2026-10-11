@@ -28,7 +28,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Application Routing](./components/app-routing.md) | Public routes including the scheduler-focused demo page, protected app entry, analytics side effects, and PWA redirects. |
 | [Recording, Dictation, and Note Generation](./components/recording.md) | Recording architecture, compact patient lookup/selection and Re-Exam behavior, browser failure risks, and required release matrix. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
-| [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, restored note/transcript popup with read-only patient name, clickable SOAP/Treatment copy controls, and the visually paired Smart Editor workspace. |
+| [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, restored note/transcript popup with clickable patient reassignment, clickable SOAP/Treatment copy controls, and the visually paired Smart Editor workspace. |
 | [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the restored, default-available asynchronous AppSync Custom Instructions experience. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |
 | [Authenticated Navigation](./components/navbar.md) | In-app route behavior, accessible state, and the 64px desktop/mobile product-header contract. |
@@ -77,7 +77,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Patient notes and data
 
-- [Patient notes](architecture/patient-notes.md): capture, the single clipboard editor, inline diagnosis confirmation, visit metadata, toolbar Save, capture lookup, profile/signature presentation, platform scope and the passed synthetic acceptance with owner publication boundary.
+- [Patient notes](architecture/patient-notes.md): capture, the single clipboard editor, inline diagnosis confirmation, visit metadata, History patient reassignment, toolbar Save, capture lookup, profile/signature presentation, platform scope and the passed synthetic acceptance with owner publication boundary.
 - [Patient data flow](security/patient-data-flow.md): clinical data boundaries, deployed retention protections and outstanding operational verification.
 
 ## Maintenance

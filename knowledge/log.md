@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **History patient reassignment**: Updated Sidebar, AppShell and patient-notes concepts for clickable patient identity, compact assignment, version protection and history/clipboard synchronization. Sources: ContentPopup, ReassignPatientDialog, AuthenticatedApp.
+
 - **Single clipboard editor**: Patients visit/source selection now loads the exact saved note into the [Clipboard](./components/clipboard.md). Retired the duplicate clinical editor; retained metadata/suggestions/retry in Patients. Documented inline explicit diagnosis-list approval, server re-exam confirmation, version/draft safety and synthetic initial-visit correction in [Patient notes](./architecture/patient-notes.md) and [App shell](./components/app-shell.md). Corrected the prior incomplete description of reconciliation during saved-note edits. No deployment or real-patient write.
 
 - **Recording lookup copy**: Simplified the unselected picker to Patient Name and one instructional placeholder covering existing/new/unassigned choices; removed duplicate status/helper text. Add New now checks matching directory pages, rejects an existing normalized name with an inline selection message, and preserves input on lookup failure. Updated [Recording](./components/recording.md) and the Patients README.

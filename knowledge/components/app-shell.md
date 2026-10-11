@@ -82,3 +82,5 @@ MainWorkspace restores the original History ContentPopup with transcript switchi
 
 Derived from [README.md](../../src/components/AppShell/README.md), [useNotesHistory.js](../../src/components/AppShell/useNotesHistory.js), and [HistorySidebar.jsx](../../src/components/Sidebar/HistorySidebar.jsx).
 
+
+History patient reassignment is handled by AuthenticatedApp.handlePatientAssigned: merge the returned saved note into the selected item/history, refresh history, and update a matching clean clipboard target/body to the new version. An unexpected dirty clipboard retains its draft and original version for conflict protection. Source: `../../src/components/AppShell/AuthenticatedApp.jsx`.

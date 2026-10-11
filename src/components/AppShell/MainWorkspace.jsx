@@ -138,6 +138,7 @@ function MainWorkspace({
           timestamp={contentPopup.selectedTimestamp}
           noteLabel={contentPopup.selectedItem?.visitLabel || contentPopup.selectedItem?.noteLabel}
           patientId={contentPopup.selectedItem?.patientId}
+          onPatientAssigned={contentPopup.onPatientAssigned}
           onLabelUpdate={contentPopup.handleLabelUpdate}
           onViewModeChange={contentPopup.handlePopupViewModeChange}
           hasTranscript={Boolean(contentPopup.selectedItem?.transcript && contentPopup.selectedItem.transcript.trim() !== '')}
