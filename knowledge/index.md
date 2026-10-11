@@ -49,7 +49,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Operations
 
-- [Patient infrastructure cutover](./operations/patient-infrastructure-release.md): verified live AppSync guard, preserved Notes resources/recovery, active runtime cutover and pending acceptance/publication.
+- [Patient infrastructure cutover](./operations/patient-infrastructure-release.md): verified live AppSync guard, preserved Notes resources/recovery, active runtime cutover and synthetic acceptance; website publication remains owner-operated.
 
 | Concept | Use it to understand |
 | --- | --- |
@@ -77,7 +77,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Patient notes and data
 
-- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and current release gates.
+- [Patient notes](architecture/patient-notes.md): capture, saved-note editing, diagnosis correction/status, platform scope and the passed synthetic acceptance with owner publication boundary.
 - [Patient data flow](security/patient-data-flow.md): clinical data boundaries, deployed retention protections and outstanding operational verification.
 
 ## Maintenance
