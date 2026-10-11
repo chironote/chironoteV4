@@ -75,11 +75,6 @@ function HistorySidebar({
             <h2 id="recent-notes-title" className="left-panel-title">Recent Notes</h2>
             <p className="recent-notes-subtitle">Your latest generated notes</p>
           </div>
-          {!isLoading && notes.length > 0 && (
-            <span className="recent-notes-count" aria-label={`${notes.length} recent notes`}>
-              {notes.length}
-            </span>
-          )}
           <button
             type="button"
             className="recent-notes-refresh"

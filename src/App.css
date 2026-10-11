@@ -198,23 +198,6 @@
   text-align: left;
 }
 
-.recent-notes-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid #cfe0d0;
-  border-radius: 999px;
-  background-color: #edf5ed;
-  color: var(--dark-green);
-  font-size: 0.75rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
 .recent-notes-refresh {
   display: inline-flex;
   flex: 0 0 auto;

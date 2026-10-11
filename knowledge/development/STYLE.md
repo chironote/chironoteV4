@@ -393,7 +393,7 @@ This is the best current reference for dense product UI: [`HistorySidebar.jsx`](
 
 - Panel: `#fbfdfb`, `1px #cfdbcf` border, `12px` radius, `0 8px 24px rgba(23, 55, 25, 0.08)` shadow.
 - Header: `20px 20px 16px` padding desktop; `18px 16px 14px` mobile. Title and subtitle are separated by `4px`.
-- Count badge: minimum width `28px`, height `28px`, `0 8px` padding, pill radius, `#edf5ed` surface, `#cfe0d0` border, `12px` bold tabular number.
+- Header actions: Refresh only; omit a note-count badge so loaded history totals do not imply a note limit.
 - Scroll region: one vertical scroller with `12px` desktop or `10px` mobile side padding.
 - Week header: minimum height `44px`, `8px 8px 6px` padding, `12px` uppercase label, and a `20px` disclosure icon.
 - Week surface: white, `1px #dce6dc`, `10px` radius, overflow clipped.
