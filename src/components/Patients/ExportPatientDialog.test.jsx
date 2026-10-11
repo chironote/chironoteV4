@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 import ExportPatientDialog from './ExportPatientDialog';
 import { patientRequest, exportPatientNotes } from '../../services/patientNotes';
 jest.mock('../../services/patientNotes', () => ({ patientRequest: jest.fn(), exportPatientNotes: jest.fn(), localDate: () => '2026-10-10' }));
+jest.mock('./SignatureSettings', () => ({ SignatureDialog: ({ onSaved }) => <button onClick={() => onSaved({ name: 'Updated Synthetic', npi: '1234567890' })}>Save test signature</button> }));
+jest.mock('./VisitDetailsDialog', () => ({ __esModule: true, default: ({ onClose }) => <button onClick={onClose}>Close test visit details</button> }));
+
 global.IS_REACT_ACT_ENVIRONMENT = true;
 beforeEach(() => { patientRequest.mockReset(); exportPatientNotes.mockReset(); });
 test('exports the complete paginated inventory beyond 100 saved visits with confirmed missing dates', async () => {
@@ -19,7 +22,8 @@ test('exports the complete paginated inventory beyond 100 saved visits with conf
   expect(calls).toHaveLength(4); expect(calls.every(([, input]) => input.completeInventory === true)).toBe(true);
   const create = [...container.querySelectorAll('button')].find(node => node.textContent === 'Create PDF');
   expect(create.disabled).toBe(true);
-  await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+  expect(container.querySelector('[aria-label="Confirm clinical information"]').parentElement.textContent.trim()).toBe('I acknowledge that the clinical information herein is accurate.');
+  await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
   expect(create.disabled).toBe(false);
   await act(async () => create.click());
   expect(exportPatientNotes).toHaveBeenCalledWith(expect.objectContaining({ noteTimestamps: notes.map(note => note.timestamp), exportDetails: { dateOfBirth: null, dateOfInjury: null } }));
@@ -31,9 +35,9 @@ test('PDF blockers and failed downloads explain the next step beside Create PDF'
   exportPatientNotes.mockRejectedValueOnce(new Error('PDF export is not enabled for this release.'));
   const container = document.createElement('div'); document.body.append(container); const root = createRoot(container);
   await act(async () => root.render(<ExportPatientDialog patient={{ patientId: 'p', name: 'Synthetic' }} onClose={() => {}} />));
-  expect(container.querySelector('#pdf-requirements').textContent).toContain('Confirm the patient dates');
+  expect(container.querySelector('#pdf-requirements').textContent).toContain('Confirm the clinical information');
   expect(container.querySelector('#pdf-requirements').textContent).toContain('Acknowledge clinical review');
-  await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+  await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
   await act(async () => container.querySelector('.patient-export-list .patient-check:last-child input').click());
   const create = [...container.querySelectorAll('button')].find(item => item.textContent === 'Create PDF');
   expect(create.disabled).toBe(false);
@@ -73,21 +77,61 @@ describe('note ranges and recovery', () => {
     expect(container.querySelector('[aria-label="From date"]')).toBeNull();
     expect(container.querySelector('.patient-calendar')).toBeNull();
     expect(container.textContent).not.toMatch(/inventory/i);
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await click('Custom range');
-    await setDate('From date', '2026-09-10'); await setDate('To date', '2026-09-20');
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await setDate('From date', '2026-09-10');
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false); await setDate('To date', '2026-09-20');
     expect(container.querySelector('.patient-export-list').textContent).not.toContain('Early visit');
     const middle = [...container.querySelectorAll('.patient-export-note')].find(node => node.textContent.includes('Middle visit'));
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await act(async () => middle.querySelector('input').click());
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    expect(button('Create PDF').disabled).toBe(true);
     expect(container.querySelector('.patient-export-list-heading input').indeterminate).toBe(true);
-    await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await click('Create PDF');
     expect(exportPatientNotes).toHaveBeenLastCalledWith(expect.objectContaining({ noteTimestamps: ['2', '4'] }));
-    await click('All notes'); await click('Create PDF');
+    await click('All notes');
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    expect(button('Create PDF').disabled).toBe(true);
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await click('Create PDF');
     expect(exportPatientNotes).toHaveBeenLastCalledWith(expect.objectContaining({ noteTimestamps: ['1', '2', '3', '4'] }));
   });
 
+  test('select all changes require a new clinical acknowledgment', async () => {
+    await mount();
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await act(async () => container.querySelector('.patient-export-list-heading input').click());
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await act(async () => container.querySelector('.patient-export-list-heading input').click());
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    expect(button('Create PDF').disabled).toBe(true);
+  });
+
+  test('saving a signature requires a new clinical acknowledgment', async () => {
+    await mount();
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await click('Edit signature'); await click('Save test signature');
+    expect(container.textContent).toContain('Updated Synthetic');
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    expect(button('Create PDF').disabled).toBe(true);
+  });
+
+  test('refreshing visit details clears the clinical acknowledgment', async () => {
+    patientRequest.mockImplementation(async operation => operation === 'getSignature' ? respond(operation) : { notes: [...notes, { timestamp: '6', ready: true, visitLabel: 'Undated visit' }], nextCursor: null });
+    await mount();
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
+    await click('Add visit date'); await click('Close test visit details');
+    expect(patientRequest.mock.calls.filter(([operation]) => operation === 'getPatientVisits')).toHaveLength(2);
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+  });
+
   test('invalid, missing and empty date ranges cannot export hidden selections', async () => {
-    await mount(); await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+    await mount(); await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await click('Custom range');
     await setDate('From date', '2026-09-21');
     expect(container.querySelector('#export-range-error').textContent).toContain('End date');
@@ -102,11 +146,13 @@ describe('note ranges and recovery', () => {
 
   test('undated notes require correction for All notes and are explicitly excluded from ranges', async () => {
     patientRequest.mockImplementation(async operation => operation === 'getSignature' ? respond(operation) : { notes: [...notes, { timestamp: '6', ready: true, visitLabel: 'Undated visit' }], nextCursor: null });
-    await mount(); await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+    await mount(); await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     expect(button('Create PDF').disabled).toBe(true);
     expect(container.querySelector('#pdf-requirements').textContent).toContain('missing visit dates');
     await click('Custom range');
     expect(container.querySelector('.patient-export-undated').textContent).toContain('1 note needs a visit date');
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await click('Create PDF');
     expect(exportPatientNotes).toHaveBeenCalledWith(expect.objectContaining({ noteTimestamps: ['1', '2', '3', '4'] }));
   });
@@ -121,18 +167,18 @@ describe('note ranges and recovery', () => {
     expect(button('Try again')).toBeUndefined();
   });
 
-  test('changing patient dates requires confirmation again and preserves injury-date checks', async () => {
+  test('changing patient dates requires clinical confirmation again and preserves injury-date checks', async () => {
     patientRequest.mockImplementation(async operation => operation === 'getSignature' ? respond(operation) : { notes: [{ ...notes[0], dateOfInjury: '2026-08-01' }], nextCursor: null });
     await mount();
     expect(container.querySelector('#pdf-requirements').textContent).toContain('injury dates');
-    await act(async () => container.querySelector('[aria-label="Confirm patient dates"]').click());
+    await act(async () => container.querySelector('[aria-label="Confirm clinical information"]').click());
     await click('Edit dates');
     const injury = [...container.querySelectorAll('#export-patient-dates label')].find(node => node.textContent === 'Date of injury').querySelector('input');
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(injury, '2026-08-01');
       injury.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    expect(container.querySelector('[aria-label="Confirm patient dates"]').checked).toBe(false);
+    expect(container.querySelector('[aria-label="Confirm clinical information"]').checked).toBe(false);
     expect(container.querySelector('#pdf-requirements').textContent).not.toContain('injury dates');
     expect(button('Create PDF').disabled).toBe(true);
   });

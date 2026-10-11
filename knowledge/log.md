@@ -2,7 +2,9 @@
 
 ## 2026-10-11
 
-- **Export date acknowledgment copy**: Updated [Patient notes](./architecture/patient-notes.md) and the Patients README for the export checkbox acknowledgment of date verification responsibility and intentional blank dates. Accessible label, checked state and export requirements are unchanged; no backend or legal-terms change.
+- **Clinical-information export acknowledgment**: Corrected the earlier dates-only copy to “I acknowledge that the clinical information herein is accurate.” Updated accessible label/blocker, local state naming, selectors, Patients README and [Patient notes](./architecture/patient-notes.md), and index. The local export gate now resets its clinical acknowledgment for selection/range/date changes, refreshed visit details and saved signatures, while keeping per-note review separate; no backend assent persistence or legal-terms change.
+
+- **Export date acknowledgment copy (superseded by clinical-information acknowledgment above)**: Updated [Patient notes](./architecture/patient-notes.md) and the Patients README for the export checkbox acknowledgment of date verification responsibility and intentional blank dates. Accessible label, checked state and export requirements are unchanged; no backend or legal-terms change.
 
 - **Stable authenticated navigation order**: Corrected [Authenticated Navigation](./components/navbar.md) and the Navbar README for Home first when shown on subroutes, followed by gated Patients, Billing and Settings on desktop/mobile; Home remains omitted on the dashboard. Feedback and Logout retain their existing controls and position; updated index routing and source/test provenance. No website publication.
 

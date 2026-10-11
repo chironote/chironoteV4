@@ -13,12 +13,12 @@ export default function ExportPatientDialog({ patient, onClose }) {
   const [scope, setScope] = useState('all'); const [range, setRange] = useState({ from: '', to: '' });
   const [acknowledged, setAcknowledged] = useState(new Set()); const [signature, setSignature] = useState(null);
   const [dates, setDates] = useState({ dateOfBirth: patient.dateOfBirth || '', dateOfInjury: patient.dateOfInjury || '' });
-  const [datesConfirmed, setDatesConfirmed] = useState(false); const [editDates, setEditDates] = useState(false);
+  const [clinicalConfirmed, setClinicalConfirmed] = useState(false); const [editDates, setEditDates] = useState(false);
   const [message, setMessage] = useState(''); const [busy, setBusy] = useState(true); const [loaded, setLoaded] = useState(false);
   const [configure, setConfigure] = useState(false); const [editTimestamp, setEditTimestamp] = useState(null);
   const allRef = useRef(null);
   const load = async (preserve = false) => {
-    setBusy(true); setMessage(''); setLoaded(false);
+    setBusy(true); setMessage(''); setLoaded(false); setClinicalConfirmed(false);
     try {
       const inventory = []; let cursor; const seen = new Set(); const cursors = new Set();
       do {
@@ -41,7 +41,7 @@ export default function ExportPatientDialog({ patient, onClose }) {
   const rangeError = scope === 'range' && (!range.from || !range.to ? 'Choose a start and end date.' : range.from > range.to ? 'End date must be on or after start date.' : '');
   useEffect(() => { if (allRef.current) allRef.current.indeterminate = chosen.length > 0 && chosen.length < eligible.length; }, [loaded, chosen.length, eligible.length]);
   const changeRange = (nextScope, nextRange = range) => {
-    setScope(nextScope); setRange(nextRange); setMessage('');
+    setScope(nextScope); setRange(nextRange); setMessage(''); setClinicalConfirmed(false);
     setSelected(new Set(notes.filter(note => ready(note) && matchesRange(note, nextScope, nextRange)).map(note => note.timestamp)));
   };
   const chooseCustomRange = () => {
@@ -56,7 +56,7 @@ export default function ExportPatientDialog({ patient, onClose }) {
   const blockers = loaded ? [
     rangeError,
     !rangeError && !chosen.length && 'Select at least one saved note.',
-    !datesConfirmed && 'Confirm the patient dates.',
+    !clinicalConfirmed && 'Confirm the clinical information.',
     !signatureReady && 'Add your signature name and 10-digit NPI.',
     missingService && 'Add the missing visit dates.',
     conflicts.length > 0 && 'Resolve the injury dates or uncheck the affected notes.',
@@ -89,11 +89,11 @@ export default function ExportPatientDialog({ patient, onClose }) {
     {busy && <p role="status">{loaded ? 'Creating PDF…' : 'Loading notes…'}</p>}
     {loaded && <>
       <div className="patient-export-list-heading">
-        <label className="patient-check"><input ref={allRef} type="checkbox" disabled={busy || !eligible.length} checked={eligible.length > 0 && chosen.length === eligible.length} onChange={e => setSelected(new Set(e.target.checked ? eligible.map(note => note.timestamp) : []))} /> Select all</label>
+        <label className="patient-check"><input ref={allRef} type="checkbox" disabled={busy || !eligible.length} checked={eligible.length > 0 && chosen.length === eligible.length} onChange={e => { setSelected(new Set(e.target.checked ? eligible.map(note => note.timestamp) : [])); setClinicalConfirmed(false); }} /> Select all</label>
         <span aria-live="polite">{chosen.length} of {eligible.length} selected</span>
       </div>
       <ul className="patient-export-list">{matching.map(note => <li key={note.timestamp}>
-        <label className="patient-check patient-export-note"><input type="checkbox" disabled={busy || !ready(note)} checked={ready(note) && selected.has(note.timestamp)} onChange={() => toggle(setSelected, selected, note.timestamp)} /><span className="patient-export-note-copy"><span>{note.visitLabel || note.noteLabel || 'Untitled note'}</span><small>{note.dateOfService ? dateLabel(note.dateOfService) : 'Visit date missing'}{!ready(note) ? ' · Not ready to export' : ''}</small></span></label>
+        <label className="patient-check patient-export-note"><input type="checkbox" disabled={busy || !ready(note)} checked={ready(note) && selected.has(note.timestamp)} onChange={() => { toggle(setSelected, selected, note.timestamp); setClinicalConfirmed(false); }} /><span className="patient-export-note-copy"><span>{note.visitLabel || note.noteLabel || 'Untitled note'}</span><small>{note.dateOfService ? dateLabel(note.dateOfService) : 'Visit date missing'}{!ready(note) ? ' · Not ready to export' : ''}</small></span></label>
         {!note.dateOfService && ready(note) && <button type="button" className="patient-export-link" disabled={busy} onClick={() => setEditTimestamp(note.timestamp)}>Add visit date</button>}
         {conflicts.includes(note) && <p className="patient-export-warning">Injury date: {dateLabel(note.dateOfInjury)}. Update the PDF details below or uncheck this note.</p>}
         {note.needsContextReview && selected.has(note.timestamp) && <label className="patient-check patient-export-review"><input type="checkbox" disabled={busy} checked={acknowledged.has(note.timestamp)} onChange={() => toggle(setAcknowledged, acknowledged, note.timestamp)} /> I acknowledge this reassigned note still needs clinical review.</label>}
@@ -102,14 +102,14 @@ export default function ExportPatientDialog({ patient, onClose }) {
       {undated.length > 0 && <div className="patient-export-undated"><p className="patient-help">{undated.length} {undated.length === 1 ? 'note needs a visit date' : 'notes need visit dates'} to match a date range.</p>{undated.map(note => <button type="button" className="patient-export-link" key={note.timestamp} disabled={busy} onClick={() => setEditTimestamp(note.timestamp)}>Add date: {note.visitLabel || note.noteLabel || 'Untitled note'}</button>)}</div>}
       <section className="patient-export-details" aria-label="PDF details">
         <div className="patient-export-details-heading"><h3>PDF details</h3><button type="button" className="patient-export-link" disabled={busy} aria-expanded={editDates} aria-controls="export-patient-dates" onClick={() => setEditDates(!editDates)}>{editDates ? 'Done' : 'Edit dates'}</button></div>
-        {editDates ? <div id="export-patient-dates" className="patient-field-grid">{[['dateOfBirth', 'Date of birth'], ['dateOfInjury', 'Date of injury']].map(([key, label]) => <label key={key}>{label}<input type="date" max={localDate()} disabled={busy} value={dates[key]} onChange={e => { setDates({ ...dates, [key]: e.target.value }); setDatesConfirmed(false); }} /></label>)}<small className="patient-help">Blank dates print as Not recorded / Not applicable.</small></div> : <dl id="export-patient-dates" className="patient-export-date-summary"><div><dt>Birth date</dt><dd>{dateLabel(dates.dateOfBirth)}</dd></div><div><dt>Injury date</dt><dd>{dateLabel(dates.dateOfInjury)}</dd></div></dl>}
-        <label className="patient-check"><input type="checkbox" aria-label="Confirm patient dates" disabled={busy} checked={datesConfirmed} onChange={e => setDatesConfirmed(e.target.checked)} /> I acknowledge responsibility for verifying the accuracy of the dates in this export. Any date left blank is intentional.</label>
+        {editDates ? <div id="export-patient-dates" className="patient-field-grid">{[['dateOfBirth', 'Date of birth'], ['dateOfInjury', 'Date of injury']].map(([key, label]) => <label key={key}>{label}<input type="date" max={localDate()} disabled={busy} value={dates[key]} onChange={e => { setDates({ ...dates, [key]: e.target.value }); setClinicalConfirmed(false); }} /></label>)}<small className="patient-help">Blank dates print as Not recorded / Not applicable.</small></div> : <dl id="export-patient-dates" className="patient-export-date-summary"><div><dt>Birth date</dt><dd>{dateLabel(dates.dateOfBirth)}</dd></div><div><dt>Injury date</dt><dd>{dateLabel(dates.dateOfInjury)}</dd></div></dl>}
+        <label className="patient-check"><input type="checkbox" aria-label="Confirm clinical information" disabled={busy} checked={clinicalConfirmed} onChange={e => setClinicalConfirmed(e.target.checked)} /> I acknowledge that the clinical information herein is accurate.</label>
         <div className="patient-export-signature"><span>{signatureReady ? <>Signed by {signature.name}<small>NPI {signature.npi}</small></> : 'Signature not configured'}</span><button type="button" className="patient-export-link" disabled={busy} onClick={() => setConfigure(true)}>{signatureReady ? 'Edit signature' : 'Set up signature'}</button></div>
       </section>
     </>}
     {blockers.length > 0 && <p id="pdf-requirements" className="patient-help patient-export-requirements">{blockers.join(' ')}</p>}
     {message && <p role={loaded ? 'status' : 'alert'} className="patient-export-result">{message}{!loaded && !busy && <> <button type="button" className="patient-export-link" onClick={() => load(notes.length > 0)}>Try again</button></>}</p>}
-    {configure && <SignatureDialog onClose={() => setConfigure(false)} onSaved={saved => setSignature(saved)} />}
+    {configure && <SignatureDialog onClose={() => setConfigure(false)} onSaved={saved => { setSignature(saved); setClinicalConfirmed(false); }} />}
     {editTimestamp && <VisitDetailsDialog timestamp={editTimestamp} onClose={() => { setEditTimestamp(null); load(true); }} />}
   </PatientDialog>;
 }

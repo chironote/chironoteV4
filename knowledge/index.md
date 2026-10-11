@@ -77,7 +77,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Patient notes and data
 
-- [Patient notes](architecture/patient-notes.md): capture, the single clipboard editor, code-only confirmation and diagnosis continuity, destination-code copying during reassignment, deletion warnings, compact all-notes/custom-range PDF selection and prerequisites, toolbar Save, capture lookup, profile/signature presentation and publication boundaries.
+- [Patient notes](architecture/patient-notes.md): capture, the single clipboard editor, code-only confirmation and diagnosis continuity, destination-code copying during reassignment, deletion warnings, compact all-notes/custom-range PDF selection, clinical-information acknowledgment and prerequisites, toolbar Save, capture lookup, profile/signature presentation and publication boundaries.
 - [Patient data flow](security/patient-data-flow.md): clinical data boundaries, deployed retention protections and outstanding operational verification.
 
 ## Maintenance
