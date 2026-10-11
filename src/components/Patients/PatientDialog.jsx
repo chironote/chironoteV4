@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import '../Dialog/ProductDialog.css';
 
-export default function PatientDialog({ title, children, onClose, busy = false, className = '' }) {
+export default function PatientDialog({ title, children, footer, onClose, busy = false, className = '' }) {
   const ref = useRef(null);
   useEffect(() => {
     const previous = document.activeElement;
@@ -21,5 +21,6 @@ export default function PatientDialog({ title, children, onClose, busy = false, 
   return <div className="patient-modal-backdrop"><section className={`patient-modal patient-form-dialog ${className}`} role="dialog" aria-modal="true" aria-label={title} aria-busy={busy} tabIndex={-1} ref={ref} onKeyDown={keyDown}>
     <header className="product-dialog__header"><h2>{title}</h2><button className="product-dialog__close" type="button" disabled={busy} onClick={onClose} aria-label={`Close ${title}`}><span className="material-symbols-rounded" aria-hidden="true">close</span></button></header>
     <div className="product-dialog__body patient-form">{children}</div>
+    {footer && <div className="patient-dialog-footer patient-form">{footer}</div>}
   </section></div>;
 }
