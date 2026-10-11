@@ -24,7 +24,7 @@ test.each([undefined, 'patient-1'])('History restores the original popup and tra
   await act(async () => root.render(<Harness patientId={patientId} />));
   expect(container.querySelector('.content-popup')).not.toBeNull();
   expect(container.querySelector('.patient-note-editor')).toBeNull();
-  expect(container.querySelector('.label-container').previousElementSibling.textContent).toBe(patientId ? 'Jordan Example' : 'Name Unknown');
+  expect(container.querySelector('.label-container').previousElementSibling.textContent).toBe(patientId ? 'Jordan Example' : 'Unassigned');
   expect(container.querySelector('.label-title').textContent).toBe('Visit label');
   await act(async () => container.querySelector('[aria-label="More options"]').click());
   await act(async () => [...container.querySelectorAll('button')].find(b => b.textContent === 'View Transcript').click());

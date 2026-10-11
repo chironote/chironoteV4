@@ -72,9 +72,11 @@ Follow [Recent Notes and dense navigation](../development/STYLE.md#recent-notes-
 
 ## Frontend correction — 2026-10-11
 
-History always uses its original ContentPopup, including View Transcript / View Note for both legacy and patient-linked notes. Only the read-only current patient name is added above the existing label. Profile, visit and diagnosis editing stay in the Patients route. Rename uses the existing noteLabel mutation and clears local visitLabel in the same way as its resolver.
+History always uses its original ContentPopup, including View Transcript / View Note for both legacy and patient-linked notes. The current patient name (or Unassigned) above the label is clickable and opens the compact ReassignPatientDialog. Profile, visit and diagnosis editing stay in the Patients route. Rename uses the existing noteLabel mutation and clears local visitLabel in the same way as its resolver.
 
 ## Provenance
 
 Derived from [README.md](../../src/components/Sidebar/README.md).
 
+
+The patient name in ContentPopup opens ReassignPatientDialog after the draft guard. Re-Assign performs an owner-verified, versioned association update; Cancel writes nothing. The modal is a sibling of the popup to avoid backdrop click dismissal. The parent updates the selected item and history after success. Clinical text remains viewed/copied here, with editing in the clipboard. Source: `../../src/components/Sidebar/ContentPopup.jsx`, `../../src/components/Patients/ReassignPatientDialog.jsx`.

@@ -62,3 +62,5 @@ Patient-enabled rows show the current verified directory name above `visitLabel`
 ## Patient UI correction
 
 History uses the original ContentPopup for both legacy and patient-linked notes, with View Transcript / View Note restored. The popup adds only the current read-only patient name above the existing label; profile, visit metadata and diagnosis editing remain on Patients.
+
+The patient name in ContentPopup opens ReassignPatientDialog after the draft guard. Re-Assign performs an owner-verified, versioned association update; Cancel writes nothing. The modal is a sibling of the popup to avoid backdrop click dismissal. The parent updates the selected item and history after success. Clinical text remains viewed/copied here, with editing in the clipboard. Source: `src/components/Sidebar/ContentPopup.jsx`, `src/components/Patients/ReassignPatientDialog.jsx`.

@@ -4,7 +4,7 @@ import './Patients.css';
 
 const normalizedName = name => name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 
-export default function PatientCapturePicker({ value, onChange, showVisitDetails = false }) {
+export default function PatientCapturePicker({ value, onChange, showVisitDetails = false, searchPlaceholder }) {
   const [search, setSearch] = useState(''); const [patients, setPatients] = useState([]);
   const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [cursor, setCursor] = useState(null);
   const requestRef = useRef(0);
@@ -68,7 +68,7 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
   </div>;
   return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient Name'}</legend>
     {showVisitDetails && <p className="patient-selection">{selected}</p>}
-    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned'} onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
+    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={searchPlaceholder || (showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned')} onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
     {showVisitDetails && !query && <p className="patient-help">Search by name, or leave this visit unassigned.</p>}
     {loading && <p role="status">Loading patients…</p>}
     {error && <p className="patient-picker-error" role="alert">{error}</p>}

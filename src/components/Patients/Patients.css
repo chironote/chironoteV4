@@ -126,4 +126,11 @@
 .clipboard-save-review :focus-visible { outline: 3px solid var(--medium-green); outline-offset: 2px; }
 .patient-directory li .visit-details-link { width: auto; min-height: 44px; padding: 6px 2px; border: 0; text-decoration: underline; background: transparent; font-size: 14px; }
 .visit-details-fields { margin: 0; padding: 0; border: 0; min-width: 0; }
+.patient-modal.patient-reassign-dialog { width: min(480px, 100%); }
+.patient-reassign-current { margin-bottom: 16px; line-height: 1.6; }
+.patient-reassign-current > span { display: block; font-size: 13px; color: var(--color-text-muted); }
+.patient-reassign-actions { justify-content: flex-end; }
+.patient-reassign-actions button:first-child { background: var(--medium-green); color: white; border-color: var(--medium-green); }
+.patient-reassign-actions button:first-child:hover:not(:disabled) { background: var(--dark-green); }
+.patient-reassign-dialog .patient-recording-search::placeholder { font-size: 12px; }
 @media(max-width:600px) { .clipboard-save-review { margin: 10px; } .clipboard-save-review li { align-items: flex-start; flex-direction: column; } }

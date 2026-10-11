@@ -241,6 +241,19 @@ function ClinicalWorkspace({ signOut, user }) {
     setShowPopupMenu(false);
   };
 
+  const handlePatientAssigned = note => {
+    setSelectedItem(item => ({ ...item, ...note }));
+    if (showNotes) setSelectedContent(note.note || '');
+    const replaceNote = items => items.map(item => item.timestamp === note.timestamp ? { ...item, ...note } : item);
+    notesHistory.setNotes(replaceNote);
+    notesHistory.setTranscripts(replaceNote);
+    if (clipboardTarget?.timestamp === note.timestamp && !clipboardDirty) {
+      setClipboardTarget(note);
+      setClipboardContent(note.note || '');
+    }
+    notesHistory.refreshNotes();
+  };
+
   const togglePopupMenu = (event) => {
     event.stopPropagation();
     setShowPopupMenu(prev => !prev);
@@ -541,6 +554,7 @@ function ClinicalWorkspace({ signOut, user }) {
               selectedItem,
               handleLabelUpdate,
               handlePopupViewModeChange,
+              onPatientAssigned: handlePatientAssigned,
               onOpen: toggleContentPopup
             }}
           />

@@ -242,3 +242,5 @@
   /* margin-top: 0.25em; removed */
   margin-left: 0.25em; /* Add a small space after the header if on the same line */
 }
+.content-popup .patient-name-link { display: block; min-height: 44px; padding: 4px 0; border: 0; background: transparent; color: var(--dark-green); font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.content-popup .patient-name-link:focus-visible { outline: 3px solid var(--medium-green); outline-offset: 3px; border-radius: 3px; }

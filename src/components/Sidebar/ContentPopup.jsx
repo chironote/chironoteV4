@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { stripMarkdown } from '../../utils/markdownStripper';
 import './ContentPopup.css'; // Import component-specific styles
 import PatientName from '../Patients/PatientName';
+import ReassignPatientDialog from '../Patients/ReassignPatientDialog';
+import { leaveDrafts } from '../Patients/draftNavigation';
 
 // Helper function to format timestamp for display in popup
 const formatPopupDate = (timestamp) => {
@@ -40,11 +42,14 @@ const ContentPopup = ({
   onLabelUpdate, // Add callback for label updates
   onViewModeChange,
   hasTranscript,
-  patientId
+  patientId,
+  onPatientAssigned
 }) => {
   const [copiedSectionHeader, setCopiedSectionHeader] = useState(''); // e.g., "Subjective:" or "Subjective: Copied!"
   const [isEditingLabel, setIsEditingLabel] = useState(false);
   const [editedLabel, setEditedLabel] = useState('');
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [assignmentMessage, setAssignmentMessage] = useState('');
 
   // Handle saving the edited label
   const handleSaveLabel = () => {
@@ -181,8 +186,10 @@ const ContentPopup = ({
   const hasViewModeMenu = Boolean(hasTranscript) || !showNotes;
 
   return (
+    <>
     <div
       className="content-popup"
+      aria-hidden={reassignOpen || undefined}
       onClick={() => {
         setShowContentPopup(false);
         if (setShowPopupMenu) setShowPopupMenu(false); // Close menu popup if its setter is provided
@@ -216,7 +223,8 @@ const ContentPopup = ({
                 </span>
               </button>
             </div>
-            <PatientName patientId={patientId} />
+            <PatientName patientId={patientId} unassignedLabel="Unassigned" onClick={timestamp ? () => leaveDrafts(() => { setAssignmentMessage(''); setReassignOpen(true); }) : undefined} />
+            {assignmentMessage && <p role="status" className="patient-help">{assignmentMessage}</p>}
             <div className="label-container">
               {isEditingLabel ? (
                 <input
@@ -310,6 +318,12 @@ const ContentPopup = ({
         
       </div>
     </div>
+    {reassignOpen && <ReassignPatientDialog timestamp={timestamp} onClose={() => setReassignOpen(false)} onAssigned={note => {
+      onPatientAssigned?.(note);
+      setReassignOpen(false);
+      setAssignmentMessage('Patient reassigned.');
+    }} />}
+    </>
   );
 };
 
