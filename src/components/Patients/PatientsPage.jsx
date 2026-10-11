@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { patientRequest, localDate } from '../../services/patientNotes';
-import VisitDetailsDialog from './VisitDetailsDialog';
 import ExportPatientDialog from './ExportPatientDialog';
 import PatientDialog from './PatientDialog';
 import DeletePatientDialog from './DeletePatientDialog';
@@ -10,7 +9,7 @@ export default function PatientsPage({ desktopSave = false, allowExport = false,
   const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState(''); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null);
   const [patient, setPatient] = useState(null); const [visits, setVisits] = useState([]); const [visitCursor, setVisitCursor] = useState(null);
-  const [selected, setSelected] = useState(null); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
   const [editingProfile, setEditingProfile] = useState(false); const [profileDraft, setProfileDraft] = useState(null); const [diagnosis, setDiagnosis] = useState(null); const [exportOpen, setExportOpen] = useState(false);
   useEffect(() => {
     let active = true; const timer = setTimeout(() => {
@@ -64,10 +63,8 @@ export default function PatientsPage({ desktopSave = false, allowExport = false,
         {diagnosis?.sourceTimestamp && <button type="button" disabled={busy} onClick={() => openVisit(diagnosis.sourceTimestamp)}>Open source note</button>}
       </aside>
       {exportOpen && <ExportPatientDialog patient={patient} desktopSave={desktopSave} onClose={() => setExportOpen(false)} />}
-      <h2>Visits</h2><ul className="patient-directory">{visits.map(visit => <li key={visit.timestamp}><button disabled={busy} onClick={() => openVisit(visit.timestamp)}><span><strong>{visit.visitLabel || visit.noteLabel || 'Untitled visit'}</strong><small>{visit.dateOfService || 'Date not confirmed'} · {visit.visitType || 'Type not set'}</small></span><small>{visit.needsContextReview || visit.diagnosisReviewRequired ? 'Review needed' : visit.generationStatus === 'PENDING' ? 'Pending' : 'Open in clipboard'}</small></button><button className="visit-details-link" disabled={busy} aria-label={`Visit details for ${visit.visitLabel || visit.noteLabel || visit.dateOfService || 'visit'}`} onClick={() => setSelected(visit.timestamp)}>Visit details</button></li>)}</ul>
+      <h2>Visits</h2><ul className="patient-directory">{visits.map(visit => <li key={visit.timestamp}><button disabled={busy} onClick={() => openVisit(visit.timestamp)}><span><strong>{visit.visitLabel || visit.noteLabel || 'Untitled visit'}</strong><small>{visit.dateOfService || 'Date not confirmed'} · {visit.visitType || 'Type not set'}</small></span><small>{visit.needsContextReview || visit.diagnosisReviewRequired ? 'Review needed' : visit.generationStatus === 'PENDING' ? 'Pending' : 'Open in clipboard'}</small></button></li>)}</ul>
       {!visits.length && <p>No visits have been assigned to this patient yet.</p>}{visitCursor && <button disabled={busy} onClick={more}>More visits</button>}
     </>}
-    {selected && <VisitDetailsDialog timestamp={selected} onClose={() => { setSelected(null); if (patient) open(patient); }}
-      onOpenNote={openVisit} onSaved={saved => setVisits(old => old.map(note => note.timestamp === saved.timestamp ? saved : note))} />}
   </main>;
 }
