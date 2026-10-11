@@ -2,6 +2,8 @@
 
 ## 2026-10-11
 
+- **Simplified recording selection**: Documented the name-only panel with × reset, automatic saved history, existing-patient Re-Exam and new-patient initial exam defaults in [Recording](./components/recording.md) and [Patient notes](./architecture/patient-notes.md). Updated component READMEs and index routing.
+
 - **Patient UI corrections**: Restored the original [History popup and transcript view](./components/sidebar.md); added only a read-only patient name above the existing label. Moved desktop Save into the [Clipboard toolbar](./components/clipboard.md) while preserving conditional saves/review and draft conflict safety. Corrected [recording](./components/recording.md) clipping and empty-query patient rosters; visit fields remain on Patients. Aligned patient cards/dialogs with established styles and added masked signature preview in [Settings](./components/billing-settings.md). Updated AppShell/patient contracts and original-folder release guidance; no backend/schema/prompt publication or real patient changes.
 
 ## 2026-10-10

@@ -22,6 +22,10 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     return () => { active = false; clearTimeout(timer); };
   }, [query]);
   const change = (fields) => onChange({ ...current, ...fields });
+  const clearPatient = () => {
+    change({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, contextMode: 'patient' });
+    setSearch('');
+  };
   const selected = current.patientId ? (current.displayName || current.patientName || 'Selected patient') : 'Unassigned';
   const more = async () => {
     const request = requestRef.current; setLoading(true);
@@ -30,6 +34,10 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     } catch (failure) { if (request === requestRef.current) setError(failure.message); }
     finally { if (request === requestRef.current) setLoading(false); }
   };
+  if (current.patientId && !showVisitDetails) return <div className="patient-capture patient-capture-selected">
+    <div className="patient-selected-name">{selected}</div>
+    <button type="button" className="patient-clear-selection" aria-label="Clear patient selection" title="Choose another patient" onClick={clearPatient}>×</button>
+  </div>;
   return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient'}</legend>
     <p className="patient-selection">{selected}</p>
     <label>Find a patient<input value={search} placeholder="Type a patient name" onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
@@ -38,12 +46,12 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     {error && <p role="alert">{error} You can record an unassigned visit and assign it later.</p>}
     {query && <div className="patient-picker-list" aria-label="Matching patients">
       {patients.map(patient => <button type="button" key={patient.patientId} aria-pressed={current.patientId === patient.patientId}
-        onClick={() => { change({ patientId: patient.patientId, patientName: undefined, displayName: patient.name, dateOfInjury: patient.dateOfInjury, visitType: null }); setSearch(''); }}>{patient.name}<small>{patient.visitCount} visits</small></button>)}
+        onClick={() => { change({ patientId: patient.patientId, patientName: undefined, displayName: patient.name, dateOfInjury: patient.dateOfInjury, visitType: showVisitDetails ? null : 'followUp', contextMode: 'patient' }); setSearch(''); }}>{patient.name}<small>{patient.visitCount} visits</small></button>)}
     </div>}
     {query && cursor && <button type="button" disabled={loading} onClick={more}>More patients</button>}
     <div className="patient-actions">
-      {query && <button type="button" onClick={() => { change({ patientId: crypto.randomUUID(), patientName: query, displayName: query, dateOfInjury: null, visitType: null }); setSearch(''); }}>Use new patient “{query}”</button>}
-      {current.patientId && <button type="button" onClick={() => { change({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null }); setSearch(''); }}>Unassigned visit</button>}
+      {query && <button type="button" onClick={() => { change({ patientId: crypto.randomUUID(), patientName: query, displayName: query, dateOfInjury: null, visitType: showVisitDetails ? null : 'initialExam', contextMode: 'patient' }); setSearch(''); }}>Use new patient “{query}”</button>}
+      {current.patientId && <button type="button" onClick={clearPatient}>Unassigned visit</button>}
     </div>
     {showVisitDetails && <div className="patient-field-grid">
       <label>Date of service<input type="date" required max={localDate()} value={current.dateOfService || localDate()} onChange={e => change({ dateOfService: e.target.value })} /></label>
@@ -52,6 +60,6 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
         <option value="">Automatic</option><option value="initialExam">Initial exam</option><option value="reExam">Re-exam</option><option value="followUp">Follow-up</option>
       </select></label>
     </div>}
-    {current.patientId && <label className="patient-inline"><input type="checkbox" checked={current.contextMode !== 'none'} onChange={e => change({ contextMode: e.target.checked ? 'patient' : 'none' })} /> Use saved patient history</label>}
+    {showVisitDetails && current.patientId && <label className="patient-inline"><input type="checkbox" checked={current.contextMode !== 'none'} onChange={e => change({ contextMode: e.target.checked ? 'patient' : 'none' })} /> Use saved patient history</label>}
   </fieldset>;
 }
