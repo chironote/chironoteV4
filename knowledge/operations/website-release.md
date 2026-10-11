@@ -8,7 +8,26 @@ tags: [release, publish, amplify, production, validation, risk]
 
 # Website Publish State and Release Checklist
 
-Only the repository owner publishes the website. This concept records evidence and a safe decision path; it does not authorize an agent to deploy.
+Publishing requires repository-owner authorization. The 2026-09-26 Custom Instructions restoration was explicitly requested by the owner; the historical checklist below is not authorization for unrelated deployments.
+
+## Custom Instructions restoration: 2026-09-26
+
+The live editor was hidden because the frontend build omitted `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED`, and the service required an explicit true value. The service now defaults to available; explicit `false` remains an emergency opt-out. Existing users' saved source and profiles were not changed.
+
+Fresh production verification superseded the August launch-blocker notes: the SQS worker mapping is enabled at batch size 1, `SOATP-MetaPrompter` is Active/Successful on Astra, and `transcriptToNoteV2` has `CUSTOM_INSTRUCTIONS_RUNTIME_ENABLED=true`. A synthetic Cognito login exercised authenticated AppSync acceptance, idempotency, queue/provider compilation to READY/CUSTOM in about 103 seconds, source round-trip, and disable preservation. Its profile remains disabled and its login was deleted. A second disposable login confirmed the actual configured Amplify client and generated query. No provider keys, real user preferences, or note-generation configuration were changed.
+
+The production build succeeded with existing lint/Browserslist warnings. All 24 focused Settings, service, and current workflow tests passed. The full isolated-tip suite had 79 passing tests and two pre-existing `DemoLandingPage.test.jsx` failures: it still expects four scheduler links and the overview video intentionally removed from `/demo`. Those assertions and the landing implementation were left unchanged.
+
+Production hosting is S3 bucket `chironote4-20240825113940-hostingbucket-prod`, served by CloudFront `E34RPJ5SU5J7IX`; the Amplify console branches are not the live custom-domain hosting path. A frontend-only publish uploaded four new immutable JS/source-map objects, then conditionally replaced the manifest and index against their backed-up ETags. It did not run Amplify push or modify the backend. CloudFront invalidation `I7DVAZ5382BCGD9MKZJRBZ33C8` completed.
+
+- Previous main/authenticated bundles: `main.01200898.js`, `982.27c37cce.chunk.js`.
+- Restored main/authenticated bundles: `main.74aa16ed.js`, `982.bd1a2e25.chunk.js`.
+- The other 68 manifest assets, including landing bundles, styles, and workflow media, are unchanged. Thirteen pre-existing landing source/media files were hash-checked and preserved. The release was built in the original checkout to include the already-live but uncommitted workflow-media changes; rebuilding only Git HEAD would regress them.
+- The live Settings route serves the new main bundle. After an initial transient session-verification failure, the signed-in browser loaded the enabled profile and displayed the Update dialog with saved text. No edit was submitted on the user's account.
+
+Release evidence, candidate artifacts, backend checks, build/test output, screenshot, pre-release index/manifest, and guarded rollback script are outside Git at `C:/Users/nikit/.codex/release-evidence/custom-instructions-20260926/`. Rollback runs `node rollback-frontend.cjs` from that directory only on an authorized rollback request. It verifies that the current index and manifest still match this release before restoring the originals and invalidating CloudFront; old immutable assets were retained.
+
+The July/August sections below are historical evidence, not the current live feature state.
 
 ## State as Reviewed on 2026-07-15
 

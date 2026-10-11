@@ -1,5 +1,18 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-09
+
+- **Landing overview video replacement**: Replaced the canonical `/` overview with the owner-supplied 58-second ambient-scribe video and an opening-scene WebP poster. Preserved deferred playback and the `/demo` overview exclusion. Updated LandingPage ownership, [Public Landing Pages](./components/landing-page.md), and the index; source: `LandingPage.jsx` and the new overview assets.
+
+## 2026-09-26
+
+- **Custom Instructions restoration**: Replaced the missing-build-flag opt-in with default availability and an explicit emergency opt-out. Verified the production Cognito/AppSync/SQS/Astra path with a disposable login: idempotent acceptance, READY/CUSTOM, source round-trip, and disable preservation all passed. Updated Settings ownership and [Billing and User Settings](./components/billing-settings.md); superseded stale August backend blockers and recorded narrow frontend release/rollback evidence in [Website Publish State and Release Checklist](./operations/website-release.md). Existing landing-page changes are preserved.
+
+## 2026-09-24
+
+- **Recording clip polish**: Recaptured the first workflow step with a visible pointer, deliberate cadence between New Note, Exam Layout, and Start Recording, and a hold on the live recording state; aligned carousel timing with the new clip in [Public Landing Pages](./components/landing-page.md).
+- **Workflow media recapture**: Documented real ScreenCLI footage of a fictional recording and the completed SOAP generation/review sequence, plus a native two-window drag of the note into the fictional Rosewood EHR chart. All three clips now have MP4 playback that starts at the beginning of each selected step, matching carousel timing, and GIF fallbacks in [Public Landing Pages](./components/landing-page.md).
+
 ## 2026-09-17
 
 - **Demo funnel and workflow display refinement**: Removed the redundant overview-video section from `/demo` while retaining it on `/`, preserved the three-step workflow lesson on both routes, corrected its desktop GIF frame to the native 3:2 composition, and delayed carousel autoplay until the lesson is actually visible.

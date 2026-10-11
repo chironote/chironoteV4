@@ -17,8 +17,8 @@ import heroImageLarge from '../../assets/hero-chiropractor-1200.webp';
 import mattAvatar from '../../assets/matt-avatar.webp';
 import jessAvatar from '../../assets/jess-avatar.webp';
 import davidAvatar from '../../assets/david-ager-avatar.webp';
-import videoThumbnail from '../../assets/demo-thumbnail.webp';
-import whiteboardVideo from '../../assets/WhiteboardAnimation.mp4';
+import videoThumbnail from '../../assets/ambient-scribe-poster.webp';
+import overviewVideo from '../../assets/ambient-scribe-overview.mp4';
 import WorkflowDemo from './WorkflowDemo';
 import hipaaIcon from '../../assets/hipaa.svg';
 
@@ -541,7 +541,7 @@ export default function LandingPage({ variant = 'standard' }) {
               onTimeUpdate={handleVideoTimeUpdate}
               onEnded={handleVideoEnded}
             >
-              <source src={whiteboardVideo} type="video/mp4" />
+              <source src={overviewVideo} type="video/mp4" />
               Your browser does not support embedded video.
             </video>
             {!videoPlaying && (

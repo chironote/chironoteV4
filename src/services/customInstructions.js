@@ -15,7 +15,7 @@ const compileStatuses = new Set(['NEVER', 'COMPILING', 'READY', 'FAILED']);
 const effectiveModes = new Set(['DEFAULT', 'CUSTOM']);
 
 export const isCustomInstructionsAvailable = () => (
-  String(process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED).toLowerCase() === 'true'
+  String(process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED ?? 'true').trim().toLowerCase() !== 'false'
 );
 
 export class CustomInstructionsError extends Error {

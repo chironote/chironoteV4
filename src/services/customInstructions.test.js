@@ -115,7 +115,26 @@ describe('customInstructions service', () => {
     expect(disableMyCustomInstructions).not.toMatch(/compiledPrompt|promptExam|promptTreatment/i);
   });
 
-  test('needs only the global flag and rejects validation or malformed server state', async () => {
+  test('loads saved instructions when a production build omits the feature flag', async () => {
+    delete process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED;
+    graphql.mockResolvedValue({ data: { getMyCustomInstructions: view() } });
+    const service = require('./customInstructions');
+
+    expect(service.isCustomInstructionsAvailable()).toBe(true);
+    await expect(service.loadCustomInstructions()).resolves.toEqual(view());
+    expect(graphql).toHaveBeenCalledTimes(1);
+  });
+
+  test('allows an explicit emergency opt-out without making a network request', async () => {
+    process.env.REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED = ' FALSE ';
+    const service = require('./customInstructions');
+
+    expect(service.isCustomInstructionsAvailable()).toBe(false);
+    await expect(service.loadCustomInstructions()).rejects.toMatchObject({ code: 'configuration' });
+    expect(graphql).not.toHaveBeenCalled();
+  });
+
+  test('rejects validation or malformed server state', async () => {
     const service = require('./customInstructions');
     expect(service.isCustomInstructionsAvailable()).toBe(true);
     await expect(service.startCustomInstructionsCompilation('   ', 'request')).rejects.toMatchObject({ code: 'validation' });

@@ -2,9 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import recordDemo from '../../assets/workflow-record.gif';
 import reviewDemo from '../../assets/workflow-review.gif';
 import editorDemo from '../../assets/workflow-editor.gif';
+import recordVideo from '../../assets/workflow-record.mp4';
+import reviewVideo from '../../assets/workflow-review.mp4';
+import editorVideo from '../../assets/workflow-editor.mp4';
+import recordPoster from '../../assets/workflow-record-poster.webp';
+import reviewPoster from '../../assets/workflow-review-poster.webp';
+import editorPoster from '../../assets/workflow-editor-poster.webp';
 import './WorkflowDemo.css';
 
-const AUTOPLAY_DELAY = 7000;
+const AUTOPLAY_DELAYS = [9500, 11500, 11500];
 const SWIPE_DISTANCE = 44;
 
 const steps = [
@@ -12,19 +18,25 @@ const steps = [
     title: 'Record the visit',
     description: 'Click New Note, then Start Recording. Speak naturally through the visit while ChiroNote listens.',
     image: recordDemo,
+    video: recordVideo,
+    poster: recordPoster,
     alt: 'ChiroNote demo opening New Note, choosing Exam Layout, and starting a recording.',
   },
   {
     title: 'Review the SOAP note',
     description: 'Stop recording and review the structured SOAP note.',
     image: reviewDemo,
-    alt: 'ChiroNote demo stopping an active recording and preparing its transcript.',
+    video: reviewVideo,
+    poster: reviewPoster,
+    alt: 'ChiroNote prepares the transcript, generates a SOAP note, and scrolls through the completed note.',
   },
   {
     title: 'Move it into your EHR',
-    description: 'Copy the full SOAP note—or one section at a time—and paste it into the patient chart you already use.',
+    description: 'Copy a section or the full note, then drag the finished note from Recent Notes into your patient chart.',
     image: editorDemo,
-    alt: 'ChiroNote demo copying the Subjective section and then the complete note.',
+    video: editorVideo,
+    poster: editorPoster,
+    alt: 'ChiroNote copies the Subjective section and full SOAP note, then drags the note from Recent Notes into a Rosewood EHR patient chart.',
   },
 ];
 
@@ -54,6 +66,7 @@ export default function WorkflowDemo() {
   const [interactionPaused, setInteractionPaused] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const demoRef = useRef(null);
+  const videoRefs = useRef([]);
   const touchStart = useRef(null);
 
   const selectStep = (nextStep) => {
@@ -78,12 +91,29 @@ export default function WorkflowDemo() {
   }, []);
 
   useEffect(() => {
+    videoRefs.current.forEach((video, index) => {
+      if (video && index !== step) video.pause();
+    });
+
+    const video = videoRefs.current[step];
+    if (!video) return;
+    if (!isInView || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      video.pause();
+      return;
+    }
+
+    video.currentTime = 0;
+    const playback = video.play();
+    if (playback?.catch) playback.catch(() => {});
+  }, [isInView, step]);
+
+  useEffect(() => {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (!isInView || userPaused || interactionPaused || reducedMotion) return undefined;
 
     const timer = window.setTimeout(() => {
       setStep((current) => (current + 1) % steps.length);
-    }, AUTOPLAY_DELAY);
+    }, AUTOPLAY_DELAYS[step]);
 
     return () => window.clearTimeout(timer);
   }, [interactionPaused, isInView, step, userPaused]);
@@ -167,7 +197,25 @@ export default function WorkflowDemo() {
                   aria-hidden={index === step ? undefined : 'true'}
                 >
                   <div className="workflow-demo__screen">
-                    <img src={item.image} alt={item.alt} width="1200" height="800" loading="lazy" decoding="async" />
+                    {item.video ? (
+                      <video
+                        ref={(element) => { videoRefs.current[index] = element; }}
+                        poster={item.poster}
+                        muted
+                        playsInline
+                        loop
+                        preload="metadata"
+                        role="img"
+                        aria-label={item.alt}
+                        width="900"
+                        height="600"
+                      >
+                        <source src={item.video} type="video/mp4" />
+                        <img src={item.image} alt={item.alt} width="900" height="600" />
+                      </video>
+                    ) : (
+                      <img src={item.image} alt={item.alt} width="600" height="400" loading="lazy" decoding="async" />
+                    )}
                   </div>
                   <div className="workflow-demo__lesson">
                     <div className="workflow-demo__dots" aria-hidden="true">
