@@ -97,6 +97,7 @@ const ClipboardButtons = ({
         >
           <span className="material-symbols-rounded toolbar-icon hide-on-mobile">edit</span>
         </button>
+        {save?.visible && <div className="toolbar-divider" aria-hidden="true" />}
         {save?.visible && <button
           type="button"
           id="save-note-btn"

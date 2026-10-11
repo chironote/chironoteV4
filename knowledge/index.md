@@ -27,7 +27,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes including the scheduler-focused demo page, protected app entry, analytics side effects, and PWA redirects. |
 | [Recording, Dictation, and Note Generation](./components/recording.md) | Recording architecture, compact patient lookup/selection and Re-Exam behavior, browser failure risks, and required release matrix. |
-| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, saved-note drop/selection parity, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
+| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, conditional Edit/Save toolbar divider, saved-note drop/selection parity, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation, restored note/transcript popup with clickable patient reassignment, clickable SOAP/Treatment copy controls, and the visually paired Smart Editor workspace. |
 | [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the restored, default-available asynchronous AppSync Custom Instructions experience. |
 | [Authentication UI](./components/auth-ui.md) | Amplify Authenticator branding and customization boundaries. |

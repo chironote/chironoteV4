@@ -38,7 +38,9 @@ test('the icon-only Save follows Edit and exposes dirty, saving and disabled sta
   const save = { visible: true, dirty: true, onSave };
   await act(async () => root.render(<Harness save={save} />));
   const button = container.querySelector('#save-note-btn');
-  expect(container.querySelector('#edit-panel-btn').nextElementSibling).toBe(button);
+  const divider = container.querySelector('#edit-panel-btn').nextElementSibling;
+  expect(divider.classList.contains('toolbar-divider')).toBe(true);
+  expect(divider.nextElementSibling).toBe(button);
   expect(button.textContent).toBe('save');
   expect(button.getAttribute('aria-label')).toBe('Save note changes');
   await act(async () => button.click()); expect(onSave).toHaveBeenCalledTimes(1);
@@ -46,4 +48,5 @@ test('the icon-only Save follows Edit and exposes dirty, saving and disabled sta
   expect(button.disabled).toBe(true); expect(button.getAttribute('aria-label')).toBe('Saving note');
   await act(async () => root.render(<Harness save={{ visible: false }} />));
   expect(container.querySelector('#save-note-btn')).toBeNull();
+  expect(container.querySelector('#edit-panel-btn').nextElementSibling).toBeNull();
 });
