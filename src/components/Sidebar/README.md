@@ -58,3 +58,7 @@ Before editing, it checks the user's subscription and decrements `notesleft` aft
 ## Patient notes integration
 
 Patient-enabled rows show the current verified directory name above `visitLabel`, falling back to the untouched legacy `noteLabel` caption. Unassigned notes use Name Unknown. Search includes the resolved name and caption/body. Patient identity never comes from parsing a label. Selection flows through the shell so draft guards run before changing the active note; patient-aware saved-note viewing and metadata controls belong to `Patients`.
+
+## Patient UI correction
+
+History uses the original ContentPopup for both legacy and patient-linked notes, with View Transcript / View Note restored. The popup adds only the current read-only patient name above the existing label; profile, visit metadata and diagnosis editing remain on Patients.

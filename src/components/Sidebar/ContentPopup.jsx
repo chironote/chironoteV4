@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { stripMarkdown } from '../../utils/markdownStripper';
 import './ContentPopup.css'; // Import component-specific styles
+import PatientName from '../Patients/PatientName';
 
 // Helper function to format timestamp for display in popup
 const formatPopupDate = (timestamp) => {
@@ -38,7 +39,8 @@ const ContentPopup = ({
   noteLabel, // Add noteLabel prop
   onLabelUpdate, // Add callback for label updates
   onViewModeChange,
-  hasTranscript
+  hasTranscript,
+  patientId
 }) => {
   const [copiedSectionHeader, setCopiedSectionHeader] = useState(''); // e.g., "Subjective:" or "Subjective: Copied!"
   const [isEditingLabel, setIsEditingLabel] = useState(false);
@@ -215,6 +217,7 @@ const ContentPopup = ({
               </button>
             </div>
             <div className="label-container">
+              <PatientName patientId={patientId} />
               {isEditingLabel ? (
                 <input
                   type="text"

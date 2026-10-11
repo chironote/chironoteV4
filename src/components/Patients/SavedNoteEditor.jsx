@@ -174,7 +174,7 @@ export default function SavedNoteEditor({ timestamp, desktopSave = false, initia
       {note.patientId && Object.entries(note.profileSuggestions?.fields || {}).some(([, suggestion]) => suggestion.status === 'pending') && <aside className="patient-confirmation"><h3>Patient profile suggestions</h3>
         {Object.entries(note.profileSuggestions.fields).filter(([, suggestion]) => suggestion.status === 'pending').map(([field, suggestion]) => <div key={field}><p>{({ dateOfBirth: 'Date of birth', dateOfInjury: 'Date of injury', sex: 'Sex' })[field]}: {suggestion.value}{suggestion.stale ? ' · From an earlier note version; confirm it in the patient profile.' : ''}</p><div className="patient-actions"><button disabled={busy || dirty || suggestion.stale} onClick={() => reviewSuggestion(field, 'accept')}>Accept</button><button disabled={busy || dirty} onClick={() => reviewSuggestion(field, 'dismiss')}>Dismiss</button></div></div>)}
       </aside>}
-      {showMetadata && <><PatientCapturePicker value={metadata} onChange={setMetadata} /><label>Visit label<input value={metadata.visitLabel || ''} onChange={e => setMetadata({ ...metadata, visitLabel: e.target.value })} /></label><button type="button" disabled={busy || dirty} onClick={() => saveMetadata()}>Save visit details</button></>}
+      {showMetadata && <><PatientCapturePicker value={metadata} onChange={setMetadata} showVisitDetails /><label>Visit label<input value={metadata.visitLabel || ''} onChange={e => setMetadata({ ...metadata, visitLabel: e.target.value })} /></label><button type="button" disabled={busy || dirty} onClick={() => saveMetadata()}>Save visit details</button></>}
     </>}
   </section>;
 }

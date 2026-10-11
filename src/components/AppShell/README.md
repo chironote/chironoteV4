@@ -67,3 +67,7 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 ## Patient notes integration
 
 `AuthenticatedApp` keys the clinical workspace by the authenticated principal so account changes discard in-memory patient and note state. `MainWorkspace` integrates the patient-aware saved-note view and recording selection; `useNotesHistory` resolves current directory names and carries note revisions, diagnosis review, and patient metadata without logging clinical payloads. Patient requests and bounded per-owner caching live in `src/services/patientNotes.js`. The website also owns `/app/patients`, exact saved-note clipboard loading, and dirty-draft guards around routes, history selection, recording, and sign-out. Desktop Save belongs to `Patients/SavedNoteEditor`; mobile has no new body Save control.
+
+## Patient UI correction
+
+History always opens the original ContentPopup, including its note/transcript menu; it no longer substitutes the patient editor. The only added popup field is the read-only patient name above the label. Clipboard Save is passed to ClipboardButtons, saves the loaded version directly through useClipboardSave, and retains guarded review for server-required confirmation. Label rename clears the local visitLabel to match the existing resolver.

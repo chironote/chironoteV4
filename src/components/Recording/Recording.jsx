@@ -157,7 +157,7 @@ function Recording({
 
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
-      <div className="popup-content" onClick={(e) => e.stopPropagation()}>
+      <div className="recording-dialog" role="dialog" aria-modal="true" aria-label="Recording" onClick={(e) => e.stopPropagation()}>
         {showConfirmation && (
           <ConfirmationPopup
             onConfirm={handleConfirmDiscard}

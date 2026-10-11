@@ -1,0 +1,30 @@
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import SignatureSettings from './SignatureSettings';
+import { patientRequest } from '../../services/patientNotes';
+jest.mock('../../services/patientNotes', () => ({ patientRequest: jest.fn() }));
+global.IS_REACT_ACT_ENVIRONMENT = true;
+let container, root;
+beforeEach(() => { patientRequest.mockReset(); container = document.createElement('div'); document.body.append(container); root = createRoot(container); });
+afterEach(() => { act(() => root.unmount()); container.remove(); });
+test('settings card exposes only the last four NPI digits and retains configuration', async () => {
+  patientRequest.mockResolvedValue({ name: 'Alex Example', npi: '1234567890' });
+  await act(async () => root.render(<SignatureSettings />));
+  expect(container.querySelector('.settings-card').textContent).toContain('Alex Example');
+  expect(container.textContent).toContain('••••••7890');
+  expect(container.textContent).not.toContain('1234567890');
+  await act(async () => container.querySelector('button').click());
+  expect(container.querySelector('[role=dialog]')).not.toBeNull();
+  expect(container.querySelector('input[inputmode=numeric]').value).toBe('1234567890');
+  patientRequest.mockResolvedValue({ name: 'Updated Example', npi: '1234567000' });
+  await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(container.querySelector('[role=dialog]')).toBeNull();
+  expect(container.textContent).toContain('Updated Example');
+  expect(container.textContent).toContain('••••••7000');
+});
+test('unset signature displays a calm empty state', async () => {
+  patientRequest.mockResolvedValue({ name: null, npi: null });
+  await act(async () => root.render(<SignatureSettings />));
+  expect(container.textContent).toContain('No signature configured yet.');
+  expect(container.textContent).not.toContain('undefined');
+});

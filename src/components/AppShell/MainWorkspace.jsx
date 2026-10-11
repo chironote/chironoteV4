@@ -7,9 +7,6 @@ import EditPanel from '../Sidebar/EditPanel';
 import ContentPopup from '../Sidebar/ContentPopup';
 import HistorySidebar from '../Sidebar/HistorySidebar';
 import MobileHistoryToggle from '../Sidebar/MobileHistoryToggle';
-import SavedNoteEditor from '../Patients/SavedNoteEditor';
-import useDesktopSave from '../Patients/useDesktopSave';
-import { patientNotesEnabled } from '../../services/patientNotes';
 
 function MainWorkspace({
   user,
@@ -21,7 +18,6 @@ function MainWorkspace({
   dictation,
   contentPopup
 }) {
-  const desktopSave = useDesktopSave();
   const isHistoryToggleDisabled = recording.showRecordingPopup ||
     recording.manager.isRecording ||
     recording.manager.isPreparingTranscript ||
@@ -67,6 +63,7 @@ function MainWorkspace({
           isWebSocketConnecting={dictation.isWebSocketConnecting}
           startDictation={dictation.main.toggleDictation}
           dictationReady={dictation.main.isInitialized}
+          save={clipboard.save}
         />
         <Clipboard
           clipboardTextareaRef={clipboard.clipboardTextareaRef}
@@ -74,7 +71,7 @@ function MainWorkspace({
           setClipboardContent={clipboard.setClipboardContent}
           streamContent={clipboard.streamingText}
           setShowCopyMessage={clipboard.setShowCopyMessage}
-          isDisabled={dictation.isDictationLoading || clipboard.noteStreamActive}
+          isDisabled={dictation.isDictationLoading || clipboard.noteStreamActive || clipboard.save?.busy}
           isTranscribing={dictation.isTranscribing}
         />
       </section>
@@ -124,12 +121,7 @@ function MainWorkspace({
         />
       )}
 
-      {patientNotesEnabled && contentPopup.showContentPopup && contentPopup.selectedItem?.note && (
-        <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Saved note">
-          <SavedNoteEditor timestamp={contentPopup.selectedTimestamp} desktopSave={desktopSave} onClose={() => contentPopup.setShowContentPopup(false)} onSaved={() => notesHistory.refreshNotes()} />
-        </div></div>
-      )}
-      {contentPopup.showContentPopup && (!patientNotesEnabled || !contentPopup.selectedItem?.note) && (
+      {contentPopup.showContentPopup && (
         <ContentPopup
           setShowContentPopup={contentPopup.setShowContentPopup}
           setShowPopupMenu={contentPopup.setShowPopupMenu}
@@ -141,7 +133,8 @@ function MainWorkspace({
           selectedContent={contentPopup.selectedContent}
           showPopupCopyMessage={contentPopup.showPopupCopyMessage}
           timestamp={contentPopup.selectedTimestamp}
-          noteLabel={contentPopup.selectedItem?.noteLabel}
+          noteLabel={contentPopup.selectedItem?.visitLabel || contentPopup.selectedItem?.noteLabel}
+          patientId={contentPopup.selectedItem?.patientId}
           onLabelUpdate={contentPopup.handleLabelUpdate}
           onViewModeChange={contentPopup.handlePopupViewModeChange}
           hasTranscript={Boolean(contentPopup.selectedItem?.transcript && contentPopup.selectedItem.transcript.trim() !== '')}

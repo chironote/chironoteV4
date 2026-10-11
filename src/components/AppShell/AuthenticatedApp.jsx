@@ -12,6 +12,7 @@ import SavedNoteEditor from '../Patients/SavedNoteEditor';
 import useDraftGuard from '../Patients/useDraftGuard';
 import { leaveDrafts } from '../Patients/draftNavigation';
 import useDesktopSave from '../Patients/useDesktopSave';
+import useClipboardSave from '../Patients/useClipboardSave';
 import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 import IntroTour from '../IntroTour/IntroTour';
 import ErrorBanner from './ErrorBanner';
@@ -44,12 +45,6 @@ function ClinicalWorkspace({ signOut, user }) {
   const [clipboardTarget, setClipboardTarget] = useState(null);
   const [generationError, setGenerationError] = useState('');
   const [saveDraft, setSaveDraft] = useState(null);
-  const clipboardSaveRef = useRef(null);
-  const clipboardGuard = useDraftGuard({
-    dirty: patientNotesEnabled && desktopSave && !saveDraft && clipboardTarget && clipboardContent !== clipboardTarget.note,
-    save: () => new Promise(resolve => { clipboardSaveRef.current = resolve; setSaveDraft({ note: clipboardTarget, text: clipboardContent }); }),
-    discard: () => setClipboardContent(clipboardTarget?.note || ''),
-  });
   const [noteStreamActive, setNoteStreamActive] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
@@ -78,6 +73,19 @@ function ClinicalWorkspace({ signOut, user }) {
   useUserAnalytics(user.username);
 
   const notesHistory = useNotesHistory(user.username, setIsWebSocketConnecting);
+  const clipboardDirty = Boolean(clipboardTarget && clipboardContent !== clipboardTarget.note);
+  const clipboardSave = useClipboardSave({
+    note: clipboardTarget, draft: clipboardContent,
+    onSaved: note => { setClipboardTarget(note); setGenerationError(''); notesHistory.refreshNotes(); },
+    onReview: setSaveDraft,
+    onError: setGenerationError,
+  });
+  const clipboardGuard = useDraftGuard({
+    dirty: patientNotesEnabled && desktopSave && !saveDraft && clipboardDirty,
+    busy: clipboardSave.busy,
+    save: () => clipboardSave.save(),
+    discard: () => setClipboardContent(clipboardTarget?.note || ''),
+  });
 
   const handleTextStreamUpdate = useCallback(async (newText) => {
     const cleanedText = stripMarkdown(newText);
@@ -293,7 +301,7 @@ function ClinicalWorkspace({ signOut, user }) {
         notesHistory.setNotes(prevNotes =>
           prevNotes.map(note =>
             (note.owner + note.timestamp) === uniqueId
-              ? { ...note, noteLabel: newLabel }
+              ? { ...note, noteLabel: newLabel, visitLabel: null }
               : note
           )
         );
@@ -303,13 +311,13 @@ function ClinicalWorkspace({ signOut, user }) {
         notesHistory.setTranscripts(prevTranscripts =>
           prevTranscripts.map(transcript =>
             (transcript.owner + transcript.timestamp) === uniqueId
-              ? { ...transcript, noteLabel: newLabel }
+              ? { ...transcript, noteLabel: newLabel, visitLabel: null }
               : transcript
           )
         );
       }
 
-      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel }));
+      setSelectedItem(prev => ({ ...prev, noteLabel: newLabel, visitLabel: null }));
     };
 
     try {
@@ -340,7 +348,7 @@ function ClinicalWorkspace({ signOut, user }) {
   }, []);
 
   const handleKeyDown = useCallback((event) => {
-    if (event.key === 'Escape' && !patientNotesEnabled) setShowContentPopup(false);
+    if (event.key === 'Escape') setShowContentPopup(false);
 
     if (window.innerWidth > 768) {
       if (event.ctrlKey && event.key === 'b') {
@@ -479,7 +487,14 @@ function ClinicalWorkspace({ signOut, user }) {
               setShowCopyMessage,
               showCopyMessage,
               handleCopy,
-              handleTextStreamUpdate
+              handleTextStreamUpdate,
+              save: {
+                visible: patientNotesEnabled && desktopSave && Boolean(clipboardTarget),
+                dirty: clipboardDirty, busy: clipboardSave.busy,
+                disabled: !clipboardDirty || !clipboardContent.trim() || noteStreamActive || isTranscribing || isDictationLoading || Boolean(saveDraft),
+                onSave: clipboardSave.save,
+                message: clipboardDirty ? 'Unsaved note changes' : 'Note saved',
+              }
             }}
             editPanel={{
               showEditPanel,
@@ -528,14 +543,11 @@ function ClinicalWorkspace({ signOut, user }) {
         <Route path="/feedback" element={<LegacyFeedbackRoute onOpen={openFeedback} />} />
         <Route path="/pricingplans" element={<PriceTable />} />
       </Routes>
-      {patientNotesEnabled && desktopSave && clipboardTarget && !saveDraft && <div className="patient-actions" style={{ justifyContent: 'center' }}>
-        <button type="button" disabled={!clipboardContent.trim()} onClick={() => setSaveDraft({ note: clipboardTarget, text: clipboardContent })}>Save clipboard changes to this note</button>
-      </div>}
       {saveDraft && <div className="patient-modal-backdrop"><div className="patient-modal" role="dialog" aria-modal="true" aria-label="Save clipboard draft">
         <SavedNoteEditor timestamp={saveDraft.note.timestamp} desktopSave initialNote={saveDraft.note} initialDraft={saveDraft.text}
-          onClose={() => { clipboardSaveRef.current?.(false); clipboardSaveRef.current = null; clipboardGuard.cancel(); setSaveDraft(null); }} onSaved={note => {
+          onClose={() => { clipboardGuard.cancel(); setSaveDraft(null); }} onSaved={note => {
             setClipboardTarget(note); setClipboardContent(note.note); notesHistory.refreshNotes();
-            if (clipboardSaveRef.current) { const resolve = clipboardSaveRef.current; clipboardSaveRef.current = null; setSaveDraft(null); resolve(true); }
+            setSaveDraft(null); clipboardGuard.saved();
           }} />
       </div></div>}
       <Feedback

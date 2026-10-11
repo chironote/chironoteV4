@@ -32,6 +32,10 @@ The August launch-blocker snapshot is superseded by the 2026-09-26 restoration c
 
 Because the runtime Amplify configuration is ignored by Git and the generated frontend schema can lag the deployed API, release reviews must verify the configured AppSync endpoint identity and operation compatibility. The 2026-09-26 check verified both local runtime configuration and authenticated operations against production API `rmegidkuengyxgmzkrhmqdxwjm`. See [Website Publish State and Release Checklist](../operations/website-release.md) for the frontend release and rollback evidence.
 
+## Frontend correction — 2026-10-11
+
+The signature section uses the same Settings card as the other account preferences. It loads and previews the clinician name with only the final four NPI digits, handles unset/loading/error states, and opens Configure Signature for editing the full fields. Successful saves refresh the masked card; the preview never renders the full NPI.
+
 ## Provenance
 
 Derived from [Billing.jsx](../../src/components/Billing/Billing.jsx), [Settings.jsx](../../src/components/Settings/Settings.jsx), [CustomInstructionsDialog.jsx](../../src/components/Settings/CustomInstructionsDialog.jsx), [customInstructions.js](../../src/services/customInstructions.js), the generated [queries.js](../../src/graphql/queries.js) and [mutations.js](../../src/graphql/mutations.js), and [AuthenticatedApp.jsx](../../src/components/AppShell/AuthenticatedApp.jsx). Initial infrastructure statements reflect the 2026-08-16 review; current readiness and restoration statements reflect the 2026-09-26 production checks and release evidence.

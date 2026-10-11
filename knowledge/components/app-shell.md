@@ -74,6 +74,10 @@ It also checks 3-note and 5-note activation milestones and updates `UserSubscrip
 - Be careful with keyboard shortcuts in `AuthenticatedApp`: `Ctrl+B`, `Ctrl+Backspace`, `Ctrl+\``, and `Escape` are handled globally.
 - `useNotesHistory` owns subscription cleanup; always unsubscribe when adding more listeners.
 
+## Frontend correction — 2026-10-11
+
+MainWorkspace restores the original History ContentPopup with transcript switching. ClipboardButtons receives an icon-only Save after Edit; useClipboardSave owns body-only conditional saves with the loaded version and stable retry ID. Failed/conflicting saves preserve drafts, while server-required confirmation/context review retains the guarded saved-note editor. Patient editing stays under the Patients route.
+
 ## Provenance
 
 Derived from [README.md](../../src/components/AppShell/README.md), [useNotesHistory.js](../../src/components/AppShell/useNotesHistory.js), and [HistorySidebar.jsx](../../src/components/Sidebar/HistorySidebar.jsx).

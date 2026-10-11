@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import '../Dialog/ProductDialog.css';
 
 export default function PatientDialog({ title, children, onClose, busy = false }) {
   const ref = useRef(null);
@@ -17,7 +18,8 @@ export default function PatientDialog({ title, children, onClose, busy = false }
     if (event.shiftKey && (document.activeElement === first || document.activeElement === ref.current)) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && (document.activeElement === last || document.activeElement === ref.current)) { event.preventDefault(); first.focus(); }
   };
-  return <div className="patient-modal-backdrop"><section className="patient-modal" role="dialog" aria-modal="true" aria-label={title} aria-busy={busy} tabIndex={-1} ref={ref} onKeyDown={keyDown}>
-    <div className="patient-toolbar"><h2>{title}</h2><button type="button" disabled={busy} onClick={onClose} aria-label={`Close ${title}`}>Close</button></div>{children}
+  return <div className="patient-modal-backdrop"><section className="patient-modal patient-form-dialog" role="dialog" aria-modal="true" aria-label={title} aria-busy={busy} tabIndex={-1} ref={ref} onKeyDown={keyDown}>
+    <header className="product-dialog__header"><h2>{title}</h2><button className="product-dialog__close" type="button" disabled={busy} onClick={onClose} aria-label={`Close ${title}`}><span className="material-symbols-rounded" aria-hidden="true">close</span></button></header>
+    <div className="product-dialog__body patient-form">{children}</div>
   </section></div>;
 }
