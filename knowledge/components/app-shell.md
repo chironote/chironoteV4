@@ -84,3 +84,5 @@ Derived from [README.md](../../src/components/AppShell/README.md), [useNotesHist
 
 
 History patient reassignment is handled by AuthenticatedApp.handlePatientAssigned: merge the returned saved note into the selected item/history, refresh history, and update a matching clean clipboard target/body to the new version. An unexpected dirty clipboard retains its draft and original version for conflict protection. Source: `../../src/components/AppShell/AuthenticatedApp.jsx`.
+
+After confirmed patient deletion, the shell clears matching local history, popup and clipboard state. History pagination skips deleted recording markers and continues toward 100 actual saved notes.

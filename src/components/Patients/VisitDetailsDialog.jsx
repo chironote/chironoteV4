@@ -16,19 +16,28 @@ export default function VisitDetailsDialog({ timestamp, onClose, onSaved, onOpen
     }).catch(error => { if (active) setMessage(error.message); }).finally(() => { if (active) setBusy(false); });
     return () => { active = false; };
   }, [timestamp]);
-  const saveMetadata = async (confirmed = false) => {
+  const saveMetadata = async (confirmed = false, deleteEmptyPatient = false) => {
+    if (note.patientId && note.patientId !== (metadata.patientId || null) && !deleteEmptyPatient) {
+      if (!window.confirm("Changing the patient does not rewrite this note. If this is the original patient's last visit, their empty profile will be permanently deleted. This cannot be undone. Continue?")) return;
+      return saveMetadata(true, true);
+    }
     setBusy(true); setMessage('');
     try {
       let patientId = metadata.patientId || null;
       if (patientId && metadata.patientName) await patientRequest('createPatient', { patientId, name: metadata.patientName });
       const result = await patientRequest('updateVisitMetadata', { timestamp, expectedVersion: note.version, patientId,
         dateOfService: metadata.dateOfService || null, dateOfInjury: metadata.dateOfInjury || null, visitType: metadata.visitType || null, contextMode: metadata.contextMode || 'patient',
-        ...(metadata.visitLabel?.trim() ? { visitLabel: metadata.visitLabel.trim() } : {}), confirmContextReview: confirmed });
+        ...(metadata.visitLabel?.trim() ? { visitLabel: metadata.visitLabel.trim() } : {}), confirmContextReview: confirmed, ...(deleteEmptyPatient ? { deleteEmptyPatient: true } : {}) });
       if (result.status === 'CONTEXT_REVIEW_REQUIRED') {
         setBusy(false);
-        if (window.confirm('Changing the patient or visit details does not rewrite the clinical note. Mark this note for review and continue?')) return saveMetadata(true);
+        if (window.confirm('Changing the patient or visit details does not rewrite the clinical note. Mark this note for review and continue?')) return saveMetadata(true, deleteEmptyPatient);
         return;
       }
+      if (result.status === 'PATIENT_DELETION_REQUIRED') {
+        if (window.confirm("This is the original patient's last visit. Continuing will permanently delete their empty patient profile. This cannot be undone. Continue?")) return saveMetadata(confirmed, true);
+        return;
+      }
+      if (result.status !== 'UPDATED' || !result.note) throw new Error('The visit update was not confirmed. Please retry.');
       setNote(result.note); setMetadata(result.note); setMessage('Visit details saved.'); onSaved?.(result.note);
     } catch (error) { setMessage(error.message); } finally { setBusy(false); }
   };

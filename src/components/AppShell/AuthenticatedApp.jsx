@@ -74,6 +74,24 @@ function ClinicalWorkspace({ signOut, user }) {
 
   const notesHistory = useNotesHistory(user.username, setIsWebSocketConnecting);
   const clipboardDirty = Boolean(clipboardTarget && clipboardContent !== clipboardTarget.note);
+  const { setNotes: setHistoryNotes, setTranscripts: setHistoryTranscripts, refreshNotes: refreshSavedHistory } = notesHistory;
+  useEffect(() => {
+    const deleted = event => {
+      const patientId = event.detail?.patientId;
+      if (!patientId) return;
+      setHistoryNotes(items => items.filter(item => item.patientId !== patientId));
+      setHistoryTranscripts(items => items.filter(item => item.patientId !== patientId));
+      if (clipboardTarget?.patientId === patientId) {
+        setClipboardTarget(null); setClipboardContent(''); setStreamingText(''); setShowEditPanel(false);
+      }
+      if (selectedItem?.patientId === patientId) {
+        setSelectedItem(null); setSelectedContent(''); setShowContentPopup(false);
+      }
+      refreshSavedHistory();
+    };
+    window.addEventListener('patient-deleted', deleted);
+    return () => window.removeEventListener('patient-deleted', deleted);
+  }, [clipboardTarget?.patientId, selectedItem?.patientId, setHistoryNotes, setHistoryTranscripts, refreshSavedHistory]);
   const clipboardSave = useClipboardSave({
     note: clipboardTarget, draft: clipboardContent,
     onSaved: note => { setClipboardTarget(note); setClipboardContent(note.note); setGenerationError(''); notesHistory.refreshNotes(); clipboardGuard.saved(); },

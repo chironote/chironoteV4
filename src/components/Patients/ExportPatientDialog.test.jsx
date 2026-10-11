@@ -24,3 +24,19 @@ test('exports the complete paginated inventory beyond 100 saved visits with conf
   expect(exportPatientNotes).toHaveBeenCalledWith(expect.objectContaining({ noteTimestamps: notes.map(note => note.timestamp), exportDetails: { dateOfBirth: null, dateOfInjury: null } }));
   act(() => root.unmount()); container.remove();
 });
+
+test('PDF blockers and failed downloads explain the next step beside Create PDF', async () => {
+  patientRequest.mockImplementation(async operation => operation === 'getSignature' ? { name: 'Synthetic', npi: '1234567890' } : { notes: [{ timestamp: '1', ready: true, dateOfService: '2026-09-01', needsContextReview: true }], nextCursor: null });
+  exportPatientNotes.mockRejectedValueOnce(new Error('PDF export is not enabled for this release.'));
+  const container = document.createElement('div'); document.body.append(container); const root = createRoot(container);
+  await act(async () => root.render(<ExportPatientDialog patient={{ patientId: 'p', name: 'Synthetic' }} onClose={() => {}} />));
+  expect(container.querySelector('#pdf-requirements').textContent).toContain('Confirm the export dates');
+  expect(container.querySelector('#pdf-requirements').textContent).toContain('Acknowledge clinical review');
+  await act(async () => container.querySelector('input[type=checkbox]').click());
+  await act(async () => container.querySelector('.patient-export-list .patient-check:last-child input').click());
+  const create = [...container.querySelectorAll('button')].find(item => item.textContent === 'Create PDF');
+  expect(create.disabled).toBe(false);
+  await act(async () => create.click());
+  expect(container.querySelector('.patient-export-result').textContent).toContain('not enabled');
+  act(() => root.unmount()); container.remove();
+});

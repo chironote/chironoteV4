@@ -38,7 +38,16 @@ export default function ExportPatientDialog({ patient, desktopSave, onClose }) {
   const conflicts = chosen.filter(note => note.dateOfInjury && note.dateOfInjury !== dates.dateOfInjury);
   const unreviewed = chosen.some(note => note.needsContextReview && !acknowledged.has(note.timestamp));
   const signatureReady = Boolean(signature?.name?.trim() && /^\d{10}$/.test(signature?.npi || ''));
+  const blockers = loaded ? [
+    !selected.size && 'Select at least one complete saved visit.',
+    !datesConfirmed && 'Confirm the export dates above, including any missing date.',
+    !signatureReady && 'Configure your signature name and 10-digit NPI.',
+    missingService && 'Confirm missing service dates in the saved visit details.',
+    conflicts.length > 0 && 'Resolve the injury-date conflict or deselect the affected visits.',
+    unreviewed && 'Acknowledge clinical review for each selected reassigned visit.',
+  ].filter(Boolean) : [];
   const create = async () => {
+    if (busy || !loaded || blockers.length) return;
     setBusy(true); setMessage('');
     try {
       await exportPatientNotes({ schemaVersion: 1, patientId: patient.patientId, noteTimestamps: [...selected],
@@ -53,7 +62,7 @@ export default function ExportPatientDialog({ patient, desktopSave, onClose }) {
   const marked = new Set(chosen.filter(note => note.dateOfService?.startsWith(month)).map(note => Number(note.dateOfService.slice(-2))));
   return <PatientDialog title={`Export patient: ${patient.name}`} busy={busy} onClose={onClose}>
     <p>This PDF uses saved notes. Save any desktop draft before exporting.</p>
-    {message && <p role="alert">{message}</p>}{busy && <p role="status">{loaded ? 'Creating PDF…' : 'Loading the complete saved inventory…'}</p>}
+    {busy && <p role="status">{loaded ? 'Creating PDF…' : 'Loading the complete saved inventory…'}</p>}
     <div className="patient-field-grid">{[['dateOfBirth', 'Date of birth'], ['dateOfInjury', 'Date of injury']].map(([key, label]) => <label key={key}>{label}<input type="date" max={localDate()} disabled={busy} value={dates[key]} onChange={e => { setDates({ ...dates, [key]: e.target.value }); setDatesConfirmed(false); }} /><small>Leave blank for Not recorded / Not applicable.</small></label>)}</div>
     <label className="patient-check"><input type="checkbox" disabled={busy} checked={datesConfirmed} onChange={e => setDatesConfirmed(e.target.checked)} /> I confirm these export dates, including any missing date.</label>
     <p>{signatureReady ? `Printed signature: ${signature.name} · NPI: ${signature.npi}` : 'Configure your name and NPI before creating this PDF.'} <button type="button" disabled={busy} onClick={() => setConfigure(true)}>Configure Signature</button></p>
@@ -68,7 +77,9 @@ export default function ExportPatientDialog({ patient, desktopSave, onClose }) {
     </li>)}</ul>
     {missingService && <p role="alert">Confirm missing service dates in the saved visit details before exporting.</p>}
     {conflicts.length > 0 && <p role="alert">The injury date conflicts with {conflicts.length} selected visit(s): {conflicts.map(note => dateLabel(note.dateOfService)).join(', ')}. Change the export date or deselect those visits.</p>}
-    <div className="patient-actions"><button type="button" disabled={busy || !loaded || !selected.size || !datesConfirmed || !signatureReady || missingService || conflicts.length > 0 || unreviewed} onClick={create}>Create PDF</button><button disabled={busy} onClick={() => load(true)}>Reload saved inventory</button><button disabled={busy} onClick={onClose}>Cancel</button></div>
+    {blockers.length > 0 && <div id="pdf-requirements" className="patient-export-requirements"><p>Before creating your PDF:</p><ul>{blockers.map(reason => <li key={reason}>{reason}</li>)}</ul></div>}
+    {message && <p role="status" className="patient-export-result">{message}</p>}
+    <div className="patient-actions"><button type="button" aria-describedby={blockers.length ? 'pdf-requirements' : undefined} disabled={busy || !loaded || blockers.length > 0} onClick={create}>{busy && loaded ? 'Creating PDF…' : 'Create PDF'}</button><button disabled={busy} onClick={() => load(true)}>Reload saved inventory</button><button disabled={busy} onClick={onClose}>Cancel</button></div>
     {configure && <SignatureDialog onClose={() => setConfigure(false)} onSaved={saved => setSignature(saved)} />}
     {editTimestamp && <VisitDetailsDialog timestamp={editTimestamp} onClose={() => { setEditTimestamp(null); load(true); }} />}
   </PatientDialog>;

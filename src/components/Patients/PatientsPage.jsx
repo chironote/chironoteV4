@@ -3,10 +3,12 @@ import { patientRequest, localDate } from '../../services/patientNotes';
 import VisitDetailsDialog from './VisitDetailsDialog';
 import ExportPatientDialog from './ExportPatientDialog';
 import PatientDialog from './PatientDialog';
+import DeletePatientDialog from './DeletePatientDialog';
 import { diagnosisStatusLabel } from './diagnosisCodes';
 import './Patients.css';
 
 export default function PatientsPage({ desktopSave = false, allowExport = false, onOpenNote }) {
+  const [deleting, setDeleting] = useState(false);
   const [search, setSearch] = useState(''); const [items, setItems] = useState([]); const [cursor, setCursor] = useState(null);
   const [patient, setPatient] = useState(null); const [visits, setVisits] = useState([]); const [visitCursor, setVisitCursor] = useState(null);
   const [selected, setSelected] = useState(null); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
@@ -16,7 +18,7 @@ export default function PatientsPage({ desktopSave = false, allowExport = false,
       setBusy(true); patientRequest('listPatients', { search, limit: 50 }).then(result => { if (active) { setItems(result.items); setCursor(result.nextCursor); setMessage(''); } }).catch(error => { if (active) setMessage(error.message); }).finally(() => { if (active) setBusy(false); });
     }, 200); return () => { active = false; clearTimeout(timer); };
   }, [search]);
-  const open = async value => { setBusy(true); setMessage(''); try { const result = await patientRequest('getPatientVisits', { patientId: value.patientId }); setPatient(result.patient); setVisits(result.notes); const details = await patientRequest('getPatient', { patientId: value.patientId, includeDiagnosis: true }); setDiagnosis(details.diagnosis); setVisitCursor(result.nextCursor); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
+  const open = async value => { if (value.deletionPending) { setPatient(value); setDeleting(true); return; } setBusy(true); setMessage(''); try { const result = await patientRequest('getPatientVisits', { patientId: value.patientId }); setPatient(result.patient); setVisits(result.notes); const details = await patientRequest('getPatient', { patientId: value.patientId, includeDiagnosis: true }); setDiagnosis(details.diagnosis); setVisitCursor(result.nextCursor); } catch (error) { setMessage(error.message); } finally { setBusy(false); } };
   const more = async () => { setBusy(true); try {
     if (patient) { const result = await patientRequest('getPatientVisits', { patientId: patient.patientId, cursor: visitCursor }); setVisits(old => [...old, ...result.notes]); setVisitCursor(result.nextCursor); }
     else { const result = await patientRequest('listPatients', { search, cursor, limit: 50 }); setItems(old => [...old, ...result.items]); setCursor(result.nextCursor); }
@@ -41,8 +43,14 @@ export default function PatientsPage({ desktopSave = false, allowExport = false,
       <ul className="patient-directory">{items.map(item => <li key={item.patientId}><button disabled={busy} onClick={() => open(item)}><strong>{item.name}</strong><small>{item.visitCount} saved visits · {item.lastVisitDate || 'No dated visit'}</small></button></li>)}</ul>
       {!busy && !items.length && <p>No patients match this search.</p>}{cursor && <button disabled={busy} onClick={more}>More patients</button>}
     </> : <>
-      <section className="patient-card" aria-labelledby="patient-details-title"><div className="patient-toolbar"><h2 id="patient-details-title">Patient details</h2><div className="patient-actions"><button disabled={busy} onClick={() => { setProfileDraft({ ...patient }); setEditingProfile(true); }}>Edit patient profile</button>{allowExport && <button disabled={busy} onClick={() => setExportOpen(true)}>Export patient</button>}</div></div>
+      <section className="patient-card" aria-labelledby="patient-details-title"><div className="patient-toolbar"><h2 id="patient-details-title">Patient details</h2><div className="patient-actions"><button disabled={busy} onClick={() => { setProfileDraft({ ...patient }); setEditingProfile(true); }}>Edit patient profile</button><button disabled={busy} onClick={() => setDeleting(true)}>Delete patient</button>{allowExport && <button disabled={busy} onClick={() => setExportOpen(true)}>Export patient</button>}</div></div>
       <dl className="patient-profile-details"><div><dt>Date of birth</dt><dd>{patient.dateOfBirth || 'Not set'}</dd></div><div><dt>Sex</dt><dd>{patient.sex || 'Not set'}</dd></div><div><dt>Date of injury</dt><dd>{patient.dateOfInjury || 'Not set'}</dd></div></dl></section>
+      {deleting && <DeletePatientDialog patient={patient} onClose={() => setDeleting(false)} onDeleted={patientId => {
+        setDeleting(false); setPatient(null); setVisits([]); setDiagnosis(null);
+        setItems(old => old.filter(item => item.patientId !== patientId));
+        setMessage('Patient and linked notes/transcripts deleted.');
+        window.dispatchEvent(new CustomEvent('patient-deleted', { detail: { patientId } }));
+      }} />}
       {editingProfile && <PatientDialog title="Edit patient profile" busy={busy} onClose={() => setEditingProfile(false)}><form onSubmit={saveProfile}>
         {message && <p role="alert">{message}</p>}
         <div className="patient-field-grid"><label>Patient name<input required value={profileDraft.name} onChange={e => setProfileDraft({ ...profileDraft, name: e.target.value })} /></label>

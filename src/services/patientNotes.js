@@ -7,6 +7,7 @@ const queries = new Set(['listPatients', 'getPatient', 'getPatientVisits', 'getP
 const operations = new Set([...queries, 'createPatient', 'updatePatient', 'assignNoteToPatient', 'updateVisitMetadata', 'updateNoteLabel', 'saveNote', 'saveSignature', 'initializeCapture', 'reviewProfileSuggestions']);
 let client;
 let cacheOwner;
+let cacheRevision = 0;
 const patientCache = new Map();
 const pendingPatients = new Map();
 export async function patientRequest(operation, input = {}) {
@@ -15,13 +16,14 @@ export async function patientRequest(operation, input = {}) {
   const authToken = session.tokens?.accessToken?.toString();
   if (!authToken) throw new Error('Please sign in again.');
   const owner = session.tokens?.accessToken?.payload?.sub;
-  if (cacheOwner !== owner) { patientCache.clear(); cacheOwner = owner; }
-  const cacheKey = owner && operation === 'getPatient' && !input.includeDiagnosis ? input.patientId : null;
+  if (cacheOwner !== owner) { patientCache.clear(); cacheOwner = owner; cacheRevision++; }
+  const cacheKey = owner && operation === 'getPatient' && !input.includeDiagnosis && !input.includeDeletionSummary ? input.patientId : null;
   const cached = cacheKey && patientCache.get(cacheKey);
   if (cached && cached.expires > Date.now()) return cached.value;
   client ??= generateClient();
   const fetchResult = () => client.graphql({ query: `${queries.has(operation) ? 'query' : 'mutation'} PatientRequest($input:AWSJSON!){${operation}(input:$input)}`,
     variables: { input: JSON.stringify(input) }, authMode: 'userPool', authToken });
+  const readRevision = cacheRevision;
   const requestKey = cacheKey ? `${owner}:${cacheKey}` : null;
   const request = (requestKey && pendingPatients.get(requestKey)) || fetchResult();
   if (requestKey) pendingPatients.set(requestKey, request);
@@ -31,12 +33,12 @@ export async function patientRequest(operation, input = {}) {
   const raw = result.data?.[operation];
   const value = typeof raw === 'string' ? JSON.parse(raw) : raw;
   if (!value?.ok) { const error = new Error(value?.message || 'The patient service is unavailable.'); error.code = value?.code; throw error; }
-  if (cacheKey) {
+  if (cacheKey && readRevision === cacheRevision) {
     if (patientCache.size >= 500) patientCache.clear();
     patientCache.set(cacheKey, { value, expires: Date.now() + 15_000 });
   }
-  if (['createPatient', 'updatePatient', 'reviewProfileSuggestions'].includes(operation)) {
-    patientCache.clear(); window.dispatchEvent(new Event('patient-profile-changed'));
+  if (['createPatient', 'updatePatient', 'reviewProfileSuggestions', 'assignNoteToPatient', 'updateVisitMetadata'].includes(operation)) {
+    patientCache.clear(); pendingPatients.clear(); cacheRevision++; window.dispatchEvent(new Event('patient-profile-changed'));
   }
   return value;
 }
@@ -67,7 +69,8 @@ export async function exportPatientNotes(input) {
   const length = Number(response.headers.get('X-PDF-Byte-Length'));
   if (!Number.isSafeInteger(length) || length <= 0 || blob.size !== length || blob.type !== 'application/pdf' || blob.size > 20 * 1024 * 1024) throw new Error('The export response was not a supported PDF.');
   const url = URL.createObjectURL(blob); const link = document.createElement('a');
-  link.href = url; link.download = 'Patient-notes.pdf'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  link.href = url; link.download = 'Patient-notes.pdf'; document.body.appendChild(link);
+  try { link.click(); } finally { link.remove(); setTimeout(() => URL.revokeObjectURL(url), 60_000); }
 }
 
 export async function retrySavedGeneration(note) {
