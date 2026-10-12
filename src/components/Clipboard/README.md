@@ -58,4 +58,4 @@ History drags include a saved-note timestamp in a custom drag format alongside p
 
 Native copy uses services/nativePlatform and propagates failures without logging clinical content. The same versioned Save control and divider appear on Capacitor phones/tablets; mobile browsers keep the prior visibility gate. Flat parent modules are compatibility re-exports.
 
-Compact layouts up to 900px wrap toolbar controls instead of clipping Save. Edit and its Save divider/button remain a single adjacent group, and the Smart Editor icon stays visible. Section-copy controls retain their established header-aligned vertical rail, widened to fit 44px touch targets without clipping.
+Phones up to 600px use a compact plus button for New Note and a single row of 48px actions, including adjacent Edit/Save; redundant dividers are hidden. Wider compact layouts can wrap. Notes without recognized SOAP headers have no section rail and use balanced editor gutters. SOAP notes retain the established header-aligned section-copy rail; scrolling does not collapse it. Phone note text is 16px with 12px padding.

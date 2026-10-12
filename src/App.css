@@ -1776,12 +1776,22 @@
 }
 
 /* Keep clipboard actions reachable on phones and compact tablet/landscape views. */
+.clipboard.without-soap-sections .soap-buttons { display: none; }
+.clipboard.without-soap-sections .clipboard-content { padding-left: 20px; }
+.clipboard-container .clipboard-visit-identity {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
 .clipboard-toolbar .toolbar-edit-actions {
   display: flex;
   align-items: center;
   gap: 6px;
   flex: 0 0 auto;
 }
+
 @media (max-width: 900px) {
   .clipboard-toolbar .toolbar-group {
     flex-wrap: wrap;
@@ -1810,4 +1820,37 @@
     left: 4px;
   }
 
+}
+
+/* Phone actions fit one deliberate row, including Edit and Save. */
+@media (max-width: 600px) {
+  .clipboard-toolbar { padding: 8px; }
+  .clipboard-toolbar .toolbar-group { gap: 8px; width: 100%; }
+  .clipboard-toolbar .toolbar-button,
+  body.native-mobile .clipboard-toolbar .toolbar-button {
+    box-sizing: border-box;
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    min-height: 48px;
+    padding: 8px;
+  }
+  .clipboard-toolbar .toolbar-button.new-note-button {
+    width: 48px;
+    min-width: 48px;
+    flex: 0 0 48px;
+    border-radius: 8px;
+  }
+  .clipboard-toolbar .new-note-button .button-text { display: none; }
+  .clipboard-toolbar .toolbar-divider { display: none; }
+  .clipboard-toolbar .toolbar-edit-actions { gap: 8px; margin-left: auto; }
+  .clipboard .clipboard-content { padding: 12px 12px 12px 0; }
+  .clipboard.without-soap-sections .clipboard-content { padding-left: 12px; }
+  .clipboard .clipboard-textarea {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 12px;
+    font-size: 16px;
+  }
 }

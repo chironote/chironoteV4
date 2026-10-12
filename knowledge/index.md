@@ -23,7 +23,7 @@ the documentation or generated-file tree.
 - [Recording Lifecycle](./components/recording-lifecycle.md): MediaRecorder
   segmentation, iPhone WebKit stop ordering, cancellation, and upload ordering.
 - [Note Workspace and Section Actions](./components/note-workspace.md):
-  versioned native Save, draft guards, SOAP copy, history reassignment, labels, and
+  compact phone toolbar, balanced editor gutters, versioned native Save, draft guards, SOAP copy, history reassignment, labels, and
   Smart Editor streaming.
 - [Live Dictation Streaming](./components/dictation-streaming.md): AudioWorklet
   conversion, AssemblyAI turns, token refresh, usage accounting, and cleanup.
