@@ -16,8 +16,25 @@ History uses ContentPopup for note/transcript reading. Current patient name open
 
 ## Phone layout
 
-Phones up to 600px use a compact, accessibly labeled New Note plus button and
-48px toolbar actions, with Edit/Save adjacent and redundant dividers hidden.
+Native Clipboard controls share 14px/600 typography, 24px line height, 8px radius
+and 44px minimum touch targets across iPhone/iPad and Android. Phone rules below
+override control size to 48px when space permits; tablet insets and New Note
+width retain their existing layout. Native icons use transparent surfaces with
+shared hover and dirty-Save feedback, preserving dictation state styling.
+
+Phone layout means viewport width at most 600px or a positive finite screen
+shortest CSS dimension at most 600px. The same classification persists through
+landscape; short desktop/tablet viewport height never identifies a phone.
+Phones retain the complete green `+ New Note` label, bounded to 120–180px,
+followed by Dictate, Copy, Delete, and independent Save for relevant saved notes.
+Targets are 44px with 6px gaps below 390px, then 48px with 8px gaps. Smaller
+layouts wrap deliberately; redundant dividers are hidden. Smart Editor has no
+button, keyboard/toggle access or mounted panel throughout native apps,
+including iPads, and in phone web layouts. Native tablet Save is independent
+without changing tablet geometry. Desktop web retains grouped Edit/Save behavior.
+iOS native toolbar insets and boxed
+phone icon surfaces are scoped to match the shared toolbar while other native
+styles remain intact. Recording dialog flex rules no longer resize Clipboard.
 Notes without recognized SOAP headers omit the empty section rail and use
 balanced editor gutters. SOAP notes retain the rail while scrolling. Phone
 writing text is 16px with 12px padding; saved-note patient/visit labels wrap with
@@ -30,6 +47,8 @@ acceptance or proof of a newly uploaded TestFlight build.
 
 - [Clipboard](../../src/components/Clipboard/Clipboard.jsx)
 - [Workspace styling](../../src/App.css)
+- [Phone classification](../../src/hooks/usePhoneLayout.js)
+- [Native presentation overrides](../../src/ios.css)
 - [Popup](../../src/components/Sidebar/ContentPopup.jsx)
 - [Save](../../src/components/Patients/useClipboardSave.js)
 - [Shell](../../src/components/AppShell/AuthenticatedApp.jsx)

@@ -32,6 +32,8 @@ writeClipboardText(cleanedText);
 
 ## Toolbar Behavior
 
+Native Clipboard controls share 14px/600 typography, 24px line height, 8px radius and a 44px minimum target across iPhone/iPad and Android. Phone rules raise targets to 48px where space permits; tablet insets and New Note width stay on their existing layout. Native icon surfaces are transparent with shared hover and dirty-Save feedback.
+
 `ClipboardButtons` calls parent-provided handlers and only owns the active/loading visual state for dictation:
 
 ```js
@@ -58,4 +60,4 @@ History drags include a saved-note timestamp in a custom drag format alongside p
 
 Native copy uses services/nativePlatform and propagates failures without logging clinical content. The same versioned Save control and divider appear on Capacitor phones/tablets; mobile browsers keep the prior visibility gate. Flat parent modules are compatibility re-exports.
 
-Phones up to 600px use a compact plus button for New Note and a single row of 48px actions, including adjacent Edit/Save; redundant dividers are hidden. Wider compact layouts can wrap. Notes without recognized SOAP headers have no section rail and use balanced editor gutters. SOAP notes retain the established header-aligned section-copy rail; scrolling does not collapse it. Phone note text is 16px with 12px padding.
+Phone layout uses `src/hooks/usePhoneLayout`: viewport width at most 600px or a valid screen shortest CSS dimension at most 600px, including phone landscape. Viewport height never identifies a phone. The toolbar keeps a complete green `+ New Note` label (120–180px), then Dictate, Copy, Delete and an independent Save when applicable. Targets are 44px with 6px gaps below 390px, then 48px with 8px gaps. Smaller layouts deliberately wrap. Smart Editor is absent throughout native iPhone/iPad apps and in phone web layouts; desktop web retains adjacent Edit/Save. Save is independent wherever Smart Editor is unavailable, with no empty editor group/divider. Redundant phone dividers are hidden. Notes without recognized SOAP headers have no section rail and use balanced editor gutters. SOAP notes retain the established header-aligned section-copy rail; scrolling does not collapse it. Phone note text is 16px with 12px padding. `ios.css` overrides native phone toolbar insets and boxed icon surfaces to match Android while preserving native styles elsewhere.

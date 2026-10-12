@@ -1,5 +1,7 @@
 # Native application shell
 
+The shell and Clipboard section receive `clipboard-native-layout` independently of phone classification, aligning native control typography and minimum touch sizes without applying phone geometry to tablets.
+
 `AuthenticatedApp` owns the principal-keyed clinical workspace, exact saved-note identity/version, in-memory clipboard drafts, recording, dictation and popup state. `MainWorkspace` renders the grouped props. `useNotesHistory` loads and paginates owner history, omits deleted markers, keeps the latest 100 non-empty notes, subscribes to updates and refreshes manually, on visibility and on native foreground. Failed refresh preserves history with an inline retry message; older fetch completions are ignored. Foreground also expires temporary PDF files.
 
 `src/App.jsx` uses a data router with DraftRouteGuard while retaining the existing AuthContainer/sign-in flow. Home, Patients, Billing and Settings are protected. Billing renders the existing native Account usage view; account/pricingplans are compatibility redirects to it. No Stripe checkout, marketing scripts, user analytics or milestone writes are included. Feedback is a controlled modal with a compatibility route.
@@ -9,3 +11,5 @@ Patients selections, source-note links, popup clipboard actions and saved-histor
 RecordingManager remains the iOS lifecycle implementation; the shell receives generation/error/saved-note callbacks without altering WebKit stop ordering. Dictation snapshots the selected textarea range before starting and applies revised transcripts through pure dictationInsertion helpers. Whole-note and section copies use nativePlatform. Flat legacy Clipboard/ContentPopup/EditPanel/ErrorBanner modules are compatibility re-exports, not additional editors.
 
 Source provenance: imported shared workflow from web prod `142383e`; native integration preserves cap-ios `2326d34`. Tests cover saved identity, draft navigation, diagnosis changes and native route restrictions. Changes to this folder require updating this README and the app-shell knowledge concept.
+
+The shared phone predicate in `src/hooks/usePhoneLayout.js` persists through orientation changes and never uses viewport height. Smart Editor availability is separate: `AuthenticatedApp` permits it only outside native apps and phone web layouts. Fresh native/phone checks guard the toggle and Ctrl+B; unavailable state closes the panel while retaining edit text. MainWorkspace omits EditPanel on native phones/tablets and phone web, keeping native Clipboard Save independent and preserving versioned patient guards. Desktop web retains editor access. Phone styling remains based only on the phone predicate, preserving tablet geometry.

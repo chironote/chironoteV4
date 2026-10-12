@@ -1,5 +1,12 @@
 # Knowledge Update Log
 
+## 2026-10-12
+
+- Aligned native Clipboard control typography and 44px minimum targets across phone/tablet platforms using a separate native presentation class. Kept phone 44/48px geometry and tablet insets intact; scoped iOS icon surface feedback to native Clipboard controls.
+
+- Restored the complete labelled phone New Note action and documented shared portrait/landscape detection, bounded targets/gaps, independent native Save, preserved SOAP rail behavior and iOS cascade overrides in [note workspace](./components/note-workspace.md). Scoped recording dialog styles so they no longer resize Clipboard.
+- Updated [app shell](./architecture/app-shell.md) for guarded native phone/tablet and phone web Smart Editor toggle/shortcut access, omitted panel mounting and stale open-state closure with edit text retained. Desktop web access and patient/draft/save guards remain intact; native tablet Save is independent and tablet geometry is preserved. Source changes require delegated tests/build/visual validation; no device acceptance or publication is implied.
+
 ## 2026-10-11
 
 - **Conditional iOS phone layout correction**: Owner requested iOS changes only if visual checks reproduced the Android regression. The unmodified 375px iOS preview showed toolbar wrapping and a reserved 52px empty SOAP rail. Applied the same compact 48px phone toolbar, balanced empty-note gutters, 16px text and spaced patient/visit identity as Android, preserving SOAP-copy behavior. Updated workspace concept, index and Clipboard README. This source correction is separate from TestFlight 1.8 (9) already Testing and from physical-device acceptance.

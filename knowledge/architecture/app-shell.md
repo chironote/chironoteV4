@@ -16,6 +16,12 @@ The unauthenticated container/card use border-box sizing and allow the card to s
 
 Recording uses the preserved iOS manager. Its generation/error/saved-note callbacks update the shell. Dictation snapshots selection before capture and applies revised turns with pure insertion helpers. Manual input is rejected during dictation while the selection remains focusable.
 
+The shared phone classification checks viewport width or valid screen shortest CSS dimension at 600px, listening for resize and orientation changes. Smart Editor availability is separate from layout: it is unavailable throughout native apps (phones and tablets) and in phone web layouts. The shell rejects toggle/Ctrl+B using fresh native/phone checks and closes existing open state when unavailable while preserving edit text. MainWorkspace never mounts EditPanel when unavailable. Clipboard Save remains governed by the native saved-note workflow independently of editor access. Desktop web retains Smart Editor behavior; tablet geometry is not classified as phone merely to hide the editor.
+
+The shell passes native presentation classification independently of phone
+layout, allowing Clipboard controls to share native typography and minimum
+touch sizes while preserving tablet layout.
+
 ## Provenance
 
 - [App routes](../../src/App.jsx)
@@ -23,6 +29,8 @@ Recording uses the preserved iOS manager. Its generation/error/saved-note callba
 - [Auth layout](../../src/components/AuthUI/AuthUI.css)
 - [Shell](../../src/components/AppShell/AuthenticatedApp.jsx)
 - [Shell ownership](../../src/components/AppShell/README.md)
+- [Phone classification](../../src/hooks/usePhoneLayout.js)
+- [Workspace composition](../../src/components/AppShell/MainWorkspace.jsx)
 - [Native account](../../src/components/Account/Account.jsx)
 
 Shared workflow source is prod142383e; native baseline is cap-ios2326d34. This describes the source candidate, not an App Store release.
