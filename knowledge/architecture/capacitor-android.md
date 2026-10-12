@@ -34,7 +34,11 @@ The app-state bridge preserves the existing WebView recording approach for nativ
 
 ## Configuration and Identity
 
-Read-only Play preflight on 2026-10-11 verified 30 (1.30) as the highest uploaded version and active on Production and Internal testing. The isolated 31 (1.31) candidate passed 37 Jest suites / 147 tests, production web compilation, Android-only Capacitor sync, and Gradle clean assembleDebug bundleRelease with JDK21/SDK36. The signed AAB SHA-256 is 8743FE92106A9558754C7B8CD08ECF5664F7D4575BAC2F1252F8620C226FE46B. No store upload or promotion was performed; installed-device acceptance is still required before distribution. Baseline AuthUI lifecycle fixes already came through 718a02b and are unchanged.
+Internal testing release 32 (1.32) became **Available to internal testers** on 2026-10-11 at 5:51 PM PDT for the unchanged one-person Early Beta list. Production remains 30 (1.30), untouched. Both patient feature flags remain enabled. The approved compatibility fix raises minimum SDK to 24 (Android 7.0+) while retaining compile/target 36 and current Play automatic protection. The signed AAB SHA-256 is 335BEA516D4CE904416B1F54280A4F222AFC28E5C674B2562B7EBB3282BC0CB4 (27,797,552 bytes), using the same upload certificate as versions 30/31. Fresh validation passed npm ci, 37 Jest suites / 147 tests, production web compilation, Android-only Capacitor sync, Gradle clean assembleDebug bundleRelease with JDK 21 / SDK 36, package/API/signature and whitespace checks.
+
+Play supports 19,223 devices versus 20,990 previously: phones 13,809 -> 12,339, tablets 7,065 -> 6,769 and TV 6 -> 5. Car 27, Chromebook 77, Android XR 1 and wearable 0 are unchanged. Play attributes all 1,767 exclusions to unsupported framework versions and reports 0 affected installs for every changed form factor; this is the explicitly approved older-Android exclusion. The only other warning is the expected missing deobfuscation file with minification disabled. Play confirms automatic protection on and adds the CHECK_LICENSE permission; hardware features, screen layouts and ABI restrictions are unchanged. Installed-device acceptance remains pending and is not established by publication. Baseline AuthUI lifecycle fixes from 718a02b are unchanged.
+
+Historical candidate 31 retained minimum 22 and was rejected during Play processing because protection requires minimum 24. After reviewing the SDK audit, the user authorized the new minimum and continued Internal testing. Version 32 avoids reusing rejected 31; no app-wide protection setting was changed. The prior signed 31 artifact remains preserved as evidence, not a published release.
 
 - Capacitor application ID: `com.chironote.app`.
 - Web assets are built into `build/` and copied into the native project by `cap sync`.
@@ -46,6 +50,14 @@ Read-only Play preflight on 2026-10-11 verified 30 (1.30) as the highest uploade
 
 ## Build and Validation
 
+### SDK baseline and history
+
+`android/variables.gradle` now sets minimum SDK 24, compile SDK 36 and target SDK 36; `android/app/build.gradle` consumes those root variables. The minimum 24 change was newly authorized on 2026-10-11 for release 32, after the history audit below. Minimum SDK determines the oldest supported Android version, while compile/target SDK describe the build API and platform behavior baseline. Application release numbers such as 24 (1.24) are unrelated to API levels.
+
+The 2026-10-11 audit of the non-shallow repository's fetched branches/tags and tracked Gradle/manifest history found no minimum-SDK-24 upgrade or reversal. The first Capacitor commit, `d383121807cb1dcdee41efd6f52b13bf1aa9b4e4` (2025-09-10), introduced minimum 22 and compile/target 34. Android Gradle files were untracked on 2025-09-22 and restored by `e99955193695c1b8a6a19a4abf8c4c6ee11d5dad` (2025-10-10) with minimum 22 and compile/target 35. Commit `716bd6ec11a2b0a8fd2567ab6b64b55c7dbe5883` (2026-08-21) raised compile/target 35 to 36 while retaining minimum 22. This source-history finding does not prove what happened in uncommitted or untracked configurations.
+
+Committed release-28/29 notes and observed Play release 30 details agree on API 22+ and target 36; historical candidate 31 retained that baseline. Its upload blocker was a mismatch with currently enabled automatic protection, not a demonstrated SDK regression. The inspected Play UI does not establish when or by whom protection was enabled. Release 32's approved minimum 24 is a new supported-OS change, not restoration of a documented previous setting.
+
 ```powershell
 npm install
 npm test -- --watchAll=false
@@ -55,7 +67,7 @@ cd android
 .\gradlew.bat assembleDebug
 ```
 
-Run `npx cap sync android` after dependency or Capacitor configuration changes so generated plugin declarations match `package.json`. A successful web build and Gradle build prove packaging, but microphone, recording/background transitions, clipboard, authentication, and note generation still require an installed-device regression before internal distribution.
+Run `npx cap sync android` after dependency or Capacitor configuration changes so generated plugin declarations match `package.json`. A successful web build and Gradle build prove packaging; microphone, recording/background transitions, clipboard, authentication, note generation and PDF share-receiver behavior still require installed-device regression. Release 32 was explicitly published to Internal testing to enable that acceptance work; no physical-device pass is claimed.
 
 ## Alignment Rule
 
@@ -66,5 +78,7 @@ When production changes, compare `cap-and` to `prod` by path. Treat native direc
 `cap-and` is the maintained Android convergence line: it contains the current shared application structure, the Android-specific recorder lifecycle and permission bridge, and the Play Internal-testing release workflow. `cap-ios` is a separately split, older iOS preparation line with its own iOS project/Pods, assets, and a divergent recording-finalization implementation. Its iOS dependencies and release path remain deferred and are not made current by an Android `cap sync` or Android validation. Do not treat either line as a drop-in platform equivalent or copy native changes between them without an explicit reconciliation review.
 
 ## Provenance
+
+Release 32 state and compatibility were directly verified in [Google Play Internal release 21](https://play.google.com/console/u/0/developers/7204637354481410807/app/4972877076794873792/tracks/4700756601084891710/releases/21/details). The local evidence bundle is `C:/Users/nikit/Documents/Codex/2026-10-11/mobile-catchup/publication/android/`, including source32.patch, validation32 logs and publication screenshots. Source is cap-and dc4ca7d8b2eb1d165d635b47121a1605614ec80d plus the isolated minimum/version patch; source integration is tracked separately from Play availability.
 
 Synthesized from [capacitor.config.json](../../capacitor.config.json), [package.json](../../package.json), [nativePlatform.js](../../src/services/nativePlatform.js), [AuthWrapper.jsx](../../src/components/AppShell/AuthWrapper.jsx), [NativeAuthContainer.jsx](../../src/components/AuthUI/NativeAuthContainer.jsx), [CredentialManagerPlugin.java](../../android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java), [Billing.jsx](../../src/components/Billing/Billing.jsx), [AuthenticatedApp.jsx](../../src/components/AppShell/AuthenticatedApp.jsx), [AppRoutes.jsx](../../src/components/AppRouting/AppRoutes.jsx), [useMediaRecorderController.js](../../src/components/Recording/useMediaRecorderController.js), [MainActivity.java](../../android/app/src/main/java/com/chironote/app/MainActivity.java), [AndroidManifest.xml](../../android/app/src/main/AndroidManifest.xml), [DataSafetyDisclosuresMap.md](../../src/DataSafetyDisclosuresMap.md), and the `cap-and`/feature-branch Git history. Current implementation takes precedence over older mobile context documents.
