@@ -11,7 +11,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [ChiroNote System Architecture](./architecture/system-overview.md) | Product purpose, system boundaries, major data flows, and ownership across frontend and backend. |
-| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, audited SDK history, published Internal 33 phone layout fix with minimum 24/protection and unchanged device support, and the minimal-difference alignment rule. |
+| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, audited SDK history, published Internal 33 and the locally prepared but unpublished 34 candidate, SDK/protection boundaries, and the minimal-difference alignment rule. |
 
 ## Development
 
