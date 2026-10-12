@@ -31,7 +31,7 @@ the documentation or generated-file tree.
 ## Operations
 
 - [Capacitor Mobile Build](./operations/mobile-build.md): web-to-native sync,
-  iOS/Android project settings, resolved Share pod, simulator build evidence, permissions, app-cache privacy manifest, and distribution checks.
+  iOS/Android project settings, resolved Share pod, simulator/archive/signing evidence, verified Apple identity, TestFlight publishing/fallback procedure, permissions and app-cache privacy manifest.
 
 ## Security
 
