@@ -46,6 +46,8 @@ const dictation = Dictation({
 
 Clipboard and Smart Editor dictation insert into the target textarea instead of replacing the full field. `AuthenticatedApp` captures immutable text before and after the textarea selection when dictation starts. Each revised AssemblyAI transcript is placed between those snapshots, so interim results cannot consume neighboring note text or jump to an identical phrase elsewhere in the note. The pure snapshot helpers live in `src/utils/dictationInsertion.js`.
 
+Phone identity comes from [usePhoneLayout](../../src/hooks/usePhoneLayout.js), using viewport width or valid shortest screen dimension up to 600px so it persists through landscape. The shell permits Smart Editor only on desktop web: installed Android phones/tablets and phone web layouts reject toggles and Ctrl+B, close stale editor state without clearing its draft, and do not mount its panel. Phone detection controls geometry separately from native editor availability. Save and history shortcuts preserve their existing eligibility.
+
 `MainWorkspace` is intentionally mostly presentational. It receives structured prop groups such as `sidebar`, `clipboard`, `editPanel`, `recording`, `dictation`, and `contentPopup`.
 
 ## Authenticated routing

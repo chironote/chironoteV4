@@ -1869,29 +1869,70 @@
 
 }
 
-/* Phone actions fit one deliberate row, including Edit and Save. */
-@media (max-width: 600px) {
-  .clipboard-toolbar { padding: 8px; }
-  .clipboard-toolbar .toolbar-group { gap: 8px; width: 100%; }
-  .clipboard-toolbar .toolbar-button,
-  body.native-mobile .clipboard-toolbar .toolbar-button {
-    box-sizing: border-box;
+/* Native Clipboard controls share typography and targets across phones and tablets. */
+.clipboard-native-layout .clipboard-toolbar .toolbar-button {
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+  border-radius: 8px;
+}
+.clipboard-native-layout .clipboard-toolbar .toolbar-button.new-note-button { min-width: 120px; }
+.clipboard-native-layout .clipboard-toolbar .toolbar-button:not(.new-note-button) {
+  background: transparent;
+  border-color: transparent;
+}
+.clipboard-native-layout .clipboard-toolbar .toolbar-button:not(.new-note-button):hover {
+  background: var(--color-hover);
+  border-color: var(--color-border);
+}
+.clipboard-native-layout .clipboard-toolbar .toolbar-button.has-unsaved-changes {
+  background: var(--pale-green);
+}
+
+/* Phone identity persists through landscape; keep complete labels and usable targets. */
+.clipboard-phone-layout .clipboard-toolbar { padding: 8px; }
+.clipboard-phone-layout .clipboard-toolbar .toolbar-group {
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+.clipboard-phone-layout .clipboard-toolbar .toolbar-button {
+  box-sizing: border-box;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 8px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+}
+.clipboard-phone-layout .clipboard-toolbar .toolbar-button.new-note-button {
+  width: auto;
+  min-width: 120px;
+  flex: 1 0 120px;
+  max-width: 180px;
+  white-space: nowrap;
+}
+.clipboard-phone-layout .clipboard-toolbar .new-note-button .button-text { display: inline; }
+.clipboard-phone-layout .clipboard-toolbar .toolbar-divider { display: none; }
+.clipboard-phone-layout .clipboard-toolbar .toolbar-button-wrapper { flex: 0 0 auto; }
+.clipboard-phone-layout .clipboard .clipboard-content { padding: 12px 12px 12px 0; }
+.clipboard-phone-layout .clipboard.without-soap-sections .clipboard-content { padding-left: 12px; }
+.clipboard-phone-layout .clipboard .clipboard-textarea { padding: 12px; font-size: 16px; }
+
+@media (min-width: 390px) {
+  .clipboard-phone-layout .clipboard-toolbar .toolbar-group { gap: 8px; }
+  .clipboard-phone-layout .clipboard-toolbar .toolbar-button {
     width: 48px;
     min-width: 48px;
     height: 48px;
     min-height: 48px;
-    padding: 8px;
   }
-  .clipboard-toolbar .toolbar-button.new-note-button {
-    width: 48px;
-    min-width: 48px;
-    flex: 0 0 48px;
-    border-radius: 8px;
-  }
-  .clipboard-toolbar .new-note-button .button-text { display: none; }
-  .clipboard-toolbar .toolbar-divider { display: none; }
-  .clipboard-toolbar .toolbar-edit-actions { gap: 8px; margin-left: auto; }
-  .clipboard .clipboard-content { padding: 12px 12px 12px 0; }
-  .clipboard.without-soap-sections .clipboard-content { padding-left: 12px; }
-  .clipboard .clipboard-textarea { padding: 12px; font-size: 16px; }
+  .clipboard-phone-layout .clipboard-toolbar .toolbar-button.new-note-button { width: auto; min-width: 120px; }
 }
