@@ -10,6 +10,12 @@ tags: [release, publish, amplify, production, validation, risk]
 
 Publishing requires repository-owner authorization. The 2026-09-26 Custom Instructions restoration was explicitly requested by the owner; the historical checklist below is not authorization for unrelated deployments.
 
+## Public patient-feature pause — 2026-10-11
+
+The owner requested a public website republish with the new patient features disabled, while Android/iPhone testing releases continue enabled. `.env.production` now defaults `REACT_APP_PATIENT_NOTES_ENABLED=false` and `REACT_APP_PATIENT_CAPTURE_ENABLED=false`; this supersedes the enabled production defaults in the historical sections below. Development defaults remain enabled for testing. Custom Instructions remains available. Build-time process/local overrides must be checked before publishing.
+
+This is a frontend feature pause, not a database or backend rollback. Retain saved records, guarded writers, patient services and retired-cleanup protections. The website hides Patients, capture selection, patient-aware Save/reassignment and export; legacy recording remains available. Existing enabled browser sessions need a reload to receive the new build. Publication evidence is recorded separately after verification.
+
 ## Original-folder reconciliation: 2026-10-10
 
 The owner publishes from `C:/Users/nikit/ChiroNote/website/chironoteV4`. This folder's local overview/workflow media and September Custom Instructions restoration are reconciled with the October patient release. The earlier alternate-clean-worktree publishing instructions omit important local work and are superseded. Private `.agents/` recordings/tooling remain local and outside Git, preserved independently with the original build and local configuration.
