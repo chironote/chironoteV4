@@ -199,7 +199,7 @@ const Clipboard = ({
   }, [updatePositions]);
 
   return (
-    <div className="clipboard">
+    <div className={`clipboard ${/Subjective:|Objective:|Assessment:|Plan:|Treatment:/.test(clipboardContent) ? 'has-soap-sections' : 'without-soap-sections'}`}>
       <div className="soap-buttons" role="group" aria-label="Copy note sections">
         {Object.entries(soapPositions).map(([section, position]) => (
           position !== undefined && position > 0 && (
