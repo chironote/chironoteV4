@@ -63,7 +63,18 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - The workspace keeps one white clipboard canvas. The textarea begins directly after the SOAP rail with a 12px top inset; its border, rather than a second colored surface, defines the writing sheet on desktop and mobile.
 - Keep platform detection out of clipboard components; extend the shared native adapter when clipboard behavior changes.
 
+## Phone layout
+
+At widths up to 600px, New Note uses its accessibly labeled plus button and the
+toolbar fits 48px actions in one row, including adjacent Edit/Save. Dividers are
+hidden on phones. Notes without recognized SOAP headers collapse the otherwise
+empty section-copy rail and have balanced editor gutters; SOAP notes retain the
+rail even when individual section buttons scroll out of view. Phone text is 16px
+with 12px padding. Saved-note patient and visit labels wrap with explicit spacing.
+These rules correct the oversized toolbar and empty gutter
+reported after Internal 32; browser previews do not establish device acceptance.
+
 ## Provenance
 
-Derived from [README.md](../../src/components/Clipboard/README.md), [Clipboard.jsx](../../src/components/Clipboard/Clipboard.jsx), and [nativePlatform.js](../../src/services/nativePlatform.js).
+Derived from [README.md](../../src/components/Clipboard/README.md), [Clipboard.jsx](../../src/components/Clipboard/Clipboard.jsx), [workspace styling](../../src/App.css), and [nativePlatform.js](../../src/services/nativePlatform.js).
 

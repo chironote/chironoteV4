@@ -52,4 +52,4 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 - The workspace keeps one white clipboard canvas. The textarea begins directly after the SOAP rail with a 12px top inset; its border, rather than a second colored surface, defines the writing sheet on desktop and mobile.
 - Keep platform detection out of clipboard components; extend the shared native adapter when clipboard behavior changes.
 
-Compact layouts up to 900px wrap toolbar controls instead of clipping Save. Edit and its Save divider/button remain a single adjacent group, and the Smart Editor icon stays visible. Section-copy controls retain their established header-aligned vertical rail, widened to fit 44px touch targets without clipping.
+Phones up to 600px use a compact plus button for New Note and a single row of 48px actions, including adjacent Edit/Save; redundant dividers are hidden. Wider compact layouts can wrap. Notes without recognized SOAP headers have no section rail and use balanced editor gutters. SOAP notes retain the established header-aligned section-copy rail; scrolling does not collapse it. Phone note text is 16px with 12px padding.

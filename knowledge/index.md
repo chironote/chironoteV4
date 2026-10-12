@@ -28,7 +28,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | [Audio Recording and Note Generation](./components/recording.md) | Independently decodable media chunks, pause-safe containers, ordered uploads, transcription completion, and generated-note streaming. |
 | [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
-| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
+| [Clinical Clipboard](./components/clipboard.md) | Main text workspace, compact phone toolbar and balanced gutters, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and the editing panel. |
 | [Billing and Settings](./components/account.md) | Current subscription and settings surfaces, web-only billing controls, and the Capacitor billing boundary. |
 | [Authentication UI](./components/auth-ui.md) | Web/native authentication boundaries, Android Credential Manager behavior, security invariants, and recovered implementation history. |
