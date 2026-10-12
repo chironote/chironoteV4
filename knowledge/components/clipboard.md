@@ -11,14 +11,14 @@ tags: [chironote, component, clipboard]
 
 # Clipboard Components
 
-The clipboard is also the sole saved-note editor. Patients and saved-note drops fetch the exact server record, preserving its identity/version. Save supports installed phones and desktop web, with a divider after Edit and confirmation for explicit diagnosis changes. Mobile web retains its prior Save gate. Coarse-pointer toolbar targets are 48px. Native copy remains in the shared adapter; drafts stay memory-only. See [patient notes](../architecture/patient-notes.md).
+The clipboard is also the sole saved-note editor. Patients and saved-note drops fetch the exact server record, preserving its identity/version. Save supports installed Android phones/tablets and desktop web, independently of Smart Editor with confirmation for explicit diagnosis changes. Mobile web retains its prior Save gate. Phone toolbar targets are 44px below 390px viewport width and 48px at wider phone widths; native tablet controls use a consistent 44px minimum. Native copy remains in the shared adapter; drafts stay memory-only. See [patient notes](../architecture/patient-notes.md).
 
 This folder owns the central clipboard panel and the toolbar above it. The clipboard is the main text handoff point between recording, dictation, note history, smart edits, and copy actions.
 
 ## Files
 
 - `Clipboard.jsx` renders the editable textarea, drag/drop behavior, and floating SOAP section-copy buttons.
-- `ClipboardButtons.jsx` renders toolbar actions for new notes, dictation, copy, clear, and smart editor toggle.
+- `ClipboardButtons.jsx` renders toolbar actions for new notes, dictation, copy, clear, and the desktop web Smart Editor toggle.
 
 ## Clipboard Behavior
 
@@ -65,16 +65,21 @@ The `New Note` button calls `toggleRecordingPopup('conversation')`, while the mi
 
 ## Phone layout
 
-At widths up to 600px, New Note uses its accessibly labeled plus button and the
-toolbar fits 48px actions in one row, including adjacent Edit/Save. Dividers are
-hidden on phones. Notes without recognized SOAP headers collapse the otherwise
-empty section-copy rail and have balanced editor gutters; SOAP notes retain the
-rail even when individual section buttons scroll out of view. Phone text is 16px
-with 12px padding. Saved-note patient and visit labels wrap with explicit spacing.
-These rules correct the oversized toolbar and empty gutter
-reported after Internal 32; browser previews do not establish device acceptance.
+Phones keep the full green + New Note label and the Dictate, Copy and Clear actions.
+Save remains present only for a relevant saved note and does not depend on Edit.
+Smart Editor is absent throughout installed Android apps at all sizes and on phone web layouts; desktop web retains it. The shared predicate
+uses viewport width up to 600px or valid screen dimensions whose shortest side is
+up to 600px. Wide short desktop windows and tablet keyboard heights alone do not
+trigger phone behavior. Targets are 44px below 390px viewport width and 48px above,
+with deliberate wrapping rather than clipping. Phone dividers are hidden.
+Notes without recognized SOAP headers retain balanced editor gutters; SOAP notes
+retain their section-copy rail. Phone text remains 16px with 12px padding, and
+saved-note patient/visit labels wrap with explicit spacing. These are local source
+changes; installed-device acceptance and publication remain separate.
 
 ## Provenance
 
-Derived from [README.md](../../src/components/Clipboard/README.md), [Clipboard.jsx](../../src/components/Clipboard/Clipboard.jsx), [workspace styling](../../src/App.css), and [nativePlatform.js](../../src/services/nativePlatform.js).
+Derived from [README.md](../../src/components/Clipboard/README.md), [Clipboard.jsx](../../src/components/Clipboard/Clipboard.jsx), [workspace styling](../../src/App.css), and [nativePlatform.js](../../src/services/nativePlatform.js), and [phone layout detection](../../src/hooks/usePhoneLayout.js).
 
+
+Native Clipboard controls share 14px semibold typography and a 44px minimum target across phones/tablets; phone layout expands targets to 48px where space permits. Native icon controls use transparent surfaces with established hover, dirty Save and active dictation states.

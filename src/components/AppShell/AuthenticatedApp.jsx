@@ -19,6 +19,7 @@ import ErrorBanner from './ErrorBanner';
 import Dictation from '../Recording/Dictation';
 import RecordingManager from '../Recording/RecordingManager';
 import MainWorkspace from './MainWorkspace';
+import usePhoneLayout, { isPhoneLayout } from '../../hooks/usePhoneLayout';
 import useNotesHistory from './useNotesHistory';
 import useUserAnalytics from './useUserAnalytics';
 import * as mutations from '../../graphql/mutations';
@@ -33,6 +34,8 @@ import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 function ClinicalWorkspace({ signOut, user }) {
   const isNative = isNativePlatform();
   const desktopSave = useDesktopSave();
+  const phoneLayout = usePhoneLayout();
+  const smartEditorAvailable = !isNative && !phoneLayout;
   const navigate = useNavigate();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
@@ -249,7 +252,14 @@ function ClinicalWorkspace({ signOut, user }) {
     dictation.isWebSocketConnecting
   ]);
 
+  useEffect(() => {
+    if (!smartEditorAvailable) {
+      setShowEditPanel(false);
+    }
+  }, [smartEditorAvailable]);
+
   const toggleEditPanel = () => {
+    if (isNativePlatform() || isPhoneLayout()) return;
     const screenWidth = window.innerWidth;
 
     if (screenWidth >= 780 && screenWidth < 1200 && !showEditPanel) {
@@ -415,7 +425,7 @@ function ClinicalWorkspace({ signOut, user }) {
     if (event.key === 'Escape') setShowContentPopup(false);
 
     if (window.innerWidth > 768) {
-      if (event.ctrlKey && event.key === 'b') {
+      if (!isNativePlatform() && !isPhoneLayout() && event.ctrlKey && event.key === 'b') {
         event.preventDefault();
         const screenWidth = window.innerWidth;
 
@@ -516,7 +526,7 @@ function ClinicalWorkspace({ signOut, user }) {
   };
 
   return (
-    <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
+    <div className={`app ${isNative ? 'clipboard-native-layout' : ''} ${phoneLayout ? 'clipboard-phone-layout' : ''} ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
       <Helmet>
         <title>ChiroNote | AI-Powered Clinical Documentation</title>
         <meta name="description" content="Your AI-powered clinical documentation workspace. Create SOAP notes in minutes with voice recording and intelligent transcription." />
@@ -538,6 +548,9 @@ function ClinicalWorkspace({ signOut, user }) {
         <Route path="/" element={
           <MainWorkspace
             user={user}
+            phoneLayout={phoneLayout}
+            nativeLayout={isNative}
+            smartEditorAvailable={smartEditorAvailable}
             notesHistory={notesHistory}
             sidebar={{
               isCollapsed,

@@ -128,7 +128,7 @@
   margin-top: 25px;
 }
 
-.toolbar-button.new-note-button {
+.recording-dialog .toolbar-button.new-note-button {
   flex: 1;
   background-color: var(--medium-green);
   color: var(--pure-white);
@@ -200,7 +200,7 @@
   justify-content: center;
 }
 
-.toolbar-button.new-note-button {
+.recording-dialog .toolbar-button.new-note-button {
   display: flex;
   align-items: center;
   justify-content: center;

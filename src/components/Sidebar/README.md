@@ -32,6 +32,8 @@ It delegates row rendering to `HistoryListItem` and calls parent callbacks for o
 
 ## Smart Editor
 
+Smart Editor is available only on desktop web. Installed Android phones and tablets, plus phone web layouts in either orientation, omit its control and panel; shell guards also reject direct toggles and Ctrl+B. Saved-note editing and Save remain in Clipboard.
+
 `EditPanel` accepts the current clipboard note plus editor instructions, then sends both to an edit Lambda:
 
 ```js

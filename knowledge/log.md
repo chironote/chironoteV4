@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-12
+
+- **Phone Clipboard reconciliation**: Restored the full green + New Note label with shared 44/48px controls, native 14px semibold typography and deliberate wrapping, removed Smart Editor entry and mounting throughout installed Android phones/tablets and phone web layouts while preserving desktop web access, and retained independent saved-note Save plus existing patient/draft safeguards. Updated Clipboard/AppShell/Sidebar concepts, patient-notes behavior and index from current source; recording New Note styles are scoped to its dialog. Regression checks cover orientation detection, short desktop/tablet keyboard dimensions, shell toggles/shortcut, panel exclusion and Save. Source-only candidate; no native sync or release.
+
 ## 2026-10-11
 
 - **Internal 33 published**: Confirmed 33 (1.33), Phone Clipboard layout, Available to internal testers at 8:04 PM PDT for the unchanged Early Beta list (1 tester). Packages merged PR44 `af3dae7` plus the version increment. Minimum 24, compile/target 36, both patient flags and automatic protection remain unchanged; Play reports no device changes (19,223 supported). Full 37 suites / 147 tests, reused validated web build with matching before/after sync fingerprint, Android-only sync, clean debug/release build and package/API/signature checks passed. Signed AAB SHA-256 44ADD647AC4F0FF7E365FF7C12EA6D43D6DE41135D2FFE6815CECC3FA048CC3C, 27,798,158 bytes; established upload certificate preserved. Only expected missing-deobfuscation warning. Production 30 untouched; physical-device acceptance pending; prior Internal 32 retained as fallback evidence. Updated Android concept and index. Evidence: `C:/Users/nikit/Documents/Codex/2026-10-11/clipboard-layout/release33/release-state.md`.
