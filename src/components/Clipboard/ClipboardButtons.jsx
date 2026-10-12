@@ -3,6 +3,8 @@ import { trackDictationStart } from '../../utils/analytics';
 
 // Updated ClipboardButtons component with clearer state styling
 const ClipboardButtons = ({ 
+  phoneLayout = false,
+  smartEditorAvailable = !phoneLayout,
   toggleRecordingPopup, 
   toggleDictationPopup, 
   showEditPanel, 
@@ -25,6 +27,19 @@ const ClipboardButtons = ({
     // Always call startDictation - the component will handle queuing if needed
     startDictation();
   };
+
+  const saveButton = save?.visible && <button
+          type="button"
+          id="save-note-btn"
+          className={`toolbar-button ${save.dirty ? 'has-unsaved-changes' : ''}`}
+          onClick={save.onSave}
+          disabled={save.disabled || save.busy}
+          aria-label={save.busy ? 'Saving note' : save.dirty ? 'Save note changes' : 'Note saved'}
+          title={save.busy ? 'Saving note…' : save.dirty ? 'Save note changes' : 'Note saved'}
+          aria-busy={save.busy}
+        >
+          <span className="material-symbols-rounded toolbar-icon" aria-hidden="true">save</span>
+        </button>;
 
   return (
     <div className="clipboard-toolbar">
@@ -85,10 +100,9 @@ const ClipboardButtons = ({
           <span className="material-symbols-rounded toolbar-icon">delete</span>
         </button>
 
-        <div className="toolbar-divider hide-on-mobile"></div>
+        {smartEditorAvailable && <div className="toolbar-divider hide-on-mobile"></div>}
         
-        <div className="toolbar-edit-actions">
-        <button
+        {smartEditorAvailable && <div className="toolbar-edit-actions"><button
           id="edit-panel-btn"
           className={`toolbar-button ${showEditPanel ? 'active' : ''}`}
           onClick={toggleEditPanel}
@@ -99,19 +113,10 @@ const ClipboardButtons = ({
           <span className="material-symbols-rounded toolbar-icon">edit</span>
         </button>
         {save?.visible && <div className="toolbar-divider" aria-hidden="true" />}
-        {save?.visible && <button
-          type="button"
-          id="save-note-btn"
-          className={`toolbar-button ${save.dirty ? 'has-unsaved-changes' : ''}`}
-          onClick={save.onSave}
-          disabled={save.disabled || save.busy}
-          aria-label={save.busy ? 'Saving note' : save.dirty ? 'Save note changes' : 'Note saved'}
-          title={save.busy ? 'Saving note…' : save.dirty ? 'Save note changes' : 'Note saved'}
-          aria-busy={save.busy}
-        >
-          <span className="material-symbols-rounded toolbar-icon" aria-hidden="true">save</span>
-        </button>}
-        </div>
+        {saveButton}
+        </div>}
+        {!smartEditorAvailable && saveButton}
+
         {save?.visible && <span className="clipboard-save-status" role="status" aria-live="polite">{save.busy ? 'Saving note…' : save.message}</span>}
         
       </div>
@@ -123,6 +128,7 @@ const ClipboardButtons = ({
         }
         .toolbar-button.has-unsaved-changes { background-color: var(--pale-green); }
         .toolbar-button:disabled { opacity: .5; cursor: not-allowed; }
+
         .clipboard-save-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
         .toolbar-icon, .material-symbols-rounded.toolbar-icon {
           color: var(--dark-green) !important;

@@ -11,3 +11,5 @@
 This folder also owns recording controls, transcript status, permission explanations and credit dialogs. No live provider/device behavior is established by source tests. Source: cap-ios 2326d34 lifecycle, prod142383e compact capture, 2026-10-11 callback wiring.
 
 The recording lifecycle test isolates unrelated PDF delivery imports so native plugin registration cannot interfere with its real microphone/WebKit timing cases. The dictation insertion suite supplies stable external-service/NoSleep doubles that survive CRA resetMocks, while executing the actual Dictation hook and media setup/callback path.
+
+Recording.css scopes its New Note flex/width rules to `.recording-dialog`, preventing those recording styles from resizing the Clipboard toolbar. Recording and dictation lifecycle behavior is unchanged.

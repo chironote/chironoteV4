@@ -17,20 +17,27 @@ import Dictation from '../Recording/Dictation';
 import RecordingManager from '../Recording/RecordingManager';
 import MainWorkspace from './MainWorkspace';
 import useNotesHistory from './useNotesHistory';
+import usePhoneLayout, { isPhoneLayout } from '../../hooks/usePhoneLayout';
 import * as mutations from '../../graphql/mutations';
 import { getAmplifyClient } from '../../services/amplifyClient';
-import { writeClipboardText } from '../../services/nativePlatform';
+import { isNativePlatform, writeClipboardText } from '../../services/nativePlatform';
 import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 function ClinicalWorkspace({ signOut, user }) {
+  const phoneLayout = usePhoneLayout();
+  const nativeLayout = isNativePlatform();
+  const smartEditorAvailable = !nativeLayout && !phoneLayout;
   const desktopSave = useDesktopSave();
   const navigate = useNavigate();
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);
   const [showEditPanel, setShowEditPanel] = useState(false);
+  useEffect(() => {
+    if (!smartEditorAvailable) setShowEditPanel(false);
+  }, [smartEditorAvailable]);
   const [showRecordingPopup, setShowRecordingPopup] = useState(false);
   const [recordingType, setRecordingType] = useState('');
   const [showDictationPopup, setShowDictationPopup] = useState(false);
@@ -234,6 +241,7 @@ function ClinicalWorkspace({ signOut, user }) {
   ]);
 
   const toggleEditPanel = () => {
+    if (isNativePlatform() || isPhoneLayout()) return;
     const screenWidth = window.innerWidth;
 
     if (screenWidth >= 780 && screenWidth < 1200 && !showEditPanel) {
@@ -397,7 +405,7 @@ function ClinicalWorkspace({ signOut, user }) {
     if (event.key === 'Escape') setShowContentPopup(false);
 
     if (window.innerWidth > 768) {
-      if (event.ctrlKey && event.key === 'b') {
+      if (!isNativePlatform() && !isPhoneLayout() && event.ctrlKey && event.key === 'b') {
         event.preventDefault();
         const screenWidth = window.innerWidth;
 
@@ -498,7 +506,7 @@ function ClinicalWorkspace({ signOut, user }) {
   };
 
   return (
-    <div className={`app ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
+    <div className={`app ${nativeLayout ? 'clipboard-native-layout' : ''} ${phoneLayout ? 'clipboard-phone-layout' : ''} ${recordingManager.isProcessing ? 'processing-active' : ''}`}>
 
       {clipboardGuard.dialog}
       <IntroTour />
@@ -513,6 +521,9 @@ function ClinicalWorkspace({ signOut, user }) {
       <Routes>
         <Route path="/" element={
           <MainWorkspace
+            phoneLayout={phoneLayout}
+            nativeLayout={nativeLayout}
+            smartEditorAvailable={smartEditorAvailable}
             user={user}
             notesHistory={notesHistory}
             sidebar={{

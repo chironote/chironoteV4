@@ -3,6 +3,20 @@
  * Capacitor body class so the web UI and application behavior stay unchanged.
  * Values follow knowledge/development/STYLE.md on production.
  */
+/* Shared phone geometry overrides native toolbar insets in portrait and landscape. */
+body.native-mobile .clipboard-phone-layout .clipboard-toolbar { padding: 8px; }
+body.native-mobile .clipboard-native-layout .clipboard-toolbar .toolbar-button:not(.new-note-button) {
+  background: transparent;
+  border-color: transparent;
+}
+body.native-mobile .clipboard-native-layout .clipboard-toolbar .toolbar-button:not(.new-note-button):hover {
+  background: var(--color-hover);
+  border-color: var(--color-border);
+}
+body.native-mobile .clipboard-native-layout .clipboard-toolbar .toolbar-button.has-unsaved-changes {
+  background: var(--pale-green);
+}
+
 @media (max-width: 768px) {
   body.native-mobile {
     color: var(--color-text);

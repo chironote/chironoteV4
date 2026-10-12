@@ -10,6 +10,9 @@ import HistorySidebar from '../Sidebar/HistorySidebar';
 import MobileHistoryToggle from '../Sidebar/MobileHistoryToggle';
 
 function MainWorkspace({
+  phoneLayout = false,
+  nativeLayout = false,
+  smartEditorAvailable = !phoneLayout,
   user,
   notesHistory,
   sidebar,
@@ -50,9 +53,11 @@ function MainWorkspace({
         onDrop={sidebar.onMobileOverlayDrop}
         onToggle={sidebar.togglePanel}
       />
-      <section className="clipboard-container">
+      <section className={`clipboard-container${nativeLayout ? ' clipboard-native-layout' : ''}${phoneLayout ? ' clipboard-phone-layout' : ''}`}>
         <h2 className="panel-header">Your Clipboard</h2>
         <ClipboardButtons
+          phoneLayout={phoneLayout}
+          smartEditorAvailable={smartEditorAvailable}
           toggleRecordingPopup={recording.toggleRecordingPopup}
           toggleDictationPopup={dictation.toggleDictationPopup}
           toggleEditPanel={editPanel.toggleEditPanel}
@@ -82,7 +87,7 @@ function MainWorkspace({
         />
       </section>
 
-      <EditPanel
+      {smartEditorAvailable && <EditPanel
         showEditPanel={editPanel.showEditPanel}
         editContent={editPanel.editContent}
         textareaRef={editPanel.editTextareaRef}
@@ -96,7 +101,7 @@ function MainWorkspace({
         isEditTranscribing={dictation.edit.isTranscribing}
         isEditWebSocketConnecting={dictation.edit.isWebSocketConnecting}
         editCreditPopupElement={dictation.edit.creditPopupElement}
-      />
+      />}
 
       {(recording.showRecordingPopup ||
         recording.manager.isPreparingTranscript ||
