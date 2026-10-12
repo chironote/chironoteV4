@@ -2,7 +2,7 @@
 
 ## 2026-10-11
 
-- **Public patient-feature pause**: Production website patient-notes/capture defaults are false; mobile/development testing remains enabled. Updated [release workflow](./operations/website-release.md), [patient notes](./architecture/patient-notes.md) and index to distinguish frontend hiding from preserved data/backend safeguards. Publication requires a fresh flag-off build and live verification.
+- **Public patient-feature pause**: Production website patient-notes/capture defaults are false; mobile/development testing remains enabled. Updated [release workflow](./operations/website-release.md), [patient notes](./architecture/patient-notes.md) and index to distinguish frontend hiding from preserved data/backend safeguards. Published the verified flag-off build; both public aliases match its index/manifest/main bundle and CloudFront invalidation completed. Backup/restore evidence is preserved; no backend or mobile release change.
 
 - **Removed Recent Notes counter**: Removed the loaded-note count badge and unused CSS; history loading, search and Refresh remain unchanged. Updated Sidebar README, [Sidebar](./components/sidebar.md), [visual style](./development/STYLE.md) and index.
 
