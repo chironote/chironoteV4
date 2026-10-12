@@ -4,11 +4,12 @@ import Recording from './Recording';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 
 const mockGraphql = jest.fn();
+let mockPatientCaptureEnabled = true;
 
 jest.mock('aws-amplify/auth', () => ({ getCurrentUser: jest.fn(), fetchAuthSession: jest.fn() }));
 jest.mock('aws-amplify/api', () => ({ generateClient: () => ({ graphql: (...args) => mockGraphql(...args) }) }));
 jest.mock('../../utils/analytics', () => ({ trackRecordingStart: jest.fn() }));
-jest.mock('../../services/patientNotes', () => ({ patientCaptureEnabled: true, localDate: () => '2026-10-11' }));
+jest.mock('../../services/patientNotes', () => ({ get patientCaptureEnabled() { return mockPatientCaptureEnabled; }, localDate: () => '2026-10-11' }));
 jest.mock('../Patients/PatientCapturePicker', () => ({ value, onChange }) => <div>
   <button onClick={() => onChange({ ...value, patientId: 'existing', patientName: undefined, visitType: 'followUp' })}>Existing patient</button>
   <button onClick={() => onChange({ ...value, patientId: 'new', patientName: 'New Example', visitType: 'initialExam' })}>New patient</button>
@@ -18,6 +19,7 @@ jest.mock('../Patients/PatientCapturePicker', () => ({ value, onChange }) => <di
 global.IS_REACT_ACT_ENVIRONMENT = true;
 let container, root, startRecording;
 beforeEach(async () => {
+  mockPatientCaptureEnabled = true;
   localStorage.setItem('noteSettings', JSON.stringify({ examLayout: true, PILayout: true }));
   getCurrentUser.mockResolvedValue({ username: 'synthetic' });
   fetchAuthSession.mockResolvedValue({});
@@ -54,4 +56,17 @@ test('new patients automatically use initial exam; clearing resets the choice', 
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ patientId: null, visitType: null }));
   expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(false);
+});
+
+
+test('disabled patient capture preserves legacy exam settings and starts without patient metadata', async () => {
+  mockPatientCaptureEnabled = false;
+  await act(async () => root.render(<Recording startRecording={startRecording} />));
+  expect(container.textContent).not.toContain('Existing patient');
+  expect(container.querySelector('#re-exam-popup')).toBeNull();
+  const exam = container.querySelector('#exam-layout-popup');
+  expect(exam.checked).toBe(true);
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenLastCalledWith(undefined);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout: true, PILayout: true });
 });
