@@ -20,6 +20,8 @@ The 2026-10-11 workflow port changes only callback forwarding in RecordingManage
 
 ## Provenance
 
+The 2026-10-13 patient-creation UI prepares a secure provisional identity before its confirmation. The final Create patient & record / Record without a patient click invokes startRecording synchronously before subscription work. Closing retains the draft; duplicate lookup fails closed. Existing/blank selections remain direct. RecordingManager media events, stop ordering and upload contract are unchanged. See [style contract](../development/STYLE.md) and [Recording](../../src/components/Recording/Recording.jsx).
+
 - [Recording manager](../../src/components/Recording/RecordingManager.jsx) (current implementation)
 - [Recording lifecycle tests](../../src/components/Recording/RecordingManager.test.js) (delayed-WebKit lifecycle coverage)
 - [Recording context](../../src/components/Recording/Context.md) (component context; current code resolves its older generic chunking description)

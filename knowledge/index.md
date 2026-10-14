@@ -41,6 +41,8 @@ the documentation or generated-file tree.
 
 ## Development
 
+- [iPhone patient capture styling](./development/STYLE.md): approved creation row, compact confirmation, responsive accessibility and synchronous capture boundary.
+
 - [Frontend and Native Verification Workflow](./development/workflow.md): local
   scripts, focused tests, Router 7.2 CommonJS test context, generated artifacts, and release verification.
 

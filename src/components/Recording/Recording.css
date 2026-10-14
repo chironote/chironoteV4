@@ -32,6 +32,25 @@
 }
 
 /* Popup heading */
+.recording-dialog .recording-patient-confirmation { width: min(480px, 100%); padding: 0; display: flex; flex-direction: column; overflow: hidden; max-height: calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+.recording-dialog .patient-modal-backdrop { padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+.recording-patient-confirmation .product-dialog__header { align-items: center; padding: 16px 24px; }
+.recording-patient-confirmation .product-dialog__header h2 { margin: 0; }
+.recording-patient-confirmation .product-dialog__body { padding: 16px 24px; }
+.recording-patient-confirmation p { margin: 0; overflow-wrap: anywhere; line-height: 1.5; }
+.recording-patient-confirmation .recording-patient-prompt { padding: 12px 14px; border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-badge, #edf5ed); color: var(--dark-green); }
+.recording-patient-confirmation .recording-patient-explanation { margin: 12px 0 0; color: var(--color-text-muted); font-size: 14px; }
+.recording-patient-confirmation .patient-dialog-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--color-divider); background: var(--color-surface-soft); }
+.recording-patient-confirmation .patient-dialog-footer button { flex: 1; min-height: 44px; padding: 10px 12px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.recording-patient-confirmation .recording-unassigned-button { background: var(--pure-white); color: var(--dark-green); border: 1px solid var(--color-border-strong); }
+.recording-patient-confirmation .recording-unassigned-button:hover { background: var(--color-hover); }
+.recording-patient-confirmation .patient-dialog-footer .recording-start-button { background: var(--medium-green); border-color: var(--medium-green); color: var(--pure-white); }
+.recording-patient-confirmation .patient-dialog-footer .recording-start-button:hover { background: var(--dark-green); border-color: var(--dark-green); }
+.recording-patient-confirmation .patient-dialog-footer button:active { filter: brightness(.95); }
+.recording-patient-confirmation .patient-dialog-footer button:focus-visible { outline: 3px solid var(--medium-green); outline-offset: 2px; }
+@media (max-width: 600px) { .recording-patient-confirmation .product-dialog__header,.recording-patient-confirmation .product-dialog__body,.recording-patient-confirmation .patient-dialog-footer { padding: 16px; } }
+@media (max-width: 400px) { .recording-patient-confirmation .patient-dialog-footer { flex-direction: column; } }
+
 .recording-dialog h2 {
   margin-bottom: 20px;
   color: var(--dark-green);
