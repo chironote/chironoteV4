@@ -1,5 +1,16 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-13
+
+- **Approved patient creation pattern**: Added the reusable compact create-row/confirmation contract to [STYLE](./development/STYLE.md) and index. Corrected the create button accessible name to include visible wording and the full typed name; added long-name and synchronous microphone-before-subscription regression coverage. Production patient flags remain false.
+- **Authorized isolated frontend release preparation**: Corrected historical publication ownership guidance for this owner-authorized rollout in [website release](./operations/website-release.md), recorded freshly verified AWS routing and entry-file backups, and preserved the production flags and unrelated original edits. Exact publication results remain in task scratch evidence.
+
+- **Confirmation spacing and copy**: Removed inherited heading/paragraph gaps from the new-patient prompt, showed the bare patient name without introductory text or quotation marks, and scoped the primary green action against generic form-button styles. Sources: Recording.jsx, Recording.css and Recording README.
+
+- **Patient capture visual refinement**: Renamed the option Create New Patient, matched the 8px result spacing and compact row height, and styled the confirmation with Record without a patient / Create patient & record choices. Unassigned recording explicitly clears patient identity and initial-exam metadata. Closing the prompt returns to the retained draft. Updated feature READMEs and recording concept; source: PatientCapturePicker.jsx, Patients.css, Recording.jsx/Recording.css and regression tests.
+
+- **Local web patient-creation experiment**: Added a pale green new-patient row with a darker + Add affordance and a confirmation when Start Recording is pressed with an unselected typed name. Reused paginated duplicate checks, retained drafts on cancellation/failure, and preserved synchronous microphone start on the confirmation click. Updated Patients/Recording READMEs, [recording](./components/recording.md), and index. Sources: PatientCapturePicker.jsx, Patients.css, Recording.jsx and adjacent regression tests. No mobile propagation or publication.
+
 ## 2026-10-11
 
 - **Public patient-feature pause**: Production website patient-notes/capture defaults are false; mobile/development testing remains enabled. Updated [release workflow](./operations/website-release.md), [patient notes](./architecture/patient-notes.md) and index to distinguish frontend hiding from preserved data/backend safeguards. Published the verified flag-off build; both public aliases match its index/manifest/main bundle and CloudFront invalidation completed. Backup/restore evidence is preserved; no backend or mobile release change.

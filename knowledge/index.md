@@ -18,7 +18,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, code conventions, testing, documentation duties, and sensitive files. |
-| [ChiroNote Visual Style System](./development/STYLE.md) | Current web visual authority plus the shared token, logical-unit, safe-area, dynamic-text, platform-adapter, component-parity, and migration contract for iOS and Android unification. |
+| [ChiroNote Visual Style System](./development/STYLE.md) | Current web visual authority, approved compact patient-creation row/confirmation pattern, and shared token, logical-unit, safe-area, dynamic-text and platform-adapter contracts. |
 
 ## Application Components
 
@@ -26,7 +26,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes including the scheduler-focused demo page, protected app entry, analytics side effects, and PWA redirects. |
-| [Recording, Dictation, and Note Generation](./components/recording.md) | Recording architecture, compact patient lookup/selection and Re-Exam behavior, browser failure risks, and required release matrix. |
+| [Recording, Dictation, and Note Generation](./components/recording.md) | Recording architecture, highlighted new-patient option and typed-name start confirmation, compact patient lookup/selection and Re-Exam behavior, browser failure risks, and required release matrix. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, conditional Edit/Save toolbar divider, saved-note drop/selection parity, shared dashboard panel styling, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Responsive saved-note navigation without a count badge, restored note/transcript popup with clickable patient reassignment, clickable SOAP/Treatment copy controls, and the visually paired Smart Editor workspace. |
 | [Billing and User Settings](./components/billing-settings.md) | Plans, billing actions, current usage, lifetime hours saved, and the restored, default-available asynchronous AppSync Custom Instructions experience. |

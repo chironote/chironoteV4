@@ -10,6 +10,14 @@ tags: [release, publish, amplify, production, validation, risk]
 
 Publishing requires repository-owner authorization. The 2026-09-26 Custom Instructions restoration was explicitly requested by the owner; the historical checklist below is not authorization for unrelated deployments.
 
+## Authorized patient-creation frontend release — 2026-10-13
+
+The owner explicitly authorized scoped integration and frontend publication of the approved patient-creation UI from an isolated worktree. This authorization supersedes historical original-folder/owner-only publication wording for this release. Both production patient flags remain false; publishing this source does not expose the patient UI publicly. No backend deployment is included. The reusable approved interaction and visual contract is in [STYLE](../development/STYLE.md).
+
+Release preparation verified `prod` at `65d6f0cf4a8689d3ef53700016f8533a46ff96f9`, the task-only approved patch SHA-256 `7a3f5d70055e6cb322d7167099440a31fd44354f9fe6d56ecb44e393100ce05f`, AWS account `026090532772`, and deployed CloudFront distribution `E34RPJ5SU5J7IX` with both `chironote.ai` aliases and the documented S3 origin. The original checkout's unrelated GraphQL/editor changes remain excluded. Required ignored `src/aws-exports.js` and `src/amplifyconfiguration.json` were copied locally for the build; original source media was compared before publication. Public files are tracked and no extra ignored public media was found.
+
+Before publication, live index/manifest bytes and their S3 metadata were captured at `C:/Users/nikit/.codex/visualizations/2026/10/14/01a13852-0557-71e3-9a34-bec693a0b6ce/web-release-evidence/`. The previous manifest hash is `58f1f189e6f267c8e10cadc1c9cf2b14d0180269d2c801d3882561c56208d9c3`; index hash is `4a8fd5bf16e4fbe6cd8fc6daad41daf4a071466bbb9580815637b2658fc35c65`. Preserve old immutable assets. Upload new immutable files first, then conditionally replace entry files against captured ETags, invalidate CloudFront and verify public bytes. A conditional restore must confirm the candidate entry files are still current before restoring these backups. This preparation entry does not itself establish public availability; the task-root `patient-ui-rollout-report.md` records the exact merged SHA, PR, artifact hashes, final publication state and remaining manual checks.
+
 ## Public patient-feature pause — 2026-10-11
 
 The owner requested a public website republish with the new patient features disabled, while Android/iPhone testing releases continue enabled. `.env.production` now defaults `REACT_APP_PATIENT_NOTES_ENABLED=false` and `REACT_APP_PATIENT_CAPTURE_ENABLED=false`; this supersedes the enabled production defaults in the historical sections below. Development defaults remain enabled for testing. Custom Instructions remains available. Build-time process/local overrides must be checked before publishing.
