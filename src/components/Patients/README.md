@@ -1,5 +1,11 @@
 # Patient components
 
+## Patient creation pattern — 2026-10-13
+
+Create New Patient is one compact full-width pale green row with the typed name and darker + Add affordance. Long names truncate visually with their full accessible label retained. The picker exposes prepareNewPatient through its ref and reports the normalized draft via onDraftChange. Preparation scans all directory pages, retains the draft, and returns a secure provisional identity without selecting or persisting it. Duplicate/failure feedback stays inline; input edits, selection and unmount invalidate stale checks. + Add still selects provisionally through the existing capture/save contract.
+
+See [iPhone style authority](../../../knowledge/development/STYLE.md). No new backend operation or production flag change is introduced.
+
 Capacitor native phones/tablets and desktop web have persistent Save with shared draft guards; browser-mobile retains its existing local-edit/copy behavior. The Patients route owns profiles, source diagnosis display and PDF selection. Settings owns Configure Signature.
 
 All clinical requests go through `../../services/patientNotes.js`; server owner verification and conditional Save are authoritative. PatientsPage opens an exact getSavedNote result in the existing clipboard through AppShell, including source-note links. Visit rows have a single note-opening action; the separate Visit details button/menu is removed from PatientsPage. There is no second clinical editor. VisitDetailsDialog remains available to the export date-correction flow; its metadata/retry implementation is preserved. History patient reassignment and clickable label editing remain in their existing popup flows.

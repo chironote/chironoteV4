@@ -1,18 +1,20 @@
 import { randomId } from '../../utils/randomId';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { localDate, patientRequest } from '../../services/patientNotes';
 import './Patients.css';
 
 const normalizedName = name => name.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
 
-export default function PatientCapturePicker({ value, onChange, showVisitDetails = false, searchPlaceholder }) {
+const PatientCapturePicker = forwardRef(function PatientCapturePicker({ value, onChange, onDraftChange, showVisitDetails = false, searchPlaceholder }, ref) {
   const [search, setSearch] = useState(''); const [patients, setPatients] = useState([]);
   const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [cursor, setCursor] = useState(null);
   const requestRef = useRef(0);
+  useEffect(() => () => { requestRef.current += 1; }, []);
   const checkingRef = useRef(false);
   const [checking, setChecking] = useState(false);
   const query = search.trim().replace(/\s+/g, ' ');
   const current = value || { dateOfService: localDate(), visitType: null, contextMode: 'patient' };
+  useEffect(() => { onDraftChange?.(query); }, [query, onDraftChange]);
   useEffect(() => {
     let active = true; const request = ++requestRef.current;
     setPatients([]); setCursor(null); setError(''); setLoading(false);
@@ -29,7 +31,8 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
   }, [query]);
   const change = (fields) => onChange({ ...current, ...fields });
   const clearPatient = () => {
-    change({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, contextMode: 'patient' });
+    requestRef.current += 1;
+    change({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, initialExam: false, contextMode: 'patient' });
     setSearch('');
   };
   const selected = current.patientId ? (current.displayName || current.patientName || 'Selected patient') : 'Unassigned';
@@ -40,7 +43,7 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     } catch (failure) { if (request === requestRef.current) setError(failure.message); }
     finally { if (request === requestRef.current) setLoading(false); }
   };
-  const addNew = async () => {
+  const prepareNewPatient = async () => {
     if (checkingRef.current || !query) return;
     checkingRef.current = true; setChecking(true); setError('');
     const request = ++requestRef.current; setLoading(false);
@@ -57,11 +60,15 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
         }
         nextCursor = page.nextCursor;
       } while (nextCursor);
-      change({ patientId: randomId(), patientName: query, displayName: query, dateOfInjury: null, visitType: showVisitDetails ? null : 'initialExam', contextMode: 'patient' });
-      setSearch('');
+      return { ...current, patientId: randomId(), patientName: query, displayName: query, dateOfInjury: null, visitType: showVisitDetails ? null : 'initialExam', contextMode: 'patient' };
     } catch {
       if (request === requestRef.current) setError('We could not check whether this patient already exists. Please try Add New again, or select an existing patient.');
     } finally { checkingRef.current = false; setChecking(false); }
+  };
+  useImperativeHandle(ref, () => ({ prepareNewPatient }));
+  const addNew = async () => {
+    const patient = await prepareNewPatient();
+    if (patient) { onChange(patient); setSearch(''); }
   };
   if (current.patientId && !showVisitDetails) return <div className="patient-capture patient-capture-selected">
     <div className="patient-selected-name">{selected}</div>
@@ -69,17 +76,20 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
   </div>;
   return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient Name'}</legend>
     {showVisitDetails && <p className="patient-selection">{selected}</p>}
-    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={searchPlaceholder || (showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned')} onChange={event => setSearch(event.target.value)} type="search" autoComplete="off" /></label>
+    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={searchPlaceholder || (showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned')} onChange={event => { requestRef.current += 1; setSearch(event.target.value); }} type="search" autoComplete="off" /></label>
     {showVisitDetails && !query && <p className="patient-help">Search by name, or leave this visit unassigned.</p>}
     {loading && <p role="status">Loading patients…</p>}
     {error && <p className="patient-picker-error" role="alert">{error}</p>}
     {query && <div className="patient-picker-list" aria-label="Matching patients">
       {patients.map(patient => <button type="button" key={patient.patientId} aria-pressed={current.patientId === patient.patientId}
-        onClick={() => { change({ patientId: patient.patientId, patientName: undefined, displayName: patient.name, dateOfInjury: patient.dateOfInjury, visitType: showVisitDetails ? null : 'followUp', contextMode: 'patient' }); setSearch(''); }}>{patient.name}<small>{patient.visitCount} visits</small></button>)}
+        onClick={() => { requestRef.current += 1; change({ patientId: patient.patientId, patientName: undefined, displayName: patient.name, dateOfInjury: patient.dateOfInjury, visitType: showVisitDetails ? null : 'followUp', contextMode: 'patient' }); setSearch(''); }}>{patient.name}<small>{patient.visitCount} visits</small></button>)}
     </div>}
     {query && cursor && <button type="button" disabled={loading} onClick={more}>More patients</button>}
-    <div className="patient-actions">
-      {query && <button type="button" disabled={checking} onClick={addNew}>{checking ? 'Checking patient…' : `Add New “${query}”`}</button>}
+    <div className="patient-actions patient-create-actions">
+      {query && <button type="button" className="patient-create-option" aria-label={`Add New “${query}”`} disabled={checking} onClick={addNew}>
+        <span className="patient-create-name" title={`Create New Patient: “${query}”`}>Create New Patient: <strong>“{query}”</strong></span>
+        <span className="patient-create-action">{checking ? 'Checking…' : '+ Add'}</span>
+      </button>}
       {current.patientId && <button type="button" onClick={clearPatient}>Unassigned visit</button>}
     </div>
     {showVisitDetails && <div className="patient-field-grid">
@@ -91,4 +101,6 @@ export default function PatientCapturePicker({ value, onChange, showVisitDetails
     </div>}
     {showVisitDetails && current.patientId && <label className="patient-inline"><input type="checkbox" checked={current.contextMode !== 'none'} onChange={e => change({ contextMode: e.target.checked ? 'patient' : 'none' })} /> Use saved patient history</label>}
   </fieldset>;
-}
+});
+
+export default PatientCapturePicker;

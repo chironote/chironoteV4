@@ -1,5 +1,9 @@
 # iOS recording and dictation
 
+## Patient creation confirmation — 2026-10-13
+
+Start Recording with an unselected typed name reuses the paginated duplicate guard, then opens Create new patient? with only the name in the highlighted panel. Create patient & record uses prepared initial-exam metadata and synchronously calls capture before subscription lookup. Record without a patient clears identity/name/injury/visit/initial-exam intent and starts directly. Close/Escape retains the typed draft; duplicates and lookup failures preserve input and block capture. Existing selections, blank and flag-off recording remain direct. The scoped green primary action, responsive footer and safe-area modal follow [STYLE](../../../knowledge/development/STYLE.md). Persistence and the WebKit manager lifecycle remain unchanged.
+
 `RecordingManager.jsx` owns the existing iOS microphone, chunk upload and WebKit finalization lifecycle. Stop transactions wait for delayed dataavailable/onstop, rotate once on foreground, suspend the rotation timer in background and cancel uploads on discard/unmount. The historical MP4 recorder/WebM-labelled upload contract is preserved; do not change it without backend validation.
 
 `useNoteGeneration.js` owns transcript subscriptions and note streaming. RecordingManager forwards generation status/errors and authoritative saved-note identity to AppShell. EOF previews do not become saved-note identity. RecordingManager.test.js remains the native lifecycle regression gate.

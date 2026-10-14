@@ -8,6 +8,8 @@ tags: [patient-notes, contracts, release]
 
 # Patient-linked saved notes
 
+The 2026-10-13 iOS patient creation adaptation adds the approved highlighted Create New Patient row and a compact confirmation for typed but unselected names. It reuses the existing cursor-based normalized-name guard and capture/save metadata contract. No createPatient call, backend schema change or production flag change is introduced. [STYLE](../development/STYLE.md) documents responsive behavior and provenance. Automated and release evidence are separate from pending physical-device acceptance.
+
 This is an iOS source candidate, not a released App Store build. Production/development defaults match web prod142383e for patient capture, saved-note features and the HTTPS export endpoint. Capacitor iPhone/iPad enables persistent Save with draft guards; browser-mobile retains local editing. Native presentation tokens, scoped ios.css and status-bar appearance were ported from the original dirty checkout; unrelated original changes remain untouched.
 
 `REACT_APP_PATIENT_NOTES_ENABLED=true` exposes patient/history features. `REACT_APP_PATIENT_CAPTURE_ENABLED=false` independently stops new patient capture without hiding saved-note tools. The capture picker supports existing/new patient or Skip, local service date, optional injury date, explicit visit type or automatic first-visit resolution, and an explicit no-history choice. Patient metadata is captured once outside generic noteSettings. Microphone acquisition begins from the gesture before authentication/eligibility network waits. Cancelled permission requests and old stream completions cannot attach to a newer recording. Language preferences are retired; clients send auto and the server retains the installed-client adapter.

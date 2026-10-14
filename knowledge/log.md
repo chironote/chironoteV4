@@ -1,5 +1,9 @@
 # Knowledge Update Log
 
+## 2026-10-13
+
+- **Update**: Adapted the approved patient creation row and typed-name confirmation to iOS, preserving secure provisional IDs, paginated duplicate checks, synchronous WebKit microphone start and existing persistence/lifecycle. Added [style authority](./development/STYLE.md), updated patient/recording concepts and feature READMEs. Validation and TestFlight evidence are recorded separately; physical-device checks remain pending.
+
 ## 2026-10-12
 
 - Aligned native Clipboard control typography and 44px minimum targets across phone/tablet platforms using a separate native presentation class. Kept phone 44/48px geometry and tablet insets intact; scoped iOS icon surface feedback to native Clipboard controls.
