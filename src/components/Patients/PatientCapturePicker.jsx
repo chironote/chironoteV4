@@ -13,6 +13,11 @@ const PatientCapturePicker = forwardRef(function PatientCapturePicker({ value, o
   const checkingRef = useRef(false);
   const [checking, setChecking] = useState(false);
   const query = search.trim().replace(/\s+/g, ' ');
+  const updateSearch = event => {
+    const nextSearch = event.target.value;
+    if (nextSearch.trim().replace(/\s+/g, ' ') !== query) requestRef.current += 1;
+    setSearch(nextSearch);
+  };
   const current = value || { dateOfService: localDate(), visitType: null, contextMode: 'patient' };
   useEffect(() => { onDraftChange?.(query); }, [query, onDraftChange]);
   useEffect(() => {
@@ -76,7 +81,7 @@ const PatientCapturePicker = forwardRef(function PatientCapturePicker({ value, o
   </div>;
   return <fieldset className="patient-capture"><legend>{showVisitDetails ? 'Patient and visit' : 'Patient Name'}</legend>
     {showVisitDetails && <p className="patient-selection">{selected}</p>}
-    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={searchPlaceholder || (showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned')} onChange={event => { requestRef.current += 1; setSearch(event.target.value); }} type="search" autoComplete="off" /></label>
+    <label>{showVisitDetails && 'Find a patient'}<input aria-label="Find a patient" className={showVisitDetails ? undefined : 'patient-recording-search'} value={search} placeholder={searchPlaceholder || (showVisitDetails ? 'Type a patient name' : 'Select Existing Patient, Add New or Leave Unassigned')} onChange={updateSearch} type="search" autoComplete="off" /></label>
     {showVisitDetails && !query && <p className="patient-help">Search by name, or leave this visit unassigned.</p>}
     {loading && <p role="status">Loading patients…</p>}
     {error && <p className="patient-picker-error" role="alert">{error}</p>}

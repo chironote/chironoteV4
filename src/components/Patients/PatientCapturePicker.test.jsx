@@ -106,3 +106,18 @@ test('date and visit controls remain available in the Patients visit editor', ()
   expect(container.querySelectorAll('input[type=date]')).toHaveLength(2);
   expect(container.querySelector('select')).not.toBeNull();
 });
+
+test('equivalent whitespace edits retain the pending normalized lookup and clear loading', async () => {
+  let resolveLookup;
+  patientRequest.mockImplementation(() => new Promise(resolve => { resolveLookup = resolve; }));
+  await act(async () => root.render(<PatientCapturePicker onChange={jest.fn()} />));
+  await type('Jordan Example');
+  await act(async () => jest.advanceTimersByTime(250));
+  expect(container.querySelector('[role=status]').textContent).toContain('Loading');
+  await type('  Jordan   Example  ');
+  await act(async () => resolveLookup({ items: [{ patientId: 'existing', name: 'Jordan Example', visitCount: 2 }], nextCursor: null }));
+  expect(patientRequest).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('[role=status]')).toBeNull();
+  expect(container.querySelector('.patient-picker-list button').textContent).toContain('Jordan Example');
+  expect(container.querySelector('input').value).toBe('  Jordan   Example  ');
+});
