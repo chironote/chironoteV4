@@ -11,6 +11,10 @@ tags: [chironote, component, recording]
 
 # Recording Components
 
+## Patient creation confirmation
+
+Android adapts the approved 2026-10-13 web patient-creation pattern: one pale green full-width Create New Patient row, typed name and darker + Add affordance, with 8px result spacing. A typed unselected Start Recording checks every matching directory page using normalized names, then opens Create new patient? with a name-only highlighted panel. Closing retains the draft. Create patient & record passes provisional identity and initialExam into the established capture contract and starts microphone access synchronously before subscription awaits. Record without a patient clears identity/name/injury/type metadata and examLayout. Existing selection, blank and disabled capture remain direct; duplicate/failing/stale checks preserve input and block capture. This UI changes no backend, patient flags or native recorder lifecycle. Sources: [picker](../../src/components/Patients/PatientCapturePicker.jsx), [Recording](../../src/components/Recording/Recording.jsx), adjacent tests and [style authority](../development/STYLE.md).
+
 Compact capture defaults existing patients to follow-up (with Re-Exam) and new names to initial exam, always using saved history. RecordingManager forwards saved-record and generation-state callbacks to the clipboard. Generation cleanup releases editor busy state. Android finalized containers, four-minute rotation, permission-start cancellation, pause/resume/background ordering and upload serialization remain unchanged by the patient port.
 
 This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.

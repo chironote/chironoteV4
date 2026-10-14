@@ -11,13 +11,14 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [ChiroNote System Architecture](./architecture/system-overview.md) | Product purpose, system boundaries, major data flows, and ownership across frontend and backend. |
-| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, audited SDK history, published Internal 33 and the locally prepared but unpublished 34 candidate, SDK/protection boundaries, and the minimal-difference alignment rule. |
+| [Capacitor Android Application](./architecture/capacitor-android.md) | Android wrapper ownership, native adaptations, build flow, audited SDK history, freshly verified Internal 34 and patient-creation candidate 35, SDK/protection boundaries, and the minimal-difference alignment rule. |
 
 ## Development
 
 | Concept | Use it to understand |
 | --- | --- |
 | [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, code conventions, testing, documentation duties, and sensitive files. |
+| [Android patient capture styling](./development/STYLE.md) | Approved green creation row, long-name/accessibility behavior and compact typed-name confirmation. |
 
 ## Application Components
 
@@ -25,7 +26,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
-| [Audio Recording and Note Generation](./components/recording.md) | Independently decodable media chunks, pause-safe containers, ordered uploads, transcription completion, and generated-note streaming. |
+| [Audio Recording and Note Generation](./components/recording.md) | Typed-name patient confirmation and direct-start behavior, independently decodable media chunks, pause-safe containers, ordered uploads, transcription completion, and generated-note streaming. |
 | [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, labelled phone toolbar, independent saved-note Save, native-app and phone-web Smart Editor exclusion and balanced gutters, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |

@@ -1,5 +1,11 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-13
+
+- **Live release correction**: Direct Play inventory now confirms Internal 34 available, highest uploaded code 34 and unchanged Early Beta audience (1 tester); Production remains 30. Updated [Android](./architecture/capacitor-android.md), [patient notes](./architecture/patient-notes.md) and index to supersede the prior unpublished-candidate statements. Candidate 35 publication remains a separate gate.
+
+- **Android patient creation UI**: Adapted the approved web patch narrowly onto freshly verified cap-and 7da14c8. Updated Patients/Recording READMEs, [recording](./components/recording.md), [style authority](./development/STYLE.md) and index for the compact highlighted creation row, duplicate-checked typed-name confirmation, draft retention, synchronous microphone start and explicit unassigned metadata. Existing patient service, native lifecycle, flags and unrelated primary edits remain preserved. Build and Play publication evidence are recorded separately.
+
 ## 2026-10-12
 
 - **Release 34 candidate prepared, not uploaded**: Prepared version 34 (1.34) from merged PR48 source `36e8c1439e44f451c2a1967b242c7064eda9463e` on `codex/android-release34`. Play was rechecked by the release coordinator: Internal 33 (1.33) remains latest and Early Beta remains the active one-person audience. Validation passed 39 Jest suites / 162 tests, feature-enabled production web build, Android-only sync (7 plugins), Gradle clean assembleDebug bundleRelease and signed-bundle verification. The AAB is 27,799,970 bytes, SHA-256 `8F862771676FFCA67A7AD5192E6B6C2A01DFB59BAE0AF96430F78A9CFE2F444D`, with the same upload certificate as published 33; package is `com.chironote.app`, min SDK 24, compile/target 36, and both patient flags are enabled. Standard CRA build reports ESLint and stale Browserslist warnings. The bundle remains local and unpublished; no upload, device acceptance, or Play processing is claimed. Production 30 (1.30) remains untouched. Evidence: `C:/Users/nikit/Documents/Codex/2026-10-12/mobile-ui-reconcile/validation/android-release34/`.
