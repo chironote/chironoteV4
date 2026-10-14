@@ -1,5 +1,7 @@
 # Recording Components
 
+The new-patient confirmation uses compact, scoped header/body spacing and displays the patient name alone in its highlighted panel. Its primary create-and-record action overrides generic patient-form button styling.
+
 This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.
 
 ## Files
@@ -93,3 +95,5 @@ With patient capture enabled, `Recording` uses `Patients/PatientCapturePicker` f
 The recording surface uses the scoped recording-dialog class, content-driven height and viewport-bounded scrolling; generic credit-limit popup CSS must not resize it. Before capture, PatientCapturePicker offers type-to-search selection or an unassigned visit, never an empty-query roster. Service date defaults to today. A selected patient appears as a name-only panel with an × reset control. Existing patients default to follow-up with Re-Exam on the left of PI; newly entered patients always request initialExam and hide Re-Exam. Saved history is automatic during capture. Recording synchronizes examLayout before the manager freezes settings. Date fields remain in the Patients visit editor.
 
 The public website production defaults now disable patient notes/capture. The flag-off recording path retains Exam Layout and Personal Injury Case and starts without patient metadata; its regression test is in `Recording.test.jsx`. Development/mobile testing can keep capture enabled.
+
+Start Recording with a typed but unselected name checks for duplicates through PatientCapturePicker and opens a Create new patient? confirmation. Closing the prompt preserves the draft; Create patient & record passes prepared initial-exam metadata directly into capture from the confirmation click, before asynchronous subscription validation. Existing selections and blank/unassigned capture start directly. Record without a patient starts with no patient identity and resets the visit/exam selection. Duplicate names or failed checks retain the picker and its inline feedback. This experiment is local to the web checkout.
