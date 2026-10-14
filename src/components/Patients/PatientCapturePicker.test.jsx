@@ -48,7 +48,7 @@ test('new patient selection requests an initial exam and automatic history', asy
   patientRequest.mockResolvedValue({ items: [], nextCursor: null });
   await act(async () => root.render(<PatientCapturePicker onChange={change} />));
   await type('New Example');
-  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent.includes('Add New')).click());
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.getAttribute('aria-label')?.includes('Add New')).click());
   expect(change).toHaveBeenCalledWith(expect.objectContaining({ patientId: 'new-patient-id', patientName: 'New Example', visitType: 'initialExam', contextMode: 'patient' }));
 });
 test('Add New catches an existing name across pages and preserves the search for selection', async () => {
@@ -56,7 +56,7 @@ test('Add New catches an existing name across pages and preserves the search for
   patientRequest.mockResolvedValueOnce({ items: [], nextCursor: 'page-2' }).mockResolvedValueOnce({ items: [{ patientId: 'existing', name: 'Jordan Example', visitCount: 2 }], nextCursor: null });
   await act(async () => root.render(<PatientCapturePicker onChange={change} />));
   await type('  jordan   EXAMPLE  ');
-  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent.includes('Add New')).click());
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.getAttribute('aria-label')?.includes('Add New')).click());
   expect(change).not.toHaveBeenCalled();
   expect(container.querySelector('[role=alert]').textContent).toContain('already exists');
   expect(container.querySelector('input').value).toBe('  jordan   EXAMPLE  ');
@@ -67,11 +67,40 @@ test('failed duplicate lookup keeps the name and does not select a new patient',
   const change = jest.fn(); patientRequest.mockRejectedValue(new Error('Offline'));
   await act(async () => root.render(<PatientCapturePicker onChange={change} />));
   await type('New Example');
-  await act(async () => [...container.querySelectorAll('button')].find(button => button.textContent.includes('Add New')).click());
+  await act(async () => [...container.querySelectorAll('button')].find(button => button.getAttribute('aria-label')?.includes('Add New')).click());
   expect(change).not.toHaveBeenCalled();
   expect(container.querySelector('[role=alert]').textContent).toContain('Please try Add New again');
   expect(container.querySelector('input').value).toBe('New Example');
 });
+test('preparing a typed name for recording confirmation preserves the draft without selecting it', async () => {
+  const change = jest.fn(); const draftChange = jest.fn(); const ref = React.createRef();
+  patientRequest.mockResolvedValue({ items: [], nextCursor: null });
+  await act(async () => root.render(<PatientCapturePicker ref={ref} onChange={change} onDraftChange={draftChange} />));
+  await type('  New   Example  ');
+  expect(draftChange).toHaveBeenLastCalledWith('New Example');
+  expect(container.querySelector('.patient-create-option').textContent).toContain('+ Add');
+  let prepared;
+  await act(async () => { prepared = await ref.current.prepareNewPatient(); });
+  expect(prepared).toEqual(expect.objectContaining({ patientName: 'New Example', visitType: 'initialExam' }));
+  expect(change).not.toHaveBeenCalled();
+  expect(container.querySelector('input').value).toBe('  New   Example  ');
+});
+
+test('editing a name while its check is pending invalidates the prepared identity', async () => {
+  let resolveLookup;
+  patientRequest.mockImplementation(() => new Promise(resolve => { resolveLookup = resolve; }));
+  const ref = React.createRef();
+  await act(async () => root.render(<PatientCapturePicker ref={ref} onChange={jest.fn()} />));
+  await type('First Name');
+  let preparation;
+  act(() => { preparation = ref.current.prepareNewPatient(); });
+  await type('Second Name');
+  let result;
+  await act(async () => { resolveLookup({ items: [], nextCursor: null }); result = await preparation; });
+  expect(result).toBeUndefined();
+  expect(container.querySelector('input').value).toBe('Second Name');
+});
+
 test('date and visit controls remain available in the Patients visit editor', () => {
   act(() => root.render(<PatientCapturePicker onChange={() => {}} showVisitDetails />));
   expect(container.querySelectorAll('input[type=date]')).toHaveLength(2);

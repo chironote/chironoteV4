@@ -13,6 +13,15 @@
 .patient-picker-list button { display: flex; justify-content: space-between; text-align: left; gap: 8px; }
 .patient-picker-list button[aria-pressed=true] { border: 2px solid var(--medium-green); background: var(--color-hover); }
 .patient-actions,.patient-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.patient-capture .patient-picker-list { margin-bottom: 0; }
+.patient-capture .patient-picker-list:empty { display: none; }
+.patient-capture .patient-create-actions { margin: 8px 0 0; }
+.patient-capture .patient-create-option { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 10px 4px 14px; text-align: left; background: var(--color-badge, #edf5ed); border-color: var(--color-border-strong); }
+.patient-capture .patient-create-option:hover { background: var(--color-hover); border-color: var(--medium-green); }
+.patient-create-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
+.patient-create-name strong { font-weight: 600; }
+.patient-create-action { flex-shrink: 0; padding: 5px 12px; border-radius: 6px; background: var(--medium-green); color: var(--pure-white); font-weight: 600; white-space: nowrap; }
+@media (pointer: coarse) { .patient-capture .patient-create-option { min-height: 48px; } }
 .patient-field-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(155px,1fr)); gap: 12px; margin: 16px 0; }
 .patient-help { font-size: 14px; line-height: 1.5; color: var(--color-text-muted); }
 .patient-capture .patient-inline { flex-direction: row; align-items: center; font-weight: 400; }

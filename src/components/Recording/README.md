@@ -1,5 +1,7 @@
 # Recording Components
 
+With capture enabled, Start Recording with a typed, unselected name reuses the picker's paginated duplicate check and opens Create new patient? The highlighted panel contains only the name. Closing retains the draft; Create patient & record starts synchronously with prepared initial-exam metadata before subscription checks. Record without a patient clears identity, display name, injury date and visit type and starts without initial exam. Duplicate/failing/stale lookups cannot start capture. Existing selections, blank input and flag-off capture remain direct. Confirmation spacing and green primary styling are scoped; Android ID compatibility, cancellable microphone acquisition and native lifecycle remain intact.
+
 Capture now collapses a selected patient to their name and × reset. Existing selections default to follow-up with a Re-Exam option; a new name uses initial exam, and capture automatically includes saved history. `RecordingManager` forwards durable saved-note and generation-state callbacks to the shared clipboard. This port preserves Android's microphone-start cancellation, four-minute finalized containers, pause-flush/resume-new-container, foreground rotation and serialized uploads. Generation cleanup releases the clipboard busy state without accepting preview text as saved.
 
 This folder owns the core recording, dictation, audio upload, transcript waiting, and generated-note streaming workflow.

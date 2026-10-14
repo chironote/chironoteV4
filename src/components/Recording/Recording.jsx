@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './Recording.css';
 import { generateClient } from 'aws-amplify/api';
 import { getCurrentUser, fetchAuthSession  } from 'aws-amplify/auth';
 import * as queries from '../../graphql/queries';
 import CreditPopup from './CreditLimit';
 import PatientCapturePicker from '../Patients/PatientCapturePicker';
+import PatientDialog from '../Patients/PatientDialog';
 import { patientCaptureEnabled, localDate } from '../../services/patientNotes';
 import ConfirmationPopup from './ConfirmationPopup';
 import { trackRecordingStart } from '../../utils/analytics';
@@ -28,6 +29,11 @@ function Recording({ isStarting = false,
   const [visitMetadata, setVisitMetadata] = useState({ dateOfService: localDate(), visitType: null, contextMode: 'patient' });
   const [showCreditPopup, setShowCreditPopup] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const patientPickerRef = useRef(null);
+  const preparingPatientRef = useRef(false);
+  const [patientDraft, setPatientDraft] = useState('');
+  const [pendingPatient, setPendingPatient] = useState(null);
+  const [checkingPatient, setCheckingPatient] = useState(false);
 
   const [noteSettings, setNoteSettings] = useState(() => {
     const storedSettings = localStorage.getItem('noteSettings');
@@ -62,7 +68,7 @@ function Recording({ isStarting = false,
     }
   };
 
-  const handleStartRecording = async () => {
+  const beginRecording = async (metadata = visitMetadata) => {
     try {
       // Track the start recording action
       trackRecordingStart();
@@ -70,10 +76,10 @@ function Recording({ isStarting = false,
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
       if (patientCaptureEnabled) {
-        const examLayout = Boolean(visitMetadata.patientName) || visitMetadata.visitType === 'reExam';
+        const examLayout = Boolean(metadata.patientName) || metadata.visitType === 'reExam';
         localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
       }
-      startRecording(patientCaptureEnabled ? { ...visitMetadata, contextMode: 'patient' } : undefined);
+      startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
 
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
@@ -90,6 +96,37 @@ function Recording({ isStarting = false,
       discardRecording();
 
     }
+  };
+
+  const handleStartRecording = async () => {
+    if (preparingPatientRef.current) return;
+    if (patientCaptureEnabled && !visitMetadata.patientId && patientDraft) {
+      preparingPatientRef.current = true;
+      setCheckingPatient(true);
+      try {
+        const patient = await patientPickerRef.current?.prepareNewPatient();
+        if (patient) setPendingPatient(patient);
+      } finally {
+        preparingPatientRef.current = false;
+        setCheckingPatient(false);
+      }
+      return;
+    }
+    beginRecording();
+  };
+
+  const confirmNewPatient = () => {
+    setVisitMetadata(pendingPatient);
+    setPendingPatient(null);
+    // Start microphone access directly from this confirmation click (Safari).
+    beginRecording(pendingPatient);
+  };
+
+  const startUnassigned = () => {
+    const metadata = { ...visitMetadata, patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, contextMode: 'patient' };
+    setVisitMetadata(metadata);
+    setPendingPatient(null);
+    beginRecording(metadata);
   };
 
   // Function for refreshing the auth session
@@ -126,7 +163,7 @@ function Recording({ isStarting = false,
   const handleOuterClick = () => {
     // Remove previous cancellation logic - only close if not in any active state
     if (!isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary) {
-      toggleRecordingPopup();
+      if (!pendingPatient && !checkingPatient) toggleRecordingPopup();
     }
   };
 
@@ -167,13 +204,18 @@ function Recording({ isStarting = false,
             onCancel={handleCancelDiscard}
           />
         )}
+        {pendingPatient && <PatientDialog title="Create new patient?" className="recording-patient-confirmation" onClose={() => setPendingPatient(null)}
+          footer={<><button type="button" className="recording-unassigned-button" onClick={startUnassigned}>Record without a patient</button><button type="button" className="recording-start-button" onClick={confirmNewPatient}>Create patient & record</button></>}>
+          <p className="recording-patient-prompt"><strong>{pendingPatient.patientName}</strong></p>
+          <p className="recording-patient-explanation">Create a new patient with this name, or record without linking it to a patient.</p>
+        </PatientDialog>}
         {showCreditPopup ? (
           <CreditPopup onClose={handleCloseCreditPopup} />
         ) : !isStarting && !isRecording && !isPreparingTranscript && !isGeneratingSummary ? (
           <>
             <h2>Recording Settings</h2>
             <div className="settings-container">
-              {patientCaptureEnabled ? <PatientCapturePicker value={visitMetadata} onChange={setVisitMetadata} /> : <p>Language is detected automatically.</p>}
+              {patientCaptureEnabled ? <PatientCapturePicker ref={patientPickerRef} value={visitMetadata} onChange={setVisitMetadata} onDraftChange={setPatientDraft} /> : <p>Language is detected automatically.</p>}
 
               <div className="settings-options">
                 <label className="options-label">Options:</label>
@@ -214,8 +256,9 @@ function Recording({ isStarting = false,
               <button
                 className="recording-start-button"
                 onClick={handleStartRecording}
+                disabled={checkingPatient}
               >
-                Start Recording
+                {checkingPatient ? 'Checking patient…' : 'Start Recording'}
               </button>
               <button
                 className="close-button"

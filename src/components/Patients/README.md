@@ -1,5 +1,7 @@
 # Patient components
 
+Capture creation uses one full-width pale green Create New Patient row with the typed name and a darker + Add affordance. It matches result-row height and 8px spacing; long names truncate visually while retaining their full accessible label. `prepareNewPatient` checks normalized names across every directory page and returns a provisional identity without selecting it or clearing the draft. `onDraftChange` lets Recording confirm a typed name. Editing, selecting or unmounting invalidates pending checks. Add selects the prepared identity; persistence remains in the existing capture/save service contract.
+
 Desktop web and installed native apps have persistent Save; mobile web retains its existing local-edit/copy boundary. The Patients route owns profiles, source diagnosis display and PDF selection. Settings owns Configure Signature. `useDesktopSave` includes the native predicate while retaining the desktop media query for browsers.
 
 Patient identities and Save request IDs use `utils/randomId`: native `crypto.randomUUID` when available, otherwise an RFC4122 version-4 UUID from WebCrypto secure bytes. This supports older native WebViews without weak randomness or changing the server identifier contract.
