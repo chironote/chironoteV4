@@ -41,7 +41,8 @@ beforeEach(async () => {
 afterEach(() => { act(() => root.unmount()); localStorage.clear(); });
 const click = async text => act(async () => [...container.querySelectorAll('button')].find(button => button.textContent === text).click());
 
-test('typed unselected name waits for confirmation and starts with the confirmed metadata', async () => {
+test.each([true, false])('typed unselected name waits for confirmation and forces initial exam from manual=%s', async manualExamLayout => {
+  if (!manualExamLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
   await click('Type patient name');
   await click('Start Recording');
   expect(startRecording).not.toHaveBeenCalled();
@@ -75,12 +76,13 @@ test('closing the prompt cancels without starting or selecting the draft', async
   expect(mockPrepareNewPatient).toHaveBeenCalledTimes(2);
 });
 
-test('continue unassigned starts without the typed patient identity or an initial exam', async () => {
+test.each([true, false])('continue unassigned preserves exam=%s and PI while clearing typed patient linkage', async examLayout => {
+  if (!examLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
   await click('Type patient name');
   await click('Start Recording');
   await click('Record without a patient');
   expect(startRecording).toHaveBeenCalledWith(expect.objectContaining({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, contextMode: 'patient' }));
-  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(false);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout, PILayout: true });
   expect(container.querySelector('[aria-label="Create new patient?"]')).toBeNull();
 });
 
@@ -99,24 +101,66 @@ test('existing patients default to follow-up and Re-Exam occupies the left optio
   expect(container.querySelector('.checkbox-grid input')).toBe(checkbox);
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ visitType: 'followUp', contextMode: 'patient' }));
-  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout: false, PILayout: true });
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout: false, PILayout: true });
   await act(async () => checkbox.click());
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ visitType: 'reExam' }));
   expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(true);
 });
 
-test('new patients automatically use initial exam; clearing resets the choice', async () => {
+test.each([true, false])('new patients force a visible disabled exam; clearing restores manual exam=%s', async manualExamLayout => {
+  if (!manualExamLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
   await click('New patient');
   expect(container.querySelector('#re-exam-popup')).toBeNull();
+  const exam = container.querySelector('#exam-layout-popup');
+  expect(exam.checked).toBe(true);
+  expect(exam.disabled).toBe(true);
+  expect(container.querySelector('label[for="exam-layout-popup"]').textContent).toBe('Exam Layout');
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ visitType: 'initialExam', contextMode: 'patient' }));
   expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(true);
   await click('Clear patient');
   expect(container.querySelector('#re-exam-popup')).toBeNull();
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(manualExamLayout);
+  expect(container.querySelector('#exam-layout-popup').disabled).toBe(false);
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ patientId: null, visitType: null }));
-  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(false);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout: manualExamLayout, PILayout: true });
+});
+
+test.each([true, false])('blank unassigned recording freezes exam=%s and PI before microphone start', async examLayout => {
+  if (!examLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
+  startRecording.mockImplementation(metadata => {
+    expect(metadata).toMatchObject({ visitType: null, contextMode: 'patient' });
+    expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout, PILayout: true });
+  });
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenCalledTimes(1);
+});
+
+test('forced layouts do not replace the manual preference across dialog remounts or patient switches', async () => {
+  await act(async () => container.querySelector('#exam-layout-popup').click());
+  await click('New patient');
+  await click('Existing patient');
+  expect(container.querySelector('#exam-layout-popup')).toBeNull();
+  await click('Clear patient');
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(false);
+  await click('New patient');
+  await click('Start Recording');
+  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(true);
+  await act(async () => root.render(null));
+  await act(async () => root.render(<Recording startRecording={startRecording} />));
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(false);
+  expect(container.querySelector('#pi-layout-popup').checked).toBe(true);
+});
+
+test('unassigned confirmation preserves unchecked PI independently of Exam Layout', async () => {
+  await act(async () => container.querySelector('#pi-layout-popup').click());
+  await click('Type patient name');
+  await click('Start Recording');
+  expect(container.querySelectorAll('#exam-layout-popup')).toHaveLength(1);
+  await click('Record without a patient');
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout: true, PILayout: false });
 });
 
 
@@ -129,5 +173,9 @@ test('disabled patient capture preserves legacy exam settings and starts without
   expect(exam.checked).toBe(true);
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(undefined);
-  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout: true, PILayout: true });
+  expect(exam.disabled).toBe(false);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout: true, PILayout: true });
+  await act(async () => exam.click());
+  await click('Start Recording');
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toMatchObject({ examLayout: false, PILayout: true });
 });

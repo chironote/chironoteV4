@@ -37,11 +37,21 @@ function Recording({
 
   const [noteSettings, setNoteSettings] = useState(() => {
     const storedSettings = localStorage.getItem('noteSettings');
-    return storedSettings ? JSON.parse(storedSettings) : {
+    const settings = storedSettings ? JSON.parse(storedSettings) : {
       examLayout: false,
       PILayout: false
     };
+    // Older preferences stored only examLayout. Forced patient layouts must not
+    // replace the manual choice when this dialog is reopened.
+    return { ...settings, examLayout: settings.manualExamLayout ?? settings.examLayout ?? false };
   });
+
+  const examLayoutFor = (metadata) => {
+    if (!patientCaptureEnabled) return noteSettings.examLayout;
+    if (metadata.patientName) return true;
+    if (metadata.patientId) return metadata.visitType === 'reExam';
+    return noteSettings.examLayout;
+  };
 
   const fetchUserSubscription = async () => {
     try {
@@ -74,11 +84,9 @@ function Recording({
       
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
-      if (patientCaptureEnabled) {
-        // RecordingManager snapshots these settings synchronously at capture start.
-        const examLayout = Boolean(metadata.patientName) || metadata.visitType === 'reExam';
-        localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
-      }
+      // RecordingManager snapshots these settings synchronously at capture start.
+      localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings,
+        manualExamLayout: noteSettings.examLayout, examLayout: examLayoutFor(metadata) }));
       startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
       
       // Check user subscription AFTER starting (async is OK now)
@@ -136,8 +144,7 @@ function Recording({
 
 
   useEffect(() => {
-    localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
-    console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
+    localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, manualExamLayout: noteSettings.examLayout }));
   }, [noteSettings]);
 
   // Keyboard event listener for Esc key during active recording
@@ -222,12 +229,13 @@ function Recording({
               <div className="settings-options">
                 <label className="options-label">Options:</label>
                 <div className="checkbox-grid">
-                  {!patientCaptureEnabled && <div className="checkbox-group">
+                  {(!patientCaptureEnabled || !visitMetadata.patientId || visitMetadata.patientName) && <div className="checkbox-group">
                     <input 
                       type="checkbox" 
                       id="exam-layout-popup" 
                       name="examLayout" 
-                      checked={noteSettings.examLayout}
+                      checked={examLayoutFor(visitMetadata)}
+                      disabled={patientCaptureEnabled && Boolean(visitMetadata.patientName)}
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
