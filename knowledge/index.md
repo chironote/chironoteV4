@@ -54,4 +54,4 @@ tokens, audio, notes, transcripts, or patient data in knowledge files.
 
 ## Patient notes update
 
-- [Patient notes](architecture/patient-notes.md): compact capture, native Save/diagnosis review, deletion/reassignment, PDF sharing and rollout gates.
+- [Patient notes](architecture/patient-notes.md): compact capture, visible Exam Layout and typed-name confirmation, native Save/diagnosis review, deletion/reassignment, PDF sharing and rollout gates.

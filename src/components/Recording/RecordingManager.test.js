@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import RecordingManager from './RecordingManager';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
+import { SendMessageCommand } from '@aws-sdk/client-sqs';
 
 // PDF delivery is unrelated to microphone/WebKit lifecycle; its own suite tests native plugins.
 jest.mock('../../services/patientPdfDelivery', () => ({ deliverPatientPdf: jest.fn() }));
@@ -267,6 +268,28 @@ describe('RecordingManager iPhone lifecycle', () => {
     await flushWebKitEvents();
     expect(uploadData).not.toHaveBeenCalled();
     expect(unmounted.recorder.startCalls).toHaveLength(1);
+  });
+
+
+  it('freezes exam and PI before pending microphone acquisition and later setting changes', async () => {
+    let resolveMicrophone;
+    navigator.mediaDevices.getUserMedia.mockImplementationOnce(() => new Promise(resolve => { resolveMicrophone = resolve; }));
+    localStorage.setItem('noteSettings', JSON.stringify({ examLayout: true, PILayout: false }));
+    const managerRef = { current: null };
+    const view = render(<RecordingHarness managerRef={managerRef} />);
+    let starting;
+    act(() => {
+      starting = managerRef.current.startRecording();
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(1);
+      localStorage.setItem('noteSettings', JSON.stringify({ examLayout: false, PILayout: true }));
+    });
+    await act(async () => { resolveMicrophone(createStream()); await starting; });
+    act(() => managerRef.current.stopRecording());
+    await flushWebKitEvents();
+    expect(SendMessageCommand).toHaveBeenCalled();
+    const message = JSON.parse(SendMessageCommand.mock.calls[0][0].MessageBody);
+    expect(message.noteSettings).toEqual({ examLayout: true, PILayout: false });
+    view.unmount();
   });
 
   it('keeps a new microphone request pending when a cancelled request resolves late', async () => {
