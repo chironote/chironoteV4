@@ -24,6 +24,11 @@ Local validation uses synthetic patients, mocked services, unit tests and featur
 
 Patient IDs, Save idempotency IDs and PDF cache suffixes use a shared secure UUIDv4 helper. Older WebViews without randomUUID use getRandomValues; there is no weak-random fallback.
 
+
+Exam Layout remains visible for new and unassigned capture: new patients force a checked, disabled gray checkbox and initial-exam metadata; unassigned visits use the editable manual choice. Existing patients retain follow-up/Re-Exam semantics. Manual exam preference is stored separately in `unassignedExamLayout` (initially seeded from legacy `noteSettings`) so a forced capture cannot become manual intent after clearing or reopening. PI is independent. Effective `noteSettings` are written synchronously before RecordingManager freezes its separate settings/visit snapshots; backend ICD rules are unchanged.
+
+A typed, unselected name is checked across matching directory pages, then Start Recording opens the existing PatientDialog confirmation after the Exam/PI options. Create patient & record starts from its click; Record without a patient clears identity, injury and initial-exam linkage while preserving the preceding Exam/PI choices. Duplicate/error feedback retains the draft. Lookup preparation is invalidated on name edits, selection, clear and unmount. Blank unassigned and feature-disabled paths start directly. This is frontend source only; no native build or deployment is implied.
+
 ## Provenance
 
 - [Secure identifier helper](../../src/utils/randomId.js)

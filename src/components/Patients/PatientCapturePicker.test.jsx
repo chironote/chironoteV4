@@ -72,8 +72,52 @@ test('failed duplicate lookup keeps the name and does not select a new patient',
   expect(container.querySelector('[role=alert]').textContent).toContain('Please try Add New again');
   expect(container.querySelector('input').value).toBe('New Example');
 });
+test('preparing a typed name for recording confirmation preserves the draft without selecting it', async () => {
+  const change = jest.fn(); const draftChange = jest.fn(); const ref = React.createRef();
+  patientRequest.mockResolvedValue({ items: [], nextCursor: null });
+  await act(async () => root.render(<PatientCapturePicker ref={ref} onChange={change} onDraftChange={draftChange} />));
+  await type('  New   Example  ');
+  expect(draftChange).toHaveBeenLastCalledWith('New Example');
+  expect(container.querySelector('.patient-actions').textContent).toContain('Add New');
+  let prepared;
+  await act(async () => { prepared = await ref.current.prepareNewPatient(); });
+  expect(prepared).toEqual(expect.objectContaining({ patientName: 'New Example', visitType: 'initialExam' }));
+  expect(change).not.toHaveBeenCalled();
+  expect(container.querySelector('input').value).toBe('  New   Example  ');
+});
+
+test('editing a name while its check is pending invalidates the prepared identity', async () => {
+  let resolveLookup;
+  patientRequest.mockImplementation(() => new Promise(resolve => { resolveLookup = resolve; }));
+  const ref = React.createRef();
+  await act(async () => root.render(<PatientCapturePicker ref={ref} onChange={jest.fn()} />));
+  await type('First Name');
+  let preparation;
+  act(() => { preparation = ref.current.prepareNewPatient(); });
+  await type('Second Name');
+  let result;
+  await act(async () => { resolveLookup({ items: [], nextCursor: null }); result = await preparation; });
+  expect(result).toBeUndefined();
+  expect(container.querySelector('input').value).toBe('Second Name');
+});
+
 test('date and visit controls remain available in the Patients visit editor', () => {
   act(() => root.render(<PatientCapturePicker onChange={() => {}} showVisitDetails />));
   expect(container.querySelectorAll('input[type=date]')).toHaveLength(2);
   expect(container.querySelector('select')).not.toBeNull();
+});
+
+test('equivalent whitespace edits retain the pending normalized lookup and clear loading', async () => {
+  let resolveLookup;
+  patientRequest.mockImplementation(() => new Promise(resolve => { resolveLookup = resolve; }));
+  await act(async () => root.render(<PatientCapturePicker onChange={jest.fn()} />));
+  await type('Jordan Example');
+  await act(async () => jest.advanceTimersByTime(250));
+  expect(container.querySelector('[role=status]').textContent).toContain('Loading');
+  await type('  Jordan   Example  ');
+  await act(async () => resolveLookup({ items: [{ patientId: 'existing', name: 'Jordan Example', visitCount: 2 }], nextCursor: null }));
+  expect(patientRequest).toHaveBeenCalledTimes(1);
+  expect(container.querySelector('[role=status]')).toBeNull();
+  expect(container.querySelector('.patient-picker-list button').textContent).toContain('Jordan Example');
+  expect(container.querySelector('input').value).toBe('  Jordan   Example  ');
 });

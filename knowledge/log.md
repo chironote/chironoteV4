@@ -1,5 +1,9 @@
 # Knowledge Update Log
 
+## 2026-10-15
+
+- Updated [patient capture](./architecture/patient-notes.md) and [recording lifecycle](./components/recording-lifecycle.md) for visible new/unassigned Exam Layout, separate persisted manual intent, synchronous effective settings snapshots and typed-name confirmation preserving Exam/PI when unassigned. Retained legacy/existing-patient and WebKit semantics. Scoped source correction only; no deployment or device acceptance implied.
+
 ## 2026-10-12
 
 - Aligned native Clipboard control typography and 44px minimum targets across phone/tablet platforms using a separate native presentation class. Kept phone 44/48px geometry and tablet insets intact; scoped iOS icon surface feedback to native Clipboard controls.
