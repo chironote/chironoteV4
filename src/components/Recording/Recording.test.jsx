@@ -47,6 +47,88 @@ test('blank selection starts directly without a duplicate check', async () => {
   expect(mockPrepareNewPatient).not.toHaveBeenCalled();
 });
 
+test.each(['isPreparingTranscript', 'isGeneratingSummary'])('offers the next appointment while %s', async flag => {
+  const next = jest.fn();
+  await act(async () => root.render(<Recording {...{ [flag]: true }} prepareNextRecording={next} />));
+  await click('Record next appointment');
+  expect(next).toHaveBeenCalledTimes(1);
+  await act(async () => root.render(<Recording startRecording={startRecording} />));
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenCalledTimes(1);
+});
+
+test('shows blocked submission and Retry inside the waiting dialog', async () => {
+  const retry = jest.fn();
+  await act(async () => root.render(<Recording isPreparingTranscript uploadStatus={{ pending: 1, blocked: 1 }} retryUploads={retry} />));
+  expect(container.querySelector('[role="alert"]').textContent).toContain('Keep the app open');
+  await click('Retry audio submission');
+  expect(retry).toHaveBeenCalledTimes(1);
+});
+
+test.each([false, true])('ignores A credit result after B starts (network failure: %s)', async fail => {
+  let oldResolve, oldReject, session = 0;
+  const getCaptureSession = () => session;
+  const discard = jest.fn();
+  startRecording.mockImplementation(() => { session++; });
+  mockGraphql.mockImplementationOnce(() => new Promise((resolve, reject) => { oldResolve = resolve; oldReject = reject; }));
+  const props = { startRecording, getCaptureSession, discardRecording: discard };
+  await act(async () => root.render(<Recording {...props} />));
+  await click('Start Recording');
+  await act(async () => root.render(<Recording {...props} isPreparingTranscript />));
+  await act(async () => root.render(<Recording {...props} />));
+  await click('Start Recording');
+  expect(session).toBe(2);
+  await act(async () => {
+    if (fail) oldReject(new TypeError('A credit check lost connection'));
+    else oldResolve({ data: { getUserSubscription: { hoursleft: 0 } } });
+  });
+  expect(discard).toHaveBeenCalledWith(1, { creditCheckFailed: true });
+  expect(session).toBe(2);
+  expect(container.textContent).toContain('Recording Settings');
+});
+
+test('a guarded Start does not run a credit check or discard the existing capture', async () => {
+  const discard = jest.fn();
+  mockGraphql.mockClear();
+  await act(async () => root.render(<Recording startRecording={startRecording} getCaptureSession={() => 7} discardRecording={discard} />));
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenCalledTimes(1);
+  expect(mockGraphql).not.toHaveBeenCalled();
+  expect(discard).not.toHaveBeenCalled();
+});
+
+test('a no-op Start cannot invalidate the current accepted capture credit check', async () => {
+  let finish, session = 0;
+  const discard = jest.fn();
+  startRecording.mockImplementationOnce(() => { session++; });
+  mockGraphql.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  await act(async () => root.render(<Recording startRecording={startRecording} getCaptureSession={() => session} discardRecording={discard} />));
+  await click('Start Recording');
+  await click('Start Recording');
+  expect(mockGraphql).toHaveBeenCalledTimes(1);
+  await act(async () => finish({ data: { getUserSubscription: { hoursleft: 0 } } }));
+  expect(discard).toHaveBeenCalledWith(1, { creditCheckFailed: true });
+  expect(container.textContent).toContain('Out of Credits');
+});
+
+test('a current credit denial still cancels only its accepted capture', async () => {
+  let session = 0;
+  const discard = jest.fn();
+  startRecording.mockImplementation(() => { session++; });
+  mockGraphql.mockResolvedValueOnce({ data: { getUserSubscription: { hoursleft: 0 } } });
+  await act(async () => root.render(<Recording startRecording={startRecording} getCaptureSession={() => session} discardRecording={discard} />));
+  await click('Start Recording');
+  expect(discard).toHaveBeenCalledWith(1, { creditCheckFailed: true });
+});
+
+test.each(['isFinishingRecording', 'isStarting'])('keeps Start explicit while %s rather than running a rejected credit lookup', async flag => {
+  await act(async () => root.render(<Recording {...{ [flag]: true }} startRecording={startRecording} />));
+  const button = container.querySelector('.recording-start-button');
+  expect(button.disabled).toBe(true);
+  await act(async () => button.click());
+  expect(startRecording).not.toHaveBeenCalled();
+});
+
 test('flag-off keeps the direct recording workflow without patient metadata', async () => {
   mockPatientCaptureEnabled = false;
   await act(async () => root.render(<Recording startRecording={startRecording} />));

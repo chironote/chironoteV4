@@ -152,7 +152,10 @@ function ClinicalWorkspace({ signOut, user }) {
   const recordingManager = RecordingManager({
     onGenerationStateChange: setNoteStreamActive,
     onGenerationError: setGenerationError,
-    onSavedNoteReady: (note) => { setClipboardTarget(note); },
+    onSavedNoteReady: (note, { isCurrent = true } = {}) => {
+      if (isCurrent) setClipboardTarget(note);
+      refreshSavedHistory();
+    },
     onTextStreamUpdate: handleTextStreamUpdate,
     onTransitionToMainApp: handleTransitionToMainApp
   });
@@ -254,10 +257,16 @@ function ClinicalWorkspace({ signOut, user }) {
 
   const toggleRecordingPopup = async (type) => {
     if (!await leaveDrafts()) return;
+    if (recordingManager.isStarting) {
+      recordingManager.discardRecording(recordingManager.getCaptureSession());
+      setShowRecordingPopup(false);
+      return;
+    }
     if (!recordingManager.isRecording) setClipboardTarget(null);
     if (recordingManager.isRecording) {
       recordingManager.discardRecording();
     } else {
+      if (!showRecordingPopup) recordingManager.prepareNextRecording?.();
       setRecordingType(type);
       setShowRecordingPopup(prev => !prev);
     }
@@ -516,6 +525,12 @@ function ClinicalWorkspace({ signOut, user }) {
         onFeedback={openFeedback}
       />
       {generationError && <p className="patient-confirmation" role="alert">{generationError}</p>}
+      {recordingManager.uploadStatus?.pending > 0 && <p className="patient-confirmation" role="status">
+        {recordingManager.uploadStatus.blocked > 0
+          ? 'An audio submission needs attention. Check your connection and recording account, then retry.'
+          : 'Audio submission pending. Connection failures retry automatically.'}
+        {' '}Keep the app open. <button type="button" onClick={recordingManager.retryUploads}>Retry audio submission</button>
+      </p>}
       <ErrorBanner isVisible={showErrorBanner} />
 
       <Routes>

@@ -110,6 +110,9 @@ function MainWorkspace({
           toggleRecordingPopup={recording.toggleRecordingPopup}
           recordingType={recording.recordingType}
           isRecording={recording.manager.isRecording}
+          isStarting={recording.manager.isStarting}
+          isFinishingRecording={recording.manager.isFinishingRecording}
+          getCaptureSession={recording.manager.getCaptureSession}
           isPaused={recording.manager.isPaused}
           isPreparingTranscript={recording.manager.isPreparingTranscript}
           isGeneratingSummary={recording.manager.isGeneratingSummary}
@@ -118,6 +121,9 @@ function MainWorkspace({
           discardRecording={recording.manager.discardRecording}
           pauseRecording={recording.manager.pauseRecording}
           resumeRecording={recording.manager.resumeRecording}
+          prepareNextRecording={recording.manager.prepareNextRecording}
+          uploadStatus={recording.manager.uploadStatus}
+          retryUploads={recording.manager.retryUploads}
         />
       )}
 

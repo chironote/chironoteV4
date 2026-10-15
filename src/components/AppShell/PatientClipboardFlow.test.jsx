@@ -3,6 +3,11 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AuthenticatedApp from './AuthenticatedApp';
 import { patientRequest } from '../../services/patientNotes';
+const mockPrepareNext = jest.fn();
+const mockHistoryRefresh = jest.fn();
+let mockRecordingCallbacks;
+let mockRecordingState = {};
+beforeEach(() => { mockRecordingState = {}; });
 
 jest.mock('../../services/patientNotes', () => ({ patientNotesEnabled: true, patientRequest: jest.fn(), localDate: () => '2026-10-11' }));
 jest.mock('../Patients/useDesktopSave', () => () => true);
@@ -11,17 +16,21 @@ jest.mock('../Account/Account', () => () => <p>Native account usage</p>);
 jest.mock('../Settings/Settings', () => () => null);
 jest.mock('../Feedback/Feedback', () => () => null);
 jest.mock('../IntroTour/IntroTour', () => () => null);
-jest.mock('../Recording/RecordingManager', () => () => ({}));
+jest.mock('../Recording/RecordingManager', () => callbacks => {
+  mockRecordingCallbacks = callbacks;
+  return { prepareNextRecording: mockPrepareNext, ...mockRecordingState };
+});
 jest.mock('../Recording/Dictation', () => () => ({}));
-jest.mock('./useNotesHistory', () => () => ({ refreshNotes: jest.fn() }));
+jest.mock('./useNotesHistory', () => () => ({ refreshNotes: mockHistoryRefresh }));
 jest.mock('../../services/amplifyClient', () => ({ getAmplifyClient: jest.fn() }));
 jest.mock('../../utils/analytics', () => ({ trackRecordingCompleted: jest.fn() }));
 jest.mock('../Navbar/Navbar', () => () => null);
-jest.mock('./MainWorkspace', () => ({ clipboard, sidebar }) => {
+jest.mock('./MainWorkspace', () => ({ clipboard, sidebar, recording }) => {
   const Clipboard = jest.requireActual('../Clipboard/Clipboard').default;
   const HistoryListItem = jest.requireActual('../Sidebar/HistoryListItem').default;
   return <main>
   <h2>Your Clipboard</h2><span>{clipboard.target?.timestamp}</span>
+  <button onClick={() => recording.toggleRecordingPopup('recording')}>New recording settings</button>
   <div data-testid="mobile-drop" onDrop={sidebar.onMobileOverlayDrop} />
   <span>{clipboard.target?.patientId} {clipboard.target?.version}</span>
   <HistoryListItem item={{ timestamp: '456', note: 'Stale history body', visitLabel: 'Dragged visit' }} onDragStart={() => {}} onClick={() => {}} />
@@ -116,6 +125,24 @@ describe('saved-note drops', () => {
     await act(async () => root.render(<MemoryRouter initialEntries={['/app']}><Routes><Route path="/app/*" element={<AuthenticatedApp user={{ username: 'synthetic' }} />} /></Routes></MemoryRouter>));
   });
   afterEach(() => { act(() => root.unmount()); container.remove(); });
+  test('opening B settings detaches A and a background saved A only refreshes history', async () => {
+    await drop('123');
+    await click('New recording settings');
+    expect(mockPrepareNext).toHaveBeenCalledTimes(1);
+    const textBeforeACompletes = container.querySelector('textarea').value;
+    mockHistoryRefresh.mockClear();
+    await act(async () => mockRecordingCallbacks.onSavedNoteReady(second, { isCurrent: false }));
+    expect(container.querySelector('textarea').value).toBe(textBeforeACompletes);
+    expect(container.textContent).not.toContain(second.timestamp);
+    expect(mockHistoryRefresh).toHaveBeenCalledTimes(1);
+  });
+  test('closing during microphone startup cancels that capture instead of hiding live acquisition', async () => {
+    const discard = jest.fn();
+    mockRecordingState = { isStarting: true, getCaptureSession: () => 7, discardRecording: discard };
+    await act(async () => mockRecordingCallbacks.onGenerationError('fixture rerender'));
+    await click('New recording settings');
+    expect(discard).toHaveBeenCalledWith(7);
+  });
   test('History carries saved identity plus external text and drop reloads the current version', async () => {
     const values = {};
     const event = new Event('dragstart', { bubbles: true });

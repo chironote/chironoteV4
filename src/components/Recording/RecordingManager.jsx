@@ -8,12 +8,23 @@ import NoSleep from 'nosleep.js';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 
+// Keep abandoned SDK auth reads independent of queue/Blob closures. Amplify
+// doesn't expose abort here; callers fence the result with their own deadline.
+async function readRecordingAuth(userId, forceRefresh) {
+  const mismatch = () => Object.assign(new Error('Recording authorization requires attention'), { blocked: true });
+  if ((await getCurrentUser()).userId !== userId) throw mismatch();
+  const session = await fetchAuthSession(forceRefresh ? { forceRefresh: true } : undefined);
+  if ((await getCurrentUser()).userId !== userId) throw mismatch();
+  if (!session.credentials || !session.tokens?.accessToken) throw new Error('Authentication temporarily unavailable');
+  return session;
+}
 
 function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerationStateChange, onGenerationError, onSavedNoteReady }) {
   const [isStarting, setIsStarting] = useState(false);
   const startingRef = useRef(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isFinishingRecording, setIsFinishingRecording] = useState(false);
   const [isPreparingTranscript, setIsPreparingTranscript] = useState(false);
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
   const [isTranscriptCompleted, setIsTranscriptCompleted] = useState(false);
@@ -26,9 +37,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
   const [generationError, setGenerationError] = useState('');
   const [textStream, setTextStream] = useState('');
   const noSleepRef = useRef(null);
+  const noSleepOwnerRef = useRef(null);
   const uploadQueueRef = useRef([]); // Queue for audio uploads
   const isProcessingUploadsRef = useRef(false); // Flag to track if we're currently processing uploads
-  const finalChunkRef = useRef(null); // Reference to store the final chunk
+  const cancelledUploadsRef = useRef(new Set());
+  const retryTimerRef = useRef(null);
+  const activeAttemptRef = useRef(null);
+  const uploadWorkerRef = useRef(null);
+  const visibleGenerationRef = useRef(null);
+  const [uploadStatus, setUploadStatus] = useState({ pending: 0, blocked: 0 });
   const isRecordingRef = useRef(false);
   const isPausedRef = useRef(false);
   const isDiscardingRef = useRef(false); // Flag to prevent processing when discarding
@@ -46,10 +63,18 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
   const isIOS = useRef(/iphone|ipad/i.test(navigator.userAgent)).current;
 
-  const { subscribeToNoteCompletion, resetNoteGenerationState, cleanupNoteGeneration } = useNoteGeneration({
-    timeStampRef, isDiscardingRef, noSleepRef, setTextStream, setIsPreparingTranscript,
+  const { subscribeToNoteCompletion, cleanupNoteGeneration } = useNoteGeneration({
+    isCurrentCapture: capture => visibleGenerationRef.current === capture.generation,
+    noSleepRef, setTextStream, setIsPreparingTranscript,
+    releaseNoSleep: capture => {
+      if (noSleepOwnerRef.current === capture.generation) {
+        noSleepOwnerRef.current = null;
+        noSleepRef.current?.disable();
+      }
+    },
     setIsGeneratingSummary, setIsTranscriptCompleted, onTextStreamUpdate, onTransitionToMainApp,
     onGenerationStateChange, onSavedNoteReady,
+    onBackgroundGenerationError: error => onGenerationError?.(error),
     onGenerationError: error => { setGenerationError(error); onGenerationError?.(error); },
   });
 
@@ -95,10 +120,9 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
 
     const pendingStop = iosStopRef.current;
     if (pendingStop && pendingStop.recorder === recorder) {
-      // A user stop before WebKit's delayed data event promotes this one
-      // pending segment to final. Once dataavailable has run, its captured
-      // classification is intentionally never changed.
-      if (intent === 'final' && !pendingStop.dataHandled) {
+      // Keep the Blob until onstop, so Stop can still promote this transaction
+      // after dataavailable without changing an already dispatched identity.
+      if (intent === 'final') {
         pendingStop.intent = 'final';
         isFinalizingRef.current = true;
         isRotatingRef.current = false;
@@ -240,156 +264,173 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
     };
   }, []);
 
-  // Process uploads from the queue one at a time
-  const processUploadQueue = async () => {
-    if (isProcessingUploadsRef.current || uploadQueueRef.current.length === 0) {
-      return;
+  // Queue ownership outlives microphone ownership. Only explicit discard or
+  // unmount cancels retained work; starting the next recording never does.
+  const uploadCancelled = item => isUnmountedRef.current || cancelledUploadsRef.current.has(item.generation);
+  const updateUploadStatus = () => {
+    if (!isUnmountedRef.current) setUploadStatus({
+      pending: uploadQueueRef.current.length,
+      blocked: uploadQueueRef.current.filter(item => item.blocked).length,
+    });
+  };
+  const persistentFailure = error => {
+    const name = `${error?.name || ''} ${error?.code || ''}`;
+    // SQS can report throttling and expired credentials as HTTP 400. Refresh
+    // and back off rather than misclassifying these as invalid input.
+    if (/Throttl|TooManyRequests|RequestLimitExceeded|SlowDown|RequestTimeout|TimeoutError|ExpiredToken|TokenExpired|RequestExpired/i.test(name)) return false;
+    return error?.blocked ||
+      /AccessDenied|NotAuthorized|Unauthorized|Forbidden|Validation|InvalidParameter|NoSuchBucket|InvalidAccessKey|SignatureDoesNotMatch|UserUnAuthenticated|InvalidGrant|UserNotFound/i.test(name) ||
+      [400, 401, 403, 404].includes(error?.$metadata?.httpStatusCode);
+  };
+
+  const uploadS3 = async item => {
+    if (item.stage === 'acknowledged' || uploadCancelled(item)) return;
+    const { audioBlob, filePath, identity } = item;
+    const { timestamp, userId } = identity;
+    const checkOwner = async () => {
+      let timer;
+      try {
+        // Amplify auth has no abort handle. Race only the read: a late result
+        // is observed by Promise.race but cannot upload, dispatch or mutate an
+        // item after this attempt timed out. Token refresh stays SDK-owned.
+        return await Promise.race([
+          readRecordingAuth(userId, item.failures > 0),
+          new Promise((resolve, reject) => {
+            timer = setTimeout(() => reject(new Error('Recording authentication timed out')), 60000);
+          }),
+        ]);
+      } finally { clearTimeout(timer); }
+    };
+    if (item.stage === 'upload-pending') {
+      await checkOwner();
+      if (uploadCancelled(item)) return;
+      let timer;
+      let transferred = 0;
+      let stalled = false;
+      let settled = false;
+      let task;
+      const armWatchdog = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { stalled = true; task.cancel(); }, 120000);
+      };
+      task = uploadData({
+        path: filePath, data: audioBlob,
+        options: {
+          // Preserve the existing MP4 Blob / WebM-labelled backend contract.
+          contentType: 'audio/webm',
+          metadata: { timestamp: timestamp.toString(), userId },
+          onProgress: progress => {
+            if (!settled && !stalled && !uploadCancelled(item)) {
+              if (progress.transferredBytes > transferred) armWatchdog();
+              // SDK part retries can lower the aggregate. Measure advancement
+              // from the last event, so real retry progress isn't a stall.
+              transferred = progress.transferredBytes;
+            }
+          },
+        },
+      });
+      activeAttemptRef.current = { item, cancel: () => task.cancel() };
+      armWatchdog();
+      try {
+        // Await settlement after cancel. A late result cannot overlap a new
+        // attempt or dispatch a recording that was explicitly discarded.
+        await task.result;
+        // A cancel can race a fulfilled SDK result. Fulfilment confirms S3;
+        // don't recreate the object if a later SQS response is ambiguous.
+        if (uploadCancelled(item)) return;
+        item.stage = 'dispatch-pending';
+      } finally { settled = true; clearTimeout(timer); }
     }
-
-    isProcessingUploadsRef.current = true;
-
+    if (uploadCancelled(item)) return;
+    // Get dispatch credentials/token after the potentially long S3 upload.
+    const session = await checkOwner();
+    if (uploadCancelled(item)) return;
+    const sqsClient = new SQSClient({ region: 'us-east-2', credentials: session.credentials });
+    const lastPart = filePath.split('/').pop();
+    const command = new SendMessageCommand({
+      QueueUrl: 'https://sqs.us-east-2.amazonaws.com/026090532772/AudioTranscriptionQueue.fifo',
+      MessageBody: JSON.stringify({
+        userId, timestamp, path: filePath, language: 'auto',
+        isFinalAudio: filePath.includes('_final_'),
+        accessToken: session.tokens.accessToken.toString(),
+        noteSettings: identity.noteSettings,
+        ...(identity.visitMetadata ? { visitMetadata: identity.visitMetadata } : {}),
+      }),
+      MessageGroupId: userId,
+      MessageDeduplicationId: `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, ''),
+    });
+    const controller = new AbortController();
+    activeAttemptRef.current = { item, cancel: () => controller.abort() };
+    const timer = setTimeout(() => controller.abort(), 60000);
     try {
-      // Process all regular chunks first
-      const regularChunks = uploadQueueRef.current.filter(item => !item.filePath.includes('_final_'));
-      for (const item of regularChunks) {
-        await uploadS3(item);
-        // Remove this item from the queue
-        uploadQueueRef.current = uploadQueueRef.current.filter(
-          queueItem => queueItem !== item
-        );
-      }
+      await sqsClient.send(command, { abortSignal: controller.signal });
+      if (uploadCancelled(item)) return;
+      item.stage = 'acknowledged';
+      if (filePath.includes('_final_')) subscribeToNoteCompletion(userId, timestamp, identity);
+    } finally {
+      clearTimeout(timer);
+      sqsClient.destroy?.();
+    }
+  };
 
-      // Then process the final chunk if it exists
-      const finalChunk = uploadQueueRef.current.find(item => item.filePath.includes('_final_'));
-      if (finalChunk) {
-        await uploadS3(finalChunk);
-        // Remove the final chunk from the queue
-        uploadQueueRef.current = uploadQueueRef.current.filter(
-          queueItem => queueItem !== finalChunk
-        );
+  const processUploadQueue = async () => {
+    if (isProcessingUploadsRef.current || isUnmountedRef.current) return;
+    clearTimeout(retryTimerRef.current);
+    isProcessingUploadsRef.current = true;
+    try {
+      while (!isUnmountedRef.current) {
+        // Only the first known item of each recording is eligible. A failed
+        // regular chunk holds its own final, without newer chunks starving A.
+        const heads = uploadQueueRef.current.filter((item, index, queue) =>
+          !queue.slice(0, index).some(earlier => earlier.generation === item.generation));
+        const item = heads.find(entry => !entry.blocked && entry.retryAt <= Date.now());
+        if (!item) break;
+        try {
+          await uploadS3(item);
+          if (item.stage === 'acknowledged' || uploadCancelled(item)) {
+            uploadQueueRef.current = uploadQueueRef.current.filter(entry => entry !== item);
+          }
+        } catch (error) {
+          if (!uploadCancelled(item)) {
+            item.failures++;
+            item.blocked = Boolean(persistentFailure(error));
+            // Full jitter with a small floor prevents a zero-delay spin.
+            item.retryAt = Date.now() + Math.max(250, Math.random() * Math.min(60000, 1000 * 2 ** Math.min(item.failures - 1, 6)));
+          }
+        } finally { activeAttemptRef.current = null; updateUploadStatus(); }
       }
-    } catch (error) {
-      console.error('Error processing upload queue:', error);
     } finally {
       isProcessingUploadsRef.current = false;
-      
-      // If there are more items in the queue, process them
-      if (uploadQueueRef.current.length > 0) {
-        processUploadQueue();
+      const heads = uploadQueueRef.current.filter((item, index, queue) => !item.blocked &&
+        !queue.slice(0, index).some(earlier => earlier.generation === item.generation));
+      if (heads.length && !isUnmountedRef.current) {
+        retryTimerRef.current = setTimeout(processUploadQueue, Math.max(0, Math.min(...heads.map(item => item.retryAt)) - Date.now()));
       }
     }
   };
 
-  // Add to upload queue instead of uploading directly
   const queueUpload = (audioBlob, filePath, identity, generation) => {
-    if (isCancelled(generation)) {
-      return;
-    }
-    uploadQueueRef.current.push({ audioBlob, filePath, identity, generation });
-    processUploadQueue();
+    if (isCancelled(generation)) return;
+    uploadQueueRef.current.push({ audioBlob, filePath, identity, generation,
+      stage: 'upload-pending', failures: 0, retryAt: 0, blocked: false });
+    updateUploadStatus(); processUploadQueue();
   };
-
-  const uploadS3 = async ({ audioBlob, filePath, identity, generation }) => {
-    // Every queue item carries the identity captured with its media event so a
-    // later recording cannot relabel an earlier upload.
-    if (isCancelled(generation)) {
-      return null; 
-    }
-    const { timestamp, userId } = identity;
-
-    // Store the last used path in the ref
-    filePathRef.current = filePath;
-    
-    try {
-      // Fetch credentials first
-      const session = await fetchAuthSession(); // Get fresh session/credentials
-      if (isCancelled(generation)) {
-        return null;
-      }
-      const credentials = session.credentials; 
-      if (!credentials) {
-        console.error("AWS Credentials not found in session");
-        return null; // Or throw an error
-      }
-
-      // Generate access token
-      const accessToken = await generateToken();
-      if (isCancelled(generation)) {
-        return null;
-      }
-
-      // Initialize SQS Client here with fetched credentials
-      const sqsClient = new SQSClient({ 
-        region: "us-east-2", 
-        credentials 
-      });
-
-      // First upload to S3 (Amplify Storage handles its own credentials)
-      const uploadResult = await uploadData({
-        path: filePath,
-        data: audioBlob,
-        options: {
-          // Keep the established browser-to-backend contract unchanged. The
-          // iPhone recorder's Blob is MP4, but backend ingestion currently
-          // expects WebM-labelled objects and must be migrated separately.
-          contentType: 'audio/webm',
-          metadata: {
-            timestamp: timestamp.toString(),
-            userId: userId
-          }
-        }
-      }).result;
-
-      console.log('[RecordingManager] Successfully uploaded audio chunk');
-      
-      // Then send a message to SQS to trigger transcription Lambda
-
-      const queueUrl = "https://sqs.us-east-2.amazonaws.com/026090532772/AudioTranscriptionQueue.fifo"; 
-      const messageBody = JSON.stringify({
-        userId,
-        timestamp,
-        path: filePath,
-        language: 'auto',
-        isFinalAudio: filePath.includes('_final_'),
-        accessToken: accessToken,
-        noteSettings: identity.noteSettings,
-        ...(identity.visitMetadata ? { visitMetadata: identity.visitMetadata } : {})
-      });
-      // Create a shorter, valid deduplication ID (max 128 chars, alphanumeric, hyphens, underscores only)
-      // Use the last part of the filename which should be unique enough
-      const filenameParts = filePath.split('/');
-      const lastPart = filenameParts[filenameParts.length - 1];
-      const deduplicationId = `${userId.substring(0, 8)}-${timestamp}-${lastPart}`.replace(/[^a-zA-Z0-9\-_]/g, '');
-      console.log('[RecordingManager] Generated deduplication ID');
-
-      const command = new SendMessageCommand({
-        QueueUrl: queueUrl,
-        MessageBody: messageBody,
-        MessageGroupId: userId, 
-        MessageDeduplicationId: deduplicationId 
-      });
-
-      try {
-        const data = await sqsClient.send(command);
-        console.log('[RecordingManager] Successfully sent message to SQS');
-        console.log(`Queue notified of new audio segment. Is final? ${filePath.includes('_final_') ? 'True' : 'False'}`);
-        
-        // Set up subscription to monitor when transcript processing completes
-        if (filePath.includes('_final_')) {
-          console.log("Final recording uploaded, waiting for transcript completion...");
-          setIsTranscriptCompleted(false);
-          subscribeToNoteCompletion(userId, timestamp, identity);
-        }
-      } catch (error) {
-        console.error("Error sending message to SQS:", error);
-        // Decide if you want to throw the error or handle it (e.g., retry logic)
-      }
-
-      return uploadResult;
-    } catch (error) {
-      console.error('Error uploading audio to S3:', error);
-      throw error; 
-    }
+  const retryUploads = () => {
+    uploadQueueRef.current.forEach(item => { item.blocked = false; item.retryAt = 0; });
+    updateUploadStatus(); processUploadQueue();
+  };
+  uploadWorkerRef.current = processUploadQueue;
+  useEffect(() => {
+    // Connectivity is a hint. Timers also recover switches without an online
+    // event. Repeated events cannot start a second worker.
+    const online = () => uploadWorkerRef.current();
+    window.addEventListener('online', online);
+    return () => { window.removeEventListener('online', online); clearTimeout(retryTimerRef.current); };
+  }, []);
+  const prepareNextRecording = () => {
+    visibleGenerationRef.current = null;
+    setIsPreparingTranscript(false); setIsGeneratingSummary(false);
+    onGenerationStateChange?.(false);
   };
 
   const stopRecording = () => {
@@ -406,6 +447,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
         isRecordingRef.current = false;
         setIsPaused(false);
         isPausedRef.current = false;
+        setIsFinishingRecording(true);
         setIsPreparingTranscript(true);
         setIsTranscriptCompleted(false);
         requestIOSStop('final');
@@ -416,6 +458,8 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       isRecordingRef.current = false;
       setIsPaused(false);
       isPausedRef.current = false;
+      isFinalizingRef.current = true;
+      setIsFinishingRecording(true);
       recorder.stop();
       if (recordingIntervalRef.current) {
         clearInterval(recordingIntervalRef.current);
@@ -427,11 +471,32 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
     }
   };
 
-  const discardRecording = () => {
+  const discardRecording = (expectedSession = recordingGenerationRef.current, { creditCheckFailed = false } = {}) => {
+    if (expectedSession !== recordingGenerationRef.current) {
+      if (cancelledUploadsRef.current.has(expectedSession)) return;
+      cancelledUploadsRef.current.add(expectedSession);
+      if (activeAttemptRef.current?.item.generation === expectedSession) activeAttemptRef.current.cancel();
+      uploadQueueRef.current = uploadQueueRef.current.filter(item => item.generation !== expectedSession);
+      updateUploadStatus();
+      cleanupNoteGeneration(expectedSession);
+      if (noSleepOwnerRef.current === expectedSession) {
+        noSleepOwnerRef.current = null;
+        noSleepRef.current?.disable();
+      }
+      if (creditCheckFailed) {
+        const message = 'An earlier recording failed its credit check. Its remaining work was cancelled; your current recording is unaffected.';
+        setGenerationError(message); onGenerationError?.(message);
+      }
+      return;
+    }
     startingRef.current = false; if (!isUnmountedRef.current) setIsStarting(false);
     // Set flag to prevent any data processing
     isDiscardingRef.current = true;
+    const discardedGeneration = recordingGenerationRef.current;
+    cancelledUploadsRef.current.add(discardedGeneration);
     recordingGenerationRef.current += 1;
+    const attempt = activeAttemptRef.current;
+    if (attempt?.item.generation === discardedGeneration) attempt.cancel();
     clearRecordingInterval();
     
     // Immediately stop recording and clean up without processing
@@ -452,11 +517,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       stopTracksAndReleaseRecorder(recorder);
     }
     
-    // Clear all upload queues and processing flags
-    uploadQueueRef.current = [];
-    isProcessingUploadsRef.current = false;
-    finalChunkRef.current = null;
+    uploadQueueRef.current = uploadQueueRef.current.filter(item => item.generation !== discardedGeneration);
+    updateUploadStatus();
     isFinalizingRef.current = false;
+    setIsFinishingRecording(false);
     isRotatingRef.current = false;
     iosStopRef.current = null;
     
@@ -473,12 +537,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
     lastUploadedChunkRef.current = 0;
     
     // Disable NoSleep
-    if (noSleepRef.current) {
+    if (noSleepRef.current && noSleepOwnerRef.current === discardedGeneration) {
+      noSleepOwnerRef.current = null;
       noSleepRef.current.disable();
     }
     
     // Cancel any active subscriptions
-    cleanupNoteGeneration();
+    cleanupNoteGeneration(discardedGeneration);
     
   };
 
@@ -532,6 +597,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       const recorder = mediaRecorderRef.current;
       const recorderIdentity = recordingIdentityRef.current;
       const recorderGeneration = recordingGenerationRef.current;
+      const queueRecorderBlob = (blob, isFinal) => {
+        if (isCancelled(recorderGeneration) || !recorderIdentity || !blob?.size) return;
+        if (isFinal && finalChunkQueuedRef.current) return;
+        const kind = isFinal ? 'final' : 'chunk';
+        const filePath = `protected/${recorderIdentity.userId}/${recorderIdentity.timestamp}_recording_${kind}_${recorderIdentity.pathstamp}_${lastUploadedChunkRef.current++}.webm`;
+        if (isFinal) finalChunkQueuedRef.current = true;
+        queueUpload(blob, filePath, recorderIdentity, recorderGeneration);
+      };
 
       if (isIOS) {
         recorder.onstop = () => {
@@ -547,12 +620,17 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
             return;
           }
 
+          // dataavailable precedes onstop. Retain those exact bytes until the
+          // stop transaction is committed, including a Stop between events.
+          queueRecorderBlob(stop.audioBlob, stop.intent === 'final');
+
           if (stop.intent === 'final') {
             // WebKit guarantees dataavailable before onstop. The final event
             // was classified from this stop transaction, then tracks are safe
             // to release only after this completed lifecycle.
             stopTracksAndReleaseRecorder(recorder);
             isFinalizingRef.current = false;
+            setIsFinishingRecording(false);
             isRotatingRef.current = false;
             return;
           }
@@ -562,34 +640,29 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
             startMediaRecorder(recorder);
           }
         };
+      } else {
+        // Preserve non-iOS recording while ensuring a new capture cannot
+        // invalidate the old asynchronous final data event in this client.
+        recorder.onstop = () => {
+          if (!isCancelled(recorderGeneration) && isFinalizingRef.current && !isRecordingRef.current) {
+            isFinalizingRef.current = false;
+            setIsFinishingRecording(false);
+          }
+        };
       }
   
       recorder.ondataavailable = (event) => {
         const stop = isIOS ? iosStopRef.current : null;
-        const identity = recorderIdentity;
         const generation = recorderGeneration;
-        // Capture the stop intent synchronously. Do not infer it from React
-        // state or finalization refs after WebKit has scheduled this event.
-        const stopIntent = stop && stop.recorder === recorder
-          ? stop.intent
-          : null;
-        if (stop && stop.recorder === recorder) {
+        if (isCancelled(generation) || !recorderIdentity || event.data.size === 0) {
+          return;
+        }
+        if (isIOS && stop?.recorder === recorder) {
           stop.dataHandled = true;
-        }
-        if (isCancelled(generation) || !identity || event.data.size === 0) {
+          stop.audioBlob = event.data;
           return;
         }
-
-        const isFinal = isIOS ? stopIntent === 'final' : !isRecordingRef.current;
-        if (isFinal && finalChunkQueuedRef.current) {
-          return;
-        }
-        const kind = isFinal ? 'final' : 'chunk';
-        const filePath = `protected/${identity.userId}/${identity.timestamp}_recording_${kind}_${identity.pathstamp}_${lastUploadedChunkRef.current++}.webm`;
-        if (isFinal) {
-          finalChunkQueuedRef.current = true;
-        }
-        queueUpload(event.data, filePath, identity, generation);
+        queueRecorderBlob(event.data, !isIOS && !isRecordingRef.current);
       };
     } catch (error) {
       console.error('[RecordingManager] Error accessing microphone:', error);
@@ -614,12 +687,14 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
   };
 
   const startRecording = async (metadata) => {
-    if (startingRef.current || isRecordingRef.current) return;
+    if (startingRef.current || isRecordingRef.current || isFinalizingRef.current) return;
     startingRef.current = true; setIsStarting(true);
-    cleanupNoteGeneration(); resetNoteGenerationState();
+    setIsPreparingTranscript(false); setIsGeneratingSummary(false);
+    onGenerationStateChange?.(false);
     const capture = Object.freeze({ visitMetadata: captureSnapshot(metadata), noteSettings: recordingSettingsSnapshot() });
     let microphonePromise;
     const generation = ++recordingGenerationRef.current;
+    visibleGenerationRef.current = generation;
     try {
       isDiscardingRef.current = false;
       isUnmountedRef.current = false;
@@ -647,12 +722,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
         throw new Error('User not authenticated for recording');
       }
       if (isCancelled(generation)) { microphonePromise.then(stream => stream.getTracks().forEach(track => track.stop())).catch(() => {}); return; }
-      recordingIdentityRef.current = {
+      recordingIdentityRef.current = Object.freeze({
         ...capture,
+        generation,
         userId,
         timestamp: timeStampRef.current,
         pathstamp: pathStampRef.current,
-      };
+      });
       
       await setupRecorder(microphonePromise, generation);
       if (isCancelled(generation)) return;
@@ -668,6 +744,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
         startMediaRecorder(mediaRecorderRef.current);
         
         if (noSleepRef.current) {
+          noSleepOwnerRef.current = generation;
           noSleepRef.current.enable();
         }
 
@@ -717,13 +794,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
     }
   }
 
-  async function generateToken() {
-    const session = await fetchAuthSession();
-    const accessToken = session.tokens.accessToken.toString();
-    console.log('[RecordingManager] Access token generated');
-    return accessToken;
-  }
-
   useEffect(() => {
     return () => {
       // Unmount is cancellation, never a request to finalize and upload PHI.
@@ -731,12 +801,18 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       discardRecording();
       // Clean up subscription when component unmounts
       cleanupNoteGeneration();
+      clearTimeout(retryTimerRef.current);
+      activeAttemptRef.current?.cancel();
+      uploadQueueRef.current = [];
     };
   }, []);
 
   return {
     generationError,
+    getCaptureSession: () => recordingGenerationRef.current,
+    uploadStatus, retryUploads, prepareNextRecording,
     isStarting,
+    isFinishingRecording,
     isRecording,
     isPaused,
     isPreparingTranscript,

@@ -16,9 +16,9 @@ operations expose owner-scoped `Notes` records with `timestamp`, `transcript`,
 subscriptions deliver note and subscription changes through AppSync.
 
 The recording path obtains the current user and access session, uploads each
-audio object through Amplify Storage, then sends a FIFO SQS message containing
+audio object through Amplify Storage, then obtains current dispatch credentials/token and sends a FIFO SQS message containing
 the recording identity, object path, language, final marker, access token, and
-note settings. After the final chunk, it waits for the owner subscription to
+note settings. The retained in-memory queue tracks S3 and SQS acknowledgement separately; failed dispatch retries preserve the same path/group/dedup IDs and never re-upload acknowledged objects. Owner changes visibly block submission. These client checks do not verify deployed duplicate/billing behavior. After the final chunk, each recording independently waits for the owner subscription to
 report `isCompleted` and posts to the transcript-to-note Function URL, reading a
 text stream. Dictation obtains a short-lived AssemblyAI token from its own
 Function URL and uses a browser WebSocket through the AssemblyAI SDK. Smart
