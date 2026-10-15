@@ -53,6 +53,10 @@ Prioritize tests around recording, authentication, GraphQL interactions, and cli
 
 See [Capacitor Android Application](../architecture/capacitor-android.md) before changing native dependencies, lifecycle behavior, application identity, or release configuration.
 
+## Upload dependency verification
+
+The recording upload queue relies on the [verified Storage cancellation patch](../../scripts/patch-amplify-upload-cancel.cjs) and [package lifecycle hooks](../../package.json). npm install/ci, test and build verify the pinned Storage 6.7.11 ESM/CJS runtime hashes and apply the narrow multipart cancelled-task fence idempotently. Unknown dependency versions/source hashes must be reviewed and the patch/regression evidence updated; do not silently skip this hook when upgrading Amplify. [Installed-runtime tests](../../src/components/Recording/amplifyUploadCancel.test.js) execute the patched factories with fictional mocks, including cancellation during configuration setup.
+
 ## Provenance
 
 Synthesized from [AGENTS.md](../../AGENTS.md), [README.md](../../README.md), and [package.json](../../package.json).

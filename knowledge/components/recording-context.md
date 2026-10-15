@@ -37,9 +37,13 @@ The manager owns shared refs and high-level UI state, including `isRecording`, `
 3. Each successful upload is announced to SQS; the final chunk starts transcript waiting.
 4. `useNoteGeneration` listens for the matching completed note record.
 5. The note-generation Lambda streams text through `onTextStreamUpdate`.
-6. Stop, discard, errors, and unmount all clean up tracks, queues, timers, subscriptions, and abort controllers.
+6. Stop finalizes audio. Explicit discard removes only the selected recording; unmount clears all sessions. Transient transport errors retain audio for paced retries.
 
-Android has one periodic scheduler: the four-minute `MediaRecorder` timeslice. Pause stops and flushes a regular chunk; Resume starts a fresh WebM container. Recorder state is captured when each audio event fires, the events are processed serially, and pending regular uploads cannot be overtaken by the final upload. SQS receives stable recording/chunk identities and order.
+Android has one periodic scheduler: four-minute stop/restart rotation without a MediaRecorder timeslice. Pause stops and flushes a regular chunk; Resume starts a fresh WebM container. Recorder state is captured when each audio event fires, the events are processed serially within their recording, and that recording's regular uploads cannot be overtaken by its final upload. SQS receives stable recording/chunk identities and order.
+
+See [recording recovery](recording.md) for memory-only upload/submission stages, progress-sensitive cancellation, paced retry and immutable session ownership. Continue in background permits another appointment; earlier generation still completes with its own capture and cannot replace the newer clipboard or disable its keep-awake. Transcript wait/fallback and note-generation timeouts retain their existing policy. Pending audio is not persisted across restarts.
+
+The delayed UI entitlement result holds a discard action bound to its original start, so it cannot cancel a later appointment. Storage's pre-configuration multipart cancellation race is closed by a verified install/test/build patch to the pinned runtime; see the recording concept for exact source and regression provenance.
 
 Backend URLs, queue configuration, timeouts, and retry messages live in `recordingConstants.js`. Authentication helpers live in `recordingAuth.js`, and user-facing error normalization lives in `noteGenerationErrors.js`.
 
@@ -97,5 +101,5 @@ The recording lifecycle and upload-queue tests cover Android container renewal a
 
 ## Provenance
 
-Derived from [Context.md](../../src/components/Recording/Context.md).
+Derived from [Context.md](../../src/components/Recording/Context.md), corrected against current [recorder](../../src/components/Recording/useMediaRecorderController.js), [queue](../../src/components/Recording/useAudioUploadQueue.js), [generation](../../src/components/Recording/useNoteGeneration.js) and [manager regression tests](../../src/components/Recording/RecordingManager.test.jsx). Current implementation wins over the older Context timeslice/global-cleanup description.
 

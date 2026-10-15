@@ -115,6 +115,7 @@ function MainWorkspace({
           isPaused={recording.manager.isPaused}
           isPreparingTranscript={recording.manager.isPreparingTranscript}
           isGeneratingSummary={recording.manager.isGeneratingSummary}
+          continueInBackground={recording.manager.continueInBackground}
           startRecording={recording.manager.startRecording}
           stopRecording={recording.manager.stopRecording}
           discardRecording={recording.manager.discardRecording}

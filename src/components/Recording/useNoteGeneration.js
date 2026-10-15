@@ -9,13 +9,14 @@ import {
   NOTE_GENERATION_URL,
   TRANSCRIPT_WAIT_TIMEOUT_MS
 } from './recordingConstants';
-import { generateToken, getUserId } from './recordingAuth';
+import { getRecordingAuth } from './recordingAuth';
 import { parseLambdaErrorPayload } from './noteGenerationErrors';
 import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 
 const client = generateClient();
 
-function useNoteGeneration({
+function createNoteGenerationSession({
+  onFinished,
   onGenerationStateChange,
   onGenerationError,
   onSavedNoteReady,
@@ -29,15 +30,15 @@ function useNoteGeneration({
   onTextStreamUpdate,
   onTransitionToMainApp
 }) {
-  const captureRef = useRef(null);
-  const runRef = useRef(0);
-  const previewRef = useRef('');
-  const subscriptionRef = useRef(null);
-  const generateTimeoutRef = useRef(null);
-  const transcriptFallbackTimeoutRef = useRef(null);
-  const hasStartedStreamingRef = useRef(false);
-  const hasHandledNoteGenerationFailureRef = useRef(false);
-  const generateAbortControllerRef = useRef(null);
+  const captureRef = { current: null };
+  const runRef = { current: 0 };
+  const previewRef = { current: '' };
+  const subscriptionRef = { current: null };
+  const generateTimeoutRef = { current: null };
+  const transcriptFallbackTimeoutRef = { current: null };
+  const hasStartedStreamingRef = { current: false };
+  const hasHandledNoteGenerationFailureRef = { current: false };
+  const generateAbortControllerRef = { current: null };
 
   const resetNoteGenerationState = () => {
     hasStartedStreamingRef.current = false;
@@ -45,6 +46,7 @@ function useNoteGeneration({
   };
 
   const cleanupNoteGeneration = () => {
+    isDiscardingRef.current = true;
     runRef.current++;
     onGenerationStateChange?.(false);
     if (transcriptFallbackTimeoutRef.current) {
@@ -136,13 +138,13 @@ function useNoteGeneration({
     }, generationTimeoutMs);
 
     try {
-      const userId = capture?.userId || await getUserId();
+      const userId = capture?.userId;
       if (!active()) return;
       if (!userId) {
         handleNoteGenerationFailure('user_not_authenticated');
         return;
       }
-      const accessToken = await generateToken();
+      const { accessToken } = await getRecordingAuth(userId);
       if (!active()) return;
 
       const response = await fetch(NOTE_GENERATION_URL, {
@@ -257,6 +259,7 @@ function useNoteGeneration({
       if (noSleepRef.current) {
         noSleepRef.current.disable();
       }
+      onFinished?.();
     }
   };
 
@@ -267,6 +270,7 @@ function useNoteGeneration({
     }
 
     const timeoutId = setTimeout(() => {
+      if (isDiscardingRef.current) return;
       console.log(`Subscription wait timeout (${TRANSCRIPT_WAIT_TIMEOUT_MS / 1000} seconds) - moving on automatically`);
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
@@ -275,12 +279,14 @@ function useNoteGeneration({
       setIsTranscriptCompleted(true);
       streamResponse({ fromTranscriptFallback: true });
     }, TRANSCRIPT_WAIT_TIMEOUT_MS);
+    transcriptFallbackTimeoutRef.current = timeoutId;
 
     subscriptionRef.current = client.graphql({
       query: subscriptions.onUpdateNotesByOwner,
       variables: { owner: userId }
     }).subscribe({
       next: ({ data }) => {
+        if (isDiscardingRef.current) return;
 
         const updatedNote = data.onUpdateNotesByOwner;
 
@@ -313,6 +319,7 @@ function useNoteGeneration({
         }
       },
       error: (error) => {
+        if (isDiscardingRef.current) return;
         console.error('Subscription error:', error);
         clearTimeout(timeoutId);
         setIsTranscriptCompleted(true);
@@ -328,6 +335,51 @@ function useNoteGeneration({
     resetNoteGenerationState,
     cleanupNoteGeneration
   };
+}
+
+// Each final submission gets its own existing transcript/stream lifecycle. Only
+// its presentation callbacks are gated by foreground ownership; background notes
+// still generate and obtain their saved-note acknowledgement using their own key.
+function useNoteGeneration(options) {
+  const sessionsRef = useRef(new Map());
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const subscribeToNoteCompletion = (userId, timestamp, capture) => {
+    if (sessionsRef.current.has(timestamp)) return;
+    const current = () => optionsRef.current;
+    const foreground = () => current().isForeground(timestamp);
+    const scoped = {};
+    for (const name of ['setTextStream', 'setIsPreparingTranscript', 'setIsGeneratingSummary',
+      'setIsTranscriptCompleted', 'onTextStreamUpdate', 'onTransitionToMainApp', 'onGenerationStateChange']) {
+      scoped[name] = (...args) => { if (foreground()) current()[name]?.(...args); };
+    }
+    scoped.onGenerationError = message => {
+      if (foreground()) current().onGenerationError?.(message);
+      else if (message) current().onBackgroundStatus?.(`An earlier appointment: ${message}`);
+    };
+    scoped.onSavedNoteReady = note => {
+      if (foreground()) current().onSavedNoteReady?.(note);
+      else current().onBackgroundStatus?.('An earlier appointment note is ready in Recent Notes.');
+    };
+    const session = createNoteGenerationSession({
+      ...scoped,
+      onFinished: () => sessionsRef.current.delete(timestamp),
+      timeStampRef: { current: timestamp },
+      isDiscardingRef: { current: false },
+      noSleepRef: { get current() { return foreground() ? current().noSleepRef.current : null; } }
+    });
+    sessionsRef.current.set(timestamp, session);
+    return session.subscribeToNoteCompletion(userId, timestamp, capture);
+  };
+  const cleanupNoteGeneration = timestamp => {
+    for (const [key, session] of sessionsRef.current) {
+      if (timestamp === undefined || timestamp === key) {
+        session.cleanupNoteGeneration();
+        sessionsRef.current.delete(key);
+      }
+    }
+  };
+  return { subscribeToNoteCompletion, cleanupNoteGeneration, resetNoteGenerationState: () => {} };
 }
 
 export default useNoteGeneration;

@@ -13,6 +13,8 @@ This folder owns the authenticated application shell: authentication wrapping, m
 
 ## Main Ownership
 
+Recording status exposes memory-only pending audio and Retry audio. The preparing/generating popup offers Continue in background, permitting another appointment. RecordingManager gates foreground text, saved-note selection, busy state and popup callbacks by recording ownership; earlier sessions still generate normally and report saved completion in Recent Notes without replacing a newer clipboard. These controls do not imply durable local audio storage. Existing history refresh remains the recovery path for a missed history subscription update.
+
 `AuthenticatedApp` keeps the high-level UI state for the app, including side panels, selected history item, clipboard text, dictation state, and recording state. It instantiates the recording and dictation controller APIs like hook-style functions:
 
 ```js

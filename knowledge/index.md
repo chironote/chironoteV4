@@ -17,7 +17,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 | Concept | Use it to understand |
 | --- | --- |
-| [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, code conventions, testing, documentation duties, and sensitive files. |
+| [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, verified Storage cancellation patch, testing, documentation duties, and sensitive files. |
 | [Android patient capture styling](./development/STYLE.md) | Approved green creation row, long-name/accessibility behavior and compact typed-name confirmation. |
 
 ## Application Components
@@ -26,13 +26,13 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | --- | --- |
 | [Authenticated Application Shell](./components/app-shell.md) | Authenticated state, workspace composition, history subscriptions, and global shortcuts. |
 | [Application Routing](./components/app-routing.md) | Public routes, protected app entry, analytics side effects, and PWA redirects. |
-| [Audio Recording and Note Generation](./components/recording.md) | Typed-name patient confirmation and direct-start behavior, independently decodable media chunks, pause-safe containers, ordered uploads, transcription completion, and generated-note streaming. |
+| [Audio Recording and Note Generation](./components/recording.md) | Patient capture, finalized containers, memory-only S3/SQS connection recovery, per-appointment ordering and completion ownership, next-appointment capture and unchanged transcript/generation policy. |
 | [Recording and Dictation Architecture](./components/recording-context.md) | Detailed recording and realtime-dictation lifecycle, insertion behavior, and validation. |
 | [AssemblyAI Dictation Implementation Reference](./components/recording-dictation.md) | Legacy low-level streaming and AudioWorklet implementation details. |
 | [Clinical Clipboard](./components/clipboard.md) | Main text workspace, labelled phone toolbar, independent saved-note Save, native-app and phone-web Smart Editor exclusion and balanced gutters, SOAP+T extraction, copying, dictation locking, and Markdown cleanup. |
 | [History Sidebar and Smart Editor](./components/sidebar.md) | Saved-note navigation, content popup behavior, and desktop-web-only Smart Editor availability. |
 | [Billing and Settings](./components/account.md) | Current subscription and settings surfaces, web-only billing controls, and the Capacitor billing boundary. |
-| [Authentication UI](./components/auth-ui.md) | Web/native authentication boundaries, Android Credential Manager behavior, security invariants, and recovered implementation history. |
+| [Authentication UI](./components/auth-ui.md) | Web/native authentication, foreground credential retry, cleanup/network-failure behavior, security invariants and source-versus-release history. |
 | [Authenticated Navigation](./components/navbar.md) | In-app navigation behavior and route links. |
 | [User Feedback](./components/feedback.md) | Feedback form behavior and backend submission. |
 | [First-run Introduction Tour](./components/intro-tour.md) | Shepherd tour targets, persistence, and cleanup. |

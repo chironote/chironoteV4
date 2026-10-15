@@ -2,6 +2,10 @@
 
 ## 2026-10-15
 
+- **Primary-checkout knowledge reconciliation**: Preserved the source-verified foreground credential retry, cleanup ordering and NetworkError auth-state behavior in [Authentication UI](./components/auth-ui.md). Luna verified the current implementation/tests and the 2026-10-10 source history. The stale local September release/lifecycle entry lacks evidence for its detailed release assertions; it is preserved in the local reconciliation backup rather than promoted to shared release knowledge. No new store-state verification or publication is implied.
+
+- **Open-app recording recovery**: Updated [recording](./components/recording.md), [lifecycle context](./components/recording-context.md), [patient notes](./architecture/patient-notes.md), [Android](./architecture/capacitor-android.md), [shell](./components/app-shell.md), index and feature READMEs for retained in-memory Blobs, separate S3/SQS acknowledgements, paced/progress-sensitive retries and immutable per-appointment completion/discard ownership. Continue in background permits the next capture without abandoning earlier generation or selecting over its clipboard. Review fixes bind delayed entitlement cancellation to its original appointment and document the version/hash-checked Storage 6.7.11 multipart cancellation fence and [workflow](./development/workflow.md) hooks. Native microphone/container behavior and transcript timeout policy remain unchanged. Mock source validation does not establish deployed backend duplicate/billing behavior or installed-device Wi-Fi handoff acceptance; no restart storage, backend or publication change.
+
 - **Exam Layout capture correction**: Updated [recording](./components/recording.md), [patient notes](./architecture/patient-notes.md), [capture styling](./development/STYLE.md), Recording README and index for visible checked/disabled gray new-patient Exam Layout, editable unassigned layout, preserved Exam/PI choices in typed-name unassigned confirmation and independent persisted manual intent. Effective settings freeze synchronously before microphone awaits, separately from patient linkage; existing follow-up/Re-Exam and backend ICD semantics remain unchanged. Frontend source only; no native/version/flag changes or deployment.
 
 ## 2026-10-13
@@ -38,6 +42,8 @@
 - **Release provenance**: Read-only Play inspection verified 30 (1.30) highest/live on Production and Internal testing. Prepared isolated 31 (1.31) as an unpublished candidate; prior local release-30 submission evidence remains historical. Existing AuthUI fixes from 718a02b are retained. Validation and hardware acceptance must be recorded separately; implementation does not establish device acceptance.
 
 ## 2026-10-10
+
+- **Credential lifecycle source**: Commit `718a02b` contains foreground retry for untouched credential fields, waiting for Cognito/provider sign-out cleanup before mounting the form, and retaining current auth state on refresh `NetworkError`. The [Authentication UI](./components/auth-ui.md) concept now records these source-backed facts without assigning them to an unverified September release.
 
 - **Update**: Added patient capture/history integration, separate names/labels, guarded saved-note workflows and automatic language selection. Removed full clinical payload logging. Android keeps native edit/copy behavior with no new clinical-body Save. The original checkout’s four focused AuthUI files were ported to preserve restored-session cleanup and safe error handling. Version/signing/release changes were not imported. Local candidate only; no push, release or deployment.
 

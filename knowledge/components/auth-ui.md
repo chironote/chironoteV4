@@ -19,6 +19,8 @@ ChiroNote has one Cognito authentication authority with two presentation boundar
 
 `SignInForm` requests an available password credential on mount. A provider-selected credential fills the username and password fields. Manual credentials are offered to the provider only after `signIn()` completes and `getCurrentUser()` proves Cognito created a session; invalid passwords and incomplete Cognito next steps are never offered for saving. Provider cancellation or unavailability is non-fatal and leaves manual sign-in available.
 
+It also requests an available credential after each background-to-foreground transition while the fields remain untouched. It suppresses overlapping requests and ignores results arriving after unmount. `NativeAuthContainer` keeps the sign-in form hidden until Cognito sign-out and Credential Manager state cleanup finish, preventing a provider request from racing cleanup. On `tokenRefresh_failure` with error name `NetworkError`, the container preserves its current auth state; other refresh failures trigger sign-out. This describes source behavior, not proof of Amplify stored-session recovery or a dated store release.
+
 ## Security Invariants
 
 - Never persist a raw password in WebView or browser storage.
@@ -49,6 +51,8 @@ The Android manifest declares `https://chironote.ai/.well-known/assetlinks.json`
 - Run the focused AuthUI/plugin tests, a production web build, and an Android Gradle build. Installed-device verification is still required for provider UI and saved-credential retrieval.
 
 ## Provenance
+
+Foreground retry and cleanup/network-failure behavior are verified against [SignInForm tests](../../src/components/AuthUI/SignInForm.test.jsx), [NativeAuthContainer tests](../../src/components/AuthUI/NativeAuthContainer.test.jsx) and their adjacent current implementations. These source changes are present in commit `718a02b` (2026-10-10); a stale primary-checkout log does not establish their availability in a September release.
 
 Synthesized from [AuthUI README](../../src/components/AuthUI/README.md), [AuthWrapper.jsx](../../src/components/AppShell/AuthWrapper.jsx), [NativeAuthContainer.jsx](../../src/components/AuthUI/NativeAuthContainer.jsx), [SignInForm.jsx](../../src/components/AuthUI/SignInForm.jsx), [CredentialManager.js](../../src/plugins/CredentialManager.js), [CredentialManagerPlugin.java](../../android/app/src/main/java/com/chironote/app/CredentialManagerPlugin.java), [AndroidManifest.xml](../../android/app/src/main/AndroidManifest.xml), [DataSafetyDisclosuresMap.md](../../src/DataSafetyDisclosuresMap.md), the codex/android-login-credentials/`cap-and` Git history, and the app-association endpoint checked on 2026-08-31.
 
