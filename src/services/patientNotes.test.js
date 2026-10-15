@@ -23,3 +23,32 @@ test.each([['text/html', '14', 14], ['application/pdf', '12', 14], ['application
   await expect(exportPatientNotes({})).rejects.toThrow('not a supported PDF');
   expect(deliverPatientPdf).not.toHaveBeenCalled();
 });
+
+test('capture snapshots keep patient linkage separate from immutable recording settings', () => {
+  const previousNotesFlag = process.env.REACT_APP_PATIENT_NOTES_ENABLED;
+  const previousCaptureFlag = process.env.REACT_APP_PATIENT_CAPTURE_ENABLED;
+  process.env.REACT_APP_PATIENT_NOTES_ENABLED = 'true';
+  process.env.REACT_APP_PATIENT_CAPTURE_ENABLED = 'true';
+  try {
+    jest.isolateModules(() => {
+      const { captureSnapshot, recordingSettingsSnapshot } = require('./patientNotes');
+      const metadata = { patientId: 'fictional-id', patientName: 'Fictional Example', visitType: 'initialExam' };
+      localStorage.setItem('noteSettings', JSON.stringify({ examLayout: true, PILayout: false }));
+      const visit = captureSnapshot(metadata);
+      const settings = recordingSettingsSnapshot();
+      metadata.patientName = 'Changed';
+      localStorage.setItem('noteSettings', JSON.stringify({ examLayout: false, PILayout: true }));
+      expect(visit).toEqual(expect.objectContaining({ patientName: 'Fictional Example', visitType: 'initialExam' }));
+      expect(settings).toEqual({ examLayout: true, PILayout: false });
+      expect(Object.isFrozen(visit)).toBe(true);
+      expect(Object.isFrozen(settings)).toBe(true);
+      expect(captureSnapshot({ patientId: null, visitType: null })).toEqual(expect.objectContaining({ patientId: null, visitType: null }));
+    });
+  } finally {
+    if (previousNotesFlag === undefined) delete process.env.REACT_APP_PATIENT_NOTES_ENABLED;
+    else process.env.REACT_APP_PATIENT_NOTES_ENABLED = previousNotesFlag;
+    if (previousCaptureFlag === undefined) delete process.env.REACT_APP_PATIENT_CAPTURE_ENABLED;
+    else process.env.REACT_APP_PATIENT_CAPTURE_ENABLED = previousCaptureFlag;
+    localStorage.clear();
+  }
+});
