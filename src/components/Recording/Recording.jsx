@@ -19,6 +19,7 @@ function Recording({ isStarting = false,
   isPaused,
   isPreparingTranscript,
   isGeneratingSummary,
+  continueInBackground,
   startRecording,
   stopRecording,
   discardRecording,
@@ -77,6 +78,8 @@ function Recording({ isStarting = false,
   };
 
   const beginRecording = async (metadata = visitMetadata) => {
+    let attempt;
+    const discardAttempt = () => attempt?.discard ? attempt.discard() : discardRecording();
     try {
       // Track the start recording action
       trackRecordingStart();
@@ -88,21 +91,21 @@ function Recording({ isStarting = false,
           ? metadata.visitType === 'reExam' : noteSettings.examLayout;
         localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
       }
-      startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
+      attempt = startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
 
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
 
       if (!subscription || subscription.hoursleft <= 0) {
         console.error('User has no remaining hours');
-        // Stop the recording we just started
-        discardRecording();
-        setShowCreditPopup(true);
+        const isCurrent = attempt?.isCurrent?.() ?? true;
+        discardAttempt();
+        if (isCurrent) setShowCreditPopup(true);
         return;
       }
     } catch (error) {
       console.error("Error in handleStartRecording:", error);
-      discardRecording();
+      discardAttempt();
 
     }
   };
@@ -283,11 +286,14 @@ function Recording({ isStarting = false,
           <div className="preparing-transcript">
             <h2>Preparing Transcript</h2>
             <div className="loading-spinner" aria-label="Preparing SOAP note transcript"></div>
+            <p>Pending audio stays in memory while this app remains open.</p>
+            <button type="button" onClick={continueInBackground}>Continue in background</button>
           </div>
         ) : isGeneratingSummary ? (
           <div className="preparing-transcript">
             <h2>Generating Note</h2>
             <div className="loading-spinner" aria-label="Generating SOAP chiropractic note"></div>
+            <button type="button" onClick={continueInBackground}>Continue in background</button>
           </div>
         ) : (
           <div className="recording-content">

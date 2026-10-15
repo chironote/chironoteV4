@@ -11,6 +11,18 @@ tags: [chironote, component, recording]
 
 # Recording Components
 
+## Open-app connection recovery
+
+Android retains finalized audio in memory until both S3 upload and SQS submission acknowledge. Explicit upload-pending/dispatch-pending stages prevent re-upload after S3 success, even when an SQS reply is ambiguous or retry exceeds five minutes. Attempts preserve original bytes/path, rc2 identities/order, timestamp, settings and patient metadata; fresh dispatch authentication is read after upload and must match the captured owner. No tokens are stored in queued items or logged by the touched auth helper.
+
+One worker owns requests and abort settlement. Retry uses exponential full jitter with ceilings from 1 to 60 seconds; 120 seconds without advancing bytes cancels uploads, while a slow progressing upload has no total duration cutoff. Dispatch aborts after 60 seconds with one SDK attempt. Missing credentials/transient errors retain and retry; persistent authorization/validation errors visibly block without dropping audio. Online hints cannot duplicate workers, and timed retries cover network switching without an online event. Regular-before-final ordering is per recording, so newer work cannot starve an earlier ready final.
+
+Continue in background releases the overlay for the next appointment. Each recorder owns its data-event chain/counter/discard state, and each final submission starts an independent existing transcript/generation lifecycle using immutable capture and timestamp. Starting or discarding B preserves A. A still generates and confirms its saved note, while foreground-gated text/selection/popup/keep-awake callbacks protect B; background completion directs the clinician to Recent Notes. The transcript timeout/fallback policy and server completeness limitation are unchanged. This is no restart storage or zero-loss guarantee; installed-device Wi-Fi/handoff/reconnect and overlapping-appointment acceptance remain manual release gates.
+
+Capture timestamps are allocated once with a controller-lifetime monotonic uniqueness guard, so same-tick starts or backward-clock changes cannot share a backend Notes key or local ownership fence. Final data/onstop events can arrive after B starts; they retain A's event chain, counter and immutable capture and cannot stop B's recorder.
+
+Delayed subscription-hours checks retain the start attempt's session-bound discard action. A late rejection cancels A's queued audio/generation and cannot discard B or show B a stale credit popup; entitlement/billing policy is unchanged. The pinned Storage 6.7.11 multipart runtime needs a verified cancellation patch because its public result can reject before configuration completes. The install/test/build hooks apply a version-and-hash-checked cancelled-task fence to both compiled ESM/CJS handlers; a cancelled continuation cannot start a new S3 write after auth/config resolves. Unknown dependency changes fail closed pending review. The queue continues to use Amplify signing/progress/multipart APIs, with no new transport or persistence.
+
 ## Patient creation confirmation
 
 Exam Layout is visible and editable for unassigned capture and visible, checked, disabled and gray for selected new patients. Initial-exam metadata remains automatic only for new patients; an unassigned exam layout does not create patient/visit linkage. Existing patients retain follow-up/Re-Exam. Manual preference lives separately in nonclinical localStorage `manualExamLayout`, initialized from legacy noteSettings when absent, so forced patient settings cannot become manual intent across clearing or reopening. Before microphone start, effective noteSettings are written synchronously; the recorder freezes settings separately from visitMetadata before permission awaits, and generation uses those session snapshots. PI remains independent in all paths. Capture-disabled builds keep legacy noteSettings behavior.
@@ -43,21 +55,18 @@ const {
   subscribeToNoteCompletion,
   resetNoteGenerationState,
   cleanupNoteGeneration
-} = useNoteGeneration({ timeStampRef, isDiscardingRef, noSleepRef });
+} = useNoteGeneration({ isForeground, noSleepRef, ...callbacks });
 
 const { queueUpload, clearUploadQueue } = useAudioUploadQueue({
-  timeStampRef,
-  filePathRef,
   onFinalAudioQueued
 });
 ```
 
-The recorder creates timestamp/path refs, records audio, and queues each blob. The upload queue writes each blob to Amplify Storage and notifies SQS. The final audio chunk triggers transcript waiting:
+The recorder creates timestamp/path refs, records audio, and queues each blob with immutable capture. The upload queue writes each blob to Amplify Storage and notifies SQS. Final SQS acknowledgement triggers session-owned transcript waiting:
 
 ```js
-onFinalAudioQueued: (userId, timestamp) => {
-  setIsTranscriptCompleted(false);
-  subscribeToNoteCompletion(userId, timestamp);
+onFinalAudioQueued: (userId, timestamp, capture) => {
+  subscribeToNoteCompletion(userId, timestamp, capture);
 }
 ```
 
@@ -81,7 +90,7 @@ Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-o
 
 ## Capacitor Lifecycle
 
-Android uses one four-minute stop/restart scheduler and starts `MediaRecorder` without a timeslice. This makes every separately uploaded blob a finalized WebM container rather than a dependent fragment of a longer container. Pause also stops and flushes the current container as a regular chunk; Resume starts a fresh container. Event state is snapshotted synchronously, event handling is serialized, and the upload queue drains every regular chunk before the final chunk. Object names carry an `rc2` protocol marker, and SQS messages carry stable recording, chunk, and order identities.
+Android uses one four-minute stop/restart scheduler and starts `MediaRecorder` without a timeslice. This makes every separately uploaded blob a finalized WebM container rather than a dependent fragment of a longer container. Pause also stops and flushes the current container as a regular chunk; Resume starts a fresh container. Event state is snapshotted synchronously, event handling is serialized per recording, and the upload queue drains each recording's regular chunks before its final chunk. Object names carry an `rc2` protocol marker, and SQS messages carry stable recording, chunk, and order identities.
 
 This preserves the established WebView implementation and does not add a native foreground recording service.
 
@@ -103,6 +112,10 @@ Google Play Production `24 (1.24)` and Internal testing `27 (1.27)` use the same
 - Verify the release bundle contains the lifecycle and object-identity helpers so an unrelated convergence build cannot revive an older recorder implementation.
 
 ## Provenance
+
+Recovery behavior and evidence: [queue](../../src/components/Recording/useAudioUploadQueue.js), [auth](../../src/components/Recording/recordingAuth.js), [session generation](../../src/components/Recording/useNoteGeneration.js), [transport tests](../../src/components/Recording/audioUploadRecovery.test.js), [manager/session tests](../../src/components/Recording/RecordingManager.test.jsx) and [auth tests](../../src/components/Recording/recordingAuth.test.js). Tests use fictional fixtures and do not verify deployed backend billing or physical-device networking.
+
+Review fixes: [SDK cancellation patch](../../scripts/patch-amplify-upload-cancel.cjs), [installed runtime regression tests](../../src/components/Recording/amplifyUploadCancel.test.js), [UI eligibility tests](../../src/components/Recording/Recording.test.jsx) and [package lifecycle hooks](../../package.json).
 
 Derived from [README.md](../../src/components/Recording/README.md), [useMediaRecorderController.js](../../src/components/Recording/useMediaRecorderController.js), [recordingLifecycle.js](../../src/components/Recording/recordingLifecycle.js), [useAudioUploadQueue.js](../../src/components/Recording/useAudioUploadQueue.js), [nativePlatform.js](../../src/services/nativePlatform.js), and [MainActivity.java](../../android/app/src/main/java/com/chironote/app/MainActivity.java).
 

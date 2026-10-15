@@ -23,6 +23,20 @@ This folder owns the core recording, dictation, audio upload, transcript waiting
 
 ## Recording Flow
 
+### Connection recovery while the app stays open
+
+Finalized Blobs remain in the in-memory queue through missing credentials, transient refresh/network/service errors and network changes. Items move through upload-pending, dispatch-pending and acknowledged stages; only both acknowledgements release their audio. S3 acknowledgement permanently advances the item to dispatch-only retries, including ambiguous SQS responses beyond FIFO dedup's window. Every attempt preserves the original bytes, path, timestamp, rc2 job/chunk/order, noteSettings and visitMetadata. Current credentials/token are obtained after upload immediately before dispatch and checked against the original owner; tokens are never retained or logged.
+
+One worker waits for each SDK attempt (including cancellation) to settle. Retries use exponential full jitter (initial ceiling 1 second, maximum 60 seconds). The upload watchdog cancels after 120 seconds without advancing byte progress, not after 120 seconds total; the small SQS request has a 60-second abort limit and one SDK attempt. Persistent authorization/validation errors retain a visibly blocked item for explicit Retry audio; repeated token rejection blocks after three attempts. Online events only wake the scheduler; timed retries work without them. Retry never discards audio. Ordering is regular-before-final within each recording; newer appointments cannot starve an earlier ready final.
+
+Continue in background releases the transcript/generation overlay so the next appointment can record. Each recorder session owns its data-event chain, chunk counter and discard marker; each completed submission owns its original transcript subscription, timeout, generation abort controller and immutable capture. Capture timestamps are allocated once with a monotonic uniqueness guard, including same-tick starts or a backward clock. Delayed final data/onstop events stay with their session while the next capture can start. Starting B does not cancel A; discarding B removes only B. A's ordinary generation and saved-note acknowledgement still run, but its text, saved-note selection, popup and keep-awake callbacks cannot affect B. Background completion points to Recent Notes rather than selecting over the current clipboard. The existing transcript wait/fallback and note-generation timeout policy is unchanged; submission acknowledgement is not proof that all server chunks have transcribed.
+
+This is memory-only recovery, with no restart/process-death persistence and no backend changes. Sign-out/unmount disposes pending work. Physical Android slow Wi-Fi, handoff, reconnect, background/foreground and next-appointment checks remain release gates. Mock tests cover transport/session behavior; they do not verify deployed duplicate/billing guards.
+
+The awaited start result carries a session-bound discard action. The UI's delayed subscription-hours check cancels only the appointment it started, including its pending audio/generation, and cannot discard a newer appointment or display its credit popup. The eligibility policy itself is unchanged.
+
+Amplify Storage 6.7.11 has a multipart cancellation race before its internal configuration await completes. `scripts/patch-amplify-upload-cancel.cjs` adds a permanent cancelled-task fence to the installed ESM and CJS handlers and skips remote cleanup before an upload ID exists. `postinstall`, `pretest` and `prebuild` apply/verify this idempotent patch against the exact version and upstream file hashes; unknown dependency changes fail closed for review. This preserves Amplify's signing, progress, multipart/container bytes and key semantics without introducing another upload transport. `amplifyUploadCancel.test.js` executes both installed runtime factories with mocked services to cover cancellation before configuration resolves and during later setup, plus normal initialization and patch drift detection. The queue does not use SDK pause/resume; this patch addresses cancellation only.
+
 `RecordingManager` composes three focused hooks:
 
 ```js
@@ -30,11 +44,9 @@ const {
   subscribeToNoteCompletion,
   resetNoteGenerationState,
   cleanupNoteGeneration
-} = useNoteGeneration({ timeStampRef, isDiscardingRef, noSleepRef });
+} = useNoteGeneration({ isForeground, noSleepRef, ...callbacks });
 
 const { queueUpload, clearUploadQueue } = useAudioUploadQueue({
-  timeStampRef,
-  filePathRef,
   onFinalAudioQueued
 });
 ```
@@ -42,9 +54,8 @@ const { queueUpload, clearUploadQueue } = useAudioUploadQueue({
 The recorder creates timestamp/path refs, records audio, and queues each blob. The upload queue writes each blob to Amplify Storage and notifies SQS. The final audio chunk triggers transcript waiting:
 
 ```js
-onFinalAudioQueued: (userId, timestamp) => {
-  setIsTranscriptCompleted(false);
-  subscribeToNoteCompletion(userId, timestamp);
+onFinalAudioQueued: (userId, timestamp, capture) => {
+  subscribeToNoteCompletion(userId, timestamp, capture);
 }
 ```
 
@@ -70,7 +81,7 @@ Regular chunks smaller than `MIN_AUDIO_BLOB_SIZE` are skipped as likely header-o
 
 Android uses the four-minute stop/restart interval for periodic chunking and calls `MediaRecorder.start()` without a timeslice. Each uploaded blob is therefore finalized as its own WebM container instead of being a dependent fragment of one long container. Android Pause likewise ends and flushes the current container as a regular chunk, and Resume starts a fresh container. The native app-state bridge suspends timed rotation in the background, rotates once on foreground, and then resumes the interval.
 
-Audio-event state is snapshotted synchronously and processed serially, so asynchronous authentication cannot reorder or relabel the final event. Upload selection always drains every pending regular chunk before the final chunk. Object names carry the `rc2` recording-protocol marker, and SQS messages include stable `recordingJobId`, `chunkId`, and `chunkOrder` values derived from that name for backend idempotency and diagnosis.
+Audio-event state is snapshotted synchronously and processed serially within its recorder session, so starting another appointment cannot relabel a delayed final event. Upload selection drains every pending regular chunk of a recording before its final chunk. Object names carry the `rc2` recording-protocol marker, and SQS messages include stable `recordingJobId`, `chunkId`, and `chunkOrder` values derived from that name for backend idempotency and diagnosis.
 
 The app-state bridge remains centralized in `src/services/nativePlatform.js`; Android runtime microphone permission is bridged by `android/app/src/main/java/com/chironote/app/MainActivity.java`.
 

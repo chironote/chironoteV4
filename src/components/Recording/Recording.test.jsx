@@ -195,3 +195,25 @@ test('pending native microphone acquisition remains cancellable and hides settin
   expect(discardRecording).toHaveBeenCalledTimes(1);
   expect(toggleRecordingPopup).toHaveBeenCalledTimes(1);
 });
+
+test.each([null, { hoursleft: 0 }])('A delayed eligibility rejection only discards A after B starts: %j', async subscription => {
+  let finishA;
+  mockGraphql.mockReturnValueOnce(new Promise(resolve => { finishA = resolve; }));
+  const discardA = jest.fn(); const discardCurrent = jest.fn();
+  const attemptA = Object.assign(Promise.resolve(), { isCurrent: () => false, discard: discardA });
+  startRecording.mockReturnValueOnce(attemptA);
+  await act(async () => root.render(<Recording startRecording={startRecording} discardRecording={discardCurrent} />));
+  await click('Start Recording');
+  // Continue/unmount A, then mount B's independent popup while A's query waits.
+  await act(async () => root.render(null));
+  const startB = jest.fn(() => Object.assign(Promise.resolve(), { isCurrent: () => true, discard: jest.fn() }));
+  await act(async () => root.render(<Recording startRecording={startB} discardRecording={discardCurrent} />));
+  await click('Start Recording');
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  await act(async () => finishA({ data: { getUserSubscription: subscription } }));
+  error.mockRestore();
+  expect(discardA).toHaveBeenCalledTimes(1);
+  expect(discardCurrent).not.toHaveBeenCalled();
+  expect(startB.mock.results[0].value.discard).not.toHaveBeenCalled();
+  expect(container.textContent).not.toContain('Insufficient');
+});

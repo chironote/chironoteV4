@@ -14,8 +14,25 @@ export async function getUserId() {
 export async function generateToken() {
   const session = await fetchAuthSession();
   const accessToken = session.tokens.accessToken.toString();
-  console.log(accessToken);
   return accessToken;
+}
+
+// Read credentials and the token together, immediately before a request. Never
+// attach a retained recording to whichever account happens to be signed in later.
+export async function getRecordingAuth(owner, forceRefresh = false) {
+  const session = await fetchAuthSession({ forceRefresh });
+  const currentOwner = session.tokens?.accessToken?.payload?.sub;
+  if (currentOwner && currentOwner !== owner) {
+    const error = new Error('Sign in to the original recording account to retry.');
+    error.name = 'RecordingOwnerMismatch';
+    throw error;
+  }
+  if (!currentOwner || !session.credentials || !session.tokens?.accessToken) {
+    const error = new Error('Recording authentication is temporarily unavailable.');
+    error.name = 'RecordingAuthUnavailable';
+    throw error;
+  }
+  return { credentials: session.credentials, accessToken: session.tokens.accessToken.toString() };
 }
 
 export async function getAwsCredentials() {

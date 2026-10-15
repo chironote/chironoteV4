@@ -11,6 +11,8 @@ tags: [chironote, component, app-shell]
 
 # AppShell Components
 
+The shell displays memory-only pending audio and Retry audio, and forwards Continue in background from the transcript/generation overlay. RecordingManager gates text, saved-target, busy-state and popup callbacks by foreground recording; older appointments still complete their ordinary saved-note path and report availability in Recent Notes without selecting over a new draft. See [recording](recording.md) and [shell implementation](../../src/components/AppShell/AuthenticatedApp.jsx). Existing history refresh remains available for a missed realtime history update.
+
 The 2026-10-11 native candidate replaces the separate saved-note editor with authoritative Patients/history loading into the clipboard. Installed phones can Save with exact timestamp/version and diagnosis confirmation. The data router and memory-only draft guard protect navigation/back/sign-out; generation callbacks bind only durable saved results. Native pricing restrictions, clipboard adaptation, principal remounting and foreground history refresh remain. See [patient notes](../architecture/patient-notes.md) for the workflow contract.
 
 This folder owns the authenticated application shell: authentication wrapping, main workspace composition, note history state, and app-wide authenticated analytics.

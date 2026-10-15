@@ -542,6 +542,8 @@ function ClinicalWorkspace({ signOut, user }) {
         onFeedback={openFeedback}
       />
       {generationError && <p className="patient-confirmation" role="alert">{generationError}</p>}
+      {recordingManager.uploadStatus && <p role="status">{recordingManager.uploadStatus} <button type="button" onClick={recordingManager.retryUploads}>Retry audio</button></p>}
+      {recordingManager.completionStatus && <p role="status">{recordingManager.completionStatus}</p>}
       <ErrorBanner isVisible={showErrorBanner} />
 
       <Routes>
