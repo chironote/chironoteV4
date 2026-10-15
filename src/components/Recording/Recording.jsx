@@ -37,11 +37,19 @@ function Recording({ isStarting = false,
 
   const [noteSettings, setNoteSettings] = useState(() => {
     const storedSettings = localStorage.getItem('noteSettings');
-    return storedSettings ? JSON.parse(storedSettings) : {
+    const settings = storedSettings ? JSON.parse(storedSettings) : {
       examLayout: false,
       PILayout: false
     };
+    // noteSettings stores the effective recording settings. Keep the user's
+    // manual choice separate so a forced patient exam cannot become a preference.
+    const manualExamLayout = localStorage.getItem('manualExamLayout');
+    return patientCaptureEnabled && manualExamLayout !== null
+      ? { ...settings, examLayout: manualExamLayout === 'true' }
+      : settings;
   });
+  const isNewPatient = patientCaptureEnabled && Boolean(visitMetadata.patientName);
+  const isExistingPatient = patientCaptureEnabled && Boolean(visitMetadata.patientId) && !isNewPatient;
 
   const fetchUserSubscription = async () => {
     try {
@@ -76,7 +84,8 @@ function Recording({ isStarting = false,
       // CRITICAL: Start recording FIRST (synchronously in user gesture)
       // Safari blocks getUserMedia() if called after async operations
       if (patientCaptureEnabled) {
-        const examLayout = Boolean(metadata.patientName) || metadata.visitType === 'reExam';
+        const examLayout = metadata.patientName ? true : metadata.patientId
+          ? metadata.visitType === 'reExam' : noteSettings.examLayout;
         localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
       }
       startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
@@ -137,6 +146,7 @@ function Recording({ isStarting = false,
 
   useEffect(() => {
     localStorage.setItem('noteSettings', JSON.stringify(noteSettings));
+    if (patientCaptureEnabled) localStorage.setItem('manualExamLayout', JSON.stringify(noteSettings.examLayout));
     console.log('Note settings changed. localStorage noteSettings:', localStorage.getItem('noteSettings'));
   }, [noteSettings]);
 
@@ -220,17 +230,18 @@ function Recording({ isStarting = false,
               <div className="settings-options">
                 <label className="options-label">Options:</label>
                 <div className="checkbox-grid">
-                  {!patientCaptureEnabled && <div className="checkbox-group">
+                  {!isExistingPatient && <div className="checkbox-group">
                     <input
                       type="checkbox"
                       id="exam-layout-popup"
                       name="examLayout"
-                      checked={noteSettings.examLayout}
+                      checked={isNewPatient || noteSettings.examLayout}
+                      disabled={isNewPatient}
                       onChange={handleCheckboxChange}
                     />
                     <label htmlFor="exam-layout-popup">Exam Layout</label>
                   </div>}
-                  {patientCaptureEnabled && visitMetadata.patientId && !visitMetadata.patientName && <div className="checkbox-group">
+                  {isExistingPatient && <div className="checkbox-group">
                     <input type="checkbox" id="re-exam-popup" checked={visitMetadata.visitType === 'reExam'}
                       onChange={event => setVisitMetadata(current => ({ ...current, visitType: event.target.checked ? 'reExam' : 'followUp' }))} />
                     <label htmlFor="re-exam-popup">Re-Exam</label>

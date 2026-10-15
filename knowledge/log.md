@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-15
+
+- **Exam Layout capture correction**: Updated [recording](./components/recording.md), [patient notes](./architecture/patient-notes.md), [capture styling](./development/STYLE.md), Recording README and index for visible checked/disabled gray new-patient Exam Layout, editable unassigned layout, preserved Exam/PI choices in typed-name unassigned confirmation and independent persisted manual intent. Effective settings freeze synchronously before microphone awaits, separately from patient linkage; existing follow-up/Re-Exam and backend ICD semantics remain unchanged. Frontend source only; no native/version/flag changes or deployment.
+
 ## 2026-10-13
 
 - **Live release correction**: Direct Play inventory now confirms Internal 34 available, highest uploaded code 34 and unchanged Early Beta audience (1 tester); Production remains 30. Updated [Android](./architecture/capacitor-android.md), [patient notes](./architecture/patient-notes.md) and index to supersede the prior unpublished-candidate statements. Candidate 35 publication remains a separate gate.

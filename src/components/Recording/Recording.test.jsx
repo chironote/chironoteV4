@@ -31,6 +31,7 @@ beforeEach(async () => {
   mockPrepareNewPatient.mockReset();
   mockPrepareNewPatient.mockResolvedValue({ patientId: 'draft-id', patientName: 'Typed Example', displayName: 'Typed Example', visitType: 'initialExam' });
   localStorage.setItem('noteSettings', JSON.stringify({ examLayout: true, PILayout: true }));
+  localStorage.removeItem('manualExamLayout');
   getCurrentUser.mockResolvedValue({ username: 'synthetic' });
   fetchAuthSession.mockResolvedValue({});
   mockGraphql.mockResolvedValue({ data: { getUserSubscription: { hoursleft: 1 } } });
@@ -61,12 +62,13 @@ test('closing the prompt cancels without starting or selecting the draft', async
   expect(mockPrepareNewPatient).toHaveBeenCalledTimes(2);
 });
 
-test('continue unassigned starts without the typed patient identity or an initial exam', async () => {
+test.each([true, false])('continue unassigned preserves Exam %s and PI without initial-exam linkage', async examLayout => {
+  if (!examLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
   await click('Type patient name');
   await click('Start Recording');
   await click('Record without a patient');
-  expect(startRecording).toHaveBeenCalledWith(expect.objectContaining({ patientId: null, patientName: undefined, displayName: '', visitType: null, contextMode: 'patient' }));
-  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(false);
+  expect(startRecording).toHaveBeenCalledWith(expect.objectContaining({ patientId: null, patientName: undefined, displayName: '', dateOfInjury: null, visitType: null, contextMode: 'patient' }));
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout, PILayout: true });
   expect(container.querySelector('[aria-label="Create new patient?"]')).toBeNull();
 });
 
@@ -114,17 +116,74 @@ test('blank patient and disabled capture retain direct recording', async () => {
   expect(mockPrepareNewPatient).not.toHaveBeenCalled();
 });
 
-test('new patients automatically use initial exam; clearing resets the choice', async () => {
+test.each([true, false])('new patients force initial exam; clearing restores manual Exam %s', async examLayout => {
+  if (!examLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
   await click('New patient');
   expect(container.querySelector('#re-exam-popup')).toBeNull();
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(true);
+  expect(container.querySelector('#exam-layout-popup').disabled).toBe(true);
+  expect(container.querySelector('label[for="exam-layout-popup"]').textContent).toBe('Exam Layout');
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ visitType: 'initialExam', contextMode: 'patient' }));
   expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(true);
   await click('Clear patient');
   expect(container.querySelector('#re-exam-popup')).toBeNull();
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(examLayout);
+  expect(container.querySelector('#exam-layout-popup').disabled).toBe(false);
   await click('Start Recording');
   expect(startRecording).toHaveBeenLastCalledWith(expect.objectContaining({ patientId: null, visitType: null }));
-  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(false);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout, PILayout: true });
+});
+
+test.each([true, false])('direct unassigned start snapshots manual Exam %s and PI synchronously', async examLayout => {
+  if (!examLayout) await act(async () => container.querySelector('#exam-layout-popup').click());
+  startRecording.mockImplementation(() => {
+    expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout, PILayout: true });
+  });
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenCalledWith(expect.objectContaining({ visitType: null }));
+});
+
+test('switching patients and reopening cannot promote a forced exam into manual preference', async () => {
+  await act(async () => container.querySelector('#exam-layout-popup').click());
+  await click('New patient');
+  await click('Existing patient');
+  expect(container.querySelector('#re-exam-popup').checked).toBe(false);
+  await click('Clear patient');
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(false);
+  await click('New patient');
+  await click('Start Recording');
+  expect(JSON.parse(localStorage.getItem('noteSettings')).examLayout).toBe(true);
+  await act(async () => root.render(null));
+  await act(async () => root.render(<Recording startRecording={startRecording} />));
+  expect(container.querySelector('#exam-layout-popup').checked).toBe(false);
+  await click('Start Recording');
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout: false, PILayout: true });
+});
+
+test.each(['Start Recording', 'Create patient & record', 'Record without a patient'])('%s preserves unchecked PI', async action => {
+  await act(async () => container.querySelector('#pi-layout-popup').click());
+  if (action !== 'Start Recording') {
+    await click('Type patient name');
+    await click('Start Recording');
+  }
+  await click(action);
+  expect(JSON.parse(localStorage.getItem('noteSettings')).PILayout).toBe(false);
+});
+
+test('capture disabled preserves legacy stored options and editable Exam behavior', async () => {
+  await act(async () => root.render(null));
+  mockPatientCaptureEnabled = false;
+  localStorage.setItem('noteSettings', JSON.stringify({ examLayout: false, PILayout: true }));
+  localStorage.setItem('manualExamLayout', 'true');
+  await act(async () => root.render(<Recording startRecording={startRecording} />));
+  const checkbox = container.querySelector('#exam-layout-popup');
+  expect(checkbox.checked).toBe(false);
+  expect(checkbox.disabled).toBe(false);
+  await act(async () => checkbox.click());
+  await click('Start Recording');
+  expect(startRecording).toHaveBeenCalledWith(undefined);
+  expect(JSON.parse(localStorage.getItem('noteSettings'))).toEqual({ examLayout: true, PILayout: true });
 });
 test('pending native microphone acquisition remains cancellable and hides settings', async () => {
   const discardRecording = jest.fn();

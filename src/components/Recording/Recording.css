@@ -116,6 +116,16 @@
   color: var(--dark-green);
 }
 
+.recording-dialog .checkbox-group input:disabled {
+  filter: grayscale(1);
+  cursor: default;
+}
+
+.recording-dialog .checkbox-group input:disabled + label {
+  color: GrayText;
+  cursor: default;
+}
+
 /* Responsive labels for desktop/mobile */
 .mobile-label {
   display: none;

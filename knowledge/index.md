@@ -72,7 +72,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 ## Patient notes update
 
-- [Patient notes](architecture/patient-notes.md): compact capture, native clipboard Save/version guards, patient reassignment/deletion, PDF selection/share/cache, platform scope and unpublished candidate gates.
+- [Patient notes](architecture/patient-notes.md): compact capture, visible new/unassigned Exam Layout with independent manual preference and frozen session settings, native clipboard Save/version guards, patient reassignment/deletion, PDF selection/share/cache, platform scope and unpublished candidate gates.
 
 ## Maintenance
 

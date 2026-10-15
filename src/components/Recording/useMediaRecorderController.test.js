@@ -94,6 +94,7 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
 
   afterEach(() => {
     act(() => root.unmount());
+    localStorage.clear();
     jest.useRealTimers();
     container.remove();
     if (originalUserAgent) {
@@ -193,6 +194,25 @@ describe('useMediaRecorderController Android pause lifecycle', () => {
       expect.objectContaining({ userId: 'user-id', noteSettings: { examLayout: false, PILayout: false } })
     );
   });
+  it('freezes effective settings before permission resolves and retains them through final upload', async () => {
+    const props = createProps(); let resolvePermission; let start;
+    localStorage.setItem('noteSettings', JSON.stringify({ examLayout: true, PILayout: true }));
+    navigator.mediaDevices.getUserMedia.mockReturnValue(new Promise(resolve => { resolvePermission = resolve; }));
+    const Harness = () => { controller = useMediaRecorderController(props); return null; };
+    await act(async () => root.render(<Harness />));
+    await act(async () => { start = controller.startRecording(); });
+    localStorage.setItem('noteSettings', JSON.stringify({ examLayout: false, PILayout: false }));
+    await act(async () => {
+      resolvePermission({ active: true, getTracks: () => [{ stop: jest.fn() }] });
+      await start;
+    });
+    act(() => controller.stopRecording());
+    await act(async () => Promise.resolve());
+    const capture = props.queueUpload.mock.calls[0][2];
+    expect(capture.noteSettings).toEqual({ examLayout: true, PILayout: true });
+    expect(Object.isFrozen(capture.noteSettings)).toBe(true);
+  });
+
   it.each(['discard', 'unmount'])('stops microphone tracks when pending permission resolves after %s', async action => {
     const props = createProps(); let resolvePermission; let start;
     const stop = jest.fn();
