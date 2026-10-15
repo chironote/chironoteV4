@@ -16,6 +16,8 @@ function Recording({
   toggleRecordingPopup,
   recordingType,
   isRecording,
+  isStarting,
+  isFinishingRecording,
   isPaused,
   isPreparingTranscript,
   isGeneratingSummary,
@@ -24,6 +26,10 @@ function Recording({
   discardRecording,
   pauseRecording,
   resumeRecording,
+  prepareNextRecording,
+  uploadStatus,
+  retryUploads,
+  getCaptureSession,
 }) {
   const [userSubscription, setUserSubscription] = useState(null);
   const [visitMetadata, setVisitMetadata] = useState({ dateOfService: localDate(), visitType: null, contextMode: 'patient' });
@@ -31,6 +37,8 @@ function Recording({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const patientPickerRef = useRef(null);
   const preparingPatientRef = useRef(false);
+  const creditRequestRef = useRef(0);
+  useEffect(() => () => { creditRequestRef.current++; }, []);
   const [patientDraft, setPatientDraft] = useState('');
   const [pendingPatient, setPendingPatient] = useState(null);
   const [checkingPatient, setCheckingPatient] = useState(false);
@@ -68,6 +76,10 @@ function Recording({
   };
 
   const beginRecording = async (metadata = visitMetadata) => {
+    const request = creditRequestRef.current + 1;
+    let captureSession;
+    const current = () => request === creditRequestRef.current &&
+      (!getCaptureSession || getCaptureSession() === captureSession);
     try {
       // Track the start recording action
       trackRecordingStart();
@@ -80,22 +92,30 @@ function Recording({
           : metadata.patientId ? metadata.visitType === 'reExam' : noteSettings.examLayout;
         localStorage.setItem('noteSettings', JSON.stringify({ ...noteSettings, examLayout }));
       }
+      const previousSession = getCaptureSession?.();
       startRecording(patientCaptureEnabled ? { ...metadata, contextMode: 'patient' } : undefined);
+      captureSession = getCaptureSession?.();
+      // A guarded/no-op Start didn't create a capture. Its credit check must
+      // never discard the recording that already owns the microphone.
+      if (getCaptureSession && captureSession === previousSession) return;
+      creditRequestRef.current = request;
 
       // Check user subscription AFTER starting (async is OK now)
       const subscription = await fetchUserSubscription();
-
       if (!subscription || subscription.hoursleft <= 0) {
+        const ownsPresentation = current();
         console.error('User has no remaining hours');
-        // Cancel without uploading the recording we just started.
-        discardRecording();
-        setShowCreditPopup(true);
+        // Preserve credit denial for A, but only cancel A's remaining work.
+        // A late result must neither cancel B nor open a popup over B.
+        if (captureSession !== undefined || ownsPresentation) discardRecording(captureSession, { creditCheckFailed: true });
+        if (ownsPresentation) setShowCreditPopup(true);
         return;
       }
     } catch (error) {
+      if (!current()) return;
       console.error("Error in handleStartRecording:", error);
       // Cancel without uploading when subscription validation fails.
-      discardRecording();
+      discardRecording(captureSession);
     }
   };
 
@@ -202,6 +222,10 @@ function Recording({
   return (
     <div className="create-note-popup" onClick={handleOuterClick}>
       <div className="recording-dialog" role="dialog" aria-modal="true" aria-label="Recording" onClick={(e) => e.stopPropagation()}>
+        {uploadStatus?.blocked > 0 && <p role="alert">
+          An audio submission needs attention. Check your connection and recording account, then retry. Keep the app open.
+          {' '}<button type="button" onClick={retryUploads}>Retry audio submission</button>
+        </p>}
         {showConfirmation && (
           <ConfirmationPopup
             onConfirm={handleConfirmDiscard}
@@ -261,9 +285,9 @@ function Recording({
               <button
                 className="recording-start-button"
                 onClick={handleStartRecording}
-                disabled={checkingPatient}
+                disabled={checkingPatient || isStarting || isFinishingRecording}
               >
-                {checkingPatient ? 'Checking patient…' : 'Start Recording'}
+                {checkingPatient ? 'Checking patient…' : isFinishingRecording ? 'Finishing previous recording…' : isStarting ? 'Starting recording…' : 'Start Recording'}
               </button>
               <button
                 className="close-button"
@@ -277,11 +301,13 @@ function Recording({
           <div className="preparing-transcript">
             <h2>Preparing Transcript</h2>
             <div className="loading-spinner" aria-label="Preparing SOAP note transcript"></div>
+            <button type="button" onClick={prepareNextRecording}>Record next appointment</button>
           </div>
         ) : isGeneratingSummary ? (
           <div className="preparing-transcript">
             <h2>Generating Note</h2>
             <div className="loading-spinner" aria-label="Generating SOAP chiropractic note"></div>
+            <button type="button" onClick={prepareNextRecording}>Record next appointment</button>
           </div>
         ) : (
           <div className="recording-content">

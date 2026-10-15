@@ -35,6 +35,8 @@ Native startup hides the splash screen, sets a light status bar, and adds the
 background and WebKit behavior; native permission and lifecycle behavior must be
 tested on devices rather than inferred from the web build.
 
+The October 15 in-memory upload-recovery candidate additionally requires installed-iPhone acceptance on slow advancing WiFi, a true upload stall, disconnect/reconnect, two-network handoff and starting/discarding the next appointment while the earlier one completes. Local mocked tests/web compilation do not establish these results. No native sync, Mac/Xcode build, store submission or production-readiness claim accompanies that source change.
+
 The patient workflow adds @capacitor/share 6.0.2, compatible with Capacitor 6. PDF delivery uses Filesystem Cache and the native share sheet; cache expiry is best-effort while suspended and resumes at launch/foreground. Run npm ci, npm run build and npx cap sync ios on Mac, then CocoaPods/Xcode validation. Windows source/build checks cannot validate iOS linking/signing or device behavior. Preserve the existing ai.chironote.app Xcode target; Capacitor 6.2.1 sync left it unchanged in the Mac validation. Verify the registered Apple app identity before reconciling the com.chironote.app Capacitor mismatch or distributing a build.
 
 The app privacy manifest declares only Filesystem file-metadata access inside the app container (FileTimestamp reason C617.1), matching the installed plugin requirement and Apple approved reason. It is linked in the App Resources build phase and was present in the Mac-built simulator app. It does not assert additional collection/tracking/privacy behavior. Confirm it again in the signed archive before distribution.
