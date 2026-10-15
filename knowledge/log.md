@@ -1,5 +1,9 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-15
+
+- **Exam Layout capture correction**: Updated [recording](./components/recording.md), [patient notes](./architecture/patient-notes.md), index routing and Recording README for the visible forced new-patient checkbox, editable unassigned choice, separate persisted manual preference and synchronous settings snapshot. Record without a patient clears linkage while retaining earlier Exam and PI choices. Sources: Recording.jsx/Recording.css, Recording.test.jsx and RecordingManager.test.jsx. Frontend source only; no feature-flag, backend, ICD-rule or deployment change.
+
 ## 2026-10-13
 
 - **Approved patient creation pattern**: Added the reusable compact create-row/confirmation contract to [STYLE](./development/STYLE.md) and index. Corrected the create button accessible name to include visible wording and the full typed name; added long-name and synchronous microphone-before-subscription regression coverage. Production patient flags remain false.
