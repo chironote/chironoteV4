@@ -11,7 +11,7 @@ tags: [chironote, component, billing, settings, capacitor]
 
 # Billing and Settings
 
-Settings now includes the patient PDF signature name/NPI card when patient notes are enabled. The NPI is masked outside Configure Signature. Native billing remains usage-only and `/app/pricingplans` redirects to Billing. The patient catch-up does not replace the existing Custom Instructions implementation.
+Settings includes the patient PDF signature name/NPI card when patient notes are enabled. The NPI is masked outside Configure Signature; the card remains below Custom Instructions. Native billing remains usage-only and `/app/pricingplans` redirects to Billing.
 
 The authenticated account experience is split between Billing and Settings. Billing is mounted at `/app/billing`, Settings is mounted at `/app/settings`, and `/app/account` is a compatibility redirect to Billing.
 
@@ -19,7 +19,17 @@ The authenticated account experience is split between Billing and Settings. Bill
 
 - `Billing/Billing.jsx` renders subscription state and monthly usage, with web-only plan comparison and billing actions.
 - `Billing/PriceTable.jsx` embeds the Stripe pricing table used only by the web pricing route.
-- `Settings/Settings.jsx` provides lifetime-hours and feature-flagged Custom Instructions preferences.
+- `Settings/Settings.jsx` provides lifetime-hours and server-backed Custom Instructions preferences; `CustomInstructionsDialog.jsx` owns source editing and compilation progress.
+
+## Custom Instructions
+
+Android uses the existing Cognito-authenticated AppSync operations to load the safe source/status view, start an asynchronous compilation with an idempotency key, and disable custom instructions without deleting saved wording. There is no direct Lambda endpoint setting. Availability defaults on; the explicit trimmed, case-insensitive `REACT_APP_CUSTOM_INSTRUCTIONS_ENABLED=false` remains an emergency opt-out and prevents these requests. Per-account activation still requires the user's compile action and a server-confirmed active profile.
+
+The editor protects dirty text and retains the existing ProductDialog behavior. An accepted compile starts job-aware polling, not a success message. Approximate progress yields to READY/effective-mode confirmation. Prior active instructions remain active during updates and on failed replacements. Same-source retries reuse the request ID; uncertain starts reload persisted state. Secure request IDs reuse the established Android WebView helper.
+
+Polling slows after 30 seconds, pauses after five minutes with honest guidance, and reloads/resumes on browser focus, native foreground or progress-dialog reopen. Listener cleanup covers delayed registration, and older reads cannot replace newer state. The dialog can be left after the initial 30-second compilation period; reopening recovers server status. Settings retains its colors, type sizes and signature/lifetime cards, with 48px coarse-pointer actions and dialog close targets; see [STYLE](../development/STYLE.md).
+
+The frontend query/mutation documents and only their supporting introspection entries were aligned with the read-only production AppSync export on 2026-10-15. Amplify backend source/infrastructure, note generation, recording, native identity and release versions are unchanged. Offline mocks/schema validation and web builds do not establish authenticated device or store acceptance.
 
 ## Important Code Paths
 
