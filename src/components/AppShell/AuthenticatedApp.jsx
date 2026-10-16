@@ -27,6 +27,7 @@ import { trackRecordingCompleted } from '../../utils/analytics';
 import { applyDictationText, createDictationInsertion } from '../../utils/dictationInsertion';
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
+import { extractCopyText } from '../../utils/copyText';
 import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 function ClinicalWorkspace({ signOut, user }) {
@@ -324,7 +325,7 @@ function ClinicalWorkspace({ signOut, user }) {
     const contentToCopy = isPopupMenu
       ? selectedContent || clipboardContent
       : clipboardTextareaRef.current?.value || '';
-    const plainText = extractPlainText(contentToCopy);
+    const plainText = extractCopyText(contentToCopy);
 
     navigator.clipboard.writeText(plainText)
       .then(() => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { stripMarkdown } from '../../utils/markdownStripper';
+import { cleanCopyText } from '../../utils/copyText';
 import './ContentPopup.css'; // Import component-specific styles
 import PatientName from '../Patients/PatientName';
 import ReassignPatientDialog from '../Patients/ReassignPatientDialog';
@@ -96,7 +96,7 @@ const ContentPopup = ({
     }
     try {
       // Strip markdown formatting before copying
-      const cleanedText = stripMarkdown(textToCopy);
+      const cleanedText = cleanCopyText(textToCopy);
       await navigator.clipboard.writeText(cleanedText);
       setCopiedSectionHeader(`${sectionName}_copied`);
     } catch (err) {

@@ -77,3 +77,8 @@ History patient reassignment is handled by AuthenticatedApp.handlePatientAssigne
 Confirmed patient deletion clears matching history, popup and clipboard state. History retrieval follows pagination beyond empty deletion markers so they do not crowd older saved notes out of the 100-note display.
 
 Saved History drops into either clipboard drop target reload `getSavedNote` by timestamp and use the same `openPatientNote` draft guard, patient/visit identity and loaded version as Patients selection. Failed fetches retain the current draft; save/dictation/generation blocks drops. A request sequence ignores superseded drop fetches and unmounted responses. Plain-text drops preserve their existing behavior: direct clipboard replacement edits the current target, while the mobile overlay guards the draft and opens unbound text.
+
+
+## Copy cleanup policy — 2026-10-15
+
+Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.

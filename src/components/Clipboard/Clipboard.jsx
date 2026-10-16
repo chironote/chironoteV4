@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { stripMarkdown } from '../../utils/markdownStripper';
+import { cleanCopyText } from '../../utils/copyText';
 import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
 
 const Clipboard = ({
@@ -80,7 +80,7 @@ const Clipboard = ({
     // Extract and copy the section text
     const sectionText = text.substring(startIndex + currentSection.length, endIndex).trim();
     // Strip markdown formatting before copying
-    const cleanedText = stripMarkdown(sectionText);
+    const cleanedText = cleanCopyText(sectionText);
     navigator.clipboard.writeText(cleanedText)
       .then(() => {
         setShowCopyMessage(true);

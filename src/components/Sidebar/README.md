@@ -68,3 +68,8 @@ The patient name in ContentPopup opens ReassignPatientDialog after the draft gua
 The descriptor label itself is a keyboard-accessible edit button with a subtle pencil to its right. Enter or blur saves; Escape cancels without dismissing the popup. The separate Rename button is retired.
 
 `HistoryListItem` exports both plain note text for external drag destinations and a timestamp-only `application/x-chironote-saved-note` format. Clipboard and mobile history-overlay drops use that key to reload the current saved note through AppShell, preserving the Patients selection guard and loaded identity/version. Clicking History remains the keyboard-accessible popup path, whose Send to Clipboard action also retrieves the saved record.
+
+
+## Copy cleanup policy — 2026-10-15
+
+Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.

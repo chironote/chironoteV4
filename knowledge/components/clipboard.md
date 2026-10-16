@@ -37,7 +37,7 @@ const sections = {
 Before copying a section, markdown is stripped:
 
 ```js
-const cleanedText = stripMarkdown(sectionText);
+const cleanedText = cleanCopyText(sectionText);
 navigator.clipboard.writeText(cleanedText);
 ```
 
@@ -79,3 +79,8 @@ Derived from [README.md](../../src/components/Clipboard/README.md).
 Selecting a visit in Patients opens the same clipboard textarea with its patient, date and loaded version. Changed explicit Assessment codes on any visit type show the code/description list and Confirm and save, without new/continuing/resolved controls. Atomic note/list saving makes the visit eligible to supply future diagnoses without a Re-Exam; ordinary edits retain server reconciliation. See [Patient notes](../architecture/patient-notes.md) for source chronology and reassignment copying.
 
 Dragging a saved History note into the clipboard reloads the current saved record by its timestamp and uses the same guarded opening as Patients selection. The history display body is not used as the draft. Failed loads retain existing content; saving, generation and dictation block drops. External plain-text drops remain replacements and edits of an existing loaded target. Source: [Clipboard drop handling](../../src/components/Clipboard/Clipboard.jsx) and [shell orchestration](../../src/components/AppShell/AuthenticatedApp.jsx).
+
+
+## Copy cleanup policy — 2026-10-15
+
+Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.

@@ -84,3 +84,8 @@ The patient name in ContentPopup opens ReassignPatientDialog after the draft gua
 The descriptor label itself is a keyboard-accessible edit button with a subtle pencil to its right. Enter or blur saves; Escape cancels without dismissing the popup. The separate Rename button is retired.
 
 History drags carry a timestamp-only saved-note format alongside plain note text for external destinations. Both internal clipboard drop surfaces retrieve the current saved record and use the Patients clipboard-opening guard. The semantic History button and popup Send to Clipboard remain the keyboard alternative. Source: [History drag payload](../../src/components/Sidebar/HistoryListItem.jsx) and [shell drop targets](../../src/components/AppShell/AuthenticatedApp.jsx).
+
+
+## Copy cleanup policy — 2026-10-15
+
+Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.
