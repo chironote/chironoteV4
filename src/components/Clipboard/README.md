@@ -26,7 +26,7 @@ const sections = {
 Before copying a section, markdown is stripped:
 
 ```js
-const cleanedText = stripMarkdown(sectionText);
+const cleanedText = cleanCopyText(sectionText);
 navigator.clipboard.writeText(cleanedText);
 ```
 
@@ -55,3 +55,8 @@ Desktop patient-note Save is an icon-only action immediately after Smart Editor 
 Smart Editor and Save are separated by the existing `toolbar-divider` style, rendered only when Save is visible.
 
 History drags include a saved-note timestamp in a custom drag format alongside plain text. With patient features enabled, `Clipboard` delegates saved-key drops to AppShell, which reloads the authoritative note and runs the same guarded opening as Patients selection. External text retains direct replacement behavior and remains an edit of an already loaded saved note. Drops cannot change text during saving, generation or active dictation.
+
+
+## Copy cleanup policy — 2026-10-15
+
+Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.

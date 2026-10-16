@@ -2,6 +2,8 @@
 
 ## 2026-10-15
 
+- **Copy text preservation**: Updated [clipboard behavior](./components/clipboard.md) for copy-only cleanup that preserves lists, numbering, quotes, rules and literal punctuation while removing paired Markdown formatting. Generation/display and SOAP extraction are unchanged; added separate helper and regression coverage. Source-only integration; no publication.
+
 - **Exam Layout capture correction**: Updated [recording](./components/recording.md), [patient notes](./architecture/patient-notes.md), index routing and Recording README for the visible forced new-patient checkbox, editable unassigned choice, separate persisted manual preference and synchronous settings snapshot. Record without a patient clears linkage while retaining earlier Exam and PI choices. Sources: Recording.jsx/Recording.css, Recording.test.jsx and RecordingManager.test.jsx. Frontend source only; no feature-flag, backend, ICD-rule or deployment change.
 
 ## 2026-10-13
