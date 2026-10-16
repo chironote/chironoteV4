@@ -18,7 +18,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 | Concept | Use it to understand |
 | --- | --- |
 | [Local Development and Change Workflow](./development/workflow.md) | Setup, commands, verified Storage cancellation patch, testing, documentation duties, and sensitive files. |
-| [Android patient capture styling](./development/STYLE.md) | Approved green creation row, long-name/accessibility behavior and compact typed-name confirmation. |
+| [Android clinical interface styling](./development/STYLE.md) | Approved patient creation pattern, Settings/dialog consistency, readable forms and coarse-pointer touch targets. |
 
 ## Application Components
 

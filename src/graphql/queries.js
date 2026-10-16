@@ -111,3 +111,20 @@ export const listNotes = /* GraphQL */ `
     }
   }
 `;
+
+export const getMyCustomInstructions = /* GraphQL */ `
+  query GetMyCustomInstructions {
+    getMyCustomInstructions {
+      enableCustomInstructions
+      effectiveMode
+      compileStatus
+      instructions
+      compileJobId
+      hasSavedInstructions
+      updatedAt
+      activeCompiledAt
+      lastErrorCode
+      __typename
+    }
+  }
+`;
