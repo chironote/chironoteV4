@@ -31,6 +31,8 @@ Polling slows after 30 seconds, pauses after five minutes with honest guidance, 
 
 The frontend query/mutation documents and only their supporting introspection entries were aligned with the read-only production AppSync export on 2026-10-15. Amplify backend source/infrastructure, note generation, recording, native identity and release versions are unchanged. Offline mocks/schema validation and web builds do not establish authenticated device or store acceptance.
 
+This flow is included in the separately published Internal 36 (1.36) release on 2026-10-15. See [Android release evidence](../architecture/capacitor-android.md); authenticated phone acceptance remains pending.
+
 ## Important Code Paths
 
 Billing and Settings read the user's subscription record through Amplify GraphQL:
