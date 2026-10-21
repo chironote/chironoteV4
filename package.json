@@ -8,14 +8,14 @@
     "@aws-amplify/cli": "^12.12.6",
     "@aws-amplify/ui-react": "^6.2.0",
     "@aws-sdk/client-sqs": "^3.777.0",
-    "@capacitor/android": "^6.1.2",
+    "@capacitor/android": "6.2.2",
     "@capacitor/app": "^6.0.1",
     "@capacitor/clipboard": "^6.0.2",
-    "@capacitor/core": "^6.1.2",
+    "@capacitor/core": "6.2.2",
     "@capacitor/device": "^6.0.1",
     "@capacitor/filesystem": "^6.0.1",
     "@capacitor/haptics": "^6.0.1",
-    "@capacitor/ios": "^6.1.2",
+    "@capacitor/ios": "6.2.2",
     "@capacitor/keyboard": "^6.0.2",
     "@capacitor/share": "6.0.2",
     "@capacitor/splash-screen": "^6.0.2",
@@ -37,7 +37,7 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^6.1.2"
+    "@capacitor/cli": "6.2.2"
   },
   "scripts": {
     "start": "react-scripts start",

@@ -8,6 +8,45 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
+## Capacitor 6.2.2 security patch candidate — October 21
+
+The framework/tool dependencies `@capacitor/android`, `@capacitor/ios`,
+`@capacitor/core` and `@capacitor/cli` are pinned to exactly **6.2.2** for
+[GHSA-rvm3-566m-v7fv / CVE-2026-103922](https://github.com/advisories/GHSA-rvm3-566m-v7fv).
+The previous npm lock and CocoaPods framework resolved 6.2.1. This is the minimum
+fixed Capacitor 6 release; existing plugins and the merged iOS 15.0 target remain.
+See [privacy boundaries](../security/privacy-boundaries.md) for the security
+boundary. Native CocoaPods sync, regression/build checks, independent review,
+signed archive, upload and processed Inner Circle availability are distinct gates.
+Latest documented TestFlight 1.9 (15) still contains 6.2.1. The initial security
+archive 1.8 (14), validated at `54fdc06`, was never uploaded and is superseded by
+the subsequent recording fixes. The security branch now incorporates those fixes;
+new source validation and fresh live version allocation precede a replacement.
+A source patch does not update an installed app or authorize public
+App Store promotion. Physical-device recording, navigation and network acceptance
+remain required.
+
+Current reconciled runtime `52c6f40aa15423b3bddd673de75035ff46ac198b`
+includes base `96d522f`, the recording fixes through TestFlight 1.9 (15), and
+the owner's native iPad platform-detection correction. Checks passed **38 suites /
+249 tests**, web build, iOS sync with no Pod lock drift, and incremental unsigned
+Release compilation on Xcode 26.6 / SDK 26.5. The
+effective minimum remains iOS 15.0; installed core/CLI/iOS/Android are 6.2.2.
+Independent review found no material source issue. Existing warnings and cached
+intermediate cleanup warnings remain; no clean-build or device-acceptance claim is made.
+
+No security-patched TestFlight availability is claimed. Browser input was stopped
+during the separate Android upload; fresh live Apple version/audience checks,
+a newly allocated current-source archive, signing/upload and processed Inner
+Circle availability remain pending. [Draft PR #69](https://github.com/chironote/chironoteV4/pull/69)
+and the isolated source are preserved. Initial 1.8 (14) export verification
+confirmed distribution signing, app/team, privacy manifests, iOS 15.0 and native
+6.2.2, but it was never uploaded and predates the later recording fixes; preserve
+it only as historical evidence. Its IPA hash is
+`d3aed41f65b1e107874b53497e0877fce22879039258159b844b0e6fda5969a3`.
+Current evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/task/evidence/ios-final-recheck/`
+and `tester-handoff.json`. The public-release hold remains with its existing owner.
+
 ## Production hold — TestFlight 1.8 (13) recording report
 
 The owner clarified the installed TestFlight **1.8 (13)** symptom: a longer
