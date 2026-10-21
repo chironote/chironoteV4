@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Native iPad recorder routing**: build-15 raw-audio and same-owner request evidence established that a Macintosh user agent bypassed the iOS recorder path. Native bridge identity now takes precedence, and MIME selection uses the same platform result as slicing and finalization. [Recording lifecycle](components/recording-lifecycle.md) and [mobile build](operations/mobile-build.md) record the correction and failed build-15 follow-up. No new build or device acceptance is implied.
+
 - **TestFlight 1.9 (15)**: PR #74 source
   d601e4c21188039e78b24c3ad28dc65484803fd7 passed 38 suites / 246 tests and 2
   focused suites / 52 tests; production web build, iOS sync, OKS and diff checks

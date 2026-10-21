@@ -26,8 +26,12 @@ capture. WebKit's follow-up reports the first 20–30 seconds on iOS 26.1 and sa
 the fix shipped in iOS 26.2. That is a plausible explanation for the symptom,
 not evidence that ChiroNote lost the audio in WebKit. The build-13 recorder did not request periodic iOS slices. Build 14 added
 one-second MP4 flushing and assembly but failed its device follow-up: about 41
-seconds survived. Build 15 now prefers supported WebM/Opus; physical-device
-completeness remains pending, so the integrity hold remains open.
+seconds survived. Build 15 also failed: a two-minute test uploaded only 42.37
+decoded seconds of MP4/AAC. Same-owner authentication requests carried a
+Macintosh user agent, bypassing the shipped iPhone/iPad-only detector and both
+earlier iOS fixes. The current source uses native Capacitor platform identity
+and one shared iOS condition; no new build has been produced. The integrity hold
+remains open pending device completeness verification after that correction.
 
 **Do not submit a build to App Review or release publicly while this recording
 integrity hold remains open.** Preserve accepted artifacts and evidence; do not
@@ -38,8 +42,12 @@ hold.
 
 ## TestFlight 1.9 (15) — October 21, 2026
 
-**Current TestFlight candidate; physical-device recording completeness is
-pending.** PR #74 merged at source commit
+**Device follow-up: failed; not a known-good recording fallback.** The captured
+MP4/AAC and matching provider duration establish loss before note generation.
+The shipped JavaScript matches its source; platform misclassification bypassed
+the intended iOS changes. Private raw evidence is retained outside Git under
+`C:/Users/nikit/Documents/Codex/2026-10-21/ios-build15-webm/raw-audio-investigation/`.
+PR #74 merged at source commit
 d601e4c21188039e78b24c3ad28dc65484803fd7. iOS prefers supported WebM/Opus to
 avoid the MP4 writer, retaining the older-device fallback and existing segment
 assembly/upload contract. This is a candidate path, not a proven recording fix.
