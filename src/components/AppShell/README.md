@@ -17,3 +17,13 @@ Opening fresh recording settings hands off presentation ownership immediately, i
 Source provenance: imported shared workflow from web prod `142383e`; native integration preserves cap-ios `2326d34`. Tests cover saved identity, draft navigation, diagnosis changes and native route restrictions. Changes to this folder require updating this README and the app-shell knowledge concept.
 
 The shared phone predicate in `src/hooks/usePhoneLayout.js` persists through orientation changes and never uses viewport height. Smart Editor availability is separate: `AuthenticatedApp` permits it only outside native apps and phone web layouts. Fresh native/phone checks guard the toggle and Ctrl+B; unavailable state closes the panel while retaining edit text. MainWorkspace omits EditPanel on native phones/tablets and phone web, keeping native Clipboard Save independent and preserving versioned patient guards. Desktop web retains editor access. Phone styling remains based only on the phone predicate, preserving tablet geometry.
+
+### Recovered saved results
+
+The current V4 Capacitor client's per-capture sessions remain independent. A
+background recovered completion refreshes history without changing the foreground
+clipboard. Foreground completion installs the exact saved body/version as its
+clean editable baseline. Opening another Patients visit is held while generation
+owns the clipboard. No native project or bridge change is included.
+
+Saved completion resets the raw body and version together; preview Markdown formatting never defines the persisted edit baseline.

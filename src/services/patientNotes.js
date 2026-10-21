@@ -1,3 +1,4 @@
+import { createNoteGenerationStreamParser, parseLambdaErrorPayload } from '../components/Recording/noteGenerationErrors';
 import { deliverPatientPdf } from './patientPdfDelivery';
 import { generateClient } from 'aws-amplify/api';
 import { fetchAuthSession } from 'aws-amplify/auth';
@@ -82,13 +83,22 @@ export async function retrySavedGeneration(note) {
   });
   if (!response.ok || !response.body) throw new Error('Generation could not start. The saved recording is unchanged.');
   const reader = response.body.getReader(); const decoder = new TextDecoder(); let preview = '';
+  const parseStream = createNoteGenerationStreamParser(); let recovered = false; let size = 0;
   while (true) {
-    const chunk = await reader.read(); preview += decoder.decode(chunk.value, { stream: !chunk.done });
-    if (preview.length > 1_000_000) { await reader.cancel(); throw new Error('The generation response exceeded its size limit.'); }
+    const chunk = await reader.read(); const text = decoder.decode(chunk.value, { stream: !chunk.done });
+    size += text.length;
+    if (size > 1_000_000) { await reader.cancel(); throw new Error('The generation response exceeded its size limit.'); }
+    const frame = parseStream(text, chunk.done); preview += frame.text;
+    const error = frame.error || parseLambdaErrorPayload(preview);
+    if (error) {
+      Promise.resolve().then(() => reader.cancel()).catch(() => {});
+      if (error.code !== 'NOTE_RECOVERED') throw new Error('The saved result could not be confirmed. Review the visit details before retrying.');
+      recovered = true; break;
+    }
     if (chunk.done) break;
   }
-  if (preview.includes('\u0000ERROR:') || /^\s*\{/.test(preview)) throw new Error('Generation did not save a new note. Review the visit details or retry when the transcript is complete.');
   const result = await patientRequest('getSavedNote', { timestamp: note.timestamp });
-  if (!result.note.ready || result.note.version === note.version) throw new Error('A new completed note has not been saved yet.');
+  if (!result.note?.ready || !result.note.version || typeof result.note.note !== 'string' ||
+      String(result.note.timestamp) !== String(note.timestamp) || (!recovered && result.note.version === note.version)) throw new Error('A new completed note has not been saved yet.');
   return result.note;
 }

@@ -25,7 +25,9 @@ jest.mock('./useNotesHistory', () => () => ({ refreshNotes: mockHistoryRefresh }
 jest.mock('../../services/amplifyClient', () => ({ getAmplifyClient: jest.fn() }));
 jest.mock('../../utils/analytics', () => ({ trackRecordingCompleted: jest.fn() }));
 jest.mock('../Navbar/Navbar', () => () => null);
-jest.mock('./MainWorkspace', () => ({ clipboard, sidebar, recording }) => {
+let mockContentPopup;
+jest.mock('./MainWorkspace', () => ({ clipboard, sidebar, recording, contentPopup }) => {
+  mockContentPopup = contentPopup;
   const Clipboard = jest.requireActual('../Clipboard/Clipboard').default;
   const HistoryListItem = jest.requireActual('../Sidebar/HistoryListItem').default;
   return <main>
@@ -143,6 +145,23 @@ describe('saved-note drops', () => {
     await click('New recording settings');
     expect(discard).toHaveBeenCalledWith(7);
   });
+  test('authoritative recovered Markdown body becomes the exact clean editable baseline', async () => {
+    const recovered = { ...first, version: 'recovered-version', note: '**Subjective:** Synthetic recovered result.' };
+    await act(async () => {
+      mockRecordingCallbacks.onTextStreamUpdate(recovered.note);
+      mockRecordingCallbacks.onSavedNoteReady(recovered);
+    });
+    expect(container.querySelector('textarea').value).toBe(recovered.note);
+    expect(container.textContent).toContain('recovered-version');
+    expect([...container.querySelectorAll('button')].find(node => node.textContent === 'Save note').disabled).toBe(true);
+  });
+  test('history popup cannot replace the clipboard while generation is active', async () => {
+    await drop('123');
+    await act(async () => mockRecordingCallbacks.onGenerationStateChange(true));
+    await act(async () => mockContentPopup.handleSendToClipboard());
+    expect(container.querySelector('textarea').value).toBe(first.note);
+    expect(container.textContent).toContain('fictional-a v1');
+  });
   test('History carries saved identity plus external text and drop reloads the current version', async () => {
     const values = {};
     const event = new Event('dragstart', { bubbles: true });
@@ -211,4 +230,24 @@ test.each(['/app/billing', '/app/account', '/app/pricingplans'])('native billing
   expect(container.textContent).toContain('Native account usage');
   expect(container.querySelector('iframe, script[src*="stripe"], a[href*="checkout"]')).toBeNull();
   await act(async () => root.unmount()); container.remove();
+});
+
+test.each([false, true])('an older patient lookup cannot replace generation, finished=%s', async finished => {
+  jest.useFakeTimers();
+  const patient={patientId:'synthetic',name:'Jordan Example'};
+  const note={timestamp:'123',version:'v1',note:'Synthetic saved body',visitLabel:'Initial visit',patientId:patient.patientId};
+  let finishRead; let delay=true;
+  patientRequest.mockImplementation(async op=>op==='listPatients'?{items:[patient]}:op==='getPatientVisits'?{patient,notes:[note]}:op==='getSavedNote'?(delay?new Promise(resolve=>{finishRead=resolve;}):{note}):{patient});
+  const container=document.createElement('div');document.body.append(container);const root=createRoot(container);
+  await act(async()=>root.render(<MemoryRouter initialEntries={['/app/patients']}><Routes><Route path="/app/*" element={<AuthenticatedApp user={{username:'synthetic'}}/>}/></Routes></MemoryRouter>));
+  await act(async()=>jest.advanceTimersByTime(250));
+  const click=async text=>act(async()=>[...container.querySelectorAll('button')].find(node=>node.textContent.includes(text)).click());
+  await click('Jordan Example'); await click('Initial visit'); expect(finishRead).toBeDefined();
+  await act(async()=>mockRecordingCallbacks.onGenerationStateChange(true));
+  if(finished)await act(async()=>mockRecordingCallbacks.onGenerationStateChange(false));
+  await act(async()=>finishRead({note}));expect(container.textContent).not.toContain('Your Clipboard');
+  delay=false;
+  await act(async()=>mockRecordingCallbacks.onGenerationStateChange(false));
+  await click('Initial visit');expect(container.querySelector('textarea').value).toBe(note.note);
+  act(()=>root.unmount());container.remove();jest.useRealTimers();
 });
