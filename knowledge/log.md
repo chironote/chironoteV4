@@ -2,7 +2,9 @@
 
 ## 2026-10-21
 
-- **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording-lifecycle.md). Synthetic validation only; no merge or production publication.
+- **TestFlight preparation**: recorded PR #63 integration, real production configuration, 243 passing Mac tests, clean native sync and unsigned Release build in [mobile build](operations/mobile-build.md). Preserved build-11 historical fallback evidence, dirty primary and precise Apple/desktop access handoff. No public release or current tester availability is claimed.
+
+- **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording-lifecycle.md). PR #63 subsequently merged at fe1a2d5; real-config Mac release checks are recorded in [mobile build](operations/mobile-build.md). No new signed/uploaded artifact is yet claimed.
 
 
 ## 2026-10-15
