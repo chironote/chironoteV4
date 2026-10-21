@@ -4,6 +4,38 @@
 
 - **Native Capacitor security patch**: pinned the framework/tool packages to exactly 6.2.2 for GHSA-rvm3-566m-v7fv, preserving plugins and merged iOS 15.0 settings. Updated [mobile build](operations/mobile-build.md), [privacy boundaries](security/privacy-boundaries.md) and index to distinguish source remediation from rebuilt TestFlight availability. Native validation/review and publication evidence are recorded separately; public promotion remains outside scope.
 
+- **TestFlight 1.9 (15)**: PR #74 source
+  d601e4c21188039e78b24c3ad28dc65484803fd7 passed 38 suites / 246 tests and 2
+  focused suites / 52 tests; production web build, iOS sync, OKS and diff checks
+  passed. The verified TestFlight IPA is 4,177,276 bytes (SHA-256
+  e038071d303927fa9dee7a257bc82c9762ec63aadac59608afcbaa9160c7529f). Apple
+  accepted the Internal Only upload at 3:32 PM PDT; build
+  f2674026-fc63-4c49-870d-4fe0ef56f364 is Testing for Inner Circle (one
+  invitation, 90 days). Tester notes are saved. The WebM/Opus candidate still
+  needs physical-device completeness verification; the recording-integrity and
+  public-release hold remain open. No App Review or public release is claimed.
+  See [mobile build](operations/mobile-build.md).
+
+- **WebM recording candidate after build 14 failed**: the owner reports about 41 seconds survived the next longer recording. iOS now prefers supported WebM/Opus to avoid the MP4 writer, retaining MP4 on older devices and the existing segment assembly/upload contract. [Recording lifecycle](components/recording-lifecycle.md) records the rationale; physical-device verification and the public-release hold remain pending.
+
+- **Retry banner lifetime**: the default note-generation failure message clears after 10 seconds; replacement and unmount cancel dismissal without clearing newer note drafts or other errors. [App shell](architecture/app-shell.md) documents this presentation-only change; backend retries and recording/transcription timeouts are unchanged.
+
+- **TestFlight 1.9 (14) and recording hold**: PR #73 merge
+  `367eb6558c1ccfdc0852d56f12c39e3a51d10bef` passed 38 suites / 245 tests, 51
+  focused tests, production web build and iOS sync. Organizer accepted the
+  Internal Only upload; build `3ca05248-94f1-46d9-abac-0a945eea5b2e` is Testing
+  for Inner Circle (one invitation, 90 days). IPA SHA256:
+  `c6483942da5fdcfe46d33ea1289725807e953bcea7a592fa74efeb1b1b1f26ef`.
+  The owner clarified the first build-13 symptom as about 20 seconds / 32 words,
+  not a fixed five-second clip; Apple tester records identify iPad Air 5 / iOS
+  26.1. The existing provider transcript and final note roughly align, placing the loss
+  before note generation; recorder versus transcription remains unresolved.
+  WebKit bug 299164 is plausible, not proven. Device acceptance and the
+  App Review/public-release hold remain. The primary fast-forwarded after backing
+  up 5 tracked and 9 untracked files. See [mobile build](operations/mobile-build.md).
+
+- **App Store 1.8 (13) upload**: recorded explicit public-release authorization, source d5218b8, signed archive and distribution IPA checks/hash, byte-identical build-12 web assets, saved 1.8 draft and error-free upload acceptance at 1:42 PM PDT with Apple processing underway in [mobile build](operations/mobile-build.md). [Privacy boundaries](security/privacy-boundaries.md) records published Name/Health/Other User Content label corrections. No App Review submission or live public 1.8 is yet claimed; device checks and Capacitor advisory remain unresolved.
+
 - **iOS 15 minimum**: raised all project/app Debug/Release deployment targets and the CocoaPods platform to 15.0, dropping iOS 13/14 support for future builds. Updated [mobile build](operations/mobile-build.md) and the setup checklist. Existing TestFlight build 12 is unchanged; this source update does not publish a new build or resolve the separate Capacitor advisory.
 
 - **TestFlight 1.8 (12) Testing**: published archived source d5a3776 to unchanged Inner Circle, one invitation/90 days; build 11 remains Testing with 85 days. [Mobile build](operations/mobile-build.md) records desktop-session archive, upload receipt, distribution IPA hash/signature/privacy/export, saved tester notes and outstanding device checks. [Privacy boundaries](security/privacy-boundaries.md) records pre-existing Capacitor 6.2.1 advisory and unresolved public-release review; dependencies were not changed. No public App Store release occurred.

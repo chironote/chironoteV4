@@ -25,6 +25,9 @@ import { applyDictationText, createDictationInsertion } from '../../utils/dictat
 import { extractPlainText } from '../../utils/historyGrouping';
 import { stripMarkdown } from '../../utils/markdownStripper';
 import { SAVED_NOTE_DRAG_TYPE } from '../../utils/savedNoteDrag';
+import { NOTE_GENERATION_RETRY_MESSAGE } from '../Recording/recordingConstants';
+
+const GENERATION_ERROR_DISMISS_DELAY_MS = 10000;
 
 function ClinicalWorkspace({ signOut, user }) {
   const phoneLayout = usePhoneLayout();
@@ -49,6 +52,7 @@ function ClinicalWorkspace({ signOut, user }) {
   const [clipboardContent, setClipboardContent] = useState('');
   const [clipboardTarget, setClipboardTarget] = useState(null);
   const [generationError, setGenerationError] = useState('');
+  const generationErrorTimeoutRef = useRef(null);
   const [noteStreamActive, setNoteStreamActive] = useState(false);
   const noteStreamActiveRef = useRef(false);
   const noteStreamEpochRef = useRef(0);
@@ -73,6 +77,24 @@ function ClinicalWorkspace({ signOut, user }) {
   const feedbackTriggerRef = useRef(null);
   const savedNoteDropRequestRef = useRef(0);
   useEffect(() => () => { savedNoteDropRequestRef.current += 1; }, []);
+  const showGenerationError = useCallback(message => {
+    if (generationErrorTimeoutRef.current !== null) {
+      clearTimeout(generationErrorTimeoutRef.current);
+      generationErrorTimeoutRef.current = null;
+    }
+
+    setGenerationError(message);
+    if (message !== NOTE_GENERATION_RETRY_MESSAGE) return;
+
+    const timeout = setTimeout(() => {
+      setGenerationError(current => current === NOTE_GENERATION_RETRY_MESSAGE ? '' : current);
+      if (generationErrorTimeoutRef.current === timeout) generationErrorTimeoutRef.current = null;
+    }, GENERATION_ERROR_DISMISS_DELAY_MS);
+    generationErrorTimeoutRef.current = timeout;
+  }, []);
+  useEffect(() => () => {
+    if (generationErrorTimeoutRef.current !== null) clearTimeout(generationErrorTimeoutRef.current);
+  }, []);
 
   const openFeedback = useCallback((event) => {
     feedbackTriggerRef.current = event?.currentTarget || document.activeElement;
@@ -102,9 +124,9 @@ function ClinicalWorkspace({ signOut, user }) {
   }, [clipboardTarget?.patientId, selectedItem?.patientId, setHistoryNotes, setHistoryTranscripts, refreshSavedHistory]);
   const clipboardSave = useClipboardSave({
     note: clipboardTarget, draft: clipboardContent,
-    onSaved: note => { setClipboardTarget(note); setClipboardContent(note.note); setGenerationError(''); notesHistory.refreshNotes(); clipboardGuard.saved(); },
+    onSaved: note => { setClipboardTarget(note); setClipboardContent(note.note); showGenerationError(''); notesHistory.refreshNotes(); clipboardGuard.saved(); },
     onCancelReview: () => clipboardGuard.cancel(),
-    onError: setGenerationError,
+    onError: showGenerationError,
   });
   const clipboardGuard = useDraftGuard({
     dirty: patientNotesEnabled && desktopSave && clipboardDirty,
@@ -116,7 +138,7 @@ function ClinicalWorkspace({ signOut, user }) {
   const openPatientNote = (note, isCurrent = () => true) => leaveDrafts(() => {
     if (!isCurrent() || noteStreamActiveRef.current || selectionEpoch !== noteStreamEpochRef.current) return;
     savedNoteDropRequestRef.current += 1;
-    setClipboardTarget(note); setClipboardContent(note.note || ''); setGenerationError('');
+    setClipboardTarget(note); setClipboardContent(note.note || ''); showGenerationError('');
     setShowContentPopup(false); setShowEditPanel(false); setStreamingText('');
     navigate('/app');
     requestAnimationFrame(() => clipboardTextareaRef.current?.focus());
@@ -132,7 +154,7 @@ function ClinicalWorkspace({ signOut, user }) {
       if (!note || String(note.timestamp) !== timestamp || typeof note.note !== 'string') throw new Error('Unavailable saved note');
       return await openPatientNote(note, isCurrent);
     } catch {
-      if (isCurrent()) setGenerationError('The saved note could not be opened for editing. Please retry.');
+      if (isCurrent()) showGenerationError('The saved note could not be opened for editing. Please retry.');
     }
   };
 
@@ -159,9 +181,9 @@ function ClinicalWorkspace({ signOut, user }) {
       if (active) { noteStreamEpochRef.current += 1; savedNoteDropRequestRef.current += 1; }
       setNoteStreamActive(active);
     },
-    onGenerationError: setGenerationError,
+    onGenerationError: showGenerationError,
     onSavedNoteReady: (note, { isCurrent = true } = {}) => {
-      if (isCurrent) { setClipboardTarget(note); setClipboardContent(note.note); setStreamingText(''); setGenerationError(''); }
+      if (isCurrent) { setClipboardTarget(note); setClipboardContent(note.note); setStreamingText(''); showGenerationError(''); }
       refreshSavedHistory();
     },
     onTextStreamUpdate: handleTextStreamUpdate,

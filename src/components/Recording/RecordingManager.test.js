@@ -77,17 +77,20 @@ const createStream = () => {
 class FakeMediaRecorder {
   static instances = [];
 
-  static isTypeSupported = jest.fn(() => true);
+  // Keep the default iPhone behavior on the legacy MP4 fallback; individual
+  // tests opt into WebM when exercising newer WebKit support.
+  static isTypeSupported = jest.fn(type => type === 'video/mp4');
 
   constructor(stream, options) {
     this.stream = stream;
     this.options = options;
+    this.mimeType = options?.mimeType || 'video/mp4';
     this.state = 'inactive';
     this.startCalls = [];
     this.stopCalls = 0;
     this.blobs = [
-      new Blob(['rotated-media'], { type: 'video/mp4' }),
-      new Blob(['final-media'], { type: 'video/mp4' }),
+      new Blob(['rotated-media'], { type: this.mimeType }),
+      new Blob(['final-media'], { type: this.mimeType }),
     ];
     FakeMediaRecorder.instances.push(this);
   }
@@ -117,7 +120,7 @@ class FakeMediaRecorder {
     }
     this.stopCalls += 1;
     this.state = 'inactive';
-    const blob = this.blobs.shift() || new Blob(['final-media'], { type: 'video/mp4' });
+    const blob = this.blobs.shift() || new Blob(['final-media'], { type: this.mimeType });
     // Model WKWebView: neither final event is synchronous with stop().
     setTimeout(() => {
       this.ondataavailable({ data: blob });
@@ -129,6 +132,13 @@ class FakeMediaRecorder {
     }, this.stopDelay ?? 1);
   }
 }
+
+const readBlobAsText = blob => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(reader.result);
+  reader.onerror = () => reject(reader.error);
+  reader.readAsText(blob);
+});
 
 function RecordingHarness({ managerRef, callbacks = {} }) {
   managerRef.current = RecordingManager({
@@ -143,6 +153,7 @@ describe('RecordingManager iPhone lifecycle', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    FakeMediaRecorder.isTypeSupported.mockImplementation(type => type === 'video/mp4');
     mockSend.mockReset().mockResolvedValue({});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     FakeMediaRecorder.instances = [];
@@ -194,6 +205,8 @@ describe('RecordingManager iPhone lifecycle', () => {
   it('serializes pause/resume rotation while preserving the WebM upload contract', async () => {
     const { managerRef, recorder } = await startManager();
 
+    expect(FakeMediaRecorder.isTypeSupported).toHaveBeenCalledWith('audio/webm;codecs=opus');
+    expect(FakeMediaRecorder.isTypeSupported.mock.results[0].value).toBe(false);
     expect(recorder.options).toEqual({ mimeType: 'video/mp4' });
 
     act(() => managerRef.current.pauseRecording());
@@ -229,6 +242,82 @@ describe('RecordingManager iPhone lifecycle', () => {
     expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
   });
 
+  it('collects iOS timeslice pieces into one blob per recorder cycle', async () => {
+    const { managerRef, recorder } = await startManager();
+    expect(recorder.startCalls).toEqual([1000]);
+    recorder.stopDelay = 10;
+
+    act(() => {
+      recorder.ondataavailable({ data: new Blob(['segment-one-a|'], { type: 'video/mp4' }) });
+      recorder.ondataavailable({ data: new Blob(['segment-one-b|'], { type: 'video/mp4' }) });
+    });
+    expect(uploadData).not.toHaveBeenCalled();
+
+    act(() => jest.advanceTimersByTime(240000));
+    await advance(1);
+    expect(uploadData).not.toHaveBeenCalled();
+    await advance(9);
+
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    const rotationUpload = uploadData.mock.calls[0][0];
+    expect(rotationUpload.path).toContain('_chunk_');
+    expect(rotationUpload.data.type).toBe('video/mp4');
+    await expect(readBlobAsText(rotationUpload.data)).resolves.toBe(
+      'segment-one-a|segment-one-b|rotated-media',
+    );
+    expect(recorder.startCalls).toEqual([1000, 1000]);
+
+    act(() => recorder.ondataavailable({ data: new Blob(['segment-two-a|'], { type: 'video/mp4' }) }));
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    act(() => managerRef.current.stopRecording());
+    await advance(1);
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    await advance(9);
+
+    expect(uploadData).toHaveBeenCalledTimes(2);
+    const finalUpload = uploadData.mock.calls[1][0];
+    expect(finalUpload.path).toContain('_final_');
+    expect(finalUpload.data.type).toBe('video/mp4');
+    await expect(readBlobAsText(finalUpload.data)).resolves.toBe('segment-two-a|final-media');
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefers supported iOS WebM and uploads ordered timeslice pieces as one final blob', async () => {
+    FakeMediaRecorder.isTypeSupported.mockImplementation(type => (
+      type === 'audio/webm;codecs=opus' || type === 'video/mp4'
+    ));
+    const { managerRef, recorder } = await startManager();
+    const webmType = 'audio/webm;codecs=opus';
+
+    expect(FakeMediaRecorder.isTypeSupported).toHaveBeenCalledWith(webmType);
+    expect(recorder.options).toEqual({ mimeType: webmType });
+    expect(recorder.mimeType).toBe(webmType);
+    expect(recorder.startCalls).toEqual([1000]);
+    recorder.stopDelay = 10;
+    recorder.blobs = [new Blob(['final-media'], { type: webmType })];
+
+    act(() => {
+      recorder.ondataavailable({ data: new Blob(['webm-part-a|'], { type: webmType }) });
+      recorder.ondataavailable({ data: new Blob(['webm-part-b|'], { type: webmType }) });
+    });
+    expect(uploadData).not.toHaveBeenCalled();
+
+    act(() => managerRef.current.stopRecording());
+    await advance(1);
+    expect(uploadData).not.toHaveBeenCalled();
+    await advance(9);
+
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    const finalUpload = uploadData.mock.calls[0][0];
+    expect(finalUpload.path).toContain('_final_');
+    expect(finalUpload.options.contentType).toBe('audio/webm');
+    expect(finalUpload.data.type).toBe(webmType);
+    await expect(readBlobAsText(finalUpload.data)).resolves.toBe(
+      'webm-part-a|webm-part-b|final-media',
+    );
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
   it('flushes a paused final stop once, without waiting or double cleanup', async () => {
     const { managerRef, recorder } = await startManager();
     act(() => managerRef.current.pauseRecording());
@@ -261,6 +350,8 @@ describe('RecordingManager iPhone lifecycle', () => {
 
   it('does not upload final media or restart after discard or unmount', async () => {
     const discarded = await startManager();
+    act(() => discarded.recorder.ondataavailable({ data: new Blob(['discarded-periodic-piece'], { type: 'video/mp4' }) }));
+    expect(uploadData).not.toHaveBeenCalled();
     act(() => jest.advanceTimersByTime(240000));
     act(() => discarded.managerRef.current.discardRecording());
     await flushWebKitEvents();
@@ -357,7 +448,8 @@ describe('RecordingManager iPhone lifecycle', () => {
     expect(mockSend).toHaveBeenCalledTimes(1);
     const original = SendMessageCommand.mock.calls[0][0];
     const originalUpload = uploadData.mock.calls[0][0];
-    expect(originalUpload.data).toBe(originalBlob);
+    expect(originalUpload.data.type).toBe(originalBlob.type);
+    await expect(readBlobAsText(originalUpload.data)).resolves.toBe(await readBlobAsText(originalBlob));
     act(() => jest.setSystemTime(Date.now() + 301000));
     mockSend.mockResolvedValue({});
     act(() => managerRef.current.retryUploads());
@@ -523,6 +615,8 @@ describe('RecordingManager iPhone lifecycle', () => {
     await act(async () => managerRef.current.startRecording({ patientId: 'fictional-b', visitType: 'followUp' }));
     expect(managerRef.current.isRecording).toBe(true);
     act(() => FakeMediaRecorder.instances[1].ondataavailable({ data: new Blob(['B regular'], { type: 'video/mp4' }) }));
+    act(() => jest.advanceTimersByTime(240000));
+    await advance(2);
     await act(async () => finish({})); await settle();
     await finalize(managerRef);
     const messages = SendMessageCommand.mock.calls.map(([request]) => JSON.parse(request.MessageBody));
@@ -541,7 +635,10 @@ describe('RecordingManager iPhone lifecycle', () => {
 
   it('commits a final when Stop lands after rotation dataavailable but before onstop', async () => {
     const { managerRef, recorder } = await startManager();
-    const originalBlob = recorder.blobs[0];
+    act(() => {
+      recorder.ondataavailable({ data: new Blob(['rotation-periodic-a|'], { type: 'video/mp4' }) });
+      recorder.ondataavailable({ data: new Blob(['rotation-periodic-b|'], { type: 'video/mp4' }) });
+    });
     recorder.stopDelay = 10;
     const dataEvent = jest.spyOn(recorder, 'ondataavailable');
     act(() => jest.advanceTimersByTime(240000));
@@ -556,7 +653,10 @@ describe('RecordingManager iPhone lifecycle', () => {
     await advance(9);
     expect(managerRef.current.isFinishingRecording).toBe(false);
     expect(uploadData).toHaveBeenCalledTimes(1);
-    expect(uploadData.mock.calls[0][0].data).toBe(originalBlob);
+    expect(uploadData.mock.calls[0][0].data.type).toBe('video/mp4');
+    await expect(readBlobAsText(uploadData.mock.calls[0][0].data)).resolves.toBe(
+      'rotation-periodic-a|rotation-periodic-b|rotated-media',
+    );
     expect(uploadData.mock.calls[0][0].path).toContain('_final_');
     expect(JSON.parse(SendMessageCommand.mock.calls[0][0].MessageBody).isFinalAudio).toBe(true);
     expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);

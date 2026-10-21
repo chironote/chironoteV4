@@ -72,3 +72,19 @@ security-setting change or audience expansion is part of the authorized TestFlig
 release. Retain it as an explicit limitation for the later public Production
 review and scope decision; TestFlight availability is not a security clearance
 for public App Store promotion.
+
+## App Store privacy disclosure correction — October 21, 2026
+
+During the separately authorized public 1.8 submission preparation, the live App
+Privacy label listed audio but omitted names, health data and other written user
+content. Those three types were added and published for App Functionality,
+linked to identity, without tracking, reflecting patient names, stored clinical
+notes and other authored content described in [patient notes](../architecture/patient-notes.md).
+Existing six declared types and policy URL were retained. Apple's [data-type
+and collection definitions](https://developer.apple.com/app-store/app-privacy-details/)
+were checked. This is metadata alignment, not a new data-use permission or a full
+legal/vendor audit. No clinical data was transmitted for these checks.
+
+Public release authorization does not establish that the Capacitor advisory above
+has been patched or that device acceptance passed. The version remains 6.2.1;
+no dependency or security-setting change was included in build 13.
