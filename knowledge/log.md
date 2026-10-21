@@ -1,5 +1,10 @@
 # Knowledge Update Log
 
+## 2026-10-21
+
+- **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording-lifecycle.md). Synthetic validation only; no merge or production publication.
+
+
 ## 2026-10-15
 
 - Reviewed retry and next-appointment races in [recording lifecycle](./components/recording-lifecycle.md) and [app shell](./architecture/app-shell.md): bounded/fenced auth reads, acknowledged S3 success after cancellation races, one dispatch credential refresh, WebKit final classification at onstop, accepted-capture credit guards, early presentation handoff and separate NoSleep ownership. Late credit denials cancel only their capture's remaining work, preserving policy without cancelling B; startup dismissal cancels pending acquisition. Clarified FIFO's finite deduplication window and unverified backend duplicate/billing guarantees. Delegated validation passed 36 suites / 217 tests, web compilation with a temporary empty ignored Amplify configuration, OKS and diff checks; fixture removed. Source integration is distinct from App Store/TestFlight publication; device gates remain open.

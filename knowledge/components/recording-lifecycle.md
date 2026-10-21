@@ -35,7 +35,41 @@ Exam Layout remains visible for new and unassigned capture: new patients force a
 
 A typed, unselected name is checked across matching directory pages, then Start Recording opens the existing PatientDialog confirmation after the Exam/PI options. Create patient & record starts from its click; Record without a patient clears identity, injury and initial-exam linkage while preserving the preceding Exam/PI choices. Duplicate/error feedback retains the draft. Lookup preparation is invalidated on name edits, selection, clear and unmount. Blank unassigned and feature-disabled paths start directly. This is frontend source only; no native build or deployment is implied.
 
+## Recovered generation and saved-note authority
+
+The existing NUL ERROR control can carry `NOTE_RECOVERED` after the backend has
+confirmed a saved result that differs from the streamed preview. The stream parser
+holds control bytes across arbitrary read boundaries until its JSON completes;
+truncated, malformed or oversized controls fail closed. Control text is never
+added to the visible clinical preview. Whole-response JSON errors and transcript
+error parsing retain their existing one-shot behavior.
+
+Only NOTE_RECOVERED follows the saved-success path: fetch `getSavedNote` for the
+captured timestamp, verify ready status, matching timestamp and a version, then
+apply that authoritative body and identity. Ordinary EOF uses the same lookup when
+patient notes are enabled. Genuine conflicts, interrupted streams and unavailable
+or incomplete lookups preserve the preview and report unconfirmed persistence.
+Reader cancellation is best effort and cannot block a confirmed saved result.
+Saved-note retry accepts an unchanged version only for the explicit recovered
+control; ordinary retry still requires its new saved revision.
+
+The current V4 Capacitor client's per-capture sessions remain independent. A
+background recovered completion refreshes history without changing the foreground
+clipboard. Foreground completion installs the exact saved body/version as its
+clean editable baseline. Opening another Patients visit is held while generation
+owns the clipboard. No native project or bridge change is included.
+
+Synthetic parser, service, generation-hook/session and application tests cover the
+recovery boundary. Browser tests do not establish installed-device acceptance.
+Authenticated refresh, physical recording, interrupted connectivity and subsequent
+conditional Save still require the platform's normal release checks. This source
+patch does not publish a website, native app or extension release.
+
 ## Provenance
+
+- [Incremental generation control parser](../../src/components/Recording/noteGenerationErrors.js)
+- [Saved generation retry and retrieval](../../src/services/patientNotes.js)
+
 
 - [Recording manager](../../src/components/Recording/RecordingManager.jsx) (current implementation)
 - [Recording lifecycle tests](../../src/components/Recording/RecordingManager.test.js) (delayed-WebKit lifecycle coverage)

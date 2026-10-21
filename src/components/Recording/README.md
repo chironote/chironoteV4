@@ -26,3 +26,13 @@ Recording.css scopes its New Note flex/width rules to `.recording-dialog`, preve
 Exam Layout remains visible for new and unassigned capture: new patients force a checked, disabled gray checkbox and initial-exam metadata; unassigned visits use the editable manual choice. Existing patients retain follow-up/Re-Exam semantics. Manual exam preference is stored separately in `unassignedExamLayout` (initially seeded from legacy `noteSettings`) so a forced capture cannot become manual intent after clearing or reopening. PI is independent. Effective `noteSettings` are written synchronously before RecordingManager freezes its separate settings/visit snapshots; backend ICD rules are unchanged.
 
 A typed, unselected name is checked across matching directory pages, then Start Recording opens the existing PatientDialog confirmation after the Exam/PI options. Create patient & record starts from its click; Record without a patient clears identity, injury and initial-exam linkage while preserving the preceding Exam/PI choices. Duplicate/error feedback retains the draft. Lookup preparation is invalidated on name edits, selection, clear and unmount. Blank unassigned and feature-disabled paths start directly. This is frontend source only; no native build or deployment is implied.
+
+### Recovered saved results
+
+The current V4 Capacitor client's per-capture sessions remain independent. A
+background recovered completion refreshes history without changing the foreground
+clipboard. Foreground completion installs the exact saved body/version as its
+clean editable baseline. Opening another Patients visit is held while generation
+owns the clipboard. No native project or bridge change is included.
+
+Stream controls are parsed incrementally. NOTE_RECOVERED retrieves the authoritative saved body/version; true errors preserve a preview with unconfirmed persistence. Cancellation cannot block saved-result retrieval. See the recording knowledge concept and regression tests.

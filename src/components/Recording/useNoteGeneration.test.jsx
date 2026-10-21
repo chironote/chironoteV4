@@ -27,7 +27,7 @@ describe('recording-owned note completion', () => {
     } }));
     getUserId.mockResolvedValue('fictional-owner');
     generateToken.mockResolvedValue('fictional-token');
-    patientRequest.mockImplementation(async (action, { timestamp }) => ({ note: { ready: true, timestamp, note: `saved ${timestamp}` } }));
+    patientRequest.mockImplementation(async (action, { timestamp }) => ({ note: { ready: true, timestamp, version: `revision-${timestamp}`, note: `saved ${timestamp}` } }));
     global.fetch = jest.fn(async () => ({ ok: true, headers: { get: () => 'text/plain' }, body: {
       getReader: () => ({ read: async () => ({ done: true }), cancel: jest.fn() }),
     } }));
@@ -154,4 +154,18 @@ describe('recording-owned note completion', () => {
     expect(options.onTextStreamUpdate).not.toHaveBeenCalled();
     expect(options.onTransitionToMainApp).not.toHaveBeenCalled();
   });
+  it.each(['foreground','background','conflict','interrupted'])('split recovery preserves capture ownership: %s', async mode => {
+    const read=jest.fn(); const parts=['Synthetic preview','\u0000ERR','OR:{"code":"'+(mode==='conflict'?'CONFLICT':'NOTE_RECOVERED')+'","message":"Synthetic"}'];
+    (mode==='interrupted'?parts.slice(0,1):parts).forEach(part=>read.mockResolvedValueOnce({done:false,value:new TextEncoder().encode(part)}));
+    if(mode==='interrupted')read.mockRejectedValue(new TypeError('Synthetic disconnect'));else read.mockResolvedValue({done:true});
+    fetch.mockResolvedValue({ok:true,headers:{get:()=> 'text/plain'},body:{getReader:()=>({read,cancel:jest.fn()})}});
+    const a=capture(1,111);api.current.subscribeToNoteCompletion(a.userId,a.timestamp,a);
+    if(mode==='background')current=2;
+    act(()=>completed(0,111));await settle();
+    if(['foreground','background'].includes(mode))expect(options.onSavedNoteReady).toHaveBeenCalledWith(expect.objectContaining({timestamp:'111',version:'revision-111'}),{isCurrent:mode==='foreground'});
+    else {expect(options.onSavedNoteReady).not.toHaveBeenCalled();expect(options.onTextStreamUpdate).toHaveBeenLastCalledWith('Synthetic preview');}
+    if(mode==='background')expect(options.onTextStreamUpdate).not.toHaveBeenCalled();
+    if(mode==='foreground')expect(options.onTextStreamUpdate).toHaveBeenLastCalledWith('saved 111');
+  });
+
 });
