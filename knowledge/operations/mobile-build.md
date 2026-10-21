@@ -8,7 +8,13 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
-## Production hold — TestFlight 1.8 (13) recording report
+## Recording incident and build-16 device acceptance
+
+On October 21 the owner reported that TestFlight **1.9 (16)** finally records
+successfully on the affected iPad and explicitly authorized public submission
+after release checks. This supersedes the recording hold below for the corrected
+source. It is owner-reported device acceptance, not a newly collected raw-waveform
+verification. Failed builds 13–15 remain unsuitable release candidates.
 
 The owner clarified the installed TestFlight **1.8 (13)** symptom: a longer
 recording produced only about the first **20 seconds / 32 words** in the resulting
@@ -30,15 +36,48 @@ seconds survived. Build 15 also failed: a two-minute test uploaded only 42.37
 decoded seconds of MP4/AAC. Same-owner authentication requests carried a
 Macintosh user agent, bypassing the shipped iPhone/iPad-only detector and both
 earlier iOS fixes. The current source uses native Capacitor platform identity
-and one shared iOS condition, packaged in TestFlight build 16 below. The integrity hold
-remains open pending device completeness verification after that correction.
+and one shared iOS condition, packaged in TestFlight build 16 below. The owner
+subsequently confirmed the corrected recording works and authorized public release.
 
-**Do not submit a build to App Review or release publicly while this recording
-integrity hold remains open.** Preserve accepted artifacts and evidence; do not
-restart an accepted upload. Public 1.7 remains unchanged. Build 13's recording
-runtime matches build 12; its deployment-target change does not establish a fix.
-Use synthetic, non-clinical recordings to verify completeness before lifting the
-hold.
+Preserve accepted artifacts and evidence; do not restart an accepted upload.
+Build 13's recording runtime matches build 12; its deployment-target change did
+not establish a fix. The separate Capacitor advisory in
+[privacy boundaries](../security/privacy-boundaries.md) remains unpatched.
+
+## App Store 1.9 (17) submitted — October 21, 2026
+
+Build 16 was uploaded Internal Only and cannot be selected for public App Review.
+Production candidate 1.9 (17) therefore archives the same tested source
+`96d522fd4de0960b3c580f33e9ed218d7072b276`, reusing the unchanged validated web
+bundle, configuration and dependencies. Archive/signature/team/bundle/privacy
+verification passed, and all packaged web assets match build 16 byte for byte.
+Archive: `/Users/user297320/Desktop/chironote-ios/production-release-20261021-17/ChiroNote-1.9-17.xcarchive`.
+Evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/ios-production17/`.
+
+The App Store draft was updated from 1.8 to 1.9 with the recording fix in release
+notes and reproducible synthetic recording steps for App Review. Existing
+automatic release after approval and immediate rollout remain selected; published
+privacy disclosures and existing iPhone/iPad listing assets were checked.
+The owner also authorized an expedited-review request after submission.
+After desktop reconnect, Organizer accepted the public-capable App Store Connect
+upload at 4:36 PM PDT. Delivered signature, Store profile, entitlements and privacy
+manifests passed; export confirms `testFlightInternalTestingOnly=false`.
+Delivered IPA: `Delivered-17/ChiroNote-1.9-17.ipa` alongside the archive above
+(4,177,391 bytes; SHA-256
+`781fd0a56f5116f7396a51b57740c9546c50e0b7be7f71ce2fb4782a3d86d04b`).
+Delivered web assets match the verified archive. Apple processed build UUID
+`a25cf7c9-4e3c-426b-bb69-85d4e86e2bf0`; existing Inner Circle distribution was
+retained (one invitation, 90 days). Build 16 remains Testing as the tested fallback.
+
+Version **1.9 (17)** was submitted at **4:41 PM PDT** and is **Waiting for Review**.
+[App Review receipt](https://appstoreconnect.apple.com/apps/6756679857/distribution/reviewsubmissions/details/245e77f7-2f84-47e1-8ef2-fbcde1ef0b47).
+The authorized expedited-review form was then sent for ChiroNote / iOS. Apple
+confirmed: **“We’ll expedite review for ChiroNote.”** The bug impact and synthetic
+reproduction steps are in the saved App Review notes; the expedite form itself
+requested only app name and platform. Confirmation screenshots are preserved in
+the evidence directory. Automatic release to all users after approval remains
+selected. Review approval, public availability and customer update timing are not
+yet established. The pre-existing Capacitor advisory remains unresolved.
 
 ## TestFlight 1.9 (16) — October 21, 2026
 
@@ -69,8 +108,9 @@ Existing Inner Circle has one tester and automatic Xcode build distribution. Pre
 Testing with 90 days available, but its recording failure means it is not a
 known-good fallback. Prior archives and exports are preserved.
 Windows evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/ios-build16-native-platform/`.
-Physical-device recording completeness remains pending. The App Review/public
-release hold remains open.
+The owner subsequently reported successful recording on the affected iPad and
+authorized public release. Build 16 remains available as the tested internal
+fallback while the public release awaits App Review.
 
 ## TestFlight 1.9 (15) — October 21, 2026
 
