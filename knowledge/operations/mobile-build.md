@@ -7,6 +7,16 @@ tags: [capacitor, ios, android, build, permissions]
 ---
 
 # Capacitor Mobile Build
+
+## Minimum iOS deployment target — October 21, 2026
+
+The source minimum is **iOS 15.0** in both project and app Debug/Release
+configurations and the CocoaPods platform. iOS 13 and 14 are no longer supported
+by future builds from this source. This addresses the deployment-target warning
+observed during the build-12 upload; SDK requirements remain a separate check.
+Build 12 already in TestFlight retains its original iOS 13 minimum. A new signed
+archive/upload is required to deliver this change; no public release is implied.
+The existing Capacitor security limitation remains separate and unchanged.
 ## Current TestFlight release — October 21, 2026
 
 **1.8 (12) Internal is Testing for unchanged Inner Circle**, one invitation,
@@ -80,7 +90,7 @@ The shared Capacitor app ID is `com.chironote.app` in
 currently declares product bundle identifier `ai.chironote.app`. Live App Store
 Connect verified that identifier for ChiroNote (Apple ID 6756679857) on October 11,
 2026; preserve it for distribution rather than renaming it to the Capacitor ID. iOS targets
-13.0, declares microphone and speech usage text, enables background audio, and
+15.0, declares microphone and speech usage text, enables background audio, and
 declares Capacitor App, Clipboard, Device, Filesystem, Haptics, Keyboard, Splash
 Screen, Share, and Status Bar in its Podfile. CocoaPods 1.16.2 resolved Share
 6.0.2 on Mac; the checked-in lockfile records that resolution. The October 11

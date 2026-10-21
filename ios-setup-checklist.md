@@ -26,7 +26,7 @@
 - [ ] Add Associated Domains capability
   - Add domain: `applinks:chironote.ai`
 - [ ] Verify Info.plist permissions are present
-- [ ] Check deployment target (iOS 13.0+)
+- [ ] Check deployment target (iOS 15.0+)
 
 ### Phase 3: Build & Test
 
@@ -154,5 +154,5 @@ npx cap sync ios
 - **App Name**: ChiroNote
 - **Hostname**: chironote.ai
 - **Scheme**: https
-- **Minimum iOS**: 13.0
+- **Minimum iOS**: 15.0
 - **Capacitor Plugins**: 7 plugins (App, Device, Filesystem, Haptics, Keyboard, SplashScreen, StatusBar)
