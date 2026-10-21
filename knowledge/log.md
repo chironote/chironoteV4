@@ -2,11 +2,23 @@
 
 ## 2026-10-21
 
+- **WebM recording candidate after build 14 failed**: the owner reports about 41 seconds survived the next longer recording. iOS now prefers supported WebM/Opus to avoid the MP4 writer, retaining MP4 on older devices and the existing segment assembly/upload contract. [Recording lifecycle](components/recording-lifecycle.md) records the rationale; physical-device verification and the public-release hold remain pending.
+
 - **Retry banner lifetime**: the default note-generation failure message clears after 10 seconds; replacement and unmount cancel dismissal without clearing newer note drafts or other errors. [App shell](architecture/app-shell.md) documents this presentation-only change; backend retries and recording/transcription timeouts are unchanged.
 
-- **iOS MP4 flushing candidate**: request one-second writer flushing, retain all periodic/final pieces in order, and assemble one complete MP4 per existing stop/rotation boundary. Preserve final promotion, cancellation ownership and upload contract; document the WebKit final-flush rationale and its iOS-version limitations in [recording lifecycle](components/recording-lifecycle.md). Physical-device completeness remains pending; this source change does not lift the production hold.
-
-- **Production hold after device report**: owner identified installed TestFlight1.8(13) as returning only approximately the first five seconds of a full note despite normal-looking completion. [Mobile build](operations/mobile-build.md) now blocks AppReview/public release of13 and supersedes the earlier access-only resume instructions. Root cause and audio/transcript/generation boundary remain unverified; accepted artifacts are preserved for investigation.
+- **TestFlight 1.9 (14) and recording hold**: PR #73 merge
+  `367eb6558c1ccfdc0852d56f12c39e3a51d10bef` passed 38 suites / 245 tests, 51
+  focused tests, production web build and iOS sync. Organizer accepted the
+  Internal Only upload; build `3ca05248-94f1-46d9-abac-0a945eea5b2e` is Testing
+  for Inner Circle (one invitation, 90 days). IPA SHA256:
+  `c6483942da5fdcfe46d33ea1289725807e953bcea7a592fa74efeb1b1b1f26ef`.
+  The owner clarified the first build-13 symptom as about 20 seconds / 32 words,
+  not a fixed five-second clip; Apple tester records identify iPad Air 5 / iOS
+  26.1. The existing provider transcript and final note roughly align, placing the loss
+  before note generation; recorder versus transcription remains unresolved.
+  WebKit bug 299164 is plausible, not proven. Device acceptance and the
+  App Review/public-release hold remain. The primary fast-forwarded after backing
+  up 5 tracked and 9 untracked files. See [mobile build](operations/mobile-build.md).
 
 - **App Store 1.8 (13) upload**: recorded explicit public-release authorization, source d5218b8, signed archive and distribution IPA checks/hash, byte-identical build-12 web assets, saved 1.8 draft and error-free upload acceptance at 1:42 PM PDT with Apple processing underway in [mobile build](operations/mobile-build.md). [Privacy boundaries](security/privacy-boundaries.md) records published Name/Health/Other User Content label corrections. No App Review submission or live public 1.8 is yet claimed; device checks and Capacitor advisory remain unresolved.
 
