@@ -2,6 +2,15 @@
 
 ## 2026-10-21
 
+- **TestFlight 1.9 (16)**: the native iPad routing correction from PR #76 was
+  archived from exact source `96d522fd4de0960b3c580f33e9ed218d7072b276` after
+  249 tests, production web build and clean iOS sync. Packaged recorder/source
+  parity, signatures, entitlements and privacy manifests passed. Apple accepted
+  the Internal Only upload at 4:16 PM PDT; Apple shows Testing for Inner Circle
+  (one invitation, 90 days). Tester notes are saved. See
+  [mobile build](operations/mobile-build.md) for artifacts and source provenance.
+  Device completeness and the public-release hold remain open.
+
 - **Native iPad recorder routing**: build-15 raw-audio and same-owner request evidence established that a Macintosh user agent bypassed the iOS recorder path. Native bridge identity now takes precedence, and MIME selection uses the same platform result as slicing and finalization. [Recording lifecycle](components/recording-lifecycle.md) and [mobile build](operations/mobile-build.md) record the correction and failed build-15 follow-up. No new build or device acceptance is implied.
 
 - **TestFlight 1.9 (15)**: PR #74 source
