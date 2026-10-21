@@ -52,6 +52,9 @@ function ClinicalWorkspace({ signOut, user }) {
   const [clipboardTarget, setClipboardTarget] = useState(null);
   const [generationError, setGenerationError] = useState('');
   const [noteStreamActive, setNoteStreamActive] = useState(false);
+  const noteStreamActiveRef = useRef(false);
+  const noteStreamEpochRef = useRef(0);
+  const selectionEpoch = noteStreamEpochRef.current;
   const [editContent, setEditContent] = useState('');
   const [showCopyMessage, setShowCopyMessage] = useState(false);
   const [showPopupCopyMessage, setShowPopupCopyMessage] = useState(false);
@@ -114,7 +117,7 @@ function ClinicalWorkspace({ signOut, user }) {
   });
 
   const openPatientNote = (note, isCurrent = () => true) => leaveDrafts(() => {
-    if (!isCurrent()) return;
+    if (!isCurrent() || noteStreamActiveRef.current || selectionEpoch !== noteStreamEpochRef.current) return;
     savedNoteDropRequestRef.current += 1;
     setClipboardTarget(note); setClipboardContent(note.note || ''); setGenerationError('');
     setShowContentPopup(false); setShowEditPanel(false); setStreamingText('');
@@ -123,7 +126,7 @@ function ClinicalWorkspace({ signOut, user }) {
   });
 
   const handleSavedNoteDrop = async timestamp => {
-    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    if (clipboardSave.busy || noteStreamActiveRef.current || isDictationLoading || isTranscribing) return;
     const request = ++savedNoteDropRequestRef.current;
     const isCurrent = () => request === savedNoteDropRequestRef.current;
     try {
@@ -137,6 +140,7 @@ function ClinicalWorkspace({ signOut, user }) {
   };
 
   const handleClipboardTextDrop = text => {
+    if (noteStreamActiveRef.current) return;
     savedNoteDropRequestRef.current += 1;
     setClipboardContent(text);
   };
@@ -162,9 +166,13 @@ function ClinicalWorkspace({ signOut, user }) {
   }, []);
 
   const recordingManager = RecordingManager({
-    onGenerationStateChange: setNoteStreamActive,
+    onGenerationStateChange: active => {
+      noteStreamActiveRef.current = active;
+      if (active) { noteStreamEpochRef.current += 1; savedNoteDropRequestRef.current += 1; }
+      setNoteStreamActive(active);
+    },
     onGenerationError: setGenerationError,
-    onSavedNoteReady: (note) => { setClipboardTarget(note); },
+    onSavedNoteReady: (note) => { setClipboardTarget(note); setClipboardContent(note.note); setStreamingText(''); setGenerationError(''); refreshSavedHistory(); },
     onTextStreamUpdate: handleTextStreamUpdate,
     onTransitionToMainApp: handleTransitionToMainApp
   });
@@ -350,12 +358,14 @@ function ClinicalWorkspace({ signOut, user }) {
   };
 
   const handleSendToClipboard = async () => {
-    if (!await leaveDrafts()) return;
+    const canApply = () => !noteStreamActiveRef.current && selectionEpoch === noteStreamEpochRef.current;
+    if (!canApply() || !await leaveDrafts() || !canApply()) return;
     if (patientNotesEnabled && showNotes && selectedItem?.timestamp) {
       try {
         const { note } = await patientRequest('getSavedNote', { timestamp: selectedItem.timestamp });
+        if (!canApply()) return;
         setClipboardTarget(note); setClipboardContent(note.note || '');
-      } catch { setGenerationError('The saved note could not be opened for editing. Please retry.'); return; }
+      } catch { if (canApply()) setGenerationError('The saved note could not be opened for editing. Please retry.'); return; }
     } else {
       setClipboardTarget(null); setClipboardContent(extractPlainText(selectedContent));
     }
@@ -512,7 +522,7 @@ function ClinicalWorkspace({ signOut, user }) {
   const handleMobileOverlayDrop = (event) => {
     event.preventDefault();
     setIsMobileOverlayDragOver(false);
-    if (clipboardSave.busy || noteStreamActive || isDictationLoading || isTranscribing) return;
+    if (clipboardSave.busy || noteStreamActiveRef.current || isDictationLoading || isTranscribing) return;
     const timestamp = event.dataTransfer.getData(SAVED_NOTE_DRAG_TYPE);
     if (patientNotesEnabled && timestamp) {
       handleSavedNoteDrop(timestamp).then(opened => { if (opened) setIsCollapsed(true); });

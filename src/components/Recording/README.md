@@ -107,3 +107,12 @@ With patient capture enabled, `Recording` uses `Patients/PatientCapturePicker` f
 `REACT_APP_PATIENT_NOTES_ENABLED` enables patient features; `REACT_APP_PATIENT_CAPTURE_ENABLED=false` independently stops new patient capture. Do not log transcripts, generated notes, patient metadata, auth tokens, or upload paths. Patient service contracts and draft guards are maintained in `Patients` and `src/services/patientNotes.js`.
 
 Recorder New Note CSS is scoped to `.recording-dialog` so importing Recording styles cannot stretch or reshape the Clipboard toolbar. This does not change the recording lifecycle.
+
+### Recovered saved results
+
+Per-timestamp sessions and foreground ownership remain in place; a background
+recovery cannot replace the current clipboard. The foreground application installs
+the exact saved body/version as its clean editable baseline. Opening another
+Patients visit is held while generation owns the clipboard, matching history drops.
+
+Stream controls are parsed incrementally. NOTE_RECOVERED retrieves the authoritative saved body/version; true errors preserve a preview with unconfirmed persistence. Cancellation cannot block saved-result retrieval. See the recording knowledge concept and regression tests.

@@ -111,7 +111,40 @@ Google Play Production `24 (1.24)` and Internal testing `27 (1.27)` use the same
 - Regression-check background/foreground transitions on an installed Android build whenever recorder lifecycle code changes.
 - Verify the release bundle contains the lifecycle and object-identity helpers so an unrelated convergence build cannot revive an older recorder implementation.
 
+## Recovered generation and saved-note authority
+
+The existing NUL ERROR control can carry `NOTE_RECOVERED` after the backend has
+confirmed a saved result that differs from the streamed preview. The stream parser
+holds control bytes across arbitrary read boundaries until its JSON completes;
+truncated, malformed or oversized controls fail closed. Control text is never
+added to the visible clinical preview. Whole-response JSON errors and transcript
+error parsing retain their existing one-shot behavior.
+
+Only NOTE_RECOVERED follows the saved-success path: fetch `getSavedNote` for the
+captured timestamp, verify ready status, matching timestamp and a version, then
+apply that authoritative body and identity. Ordinary EOF uses the same lookup when
+patient notes are enabled. Genuine conflicts, interrupted streams and unavailable
+or incomplete lookups preserve the preview and report unconfirmed persistence.
+Reader cancellation is best effort and cannot block a confirmed saved result.
+Saved-note retry accepts an unchanged version only for the explicit recovered
+control; ordinary retry still requires its new saved revision.
+
+Per-timestamp sessions and foreground ownership remain in place; a background
+recovery cannot replace the current clipboard. The foreground application installs
+the exact saved body/version as its clean editable baseline. Opening another
+Patients visit is held while generation owns the clipboard, matching history drops.
+
+Synthetic parser, service, generation-hook/session and application tests cover the
+recovery boundary. Browser tests do not establish installed-device acceptance.
+Authenticated refresh, physical recording, interrupted connectivity and subsequent
+conditional Save still require the platform's normal release checks. This source
+patch does not publish a website, native app or extension release.
+
 ## Provenance
+
+- [Incremental generation control parser](../../src/components/Recording/noteGenerationErrors.js)
+- [Saved generation retry and retrieval](../../src/services/patientNotes.js)
+
 
 Recovery behavior and evidence: [queue](../../src/components/Recording/useAudioUploadQueue.js), [auth](../../src/components/Recording/recordingAuth.js), [session generation](../../src/components/Recording/useNoteGeneration.js), [transport tests](../../src/components/Recording/audioUploadRecovery.test.js), [manager/session tests](../../src/components/Recording/RecordingManager.test.jsx) and [auth tests](../../src/components/Recording/recordingAuth.test.js). Tests use fictional fixtures and do not verify deployed backend billing or physical-device networking.
 

@@ -75,3 +75,12 @@ On Capacitor, `useNotesHistory` subscribes to native app-state changes through `
 ## Phone Clipboard access
 
 `src/hooks/usePhoneLayout.js` supplies the same orientation-stable predicate to shell actions and `MainWorkspace`. Smart Editor availability requires desktop web: installed Android phones and tablets, plus phone web layouts, exclude its button and panel and reject direct toggle and Ctrl+B. Losing availability closes stale editor state while preserving its draft. Phone detection controls geometry independently from native editor availability. Clipboard Save remains governed by saved-note identity and existing draft/review guards. The root `clipboard-phone-layout` class applies the shared toolbar geometry in portrait and landscape. History shortcuts retain their existing behavior.
+
+### Recovered saved results
+
+Per-timestamp sessions and foreground ownership remain in place; a background
+recovery cannot replace the current clipboard. The foreground application installs
+the exact saved body/version as its clean editable baseline. Opening another
+Patients visit is held while generation owns the clipboard, matching history drops.
+
+Saved completion resets the raw body and version together; preview Markdown formatting never defines the persisted edit baseline.

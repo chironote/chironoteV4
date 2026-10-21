@@ -1,5 +1,10 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-21
+
+- **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording.md). Synthetic validation only; no merge or production publication.
+
+
 ## 2026-10-15
 
 - **Internal 36 published**: Version 36 (1.36), 1.36 Custom Instructions, became Available to internal testers at 5:26 PM PDT for the unchanged Early Beta audience (one tester). Release source `ef50369` packages merged PR58 (`831be15`) and current recording/Exam Layout fixes; unpublished 35 is skipped. Passed 44 suites / 240 tests, web build, Android-only sync, clean debug/release Gradle build, signing and upload-certificate checks. Signed AAB: 27,822,764 bytes, SHA-256 `1624258C32A5EDF49C3D225EAC22C4460C52234BB4D31507C8E6A1A31570DAEC`. Play verified API 24+/target 36, zero device losses and only the expected missing-deobfuscation warning; the published summary lists 19,278 devices. Updated [Android](./architecture/capacitor-android.md), [patient notes](./architecture/patient-notes.md), [account](./components/account.md), index and Settings README to distinguish confirmed Internal availability from pending phone acceptance. Package, toolchain, upload certificate and patient flags are unchanged; Production was untouched. Evidence is in the current task's `work/release36/` and `outputs/`.
