@@ -36,6 +36,12 @@ The app-state bridge preserves the existing WebView recording approach for nativ
 
 ## Configuration and Identity
 
+### Capacitor security patch candidate — October 21
+
+The security patch pins `@capacitor/android`, `@capacitor/ios`, `@capacitor/core` and `@capacitor/cli` to exactly **6.2.2**, the minimum fixed Capacitor 6 release for [GHSA-rvm3-566m-v7fv / CVE-2026-103922](https://github.com/advisories/GHSA-rvm3-566m-v7fv). Both native packages previously resolved to 6.2.1. The fix prevents document navigation through the internal HTTP proxy and restricts proxy handling; disabling CapacitorHttp alone did not protect affected versions. Existing 6.0.x plugins, app identity, SDK levels, signing and application behavior are preserved. The dependency change does not resolve unrelated audit findings.
+
+Source remediation requires fresh web build, Android sync, signed native rebuild and verified tester distribution. Internal 37 remains the previously published 6.2.1 build until a replacement is confirmed available; source changes alone do not patch installed apps. Independent review and validation evidence will be recorded before distribution. Recording, network-switching, appointment isolation and native navigation still require installed-device acceptance. Public promotion is outside this security-patch task.
+
 ### October 21 Internal 37 publication
 
 Version 37 (1.37), **1.37 Saved note recovery**, became **Available to internal testers** on October 21 at **12:05 PM PDT**, for the unchanged selected Early Beta list (one tester). Exact release source is `5ff320e206461d6321bfa1d160f43f818206aa74`, packaging PR62 merge `d5fde588ed65ee75b77af2e7bf6ba4c4462affad` and reviewed patch head `4eb2ad0b98189a4c442419e755d75424cfb3a28c`. It buffers terminal controls, verifies the saved result for the original timestamp, installs its authoritative body/version, and fences delayed selections while generation owns the clipboard. The existing backend API/control is compatible for independent staging; optional private backend receipts are not client inputs. App identity, signing, minimum 24, target/compile 36 and toolchain are unchanged. Internal 36 and its signed artifact remain fallback evidence. Production 30 was untouched.
