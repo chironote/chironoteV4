@@ -26,12 +26,14 @@ A source patch does not update an installed app or authorize public
 App Store promotion. Physical-device recording, navigation and network acceptance
 remain required.
 
-Current reconciled runtime `551d9ed5056a98136652c179e20adde146a985c7`
-includes base `56eb097` and all recording fixes through TestFlight 1.9 (15).
-Fresh checks passed **38 suites / 246 tests**, web build, iOS sync with no Pod
-lock drift, and unsigned Release compilation on Xcode 26.6 / SDK 26.5. The
+Current reconciled runtime `52c6f40aa15423b3bddd673de75035ff46ac198b`
+includes base `96d522f`, the recording fixes through TestFlight 1.9 (15), and
+the owner's native iPad platform-detection correction. Checks passed **38 suites /
+249 tests**, web build, iOS sync with no Pod lock drift, and incremental unsigned
+Release compilation on Xcode 26.6 / SDK 26.5. The
 effective minimum remains iOS 15.0; installed core/CLI/iOS/Android are 6.2.2.
-Independent review found no material source issue. Existing warnings remain.
+Independent review found no material source issue. Existing warnings and cached
+intermediate cleanup warnings remain; no clean-build or device-acceptance claim is made.
 
 No security-patched TestFlight availability is claimed. Browser input was stopped
 during the separate Android upload; fresh live Apple version/audience checks,
@@ -42,7 +44,7 @@ confirmed distribution signing, app/team, privacy manifests, iOS 15.0 and native
 6.2.2, but it was never uploaded and predates the later recording fixes; preserve
 it only as historical evidence. Its IPA hash is
 `d3aed41f65b1e107874b53497e0877fce22879039258159b844b0e6fda5969a3`.
-Current evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/task/evidence/ios-recheck/`
+Current evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/task/evidence/ios-final-recheck/`
 and `tester-handoff.json`. The public-release hold remains with its existing owner.
 
 ## Production hold — TestFlight 1.8 (13) recording report
