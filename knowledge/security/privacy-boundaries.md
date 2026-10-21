@@ -45,3 +45,22 @@ Native PDF caching uses app-private Filesystem metadata. The app privacy manifes
 The source implementation wins over broad compliance statements when describing
 what this checkout actually does. No secret values or clinical records are
 included here.
+
+## Native dependency advisory — October 21, 2026
+
+The build-12 candidate still resolves `@capacitor/core` and `@capacitor/ios`
+6.2.1 on the Mac; the checked-in Podfile.lock also resolves Capacitor and
+CapacitorCordova 6.2.1. This native version is in the affected iOS range of
+[GHSA-rvm3-566m-v7fv / CVE-2026-103922](https://github.com/advisories/GHSA-rvm3-566m-v7fv).
+The advisory identifies 6.2.2 as the patched 6.x release. A crafted link activated
+inside an affected app WebView can load remote content through the internal HTTP
+proxy at the app origin, granting that content same-origin access. Disabling
+CapacitorHttp alone does not mitigate affected versions.
+
+The advisory's prerequisites and ChiroNote-specific link delivery/exploitability
+have not been demonstrated here. The dependency predates recovery PR #63; that
+patch does not introduce it. No exploit exercise, dependency upgrade, workaround,
+security-setting change or audience expansion is part of the authorized TestFlight
+release. Retain it as an explicit limitation for the later public Production
+review and scope decision; TestFlight availability is not a security clearance
+for public App Store promotion.
