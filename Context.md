@@ -745,11 +745,11 @@ When ready to submit to App Store:
 
 ### Minimum iOS Version
 
-Current minimum deployment target: **iOS 13.0**
+Current minimum deployment target: **iOS 15.0**
 
 This can be changed in Xcode:
 1. Select App target
 2. General tab
 3. Deployment Info > iOS Deployment Target
 
-**Recommendation:** Keep at iOS 13.0+ for maximum device compatibility while maintaining modern API support.
+Keep the Xcode project and app Debug/Release deployment targets and CocoaPods platform at iOS 15.0 or later. Builds with this minimum do not support iOS 13 or 14.

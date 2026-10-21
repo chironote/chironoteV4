@@ -17,6 +17,13 @@ observed during the build-12 upload; SDK requirements remain a separate check.
 Build 12 already in TestFlight retains its original iOS 13 minimum. A new signed
 archive/upload is required to deliver this change; no public release is implied.
 The existing Capacitor security limitation remains separate and unchanged.
+
+Mac verification of source `b96af279` passed CocoaPods install and an unsigned
+Release build on Xcode 26.6 with effective App deployment target 15.0. The
+regenerated Podfile.lock changes only its Podfile checksum; dependency versions
+are unchanged. Evidence is under the existing release root's `target15-check/`.
+This verifies native compilation, separate from signing or device acceptance.
+
 ## Current TestFlight release — October 21, 2026
 
 **1.8 (12) Internal is Testing for unchanged Inner Circle**, one invitation,
