@@ -8,6 +8,53 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
+## App Store 1.8 (13) upload — October 21, 2026
+
+The owner explicitly authorized public App Store release after PR #67 raised the
+minimum OS. Exact archive source is `d5218b86faa17da34ac6a81e910c2b925d0fc59f`;
+version/build overrides are `MARKETING_VERSION=1.8`, `CURRENT_PROJECT_VERSION=13`.
+The clean Mac checkout and existing real-config web assets were verified. Packaged
+web assets match delivered build 12 byte for byte. The earlier 243-test result
+covers the unchanged runtime; the changed deployment configuration separately
+passed an unsigned native Release build. No new device-test pass is implied.
+
+The logged-in desktop `archive13.command` exited 0. Archive and distribution IPA
+verify as `ai.chironote.app`, team `LH7497Z687`, arm64, minimum iOS 15.0, with app,
+Capacitor and Cordova privacy manifests. The IPA uses Apple Distribution and Store
+provisioning, `get-task-allow=false`, `beta-reports-active=true`, and declares
+non-exempt encryption false. Its SHA256 is
+`c089dfb07696c7bcadae72b1f93a79b2e96baba52f9fc0f033bf3e7ce80290e9`
+(**4,176,316 bytes**). Archive: `tester-release-20261021/ChiroNote-1.8-13.xcarchive`;
+package: `tester-release-20261021/Delivered-13/ChiroNote.ipa`, under the same Mac
+release root recorded below. Windows evidence remains in `ios-tester-release/`.
+
+Organizer's **App Store Connect** distribution was selected, rather than Internal
+Only. The 1.8 App Store draft and factual release notes are saved, retaining the
+existing automatic release after approval and immediate automatic-update choices.
+Xcode ContentDelivery reports **Upload succeeded with no errors at 1:42:46 PM
+PDT**, with delivery state COMPLETE and the build entering PROCESSING. Browser
+availability remains unverified after the access interruption below. No submitted
+App Review, approval or live public 1.8 is claimed.
+Public 1.7 (8) and both prior TestFlight fallbacks remain unchanged.
+
+Access interruption after upload began: the Windows RDP capture became black and
+activation failed; later Chrome explicitly blocked automation because another
+extension UI was open. The owner was asked to restore the unlocked Windows/
+MacinCloud view and dismiss the Chrome extension panel. SSH delivery logs later
+confirmed acceptance after analysis completed; no retry was needed. Inspect
+Organizer and live Apple history after access returns, then select exact build 13
+for the saved 1.8 draft and complete the separately authorized review submission.
+Do not restart an accepted upload or infer processing completion from its receipt.
+
+App Privacy was corrected from six to nine declared data types by adding Name,
+Health and Other User Content for the app's patient/clinical-note functionality.
+Each addition is declared App Functionality, linked to identity and not used for
+tracking; Apple showed Published with no incomplete-setup warning. Existing six
+types and the privacy-policy URL were retained. This public metadata correction
+is separate from binary availability and is not a full third-party/legal audit.
+See [privacy boundaries](../security/privacy-boundaries.md) for the unchanged
+Capacitor advisory; neither the target fix nor the public-release request patches it.
+
 ## Minimum iOS deployment target — October 21, 2026
 
 The source minimum is **iOS 15.0** in both project and app Debug/Release
