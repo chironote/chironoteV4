@@ -30,7 +30,7 @@ seconds survived. Build 15 also failed: a two-minute test uploaded only 42.37
 decoded seconds of MP4/AAC. Same-owner authentication requests carried a
 Macintosh user agent, bypassing the shipped iPhone/iPad-only detector and both
 earlier iOS fixes. The current source uses native Capacitor platform identity
-and one shared iOS condition; no new build has been produced. The integrity hold
+and one shared iOS condition, packaged in TestFlight build 16 below. The integrity hold
 remains open pending device completeness verification after that correction.
 
 **Do not submit a build to App Review or release publicly while this recording
@@ -39,6 +39,38 @@ restart an accepted upload. Public 1.7 remains unchanged. Build 13's recording
 runtime matches build 12; its deployment-target change does not establish a fix.
 Use synthetic, non-clinical recordings to verify completeness before lifting the
 hold.
+
+## TestFlight 1.9 (16) — October 21, 2026
+
+Source PR #76 merged at `96d522fd4de0960b3c580f33e9ed218d7072b276`.
+Native Capacitor iOS identity now selects the recording lifecycle and MIME path
+even when an iPad reports a Macintosh user agent. Source validation passed 38
+suites / 249 tests, including 2 focused suites / 55 tests. The exact source
+passed the real-configuration production web build and iOS sync with a clean
+Mac checkout. Dependency manifest and installed lock hashes matched the prior
+successful locked install. Desktop-session archive/signing passed.
+
+Archive: `/Users/user297320/Desktop/chironote-ios/native-platform-release-20261021/ChiroNote-1.9-16.xcarchive`.
+Explicit overrides were `MARKETING_VERSION=1.9` and `CURRENT_PROJECT_VERSION=16`.
+Verified identity: `ai.chironote.app`, team `LH7497Z687`, minimum iOS 15.0.
+The packaged recorder matches the corrected source byte-for-byte; delivered web
+assets match the archive. Delivered IPA:
+`/Users/user297320/Desktop/chironote-ios/native-platform-release-20261021/Delivered-16/ChiroNote-1.9-16.ipa`
+(4,177,474 bytes, SHA-256
+`6c017b91ae5526c10b7ba2ec723094daf59de9fe808fd8f1c51dafdec6bd7ee4`).
+Apple Distribution signature, Store profile, `get-task-allow=false`,
+`beta-reports-active=true`, and app/Capacitor/Cordova privacy manifests passed.
+Export retained internal-only distribution, automatic signing and symbol upload.
+
+Organizer accepted **1.9 (16)** at **4:16 PM PDT**; Apple shows **Testing** for
+Inner Circle, one invitation and 90 days remaining. Tester notes are saved.
+[Processed build](https://appstoreconnect.apple.com/teams/4f8649c7-593d-4b5c-993f-c1a508200a8c/apps/6756679857/testflight/ios/7c8a9576-1c41-4159-9c0a-1abf8e96d507).
+Existing Inner Circle has one tester and automatic Xcode build distribution. Previous build 15 remains
+Testing with 90 days available, but its recording failure means it is not a
+known-good fallback. Prior archives and exports are preserved.
+Windows evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/ios-build16-native-platform/`.
+Physical-device recording completeness remains pending. The App Review/public
+release hold remains open.
 
 ## TestFlight 1.9 (15) — October 21, 2026
 
