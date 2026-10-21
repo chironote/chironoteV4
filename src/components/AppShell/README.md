@@ -82,3 +82,12 @@ Saved History drops into either clipboard drop target reload `getSavedNote` by t
 ## Copy cleanup policy — 2026-10-15
 
 Copy actions preserve list prefixes, numbering, blockquote markers, horizontal rules, and literal asterisks/underscores. They remove heading markers and paired bold, italic, strikethrough and inline-code delimiters; links retain visible text without URLs, and outer whitespace is trimmed. Whole-note HTML extraction and SOAP section-body selection remain in place. Copy uses `src/utils/copyText.js`; generated text, display cleanup and history-to-clipboard loading retain their existing `stripMarkdown`/`extractPlainText` behavior. Fenced-code handling retains the legacy cleanup behavior. These copy rules cannot restore markers already removed by the existing display cleanup. Source integration does not publish the website or extension.
+
+### Recovered saved results
+
+Run cancellation fences late retrieval. The application installs the exact saved
+body as its editable baseline after preview Markdown formatting, so recovery does
+not immediately create a dirty draft. Opening another Patients visit is held while
+generation owns the clipboard, matching the existing history-drop gate.
+
+Saved completion resets the raw body and version together; preview Markdown formatting never defines the persisted edit baseline.

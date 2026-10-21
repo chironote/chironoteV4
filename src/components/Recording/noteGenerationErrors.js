@@ -47,3 +47,35 @@ export const parseLambdaErrorPayload = (payload) => {
 
   return null;
 };
+
+// A terminal control frame has no delimiter after its JSON body. Keep it until
+// JSON is complete (or EOF proves it malformed); never publish its bytes.
+export function createNoteGenerationStreamParser() {
+  let control = null;
+  let finished = false;
+  return (chunk, done = false) => {
+    if (finished) return { text: '', error: null };
+    let text = chunk;
+    if (control !== null) { control += chunk; text = ''; }
+    else {
+      const index = chunk.indexOf('\u0000');
+      if (index >= 0) { text = chunk.slice(0, index); control = chunk.slice(index); }
+    }
+    if (control === null) return { text, error: null };
+    let error = null;
+    if (control.length <= 16384 && control.startsWith(NOTE_GENERATION_STREAM_ERROR_SENTINEL)) {
+      // A second terminal frame can follow a confirmed save's accounting timeout.
+      const payload = control.slice(NOTE_GENERATION_STREAM_ERROR_SENTINEL.length)
+        .split(NOTE_GENERATION_STREAM_ERROR_SENTINEL)[0].trim();
+      try {
+        const parsed = JSON.parse(payload);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) error = parsed;
+      } catch { /* The next read may finish the JSON. */ }
+    }
+    if (!error && (done || control.length > 16384)) {
+      error = { code: 'STREAM_CONTROL_INVALID', message: 'The saved result could not be confirmed. Refresh the saved record before retrying.' };
+    }
+    if (error) finished = true;
+    return { text, error };
+  };
+}
