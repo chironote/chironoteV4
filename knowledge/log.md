@@ -2,6 +2,17 @@
 
 ## 2026-10-21
 
+- **Recording acceptance and public submission**: the owner confirmed successful
+  recording in TestFlight 1.9 (16) and authorized public submission plus expedited
+  review. [Recording lifecycle](components/recording-lifecycle.md) records that
+  user-reported acceptance. [Mobile build](operations/mobile-build.md) records
+  the same-source 1.9 (17) signed archive, byte-identical web assets and verified
+  public-capable delivered IPA. Apple accepted the upload at 4:36 PM PDT and the
+  App Review submission at 4:41 PM PDT (Waiting for Review). Apple confirmed it
+  will expedite review. Automatic release to all users after approval is selected;
+  public availability is not yet established. The existing native dependency
+  advisory remains unresolved.
+
 - **TestFlight 1.9 (16)**: the native iPad routing correction from PR #76 was
   archived from exact source `96d522fd4de0960b3c580f33e9ed218d7072b276` after
   249 tests, production web build and clean iOS sync. Packaged recorder/source
