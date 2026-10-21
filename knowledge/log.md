@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Security candidate reconciled and validated**: preserved all current recording fixes from base `56eb097` in runtime `551d9ed`; passed 246 tests, web build, clean iOS sync and unsigned Release compilation, with native 6.2.2 / iOS 15.0 and no material independent-review finding. [Mobile build](operations/mobile-build.md) records the pending store handoff and superseded, never-uploaded initial 1.8 (14) archive. Draft PR #69 remains open; fresh live build allocation, signing/upload and tester availability are not claimed. Primary work and owner release holds remain preserved.
+
 - **Native Capacitor security patch**: pinned the framework/tool packages to exactly 6.2.2 for GHSA-rvm3-566m-v7fv, preserving plugins and merged iOS 15.0 settings. Updated [mobile build](operations/mobile-build.md), [privacy boundaries](security/privacy-boundaries.md) and index to distinguish source remediation from rebuilt TestFlight availability. Native validation/review and publication evidence are recorded separately; public promotion remains outside scope.
 
 - **TestFlight 1.9 (15)**: PR #74 source
