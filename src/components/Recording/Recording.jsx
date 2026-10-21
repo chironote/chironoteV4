@@ -286,14 +286,14 @@ function Recording({ isStarting = false,
           <div className="preparing-transcript">
             <h2>Preparing Transcript</h2>
             <div className="loading-spinner" aria-label="Preparing SOAP note transcript"></div>
-            <p>Pending audio stays in memory while this app remains open.</p>
-            <button type="button" onClick={continueInBackground}>Continue in background</button>
+            <p>Keep ChiroNote open while your audio uploads.</p>
+            <button type="button" onClick={continueInBackground}>Record next appointment</button>
           </div>
         ) : isGeneratingSummary ? (
           <div className="preparing-transcript">
             <h2>Generating Note</h2>
             <div className="loading-spinner" aria-label="Generating SOAP chiropractic note"></div>
-            <button type="button" onClick={continueInBackground}>Continue in background</button>
+            <button type="button" onClick={continueInBackground}>Record next appointment</button>
           </div>
         ) : (
           <div className="recording-content">
