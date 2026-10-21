@@ -36,7 +36,15 @@ The app-state bridge preserves the existing WebView recording approach for nativ
 
 ## Configuration and Identity
 
+### October 21 recovered-result Internal candidate
+
+Internal candidate 37 (1.37) packages PR62, merged as `d5fde588ed65ee75b77af2e7bf6ba4c4462affad`, exact reviewed patch head `4eb2ad0b98189a4c442419e755d75424cfb3a28c`. It buffers terminal stream controls, verifies the saved result for the original timestamp, installs its authoritative body/version, and fences delayed selections while generation owns the clipboard. The existing backend API/control remains compatible for independent staging; optional private backend receipts are not client inputs. Source integration is distinct from Play availability and installed-device acceptance. Preflight verified Internal 36 as available, highest uploaded 36, Production 30 and selected Early Beta with one tester. Candidate 37 preserves app identity, signing, minimum 24, target/compile 36 and the existing toolchain. Internal 36 and its signed artifact remain fallback evidence. Publication is recorded only after Play confirms availability.
+
+Release evidence is preserved at `C:/Users/nikit/Documents/Codex/2026-10-21/android-internal37/`. The compatibility assessment is `C:/Users/nikit/Documents/Codex/2026-10-21/chironote-incident-investigation/outputs/compatibility-gate.txt`; no backend deployment is performed by this Android release task. Physical recovery/retrieval, conditional Save, network switching and appointment isolation remain device acceptance checks.
+
 ### October 15 Internal 36 publication
+
+An independent tester-release recheck on October 15 confirmed that fetched `origin/cap-and` is `387d50274b75d1ac7fb933d4a952c46ef6f68c15`; its differences from build source `ef503695901dcae3268564c4ddcc2d56b1e52811` are documentation only. Live Play lists 36 as the newest uploaded bundle and Internal 1.36 as Available to internal testers for the selected Early Beta list (one tester). Production remains 30. The preserved 1.36 bundle passed the signed-bundle verifier again with its recorded hash, so no duplicate build/upload was made. Local diagnostics commit `58de7e7` remains unmerged and excluded: collector configuration, integration/parity and phone acceptance are pending. Exam Layout, open-app Wi-Fi recovery and Custom Instructions are already included through merged PR55/57/58. Evidence: `C:/Users/nikit/Documents/Codex/2026-10-15/android-tester-recheck/release-state.md`.
 
 Version 36 (1.36), **1.36 Custom Instructions**, became **Available to internal testers** on 2026-10-15 at 5:26 PM PDT for the unchanged Early Beta list (one tester). It packages merged Custom Instructions PR58 (`831be15`) and the current `cap-and` recording recovery/Exam Layout fixes, with release source `ef50369`. Preflight found highest uploaded/Internal code 34; the earlier local 35 candidate was never uploaded and is skipped. Version 36 retains `com.chironote.app`, minimum SDK 24, compile/target 36, AGP 8.9.1 / Gradle 8.11.1, upload certificate and both enabled patient flags. Custom Instructions is available by default with the documented explicit opt-out.
 

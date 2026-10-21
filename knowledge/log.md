@@ -2,10 +2,14 @@
 
 ## 2026-10-21
 
+- **Internal 37 preparation**: Updated [Android](./architecture/capacitor-android.md) and index for the PR62 recovered-result candidate, exact patch `4eb2ad0`, merge `d5fde58`, independent backend compatibility and unchanged native/security boundary. Live preflight confirms highest uploaded/Internal 36, Early Beta one tester and unchanged Production 30; allocated 37 / 1.37. Source merge is not publication or phone acceptance. Preserved prior release evidence and the October 15 independent recheck documentation from the primary checkout. Build/store outcomes are recorded separately as they occur.
+
 - **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording.md). Synthetic validation only; no merge or production publication.
 
 
 ## 2026-10-15
+
+- **Tester release independently rechecked**: Fetched `cap-and` at `387d502`; differences from Internal 36 build source `ef50369` are documentation only. Live Play confirms newest uploaded 36 / 1.36, Available to internal testers, selected Early Beta list with one tester, and unchanged Production 30. Re-ran the signed-bundle verifier against the preserved 27,822,764-byte release artifact; signature and recorded SHA-256 pass. Existing fresh release gates remain valid; no duplicate build/upload/publication was needed. [Android](./architecture/capacitor-android.md) and index now distinguish merged Exam Layout/recovery/Custom Instructions from local unmerged diagnostics `58de7e7`, whose collector/integration/device gates remain pending. Evidence: `C:/Users/nikit/Documents/Codex/2026-10-15/android-tester-recheck/release-state.md`. No website, Production, audience, email or cross-chat mutation.
 
 - **Internal 36 published**: Version 36 (1.36), 1.36 Custom Instructions, became Available to internal testers at 5:26 PM PDT for the unchanged Early Beta audience (one tester). Release source `ef50369` packages merged PR58 (`831be15`) and current recording/Exam Layout fixes; unpublished 35 is skipped. Passed 44 suites / 240 tests, web build, Android-only sync, clean debug/release Gradle build, signing and upload-certificate checks. Signed AAB: 27,822,764 bytes, SHA-256 `1624258C32A5EDF49C3D225EAC22C4460C52234BB4D31507C8E6A1A31570DAEC`. Play verified API 24+/target 36, zero device losses and only the expected missing-deobfuscation warning; the published summary lists 19,278 devices. Updated [Android](./architecture/capacitor-android.md), [patient notes](./architecture/patient-notes.md), [account](./components/account.md), index and Settings README to distinguish confirmed Internal availability from pending phone acceptance. Package, toolchain, upload certificate and patient flags are unchanged; Production was untouched. Evidence is in the current task's `work/release36/` and `outputs/`.
 
