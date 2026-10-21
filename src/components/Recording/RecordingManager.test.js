@@ -1,6 +1,7 @@
 import React, { act } from 'react';
 import { render } from '@testing-library/react';
 import RecordingManager from './RecordingManager';
+import { Capacitor } from '@capacitor/core';
 import { getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
 import { uploadData } from 'aws-amplify/storage';
 import { SendMessageCommand } from '@aws-sdk/client-sqs';
@@ -51,7 +52,10 @@ jest.mock('../../graphql/subscriptions', () => ({
 }));
 
 jest.mock('@capacitor/core', () => ({
-  Capacitor: { isNativePlatform: jest.fn(() => false) },
+  Capacitor: {
+    isNativePlatform: jest.fn(() => false),
+    getPlatform: jest.fn(() => 'web'),
+  },
 }));
 
 jest.mock('@capacitor/app', () => ({
@@ -153,6 +157,8 @@ describe('RecordingManager iPhone lifecycle', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    Capacitor.getPlatform.mockReturnValue('web');
+    Capacitor.isNativePlatform.mockReturnValue(false);
     FakeMediaRecorder.isTypeSupported.mockImplementation(type => type === 'video/mp4');
     mockSend.mockReset().mockResolvedValue({});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -316,6 +322,70 @@ describe('RecordingManager iPhone lifecycle', () => {
       'webm-part-a|webm-part-b|final-media',
     );
     expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ['when WebM is supported', true, 'audio/webm;codecs=opus'],
+    ['when WebM is unsupported', false, 'video/mp4'],
+  ])('uses the native iOS recorder path for a Mac-style UA %s', async (_caseName, webmSupported, expectedMime) => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+    });
+    Capacitor.getPlatform.mockReturnValue('ios');
+    Capacitor.isNativePlatform.mockReturnValue(true);
+    FakeMediaRecorder.isTypeSupported.mockImplementation(type => (
+      type === 'video/mp4' || (webmSupported && type === 'audio/webm;codecs=opus')
+    ));
+
+    const { managerRef, recorder } = await startManager();
+    const webmType = 'audio/webm;codecs=opus';
+    expect(FakeMediaRecorder.isTypeSupported).toHaveBeenCalledWith(webmType);
+    expect(FakeMediaRecorder.isTypeSupported.mock.results[0].value).toBe(webmSupported);
+    expect(recorder.options).toEqual({ mimeType: expectedMime });
+    expect(recorder.startCalls).toEqual([1000]);
+    recorder.stopDelay = 10;
+    recorder.blobs = [new Blob(['native-stop-tail|'], { type: expectedMime })];
+
+    act(() => {
+      recorder.ondataavailable({ data: new Blob(['native-part-a|'], { type: expectedMime }) });
+      recorder.ondataavailable({ data: new Blob(['native-part-b|'], { type: expectedMime }) });
+    });
+    expect(uploadData).not.toHaveBeenCalled();
+
+    act(() => managerRef.current.stopRecording());
+    expect(recorder.stream.track.stop).not.toHaveBeenCalled();
+    await advance(1);
+    expect(uploadData).not.toHaveBeenCalled();
+    expect(recorder.stream.track.stop).not.toHaveBeenCalled();
+    await advance(9);
+
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    const finalUpload = uploadData.mock.calls[0][0];
+    expect(finalUpload.path).toContain('_final_');
+    expect(finalUpload.data.type).toBe(expectedMime);
+    await expect(readBlobAsText(finalUpload.data)).resolves.toBe(
+      'native-part-a|native-part-b|native-stop-tail|',
+    );
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps a generic Mac UA on the non-iOS recorder path in web mode', async () => {
+    Object.defineProperty(window.navigator, 'userAgent', {
+      configurable: true,
+      value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)',
+    });
+    const { managerRef, recorder, view } = await startManager();
+
+    expect(Capacitor.getPlatform()).toBe('web');
+    expect(recorder.options).toEqual({});
+    expect(recorder.startCalls).toEqual([undefined]);
+    expect(FakeMediaRecorder.isTypeSupported).not.toHaveBeenCalledWith('audio/webm;codecs=opus');
+
+    act(() => managerRef.current.stopRecording());
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+    await advance(10);
+    view.unmount();
   });
 
   it('flushes a paused final stop once, without waiting or double cleanup', async () => {
@@ -684,6 +754,8 @@ describe('RecordingManager iPhone lifecycle', () => {
   it('keeps the non-iOS final event alive until onstop before accepting B', async () => {
     Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Android' });
     const { managerRef } = await startManager();
+    expect(Capacitor.getPlatform()).toBe('web');
+    expect(FakeMediaRecorder.instances[0].startCalls).toEqual([240000]);
     const a = managerRef.current.getCaptureSession();
     act(() => managerRef.current.stopRecording());
     await act(async () => managerRef.current.startRecording());
