@@ -8,6 +8,21 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
+## Production hold — reported build-13 recording truncation
+
+After installing TestFlight **1.8 (13)**, the owner reported recording an entire
+note but receiving only approximately the first five seconds, while the app
+appeared to complete normally. This is a user-reported failure, not yet an
+independently reproduced root cause. Whether capture/audio, transcription, or
+note generation lost the remainder is unresolved.
+
+**Do not submit build 13 to App Review or release it publicly.** This recording
+integrity blocker supersedes the access-only resume instructions below. Preserve
+the accepted archive/package and diagnostic evidence; do not restart the upload.
+Public 1.7 remains unchanged. The uploaded build's recording runtime matches
+build 12; the 13-only deployment-target change does not establish a remedy.
+Use synthetic, non-clinical recordings to investigate and verify completeness
+before resuming the separately authorized public-release workflow.
 ## App Store 1.8 (13) upload — October 21, 2026
 
 The owner explicitly authorized public App Store release after PR #67 raised the
