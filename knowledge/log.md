@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Security candidate validated, tester publication pending**: reconciled the Capacitor patch with current Android base `a1984b8` at runtime `9996a0d`; passed 266 tests, web/sync/native builds, signed 38 / 1.38 bundle checks and independent review. [Android](./architecture/capacitor-android.md) records the final hash, remaining audit findings and interrupted upload: Internal release 26 remained an empty draft on read-only inspection. Draft PR #68 is retained; no fixed tester availability or public promotion is claimed. Primary edits were preserved.
+
 - **Native Capacitor security patch**: pinned the framework/tool packages to 6.2.2, the minimum fixed Capacitor 6 release for GHSA-rvm3-566m-v7fv. Updated [Android](./architecture/capacitor-android.md) and index to separate source remediation from rebuilt tester availability. Preserved plugins, SDKs, signing, application behavior and unrelated primary edits. Validation/review and release results are recorded separately; no public promotion or backend/web deployment is authorized by this patch.
 
 - **Android recording wording**: Renamed the transcript-preparation and note-generation continuation buttons to "Record next appointment" and simplified the preparation reminder to "Keep ChiroNote open while your audio uploads." Updated the Recording README, [recording concept](./components/recording.md) and index; continuation behavior is unchanged. Source copy only, not a published app release.
