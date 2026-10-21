@@ -77,18 +77,20 @@ const createStream = () => {
 class FakeMediaRecorder {
   static instances = [];
 
-  static isTypeSupported = jest.fn(() => true);
+  // Keep the default iPhone behavior on the legacy MP4 fallback; individual
+  // tests opt into WebM when exercising newer WebKit support.
+  static isTypeSupported = jest.fn(type => type === 'video/mp4');
 
   constructor(stream, options) {
     this.stream = stream;
     this.options = options;
-    this.mimeType = options?.mimeType || '';
+    this.mimeType = options?.mimeType || 'video/mp4';
     this.state = 'inactive';
     this.startCalls = [];
     this.stopCalls = 0;
     this.blobs = [
-      new Blob(['rotated-media'], { type: 'video/mp4' }),
-      new Blob(['final-media'], { type: 'video/mp4' }),
+      new Blob(['rotated-media'], { type: this.mimeType }),
+      new Blob(['final-media'], { type: this.mimeType }),
     ];
     FakeMediaRecorder.instances.push(this);
   }
@@ -118,7 +120,7 @@ class FakeMediaRecorder {
     }
     this.stopCalls += 1;
     this.state = 'inactive';
-    const blob = this.blobs.shift() || new Blob(['final-media'], { type: 'video/mp4' });
+    const blob = this.blobs.shift() || new Blob(['final-media'], { type: this.mimeType });
     // Model WKWebView: neither final event is synchronous with stop().
     setTimeout(() => {
       this.ondataavailable({ data: blob });
@@ -151,6 +153,7 @@ describe('RecordingManager iPhone lifecycle', () => {
   beforeEach(() => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    FakeMediaRecorder.isTypeSupported.mockImplementation(type => type === 'video/mp4');
     mockSend.mockReset().mockResolvedValue({});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     FakeMediaRecorder.instances = [];
@@ -202,6 +205,8 @@ describe('RecordingManager iPhone lifecycle', () => {
   it('serializes pause/resume rotation while preserving the WebM upload contract', async () => {
     const { managerRef, recorder } = await startManager();
 
+    expect(FakeMediaRecorder.isTypeSupported).toHaveBeenCalledWith('audio/webm;codecs=opus');
+    expect(FakeMediaRecorder.isTypeSupported.mock.results[0].value).toBe(false);
     expect(recorder.options).toEqual({ mimeType: 'video/mp4' });
 
     act(() => managerRef.current.pauseRecording());
@@ -274,6 +279,42 @@ describe('RecordingManager iPhone lifecycle', () => {
     expect(finalUpload.path).toContain('_final_');
     expect(finalUpload.data.type).toBe('video/mp4');
     await expect(readBlobAsText(finalUpload.data)).resolves.toBe('segment-two-a|final-media');
+    expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('prefers supported iOS WebM and uploads ordered timeslice pieces as one final blob', async () => {
+    FakeMediaRecorder.isTypeSupported.mockImplementation(type => (
+      type === 'audio/webm;codecs=opus' || type === 'video/mp4'
+    ));
+    const { managerRef, recorder } = await startManager();
+    const webmType = 'audio/webm;codecs=opus';
+
+    expect(FakeMediaRecorder.isTypeSupported).toHaveBeenCalledWith(webmType);
+    expect(recorder.options).toEqual({ mimeType: webmType });
+    expect(recorder.mimeType).toBe(webmType);
+    expect(recorder.startCalls).toEqual([1000]);
+    recorder.stopDelay = 10;
+    recorder.blobs = [new Blob(['final-media'], { type: webmType })];
+
+    act(() => {
+      recorder.ondataavailable({ data: new Blob(['webm-part-a|'], { type: webmType }) });
+      recorder.ondataavailable({ data: new Blob(['webm-part-b|'], { type: webmType }) });
+    });
+    expect(uploadData).not.toHaveBeenCalled();
+
+    act(() => managerRef.current.stopRecording());
+    await advance(1);
+    expect(uploadData).not.toHaveBeenCalled();
+    await advance(9);
+
+    expect(uploadData).toHaveBeenCalledTimes(1);
+    const finalUpload = uploadData.mock.calls[0][0];
+    expect(finalUpload.path).toContain('_final_');
+    expect(finalUpload.options.contentType).toBe('audio/webm');
+    expect(finalUpload.data.type).toBe(webmType);
+    await expect(readBlobAsText(finalUpload.data)).resolves.toBe(
+      'webm-part-a|webm-part-b|final-media',
+    );
     expect(recorder.stream.track.stop).toHaveBeenCalledTimes(1);
   });
 

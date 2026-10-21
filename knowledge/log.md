@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **WebM recording candidate after build 14 failed**: the owner reports about 41 seconds survived the next longer recording. iOS now prefers supported WebM/Opus to avoid the MP4 writer, retaining MP4 on older devices and the existing segment assembly/upload contract. [Recording lifecycle](components/recording-lifecycle.md) records the rationale; physical-device verification and the public-release hold remain pending.
+
 - **Retry banner lifetime**: the default note-generation failure message clears after 10 seconds; replacement and unmount cancel dismissal without clearing newer note drafts or other errors. [App shell](architecture/app-shell.md) documents this presentation-only change; backend retries and recording/transcription timeouts are unchanged.
 
 - **TestFlight 1.9 (14) and recording hold**: PR #73 merge

@@ -37,6 +37,8 @@ hold.
 
 ## TestFlight 1.9 (14) — October 21, 2026
 
+**Device follow-up: failed.** The owner reports another truncated recording, with about 41 seconds surviving. Periodic MP4 flushing alone did not resolve the incident. The next candidate prefers supported WebM/Opus; build 14 must not be treated as a known-good recording fallback.
+
 PR #73 merge `367eb6558c1ccfdc0852d56f12c39e3a51d10bef` (recorder `6be3051`,
 banner `f699ee3`) was archived with version 1.9/build 14. iOS requests one-second
 MediaRecorder slices and assembles each complete stop segment; this is a plausible

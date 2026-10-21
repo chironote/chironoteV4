@@ -90,7 +90,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       return false;
     }
 
-    // Flush WebKit's MP4 writer regularly, then assemble all emitted pieces
+    // Flush WebKit's writer regularly, then assemble all emitted pieces
     // into one complete container when this recorder cycle stops.
     if (isIOS) {
       recorder.start(1000);
@@ -317,7 +317,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       task = uploadData({
         path: filePath, data: audioBlob,
         options: {
-          // Preserve the existing MP4 Blob / WebM-labelled backend contract.
+          // Preserve the existing WebM-labelled backend contract, including legacy MP4 fallback.
           contentType: 'audio/webm',
           metadata: { timestamp: timestamp.toString(), userId },
           onProgress: progress => {
@@ -581,9 +581,12 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       const uaString = navigator.userAgent.toLowerCase();
       let options = {};
       
-      // iOS devices need mp4
+      // Modern WebKit supports WebM/Opus, avoiding the MP4 final-writer path.
+      // Keep MP4 compatibility for older iOS versions without WebM recording.
       if (/iphone|ipad/i.test(uaString)) {
-        options = { mimeType: "video/mp4" };
+        options = { mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'video/mp4' };
       } 
       // Firefox doesn't support PCM codec
       else if (/firefox/i.test(uaString)) {
@@ -629,7 +632,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
             return;
           }
 
-          // All periodic and final data events belong to this complete MP4.
+          // All periodic and final data events belong to this complete container.
           // Stop may still promote a rotation to final between the last data
           // event and onstop; use the transaction's current intent.
           queueRecorderBlob(audioBlob, stop.intent === 'final');
