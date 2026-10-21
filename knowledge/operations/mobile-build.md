@@ -8,6 +8,21 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
+## Capacitor 6.2.2 security patch candidate — October 21
+
+The framework/tool dependencies `@capacitor/android`, `@capacitor/ios`,
+`@capacitor/core` and `@capacitor/cli` are pinned to exactly **6.2.2** for
+[GHSA-rvm3-566m-v7fv / CVE-2026-103922](https://github.com/advisories/GHSA-rvm3-566m-v7fv).
+The previous npm lock and CocoaPods framework resolved 6.2.1. This is the minimum
+fixed Capacitor 6 release; existing plugins and the merged iOS 15.0 target remain.
+See [privacy boundaries](../security/privacy-boundaries.md) for the security
+boundary. Native CocoaPods sync, regression/build checks, independent review,
+signed archive, upload and processed Inner Circle availability are distinct gates.
+Existing TestFlight 1.8 (12) continues to contain 6.2.1 until a replacement is
+confirmed. A source patch does not update an installed app or authorize public
+App Store promotion. Physical-device recording, navigation and network acceptance
+remain required.
+
 ## Minimum iOS deployment target — October 21, 2026
 
 The source minimum is **iOS 15.0** in both project and app Debug/Release

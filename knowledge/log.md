@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Native Capacitor security patch**: pinned the framework/tool packages to exactly 6.2.2 for GHSA-rvm3-566m-v7fv, preserving plugins and merged iOS 15.0 settings. Updated [mobile build](operations/mobile-build.md), [privacy boundaries](security/privacy-boundaries.md) and index to distinguish source remediation from rebuilt TestFlight availability. Native validation/review and publication evidence are recorded separately; public promotion remains outside scope.
+
 - **iOS 15 minimum**: raised all project/app Debug/Release deployment targets and the CocoaPods platform to 15.0, dropping iOS 13/14 support for future builds. Updated [mobile build](operations/mobile-build.md) and the setup checklist. Existing TestFlight build 12 is unchanged; this source update does not publish a new build or resolve the separate Capacitor advisory.
 
 - **TestFlight 1.8 (12) Testing**: published archived source d5a3776 to unchanged Inner Circle, one invitation/90 days; build 11 remains Testing with 85 days. [Mobile build](operations/mobile-build.md) records desktop-session archive, upload receipt, distribution IPA hash/signature/privacy/export, saved tester notes and outstanding device checks. [Privacy boundaries](security/privacy-boundaries.md) records pre-existing Capacitor 6.2.1 advisory and unresolved public-release review; dependencies were not changed. No public App Store release occurred.
