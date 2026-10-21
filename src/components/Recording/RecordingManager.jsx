@@ -90,9 +90,11 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       return false;
     }
 
-    // Keep the Android timeslice behavior unchanged. iOS intentionally uses
-    // the existing no-timeslice MP4 recording path.
-    if (isAndroid) {
+    // Flush WebKit's MP4 writer regularly, then assemble all emitted pieces
+    // into one complete container when this recorder cycle stops.
+    if (isIOS) {
+      recorder.start(1000);
+    } else if (isAndroid) {
       recorder.start(240000);
     } else {
       recorder.start();
@@ -138,7 +140,6 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       recorder,
       generation: recordingGenerationRef.current,
       intent,
-      dataHandled: false,
     };
     iosStopRef.current = stop;
     isRotatingRef.current = intent === 'rotation';
@@ -597,6 +598,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       const recorder = mediaRecorderRef.current;
       const recorderIdentity = recordingIdentityRef.current;
       const recorderGeneration = recordingGenerationRef.current;
+      let iosAudioParts = [];
       const queueRecorderBlob = (blob, isFinal) => {
         if (isCancelled(recorderGeneration) || !recorderIdentity || !blob?.size) return;
         if (isFinal && finalChunkQueuedRef.current) return;
@@ -608,8 +610,15 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
 
       if (isIOS) {
         recorder.onstop = () => {
+          const parts = iosAudioParts;
+          iosAudioParts = [];
+          const audioBlob = parts.length
+            ? new Blob(parts, { type: recorder.mimeType || parts[0].type || 'video/mp4' })
+            : null;
           const stop = iosStopRef.current;
           if (!stop || stop.recorder !== recorder) {
+            // Preserve an unsolicited stop's audio as a regular segment.
+            queueRecorderBlob(audioBlob, false);
             return;
           }
           iosStopRef.current = null;
@@ -620,9 +629,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
             return;
           }
 
-          // dataavailable precedes onstop. Retain those exact bytes until the
-          // stop transaction is committed, including a Stop between events.
-          queueRecorderBlob(stop.audioBlob, stop.intent === 'final');
+          // All periodic and final data events belong to this complete MP4.
+          // Stop may still promote a rotation to final between the last data
+          // event and onstop; use the transaction's current intent.
+          queueRecorderBlob(audioBlob, stop.intent === 'final');
 
           if (stop.intent === 'final') {
             // WebKit guarantees dataavailable before onstop. The final event
@@ -652,14 +662,13 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       }
   
       recorder.ondataavailable = (event) => {
-        const stop = isIOS ? iosStopRef.current : null;
         const generation = recorderGeneration;
         if (isCancelled(generation) || !recorderIdentity || event.data.size === 0) {
           return;
         }
-        if (isIOS && stop?.recorder === recorder) {
-          stop.dataHandled = true;
-          stop.audioBlob = event.data;
+        if (isIOS) {
+          // Timeslices can be dependent fragments. Never upload them alone.
+          iosAudioParts.push(event.data);
           return;
         }
         queueRecorderBlob(event.data, !isIOS && !isRecordingRef.current);
