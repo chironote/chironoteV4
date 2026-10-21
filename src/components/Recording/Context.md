@@ -84,7 +84,7 @@ The process follows a specific sequence of events:
     -   Starts the `mediaRecorder`, which begins capturing audio.
 
 3.  **Audio Chunking & Uploading (`mediaRecorder.ondataavailable`)**:
-    -   Four-minute rotation is timer-driven. On iPhone/iPad, WebKit's delayed `dataavailable` event is handled before `onstop` can start the next segment; regular chunks are queued before the one final chunk.
+    -   Four-minute rotation is timer-driven. On iPhone/iPad, a 1000ms timeslice flushes MP4 data into an ordered per-cycle buffer; periodic pieces are not standalone uploads. WebKit's final delayed `dataavailable` event joins that buffer before `onstop` assembles one complete Blob and can start the next segment; regular chunks are queued before the one final chunk.
     -   Each blob is added to an `uploadQueueRef` array.
     -   The `processUploadQueue` function is called, which works through the queue sequentially to prevent race conditions.
 

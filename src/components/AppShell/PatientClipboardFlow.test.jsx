@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import AuthenticatedApp from './AuthenticatedApp';
 import { patientRequest } from '../../services/patientNotes';
+import { NOTE_GENERATION_RETRY_MESSAGE } from '../Recording/recordingConstants';
 const mockPrepareNext = jest.fn();
 const mockHistoryRefresh = jest.fn();
 let mockRecordingCallbacks;
@@ -92,6 +93,33 @@ test.each(['initialExam', 'followUp', 'reExam'])('Patients opens %s in clipboard
   expect(container.querySelector('.clipboard-save-review')).toBeNull();
   expect([...container.querySelectorAll('button')].find(node => node.textContent === 'Save note').disabled).toBe(true);
   act(() => root.unmount()); container.remove(); jest.useRealTimers();
+});
+
+test('expires only the exact note-generation retry banner after 10 seconds', async () => {
+  jest.useFakeTimers();
+  const container = document.createElement('div'); document.body.append(container); const root = createRoot(container);
+  try {
+    await act(async () => root.render(<MemoryRouter initialEntries={['/app']}><Routes><Route path="/app/*" element={<AuthenticatedApp user={{ username: 'synthetic' }} />} /></Routes></MemoryRouter>));
+    await act(async () => mockRecordingCallbacks.onTextStreamUpdate('Synthetic note preview.'));
+    await act(async () => mockRecordingCallbacks.onGenerationError(NOTE_GENERATION_RETRY_MESSAGE));
+    const alert = () => container.querySelector('.patient-confirmation[role="alert"]');
+    expect(alert()?.textContent).toBe(NOTE_GENERATION_RETRY_MESSAGE);
+    expect(container.querySelector('textarea').value).toBe('Synthetic note preview.');
+
+    await act(async () => jest.advanceTimersByTime(9999));
+    expect(alert()?.textContent).toBe(NOTE_GENERATION_RETRY_MESSAGE);
+
+    await act(async () => mockRecordingCallbacks.onTextStreamUpdate('Newer unsaved note draft.'));
+    await act(async () => jest.advanceTimersByTime(1));
+    expect(alert()).toBeNull();
+    expect(container.querySelector('textarea').value).toBe('Newer unsaved note draft.');
+
+    await act(async () => mockRecordingCallbacks.onGenerationError('A different error remains visible.'));
+    await act(async () => jest.advanceTimersByTime(10000));
+    expect(alert()?.textContent).toBe('A different error remains visible.');
+  } finally {
+    act(() => root.unmount()); container.remove(); jest.useRealTimers();
+  }
 });
 
 describe('saved-note drops', () => {
