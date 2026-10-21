@@ -108,3 +108,65 @@ Local verification evidence: `C:/Users/nikit/Documents/Codex/2026-10-11/ios-publ
 
 Generated web bundles, native asset copies, and dependency directories are excluded
 from this knowledge layer.
+
+## October 21 recovered-result TestFlight preparation
+
+PR #63 merged into `cap-ios` at `fe1a2d5c33e6eb469268c2da56878a3d0c308806`.
+Its complete tree matches reviewed head `3599ba083f2b29b86557171372f5d62c4c5da7ce`.
+The source buffers terminal controls, applies confirmed NOTE_RECOVERED saved
+body/version to the owning capture, and preserves preview/error and foreground/
+background isolation for uncertain results. The wire/API contract is unchanged;
+completion receipts are optional/private, so current backend compatibility does
+not require atomic deployment. Backend deployment belongs to its separate owner.
+No client, backend or public release is implied by this merge.
+
+The release uses the clean Mac checkout
+`/Users/user297320/Desktop/chironote-ios/chironote-ios-tester-20261021`, initially
+validated at the exact PR head and then pinned to the identical-tree merge.
+The existing legitimate ignored Amplify configuration was copied from the prior
+verified Mac release checkout; production GraphQL endpoint and required Cognito
+configuration were checked locally without exposing secrets. No placeholder
+configuration is used for this release.
+
+Passed on Mac: locked `npm ci`, **38 suites / 243 tests**, normal production web
+build, `npx --no-install cap sync ios`, and unsigned Release compilation for
+`generic/platform=iOS`. Sync and native build left tracked source clean.
+Normal web build retains existing ESLint/CRA warnings; strict CI-mode compilation
+fails on existing warnings and no configured client GitHub CI exists. No lint
+suppression, broad refactor or dependency update was made to conceal that limit.
+Unsigned compilation is not signing, upload or physical-device acceptance.
+
+As of this preparation checkpoint SSH is available, but the App Store Connect
+browser session is expired and no connected Mac desktop is available. The
+launched Windows RDP connection window could not be activated after refreshed
+selection/retry. Owner reconnect/browser login and verification of the existing
+Xcode account were requested together. No live Apple version/build number,
+tester availability, or current expiry has been verified yet; no new build
+number, signed archive, upload or release is claimed.
+
+Historical fallback: 1.8 (11) from `bcdfa299d2e67e19a82ee95815374ed2f2a13588`
+was Testing for Inner Circle on October 16. Its preserved delivered IPA is
+4,178,238 bytes, SHA256
+`343b6abf7fb528a7d33d3ec6d23037035f1fbb1c17fb3c289f762cfb188bec10`, under
+`/Users/user297320/Desktop/chironote-ios/tester-release-20261015/Delivered-11/`.
+Its archive is in the same release root as `ChiroNote-1.8-11.xcarchive`.
+Recheck live availability and expiry before labeling it an installable fallback.
+
+Continue by restoring Apple/desktop access, checking current build history/group,
+choosing an unused number, staging an exact-HEAD archive command and using the
+logged-in desktop session for signing first. Prior SSH signing failed twice;
+do not weaken keychain settings or repeat an SSH archive merely to rediscover it.
+Reverify bundle/team/profile/privacy/archive and delivered distribution signature,
+then upload TestFlight Internal Only and verify exact processed group availability.
+Physical recording, authenticated saved-note recovery/refresh, a subsequent
+conditional Save, interrupted connectivity and foreground/background capture
+isolation remain device acceptance checks. No public App Store promotion is
+authorized in this task.
+
+Evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/ios-tester-release/`;
+Mac logs/native outputs:
+`/Users/user297320/Desktop/chironote-ios/tester-release-20261021/`.
+The dirty primary Windows checkout stays at `bf39e30` with its unrelated local
+style/bootstrap and knowledge edits preserved; local primary synchronization is
+intentionally incomplete under the current preservation boundary. Release source
+comes from the isolated, verified merge checkout.
