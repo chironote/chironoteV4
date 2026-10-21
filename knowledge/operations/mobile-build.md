@@ -24,9 +24,10 @@ This resembles [WebKit bug 299164](https://bugs.webkit.org/show_bug.cgi?id=29916
 which describes missing MP4 recording content with long, unsliced MediaRecorder
 capture. WebKit's follow-up reports the first 20–30 seconds on iOS 26.1 and says
 the fix shipped in iOS 26.2. That is a plausible explanation for the symptom,
-not evidence that ChiroNote lost the audio in WebKit. The build-13 recorder did
-not request periodic iOS slices; the 1.9 (14) change below may mitigate that
-writer path, but it has not yet been verified on a device.
+not evidence that ChiroNote lost the audio in WebKit. The build-13 recorder did not request periodic iOS slices. Build 14 added
+one-second MP4 flushing and assembly but failed its device follow-up: about 41
+seconds survived. Build 15 now prefers supported WebM/Opus; physical-device
+completeness remains pending, so the integrity hold remains open.
 
 **Do not submit a build to App Review or release publicly while this recording
 integrity hold remains open.** Preserve accepted artifacts and evidence; do not
@@ -34,6 +35,36 @@ restart an accepted upload. Public 1.7 remains unchanged. Build 13's recording
 runtime matches build 12; its deployment-target change does not establish a fix.
 Use synthetic, non-clinical recordings to verify completeness before lifting the
 hold.
+
+## TestFlight 1.9 (15) — October 21, 2026
+
+**Current TestFlight candidate; physical-device recording completeness is
+pending.** PR #74 merged at source commit
+d601e4c21188039e78b24c3ad28dc65484803fd7. iOS prefers supported WebM/Opus to
+avoid the MP4 writer, retaining the older-device fallback and existing segment
+assembly/upload contract. This is a candidate path, not a proven recording fix.
+
+The clean Mac checkout passed the production web build and iOS Capacitor sync.
+The full suite passed 38 suites / 246 tests; focused recording and patient-flow
+coverage passed 2 suites / 52 tests. OKS and diff checks passed.
+
+Archive: /Users/user297320/Desktop/chironote-ios/webm-release-20261021/ChiroNote-1.9-15.xcarchive
+(ai.chironote.app, team LH7497Z687, iOS 15.0 minimum; Apple Development
+signature). TestFlight IPA: /Users/user297320/Desktop/chironote-ios/webm-release-20261021/Delivered-15/ChiroNote-1.9-15.ipa
+(4,177,276 bytes; SHA-256
+e038071d303927fa9dee7a257bc82c9762ec63aadac59608afcbaa9160c7529f). Its Apple
+Distribution signature, get-task-allow=false, beta-reports-active=true, and
+app/Capacitor/Cordova privacy manifests verified. Export used TestFlight
+Internal Only and automatic signing.
+
+Organizer accepted the upload at **3:32 PM PDT**. Apple shows build 1.9 (15) as
+**Testing** for Inner Circle (one invitation, 90 days), UUID
+f2674026-fc63-4c49-870d-4fe0ef56f364. [Processed build](https://appstoreconnect.apple.com/teams/4f8649c7-593d-4b5c-993f-c1a508200a8c/apps/6756679857/testflight/ios/f2674026-fc63-4c49-870d-4fe0ef56f364).
+Tester notes are saved. Windows evidence is under C:/Users/nikit/Documents/Codex/2026-10-21/ios-build15-webm/:
+archive15-verification.txt, Delivered-15/verification.txt,
+testflight-1.9-15-notes.png, and testflight-1.9-15-testing.png. Device recording
+completeness remains pending; the recording-integrity and public-release hold
+above remain open. No App Review submission or public release is claimed.
 
 ## TestFlight 1.9 (14) — October 21, 2026
 

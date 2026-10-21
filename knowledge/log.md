@@ -2,6 +2,18 @@
 
 ## 2026-10-21
 
+- **TestFlight 1.9 (15)**: PR #74 source
+  d601e4c21188039e78b24c3ad28dc65484803fd7 passed 38 suites / 246 tests and 2
+  focused suites / 52 tests; production web build, iOS sync, OKS and diff checks
+  passed. The verified TestFlight IPA is 4,177,276 bytes (SHA-256
+  e038071d303927fa9dee7a257bc82c9762ec63aadac59608afcbaa9160c7529f). Apple
+  accepted the Internal Only upload at 3:32 PM PDT; build
+  f2674026-fc63-4c49-870d-4fe0ef56f364 is Testing for Inner Circle (one
+  invitation, 90 days). Tester notes are saved. The WebM/Opus candidate still
+  needs physical-device completeness verification; the recording-integrity and
+  public-release hold remain open. No App Review or public release is claimed.
+  See [mobile build](operations/mobile-build.md).
+
 - **WebM recording candidate after build 14 failed**: the owner reports about 41 seconds survived the next longer recording. iOS now prefers supported WebM/Opus to avoid the MP4 writer, retaining MP4 on older devices and the existing segment assembly/upload contract. [Recording lifecycle](components/recording-lifecycle.md) records the rationale; physical-device verification and the public-release hold remain pending.
 
 - **Retry banner lifetime**: the default note-generation failure message clears after 10 seconds; replacement and unmount cancel dismissal without clearing newer note drafts or other errors. [App shell](architecture/app-shell.md) documents this presentation-only change; backend retries and recording/transcription timeouts are unchanged.
