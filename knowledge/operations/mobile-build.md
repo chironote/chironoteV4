@@ -8,21 +8,62 @@ tags: [capacitor, ios, android, build, permissions]
 
 # Capacitor Mobile Build
 
-## Production hold — reported build-13 recording truncation
+## Production hold — TestFlight 1.8 (13) recording report
 
-After installing TestFlight **1.8 (13)**, the owner reported recording an entire
-note but receiving only approximately the first five seconds, while the app
-appeared to complete normally. This is a user-reported failure, not yet an
-independently reproduced root cause. Whether capture/audio, transcription, or
-note generation lost the remainder is unresolved.
+The owner clarified the installed TestFlight **1.8 (13)** symptom: a longer
+recording produced only about the first **20 seconds / 32 words** in the resulting
+note, not a fixed five-second clip. The Apple tester record identifies an iPad
+Air (5th generation) on iOS 26.1. The app appeared to complete normally. The
+existing AssemblyAI transcript covers 22 seconds / 32 words (timestamps
+1326–21740 ms) and roughly matches the final note, so later speech was already
+absent before note generation. Whether later speech was absent from captured audio
+or omitted by transcription remains unresolved; the full waveform has not been
+inspected.
 
-**Do not submit build 13 to App Review or release it publicly.** This recording
-integrity blocker supersedes the access-only resume instructions below. Preserve
-the accepted archive/package and diagnostic evidence; do not restart the upload.
-Public 1.7 remains unchanged. The uploaded build's recording runtime matches
-build 12; the 13-only deployment-target change does not establish a remedy.
-Use synthetic, non-clinical recordings to investigate and verify completeness
-before resuming the separately authorized public-release workflow.
+This resembles [WebKit bug 299164](https://bugs.webkit.org/show_bug.cgi?id=299164),
+which describes missing MP4 recording content with long, unsliced MediaRecorder
+capture. WebKit's follow-up reports the first 20–30 seconds on iOS 26.1 and says
+the fix shipped in iOS 26.2. That is a plausible explanation for the symptom,
+not evidence that ChiroNote lost the audio in WebKit. The build-13 recorder did
+not request periodic iOS slices; the 1.9 (14) change below may mitigate that
+writer path, but it has not yet been verified on a device.
+
+**Do not submit a build to App Review or release publicly while this recording
+integrity hold remains open.** Preserve accepted artifacts and evidence; do not
+restart an accepted upload. Public 1.7 remains unchanged. Build 13's recording
+runtime matches build 12; its deployment-target change does not establish a fix.
+Use synthetic, non-clinical recordings to verify completeness before lifting the
+hold.
+
+## TestFlight 1.9 (14) — October 21, 2026
+
+PR #73 merge `367eb6558c1ccfdc0852d56f12c39e3a51d10bef` (recorder `6be3051`,
+banner `f699ee3`) was archived with version 1.9/build 14. iOS requests one-second
+MediaRecorder slices and assembles each complete stop segment; this is a plausible
+WebKit mitigation, not a proven root-cause fix. The clean Mac source checkout was
+`/Users/user297320/Desktop/chironote-ios/chironote-ios-tester-20261021`.
+
+The production web build, `npx cap sync ios`, 38 suites / 245 tests, and the 51
+focused tests passed. Archive:
+`/Users/user297320/Desktop/chironote-ios/recording-release-20261021/ChiroNote-1.9-14.xcarchive`
+(verified `ai.chironote.app`, team `LH7497Z687`, iOS 15.0 minimum; Apple Development
+signature). TestFlight export:
+`/Users/user297320/Desktop/chironote-ios/recording-release-20261021/Delivered-14/ChiroNote-1.9-14.ipa`
+(4,177,187 bytes; SHA256
+`c6483942da5fdcfe46d33ea1289725807e953bcea7a592fa74efeb1b1b1f26ef`). Its Apple
+Distribution signature, `get-task-allow=false`, `beta-reports-active=true`, and
+app/Capacitor/Cordova privacy manifests verified. Export used TestFlight Internal
+Only and automatic signing; export records are under
+`/Users/user297320/Documents/App 2026-10-21 15-14-39`.
+
+Organizer accepted the upload at **3:13 PM PDT**. Build UUID
+`3ca05248-94f1-46d9-abac-0a945eea5b2e` is **Testing** for Inner Circle (one
+invitation, 90 days remaining). [Processed build](https://appstoreconnect.apple.com/teams/4f8649c7-593d-4b5c-993f-c1a508200a8c/apps/6756679857/testflight/ios/3ca05248-94f1-46d9-abac-0a945eea5b2e).
+Saved tester notes request synthetic start/middle/end speech markers, pause/resume,
+and a recording longer than four minutes. Physical-device recording completeness
+is pending; the public-release hold above remains open. Windows evidence is under
+`C:/Users/nikit/Documents/Codex/2026-10-21/ios-build14-recording/`.
+
 ## App Store 1.8 (13) upload — October 21, 2026
 
 The owner explicitly authorized public App Store release after PR #67 raised the
@@ -57,9 +98,9 @@ activation failed; later Chrome explicitly blocked automation because another
 extension UI was open. The owner was asked to restore the unlocked Windows/
 MacinCloud view and dismiss the Chrome extension panel. SSH delivery logs later
 confirmed acceptance after analysis completed; no retry was needed. Inspect
-Organizer and live Apple history after access returns, then select exact build 13
-for the saved 1.8 draft and complete the separately authorized review submission.
-Do not restart an accepted upload or infer processing completion from its receipt.
+Organizer and live Apple history after access returns to record build 13's
+processing state. Do not restart the accepted upload or submit build 13 for App
+Review while the production hold above remains open.
 
 App Privacy was corrected from six to nine declared data types by adding Name,
 Health and Other User Content for the app's patient/clinical-note functionality.
@@ -86,13 +127,15 @@ regenerated Podfile.lock changes only its Podfile checksum; dependency versions
 are unchanged. Evidence is under the existing release root's `target15-check/`.
 This verifies native compilation, separate from signing or device acceptance.
 
-## Current TestFlight release — October 21, 2026
+## Prior TestFlight build — 1.8 (12), October 21, 2026
 
-**1.8 (12) Internal is Testing for unchanged Inner Circle**, one invitation,
-90 days remaining. Apple build UUID `9d155da0-0f5f-4c38-a389-d5c933b454d3`.
+At its earlier verification checkpoint, **1.8 (12) Internal was Testing for
+unchanged Inner Circle**, with one invitation and 90 days remaining. Apple build
+UUID `9d155da0-0f5f-4c38-a389-d5c933b454d3`.
 [Processed build](https://appstoreconnect.apple.com/teams/4f8649c7-593d-4b5c-993f-c1a508200a8c/apps/6756679857/testflight/ios/9d155da0-0f5f-4c38-a389-d5c933b454d3).
-This supersedes the earlier access-blocked checkpoint below. No new testers,
-group, public link, website or public App Store release was performed.
+Recheck live availability before relying on it as a fallback. This superseded the
+earlier access-blocked checkpoint below. No new testers, group, public link,
+website or public App Store release was performed.
 
 Exact archived/uploaded source: `d5a3776fd3216374c3e05446e0d12113b924368c`,
 which includes recovery PR #63 and preparation record PR #64. Its runtime/package/
@@ -138,11 +181,12 @@ failed/interrupted lookup preserving preview, current/background capture
 isolation, recording/final audio, pause/background/Wi-Fi handoff and PDF Share.
 No provider replay, clinical/customer data test or backend mutation was performed.
 
-Fallback **1.8 (11)** remains Testing in Inner Circle with **85 days** remaining;
-its archive and hash-verified delivered IPA are preserved. Do not expire it for
-routine replacement. Public 1.7 was not changed. Public promotion remains a
-separate authorization/review; this tester release does not establish device or
-security readiness for that step. The shipped Capacitor framework is **6.2.1**,
+At that checkpoint, fallback **1.8 (11)** was Testing in Inner Circle with **85
+days** remaining; its archive and hash-verified delivered IPA are preserved.
+Recheck live availability before relying on it. Public 1.7 was not changed.
+Public promotion remains a separate authorization/review; this tester release
+does not establish device or security readiness for that step. The shipped
+Capacitor framework is **6.2.1**,
 confirmed in the delivered IPA, and remains affected by the pre-existing advisory
 recorded in [privacy boundaries](../security/privacy-boundaries.md). No dependency
 upgrade/workaround was included; ChiroNote-specific exploitability is unproven.
@@ -305,7 +349,9 @@ authorized in this task.
 Evidence: `C:/Users/nikit/Documents/Codex/2026-10-21/ios-tester-release/`;
 Mac logs/native outputs:
 `/Users/user297320/Desktop/chironote-ios/tester-release-20261021/`.
-The dirty primary Windows checkout stays at `bf39e30` with its unrelated local
-style/bootstrap and knowledge edits preserved; local primary synchronization is
-intentionally incomplete under the current preservation boundary. Release source
-comes from the isolated, verified merge checkout.
+After PR #73 merged, the primary Windows checkout was fast-forwarded to the
+verified `origin/cap-ios` merge `367eb6558c1ccfdc0852d56f12c39e3a51d10bef` and
+now matches that remote head. Before reconciliation, five tracked changes,
+including a binary patch, and nine original untracked files (14 files total)
+were preserved under
+`C:/Users/nikit/Documents/Codex/2026-10-21/ios-build14-recording/primary-backup/`.
