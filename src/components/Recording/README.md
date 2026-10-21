@@ -98,3 +98,12 @@ The recording surface uses the scoped recording-dialog class, content-driven hei
 The public website production defaults now disable patient notes/capture. The flag-off recording path retains Exam Layout and Personal Injury Case and starts without patient metadata; its regression test is in `Recording.test.jsx`. Development/mobile testing can keep capture enabled.
 
 Start Recording with a typed but unselected name checks for duplicates through PatientCapturePicker and opens a Create new patient? confirmation. Closing the prompt preserves the draft; Create patient & record passes prepared initial-exam metadata directly into capture from the confirmation click, before asynchronous subscription validation. Existing selections and blank/unassigned capture start directly. Record without a patient clears patient identity and initial-exam linkage while preserving the earlier Exam Layout and PI choices. Duplicate names or failed checks retain the picker and its inline feedback. This experiment is local to the web checkout.
+
+### Recovered saved results
+
+Run cancellation fences late retrieval. The application installs the exact saved
+body as its editable baseline after preview Markdown formatting, so recovery does
+not immediately create a dirty draft. Opening another Patients visit is held while
+generation owns the clipboard, matching the existing history-drop gate.
+
+Stream controls are parsed incrementally. NOTE_RECOVERED retrieves the authoritative saved body/version; true errors preserve a preview with unconfirmed persistence. Cancellation cannot block saved-result retrieval. See the recording knowledge concept and regression tests.

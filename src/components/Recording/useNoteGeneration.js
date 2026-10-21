@@ -3,14 +3,13 @@ import { generateClient } from 'aws-amplify/api';
 import * as subscriptions from '../../graphql/subscriptions';
 import {
   NOTE_GENERATION_RETRY_MESSAGE,
-  NOTE_GENERATION_STREAM_ERROR_SENTINEL,
   NOTE_GENERATION_TIMEOUT_AFTER_TRANSCRIPT_FALLBACK_MS,
   NOTE_GENERATION_TIMEOUT_MS,
   NOTE_GENERATION_URL,
   TRANSCRIPT_WAIT_TIMEOUT_MS
 } from './recordingConstants';
 import { generateToken, getUserId } from './recordingAuth';
-import { parseLambdaErrorPayload } from './noteGenerationErrors';
+import { createNoteGenerationStreamParser, parseLambdaErrorPayload } from './noteGenerationErrors';
 import { patientNotesEnabled, patientRequest } from '../../services/patientNotes';
 
 const client = generateClient();
@@ -82,7 +81,7 @@ function useNoteGeneration({
     const message = error?.safeMessage || userMessage;
     setTextStream(previewRef.current);
     onTextStreamUpdate(previewRef.current);
-    onGenerationError?.(previewRef.current ? `This preview was not saved. ${message}` : message);
+    onGenerationError?.(previewRef.current ? `Saving could not be confirmed. Keep this preview and check saved notes before retrying. ${message}` : message);
     setIsGeneratingSummary(false);
     setIsPreparingTranscript(false);
     onTransitionToMainApp();
@@ -182,7 +181,15 @@ function useNoteGeneration({
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
-      let streamControlBuffer = '';
+      const parseStream = createNoteGenerationStreamParser();
+      const applySavedNote = async () => {
+        const saved = await patientRequest('getSavedNote', { timestamp: String(timestamp) });
+        if (!active() || hasHandledNoteGenerationFailureRef.current) return;
+        if (!saved.note?.ready || !saved.note.version || typeof saved.note.note !== 'string' ||
+            String(saved.note.timestamp) !== String(timestamp)) throw new Error('The saved result could not be confirmed.');
+        previewRef.current = saved.note.note;
+        setTextStream(saved.note.note); onTextStreamUpdate(saved.note.note); onSavedNoteReady?.(saved.note);
+      };
 
       setIsGeneratingSummary(false);
       onTransitionToMainApp();
@@ -199,43 +206,23 @@ function useNoteGeneration({
 
         const chunk = await reader.read();
         if (!active()) return;
+        const frame = parseStream(decoder.decode(chunk.value, { stream: !chunk.done }), chunk.done);
+        previewRef.current += frame.text;
+        const lambdaError = frame.error || parseLambdaErrorPayload(previewRef.current);
+        if (lambdaError) {
+          if (lambdaError.code === 'NOTE_RECOVERED') await applySavedNote();
+          else handleNoteGenerationFailure('lambda_stream_chunk_error', lambdaError);
+          Promise.resolve().then(() => reader.cancel()).catch(() => {});
+          break;
+        }
+        if (frame.text) {
+          setTextStream(previewRef.current);
+          onTextStreamUpdate(previewRef.current);
+        }
         if (chunk.done) {
-          if (patientNotesEnabled && !hasHandledNoteGenerationFailureRef.current && !isDiscardingRef.current) {
-            const saved = await patientRequest('getSavedNote', { timestamp: String(timestamp) });
-            if (!active()) return;
-            if (!saved.note.ready) throw new Error('The complete note has not been saved.');
-            setTextStream(saved.note.note); onTextStreamUpdate(saved.note.note); onSavedNoteReady?.(saved.note);
-          }
-          if (generateTimeoutRef.current) {
-            clearTimeout(generateTimeoutRef.current);
-            generateTimeoutRef.current = null;
-          }
+          if (patientNotesEnabled && !hasHandledNoteGenerationFailureRef.current) await applySavedNote();
           break;
         }
-
-        const text = decoder.decode(chunk.value, { stream: !chunk.done });
-        const chunkForErrorDetection = streamControlBuffer + text;
-        const lambdaChunkError = parseLambdaErrorPayload(chunkForErrorDetection);
-        if (lambdaChunkError) {
-          handleNoteGenerationFailure('lambda_stream_chunk_error', lambdaChunkError);
-          try {
-            await reader.cancel();
-          } catch (cancelError) {
-            console.warn('Error cancelling note generation stream reader after chunk error:', cancelError);
-          }
-          break;
-        }
-
-        const sentinelTailLength = NOTE_GENERATION_STREAM_ERROR_SENTINEL.length - 1;
-        streamControlBuffer = chunkForErrorDetection.slice(-sentinelTailLength);
-
-        if (hasHandledNoteGenerationFailureRef.current || isDiscardingRef.current) {
-          break;
-        }
-
-        previewRef.current = (previewRef.current + text).split('\u0000')[0];
-        setTextStream(previewRef.current);
-        onTextStreamUpdate(previewRef.current);
       }
     } catch (error) {
       if (active() && error?.name !== 'AbortError') {

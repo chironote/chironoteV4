@@ -121,7 +121,40 @@ The web picker presents creation as a pale green full-width option with the ente
 
 The dialog preserves the manual Exam Layout choice in the optional local noteSettings.manualExamLayout field, with fallback to existing examLayout preferences. New-patient and existing Re-Exam/follow-up layouts are derived independently; clearing or switching patient selection and reopening the dialog restores the manual unassigned choice. Both direct blank start and the typed-name confirmation honor that choice for unassigned capture. Effective examLayout and PI are written synchronously before startRecording, which freezes only the two backend settings separately from visit metadata. The local preference field never enters the upload/generation settings payload. Backend ICD rules and production feature flags are unchanged; this is source-only work without deployment. Sources: [Recording.jsx](../../src/components/Recording/Recording.jsx), [Recording.test.jsx](../../src/components/Recording/Recording.test.jsx), and [RecordingManager.test.jsx](../../src/components/Recording/RecordingManager.test.jsx).
 
+## Recovered generation and saved-note authority
+
+The existing NUL ERROR control can carry `NOTE_RECOVERED` after the backend has
+confirmed a saved result that differs from the streamed preview. The stream parser
+holds control bytes across arbitrary read boundaries until its JSON completes;
+truncated, malformed or oversized controls fail closed. Control text is never
+added to the visible clinical preview. Whole-response JSON errors and transcript
+error parsing retain their existing one-shot behavior.
+
+Only NOTE_RECOVERED follows the saved-success path: fetch `getSavedNote` for the
+captured timestamp, verify ready status, matching timestamp and a version, then
+apply that authoritative body and identity. Ordinary EOF uses the same lookup when
+patient notes are enabled. Genuine conflicts, interrupted streams and unavailable
+or incomplete lookups preserve the preview and report unconfirmed persistence.
+Reader cancellation is best effort and cannot block a confirmed saved result.
+Saved-note retry accepts an unchanged version only for the explicit recovered
+control; ordinary retry still requires its new saved revision.
+
+Run cancellation fences late retrieval. The application installs the exact saved
+body as its editable baseline after preview Markdown formatting, so recovery does
+not immediately create a dirty draft. Opening another Patients visit is held while
+generation owns the clipboard, matching the existing history-drop gate.
+
+Synthetic parser, service, generation-hook/session and application tests cover the
+recovery boundary. Browser tests do not establish installed-device acceptance.
+Authenticated refresh, physical recording, interrupted connectivity and subsequent
+conditional Save still require the platform's normal release checks. This source
+patch does not publish a website, native app or extension release.
+
 ## Provenance
+
+- [Incremental generation control parser](../../src/components/Recording/noteGenerationErrors.js)
+- [Saved generation retry and retrieval](../../src/services/patientNotes.js)
+
 
 Synthesized from [RecordingManager.jsx](../../src/components/Recording/RecordingManager.jsx), [useMediaRecorderController.js](../../src/components/Recording/useMediaRecorderController.js), [useAudioUploadQueue.js](../../src/components/Recording/useAudioUploadQueue.js), [useNoteGeneration.js](../../src/components/Recording/useNoteGeneration.js), [recordingMedia.js](../../src/components/Recording/recordingMedia.js), the adjacent recording tests, [Dictation.jsx](../../src/components/Recording/Dictation.jsx), [dictationInsertion.js](../../src/utils/dictationInsertion.js), [Context.md](../../src/components/Recording/Context.md), [README.md](../../src/components/Recording/README.md), and Git commits `62f4ec8`, `a46b6d7`, `344f224`, `7200096`, `8d6e8b9`, `2f02843`, and `7761d93`. Current implementation takes precedence over older recording reference documents.
 

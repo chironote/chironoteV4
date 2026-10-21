@@ -1,5 +1,10 @@
 # ChiroNote Knowledge Update Log
 
+## 2026-10-21
+
+- **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording.md). Synthetic validation only; no merge or production publication.
+
+
 ## 2026-10-15
 
 - **Copy text preservation**: Updated [clipboard behavior](./components/clipboard.md) for copy-only cleanup that preserves lists, numbering, quotes, rules and literal punctuation while removing paired Markdown formatting. Generation/display and SOAP extraction are unchanged; added separate helper and regression coverage. Source-only integration; no publication.
