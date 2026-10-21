@@ -7,6 +7,66 @@ tags: [capacitor, ios, android, build, permissions]
 ---
 
 # Capacitor Mobile Build
+## Current TestFlight release — October 21, 2026
+
+**1.8 (12) Internal is Testing for unchanged Inner Circle**, one invitation,
+90 days remaining. Apple build UUID `9d155da0-0f5f-4c38-a389-d5c933b454d3`.
+[Processed build](https://appstoreconnect.apple.com/teams/4f8649c7-593d-4b5c-993f-c1a508200a8c/apps/6756679857/testflight/ios/9d155da0-0f5f-4c38-a389-d5c933b454d3).
+This supersedes the earlier access-blocked checkpoint below. No new testers,
+group, public link, website or public App Store release was performed.
+
+Exact archived/uploaded source: `d5a3776fd3216374c3e05446e0d12113b924368c`,
+which includes recovery PR #63 and preparation record PR #64. Its runtime/package/
+native tree equals tested implementation merge `fe1a2d5c`; explicit archive
+overrides are `MARKETING_VERSION=1.8` and `CURRENT_PROJECT_VERSION=12`.
+Fresh remote and clean Mac HEAD were verified before archiving. The existing
+real-configuration web bundle and native sync were used; no placeholder shipped.
+All 243 tests, normal production build, clean sync and unsigned native Release
+checks passed as recorded below. Existing lint/CRA warnings remain.
+
+Apple browser and Mac desktop access were restored, and Xcode showed the
+existing development@chironote.ai account and MYKYTA PREDTECHENSKYI team (Admin).
+The exact-HEAD guarded executable `archive12.command`, launched through
+`open -a Terminal`, succeeded in the logged-in desktop session on Xcode 26.6
+(17F113). No SSH signing attempt, new credentials/certificate, security-setting
+change or agreement acceptance was needed. The archive retains bundle
+`ai.chironote.app`, arm64 and team `LH7497Z687`; deep/strict codesign, provisioning,
+non-exempt encryption declaration false and packaged app/framework privacy checks
+passed. Archive development signing is separate from delivered distribution signing.
+
+Organizer's **TestFlight Internal Only** upload was accepted at **12:40 PM PDT**.
+Apple retained build 12; processing completed into Testing for the existing group.
+Only the established iOS-13-minimum warning for April 2027 was reported.
+Export options retain internal-only testing, symbol upload, automatic signing and
+automatic version/build management. The delivered IPA verifies with the existing
+Apple Distribution identity, Store provisioning valid through August 21, 2027,
+`get-task-allow=false`, `beta-reports-active=true`, correct bundle/team/version,
+and app/Capacitor/Cordova privacy manifests. No extra compliance answer was needed.
+
+IPA: **4,180,173 bytes**, SHA256
+`b5da6b1cf0bd63069e053b631e5f38c782f801f2a848496d1e030c4eb8d436a9`.
+Archive:
+`/Users/user297320/Desktop/chironote-ios/tester-release-20261021/ChiroNote-1.8-12.xcarchive`.
+Export including ExportOptions/DistributionSummary/Packaging log:
+`/Users/user297320/Documents/App 2026-10-21 12-40-58`.
+A second preserved IPA and inspection are under `tester-release-20261021/Delivered-12`.
+The Windows IPA hash matches. Local evidence root remains
+`C:/Users/nikit/Documents/Codex/2026-10-21/ios-tester-release/`.
+
+What to Test notes were saved on this exact build. Installed-device acceptance
+remains pending: authoritative recovered note and refresh, conditional Save,
+failed/interrupted lookup preserving preview, current/background capture
+isolation, recording/final audio, pause/background/Wi-Fi handoff and PDF Share.
+No provider replay, clinical/customer data test or backend mutation was performed.
+
+Fallback **1.8 (11)** remains Testing in Inner Circle with **85 days** remaining;
+its archive and hash-verified delivered IPA are preserved. Do not expire it for
+routine replacement. Public 1.7 was not changed. Public promotion remains a
+separate authorization/review; this tester release does not establish device or
+security readiness for that step. The shipped Capacitor framework is **6.2.1**,
+confirmed in the delivered IPA, and remains affected by the pre-existing advisory
+recorded in [privacy boundaries](../security/privacy-boundaries.md). No dependency
+upgrade/workaround was included; ChiroNote-specific exploitability is unproven.
 
 The React production build is the Capacitor `webDir` (`build`). The documented
 mobile sequence is `npm run build`, `npx cap sync <platform>`, then open the

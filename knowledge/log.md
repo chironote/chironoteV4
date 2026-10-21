@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **TestFlight 1.8 (12) Testing**: published archived source d5a3776 to unchanged Inner Circle, one invitation/90 days; build 11 remains Testing with 85 days. [Mobile build](operations/mobile-build.md) records desktop-session archive, upload receipt, distribution IPA hash/signature/privacy/export, saved tester notes and outstanding device checks. [Privacy boundaries](security/privacy-boundaries.md) records pre-existing Capacitor 6.2.1 advisory and unresolved public-release review; dependencies were not changed. No public App Store release occurred.
+
 - **TestFlight preparation**: recorded PR #63 integration, real production configuration, 243 passing Mac tests, clean native sync and unsigned Release build in [mobile build](operations/mobile-build.md). Preserved build-11 historical fallback evidence, dirty primary and precise Apple/desktop access handoff. No public release or current tester availability is claimed.
 
 - **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording-lifecycle.md). PR #63 subsequently merged at fe1a2d5; real-config Mac release checks are recorded in [mobile build](operations/mobile-build.md). No new signed/uploaded artifact is yet claimed.
