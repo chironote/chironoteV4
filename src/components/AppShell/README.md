@@ -10,6 +10,8 @@ Patients selections, source-note links, popup clipboard actions and saved-histor
 
 RecordingManager remains the iOS lifecycle implementation; the shell receives generation/error/saved-note callbacks without altering WebKit stop ordering. Dictation snapshots the selected textarea range before starting and applies revised transcripts through pure dictationInsertion helpers. Whole-note and section copies use nativePlatform. Flat legacy Clipboard/ContentPopup/EditPanel/ErrorBanner modules are compatibility re-exports, not additional editors.
 
+The exact default `NOTE_GENERATION_RETRY_MESSAGE` banner clears after 10 seconds. Error replacement, explicit clearing and unmount cancel its pending dismissal. Other errors and all note/draft content are preserved; generation/transcription timeouts and retry behavior are unchanged.
+
 Audio submission status exposes pending/blocked in-memory work and Retry. Recording's Record next appointment action releases only the waiting presentation. Earlier recordings finish their own generation and authoritative saved-note lookup, refresh history and cannot overwrite the current clipboard/target or close the new recording popup. The manager fences these presentation callbacks by recording ownership; the shell honors saved-note `isCurrent` metadata separately from history refresh.
 
 Opening fresh recording settings hands off presentation ownership immediately, including while an earlier note is already streaming and B has not started. NoSleep release is independently scoped to the successfully started recording. The workspace forwards the capture-session getter and microphone startup/finishing state so stale credit checks cannot cancel the next capture and rejected Starts do not run credit lookups.

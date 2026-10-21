@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Retry banner lifetime**: the default note-generation failure message clears after 10 seconds; replacement and unmount cancel dismissal without clearing newer note drafts or other errors. [App shell](architecture/app-shell.md) documents this presentation-only change; backend retries and recording/transcription timeouts are unchanged.
+
 - **iOS MP4 flushing candidate**: request one-second writer flushing, retain all periodic/final pieces in order, and assemble one complete MP4 per existing stop/rotation boundary. Preserve final promotion, cancellation ownership and upload contract; document the WebKit final-flush rationale and its iOS-version limitations in [recording lifecycle](components/recording-lifecycle.md). Physical-device completeness remains pending; this source change does not lift the production hold.
 
 - **Production hold after device report**: owner identified installed TestFlight1.8(13) as returning only approximately the first five seconds of a full note despite normal-looking completion. [Mobile build](operations/mobile-build.md) now blocks AppReview/public release of13 and supersedes the earlier access-only resume instructions. Root cause and audio/transcript/generation boundary remain unverified; accepted artifacts are preserved for investigation.
