@@ -2,7 +2,7 @@
 
 ## 2026-10-21
 
-- **App Store 1.8 (13) preparation**: recorded explicit public-release authorization, source d5218b8, signed archive and distribution IPA checks/hash, byte-identical build-12 web assets, saved 1.8 draft and pending Apple upload analysis in [mobile build](operations/mobile-build.md). [Privacy boundaries](security/privacy-boundaries.md) records published Name/Health/Other User Content label corrections. No App Review submission or live public 1.8 is yet claimed; device checks and Capacitor advisory remain unresolved.
+- **App Store 1.8 (13) upload**: recorded explicit public-release authorization, source d5218b8, signed archive and distribution IPA checks/hash, byte-identical build-12 web assets, saved 1.8 draft and error-free upload acceptance at 1:42 PM PDT with Apple processing underway in [mobile build](operations/mobile-build.md). [Privacy boundaries](security/privacy-boundaries.md) records published Name/Health/Other User Content label corrections. No App Review submission or live public 1.8 is yet claimed; device checks and Capacitor advisory remain unresolved.
 
 - **iOS 15 minimum**: raised all project/app Debug/Release deployment targets and the CocoaPods platform to 15.0, dropping iOS 13/14 support for future builds. Updated [mobile build](operations/mobile-build.md) and the setup checklist. Existing TestFlight build 12 is unchanged; this source update does not publish a new build or resolve the separate Capacitor advisory.
 
