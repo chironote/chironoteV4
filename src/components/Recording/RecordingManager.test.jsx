@@ -64,7 +64,7 @@ beforeEach(async () => {
   };
   uploadData.mockImplementation(() => ({ result: Promise.resolve({}), cancel: jest.fn() }));
   mockSend.mockResolvedValue({ MessageId: 'fictional' });
-  patientRequest.mockImplementation(async (_operation, { timestamp }) => ({ note: { timestamp, note: `Saved fictional ${timestamp}`, ready: true } }));
+  patientRequest.mockImplementation(async (_operation, { timestamp }) => ({ note: { timestamp, note: `Saved fictional ${timestamp}`, version: `revision-${timestamp}`, ready: true } }));
   props = Object.fromEntries(['onTextStreamUpdate', 'onTransitionToMainApp', 'onSavedNoteReady', 'onGenerationStateChange', 'onGenerationError'].map(name => [name, jest.fn()]));
   root = createRoot(document.createElement('div'));
   const Harness = () => { manager = RecordingManager(props); return null; };
@@ -281,4 +281,21 @@ test('late A eligibility cancellation clears only A while B continues capturing'
   expect(mockSend).not.toHaveBeenCalled(); // A's queued final was cancelled, B is still capturing.
   await act(async () => { manager.stopRecording(); await flush(); }); await tick(0);
   expect(JSON.parse(mockSend.mock.calls[0][0].input.MessageBody)).toMatchObject({ timestamp: 1001, visitMetadata: { patientId: 'fictional-B' } });
+});
+
+test.each(['foreground','background','conflict','interrupted'])('split recovered result preserves recording ownership: %s',async mode=>{
+  const read=jest.fn();
+  const parts=['Synthetic preview', '\u0000ERR', 'OR:{"code":"'+(mode==='conflict'?'CONFLICT':'NOTE_RECOVERED')+'","message":"Synthetic"}'];
+  (mode==='interrupted'?parts.slice(0,1):parts).forEach(part=>read.mockResolvedValueOnce({done:false,value:new Uint8Array(Buffer.from(part))}));
+  if(mode==='interrupted')read.mockRejectedValue(new TypeError('Synthetic disconnect'));else read.mockResolvedValue({done:true});
+  global.fetch.mockResolvedValue({ok:true,headers:{get:()=> 'text/plain'},body:{getReader:()=>({read,cancel:jest.fn()})}});
+  await start('fictional-A'); await act(async()=>{manager.stopRecording();await flush();});await tick(0);
+  if(mode==='background'){act(()=>manager.continueInBackground());jest.setSystemTime(1001);await start('fictional-B');Object.values(props).forEach(cb=>cb.mockClear());}
+  await act(async()=>{mockObservers[0].next({data:{onUpdateNotesByOwner:{timestamp:1000,isCompleted:true}}});await flush();});
+  if(mode==='foreground'){
+    expect(props.onSavedNoteReady).toHaveBeenCalledWith(expect.objectContaining({timestamp:'1000',version:'revision-1000'}));
+    expect(props.onTextStreamUpdate).toHaveBeenLastCalledWith('Saved fictional 1000');
+  }else expect(props.onSavedNoteReady).not.toHaveBeenCalled();
+  if(mode==='background'){expect(props.onTextStreamUpdate).not.toHaveBeenCalled();expect(manager.completionStatus).toContain('ready in Recent Notes');}
+  if(['conflict','interrupted'].includes(mode)){expect(patientRequest).not.toHaveBeenCalled();expect(props.onTextStreamUpdate).toHaveBeenLastCalledWith('Synthetic preview');}
 });
