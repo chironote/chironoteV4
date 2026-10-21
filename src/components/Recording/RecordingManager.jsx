@@ -61,7 +61,10 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
   // Recent Android WebView updates cause MediaRecorder to produce audio blobs with duration=0 without timeslice
   // Using 240-second (4-minute) timeslice to match chunk cycle and enable proper transcription
   const isAndroid = useRef(/android/i.test(navigator.userAgent)).current;
-  const isIOS = useRef(/iphone|ipad/i.test(navigator.userAgent)).current;
+  // Native iPads can report a Macintosh user agent. Prefer bridge identity.
+  const isIOS = useRef(
+    Capacitor.getPlatform() === 'ios' || /iphone|ipad/i.test(navigator.userAgent)
+  ).current;
 
   const { subscribeToNoteCompletion, cleanupNoteGeneration } = useNoteGeneration({
     isCurrentCapture: capture => visibleGenerationRef.current === capture.generation,
@@ -583,7 +586,7 @@ function RecordingManager({ onTextStreamUpdate, onTransitionToMainApp, onGenerat
       
       // Modern WebKit supports WebM/Opus, avoiding the MP4 final-writer path.
       // Keep MP4 compatibility for older iOS versions without WebM recording.
-      if (/iphone|ipad/i.test(uaString)) {
+      if (isIOS) {
         options = { mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
           ? 'audio/webm;codecs=opus'
           : 'video/mp4' };
