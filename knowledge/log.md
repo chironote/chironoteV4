@@ -2,6 +2,8 @@
 
 ## 2026-10-21
 
+- **Patient features restored for owner republish**: Enabled both production patient flags to match development, restoring the existing Patients tab, patient-aware sidebar and recording picker. Updated [website release](operations/website-release.md), [patient notes](architecture/patient-notes.md), [sidebar](components/sidebar.md), Recording README and index to supersede the October 11 pause and explain build-time overrides. Source preparation only; the owner will rebuild/publish and verify the live artifact.
+
 - **Recovered-result candidate**: documented split stream controls, authoritative recovered body/version retrieval, session ownership, uncertainty and platform acceptance limits in [the recovery contract](components/recording.md). Synthetic validation only; no merge or production publication.
 
 

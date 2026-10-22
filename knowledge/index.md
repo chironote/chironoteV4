@@ -53,7 +53,7 @@ This is a concept-oriented knowledge map for ChiroNote. Query by the thing you n
 
 | Concept | Use it to understand |
 | --- | --- |
-| [Website Publish State and Release Checklist](./operations/website-release.md) | Public patient-feature pause, original-folder reconciliation, production build defaults, live-versus-local evidence, owner publication steps, and rollback. |
+| [Website Publish State and Release Checklist](./operations/website-release.md) | Restored production patient features, historical pause, build overrides, live-versus-local evidence, owner publication steps, and rollback. |
 
 ## Security
 

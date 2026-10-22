@@ -39,6 +39,8 @@ return groupItemsByWeek(notes).map(week => (
 
 It delegates row rendering to `HistoryListItem` and calls parent callbacks for open, drag start, highlight removal, and week collapse. The panel uses one bounded scroll region, a stable desktop width, and a viewport-bounded mobile drawer. The header shows the title, supporting label and Refresh control, without a note-count badge. Notes are grouped into bordered weekly surfaces; each semantic button row shows the note label above `time · weekday · date`, while notes from the current local calendar day use `time · Today`.
 
+Patient-aware history is controlled by `REACT_APP_PATIENT_NOTES_ENABLED`: when enabled, rows show the canonical patient name above the visit label (falling back to the note label or note text), and history search is available. The flag-off view hides patient names/search while retaining legacy history. Production and development defaults enable this flag as of October 21; build-time overrides and the artifact actually published determine the visible behavior. See [website release](../operations/website-release.md).
+
 ## Smart Editor
 
 `EditPanel` accepts the current clipboard note plus editor instructions, then sends both to an edit Lambda:
