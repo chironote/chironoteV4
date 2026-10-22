@@ -1,7 +1,7 @@
 ---
 type: release-operations
 title: "Website Publish State and Release Checklist"
-description: "Current live-versus-unpublished state, synthetic acceptance, owner publication gate and website recovery evidence."
+description: "Production patient feature defaults, dated publication evidence, synthetic acceptance and website recovery steps."
 resource: "../../package.json"
 tags: [release, publish, amplify, production, validation, risk]
 ---
@@ -9,6 +9,14 @@ tags: [release, publish, amplify, production, validation, risk]
 # Website Publish State and Release Checklist
 
 Publishing requires repository-owner authorization. The 2026-09-26 Custom Instructions restoration was explicitly requested by the owner; the historical checklist below is not authorization for unrelated deployments.
+
+## Patient features restored for owner republish — 2026-10-21
+
+After reporting a website publish, the owner found Patients and patient-aware sidebar names missing and requested a local correction for republishing. Both `.env.production` patient flags still contained the October 11 pause values, while `.env.development` enabled them. Production now defaults `REACT_APP_PATIENT_NOTES_ENABLED=true` and `REACT_APP_PATIENT_CAPTURE_ENABLED=true`, retaining the existing HTTPS PDF endpoint. These defaults supersede the historical pause below.
+
+The notes flag exposes the existing Patients navigation/route, sidebar patient names/search and saved-note tools. Sidebar rows retain their existing visit-label, note-label and note-text fallback order. The capture flag restores existing/new patient selection before recording. This is a build configuration correction; patient records, backend safeguards, clinical prompts and mobile branches are unchanged.
+
+Rebuild from the owner's normal website folder after synchronizing `prod`; CRA embeds flags at build time, so publishing an older `build/` will retain its older behavior. Check process variables, `.env.production.local` and `.env.local` for higher-priority overrides. The owner will publish the resulting build. This source preparation does not establish that the enabled artifact is live; verify its manifest and reload the signed-in website after publication. Earlier deployment/acceptance sections below are dated evidence.
 
 ## Authorized patient-creation frontend release — 2026-10-13
 
@@ -20,7 +28,7 @@ Before publication, live index/manifest bytes and their S3 metadata were capture
 
 ## Public patient-feature pause — 2026-10-11
 
-The owner requested a public website republish with the new patient features disabled, while Android/iPhone testing releases continue enabled. `.env.production` now defaults `REACT_APP_PATIENT_NOTES_ENABLED=false` and `REACT_APP_PATIENT_CAPTURE_ENABLED=false`; this supersedes the enabled production defaults in the historical sections below. Development defaults remain enabled for testing. Custom Instructions remains available. Build-time process/local overrides must be checked before publishing.
+The owner requested a public website republish with the new patient features disabled, while Android/iPhone testing releases continued enabled. At that time `.env.production` defaulted `REACT_APP_PATIENT_NOTES_ENABLED=false` and `REACT_APP_PATIENT_CAPTURE_ENABLED=false`; the October 21 restoration above supersedes this pause. Development defaults remained enabled for testing. Custom Instructions remained available. Build-time process/local overrides must be checked before publishing.
 
 This is a frontend feature pause, not a database or backend rollback. Retain saved records, guarded writers, patient services and retired-cleanup protections. The website hides Patients, capture selection, patient-aware Save/reassignment and export; legacy recording remains available. Existing enabled browser sessions need a reload to receive the new build. Published October 11, 2026 (Pacific) to the verified S3/CloudFront host. Both public aliases returned matching SHA-256 hashes for index, manifest and `main.00c5c358.js`; invalidation `IZ29GKVMCGSBUP4RRFHJW8RBF` completed. Manifest SHA-256: `58f1f189e6f267c8e10cadc1c9cf2b14d0180269d2c801d3882561c56208d9c3`. The production build, 17 focused tests, 108 JSX tests and 27-concept OKS validation passed. No new live microphone/provider invocation was performed. Backups, conditional restore script, candidate hashes and live verification are preserved at `C:/Users/nikit/Documents/Codex/2026-10-11/website-flags-off/`; old immutable assets remain available.
 
@@ -101,7 +109,7 @@ The UI refactor is large in file movement but intended to preserve behavior. The
 
 ## Owner publication and post-publication checks
 
-The authenticated synthetic release checks and local tests/build are complete. The prepared website build remains unpublished; publication follows the existing owner-operated release process. This record does not add an approval gate. During that publish step, use the intended merged commit and feature-enabled build, verify the origin and consult the [recovery evidence](#rollback-evidence-and-recovery-copy).
+The October patient-release authenticated synthetic checks and local tests/build completed as recorded below. The owner reported another publication on October 21; the newly restored patient-enabled build still requires owner republishing and live artifact verification. This record does not add an approval gate. During that publish step, use the intended merged commit and feature-enabled build, verify the origin and consult the [recovery evidence](#rollback-evidence-and-recovery-copy).
 
 1. In `C:/Users/nikit/ChiroNote/website/chironoteV4`, verify `prod` matches the intended merged `origin/prod` commit. Preserve private local files. Run the test suite and `npm run build`; `.env.production` supplies `REACT_APP_PATIENT_NOTES_ENABLED=true`, `REACT_APP_PATIENT_CAPTURE_ENABLED=true` and `REACT_APP_PATIENT_EXPORT_URL=https://g6irrdqen2ig24qnenisyxvwre0mihei.lambda-url.us-east-2.on.aws/`. Check higher-priority environment/local-file overrides. Use `npm ci` if dependencies need installation.
 2. Confirm the signed-in website points at the intended production AppSync API and the export endpoint. Confirm the AWS identity is in account `026090532772`, and verify the target CloudFront distribution aliases and S3 origin before uploading.
@@ -131,4 +139,4 @@ The October 11 frontend correction restores the original History popup/transcrip
 
 Synthesized from Git branch and commit history; [package.json](../../package.json); the dated July 2026 website fingerprint and dependency review; current patient-notes and recording implementations; October 10 read-only hosting/runtime verification; the feature-enabled build and authenticated synthetic acceptance evidence kept in the release task; and the website recovery manifest. Website publication remains a separate owner action; this documentation records evidence but does not publish.
 
-October 11 source update: .env.development supplies the same public patient flags and HTTPS export endpoint as .env.production for plain npm start. Restart the development server to load changed environment defaults. Local export calls the existing authenticated production export service; validation uses fictional fixtures only. Patient deletion requires the coordinated audio replay guard and patient API release before user acceptance.
+October 21 source defaults: .env.development and .env.production both enable the public patient flags and supply the same HTTPS export endpoint. Restart the development server or rebuild production assets to load changed environment defaults. Local export calls the existing authenticated production export service; validation uses fictional fixtures only. Patient deletion requires the coordinated audio replay guard and patient API release before user acceptance.
